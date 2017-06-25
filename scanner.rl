@@ -1,42 +1,72 @@
+// Adapted from https://github.com/mhamrah/thermostat
 package main
 
+import "fmt"
 import "strconv"
 
-%% machine lexer;
+%%{
+	machine expression;
+	write data;
+	access lex.;
+	variable p lex.p;
+	variable pe lex.pe;
+}%%
 
-func ScanExpression(data string) ([]Token, error) {
-	cs, p, pe, eof := 0, 0, len(data), len(data)
-  var (ts, te, act int)
-  _ = act
-  tokens := make([]Token, 0)
-
-	%%{
-    action Ident {tokens = append(tokens, Token{IdentifierType, data[ts:te], nil})}
-    action Number {
-      n, err := strconv.ParseFloat(data[ts:te], 64)
-      if err != nil {
-        panic(err)
-      }
-      tokens = append(tokens, Token{ValueType, "", n})
-    }
-    action Relation {tokens = append(tokens, Token{RelationType, data[ts:te], nil})}
-
-    ident = (alpha | '_') . (alnum | '_')* ;
-    number = '-'? (digit+ ('.' digit*)?) ;
-
-    main := |*
-      ident => Ident;
-      number => Number;
-      ("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
-      ("and" | "or" | "contains") => Relation;
-      space+;
-    *|;
-
-		write init;
-		write exec;
-  }%%
-
-	return tokens, nil
+type lexer struct {
+    data []byte
+    p, pe, cs int
+    ts, te, act int
+		val func(Context) interface{}
 }
 
-%% write data;
+func newLexer(data []byte) *lexer {
+	lex := &lexer{
+			data: data,
+			pe: len(data),
+	}
+	%% write init;
+	return lex
+}
+
+func (lex *lexer) Lex(out *yySymType) int {
+	eof := lex.pe
+	tok := 0
+
+	%%{
+		action Ident {
+			tok = IDENTIFIER
+			name := string(lex.data[lex.ts:lex.te])
+			out.val = func(ctx Context) interface{} { return ctx.Variables[name] }
+			fbreak;
+		}
+		action Number {
+			tok = NUMBER
+			n, err := strconv.ParseFloat(string(lex.data[lex.ts:lex.te]), 64)
+			if err != nil {
+				panic(err)
+			}
+			out.val = func(_ Context) interface{} { return n }
+			fbreak;
+		}
+		action Relation { tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); fbreak; }
+
+		ident = (alpha | '_') . (alnum | '_')* ;
+		number = '-'? (digit+ ('.' digit*)?) ;
+
+		main := |*
+			ident => Ident; #{ tok = IDENTIFIER; out.name = string(lex.data[lex.ts:lex.te]); fbreak; };
+			number => Number;
+			("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
+			("and" | "or" | "contains") => Relation;
+			space+;
+		*|;
+
+		write exec;
+	}%%
+
+	return tok
+}
+
+func (lex *lexer) Error(e string) {
+    fmt.Println("error:", e)
+}

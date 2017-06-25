@@ -2,7 +2,9 @@ package main
 
 import "io"
 
-type Context interface{}
+type Context struct {
+	Variables map[string]interface{}
+}
 
 func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 	for _, c := range n.Children {

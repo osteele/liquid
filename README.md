@@ -36,6 +36,7 @@
 
 ```bash
 go get golang.org/x/tools/cmd/stringer
+go install golang.org/x/tools/cmd/goyacc
 ```
 
 Install Ragel. On macOS: `brew install ragel`.
@@ -52,3 +53,7 @@ Test just the scanner:
 ```bash
 ragel -Z scanner.rl && go test -run TestExpressionParser
 ```
+
+## Attribution
+
+Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.

@@ -1,5 +1,3 @@
-//go:generate stringer -type=TokenType
-
 package main
 
 import (
@@ -8,15 +6,13 @@ import (
 )
 
 type Token struct {
-	t TokenType
+	t int
 	s string
 	v interface{}
 }
 
-type TokenType int
-
 const (
-	IdentifierType TokenType = iota
+	IdentifierType = iota
 	KeywordType
 	RelationType
 	ValueType
