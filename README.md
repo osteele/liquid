@@ -30,12 +30,25 @@
 
 `go get -u github.com/osteele/goliquid`
 
-## Develop
+## Contribute
+
+### Setup
 
 ```bash
 go get golang.org/x/tools/cmd/stringer
 ```
 
+Install Ragel. On macOS: `brew install ragel`.
+
+### Workflow
+
 ```bash
 go generate
+go test
+```
+
+Test just the scanner:
+
+```bash
+ragel -Z scanner.rl && go test -run TestExpressionParser
 ```

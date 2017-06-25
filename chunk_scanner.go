@@ -1,3 +1,5 @@
+//go:generate stringer -type=ChunkType
+
 package main
 
 import (
@@ -18,7 +20,6 @@ type SourceInfo struct {
 
 type ChunkType int
 
-//go:generate stringer -type=ChunkType
 const (
 	TextChunk ChunkType = iota
 	TagChunk
