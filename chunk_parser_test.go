@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-	"os"
+	"bytes"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -14,26 +13,25 @@ func TestChunkParser(t *testing.T) {
 	},
 	}
 
-	tokens := ScanChunks("pre{%if 1%}left{{x}}right{%endif%}post", "")
-	// fmt.Println("tokens =", tokens)
-	ast, err := Parse(tokens)
-	require.NoError(t, err)
-	fmt.Println("ast =", ast)
-	err = ast.Render(os.Stdout, ctx)
-	require.NoError(t, err)
-	fmt.Println()
-	return
-
 	for _, test := range chunkTests {
-		tokens := ScanChunks(test.in, "")
-		ast, err := Parse(tokens)
-		require.NoError(t, err)
-		actual := ast.Render(os.Stdout, ctx)
-		require.Equal(t, test.expected, actual)
+		t.Run(test.in, func(t *testing.T) {
+			tokens := ScanChunks(test.in, "")
+			// fmt.Println(tokens)
+			ast, err := Parse(tokens)
+			require.NoError(t, err)
+			// fmt.Println(ast)
+			buf := new(bytes.Buffer)
+			err = ast.Render(buf, ctx)
+			require.NoError(t, err)
+			require.Equal(t, test.expected, buf.String())
+		})
 	}
 }
 
 var chunkTests = []struct{ in, expected string }{
-	{"{{var}}", "value"},
-	{"{{x}}", "1"},
+	{"{{12}}", "12"},
+	{"{{x}}", "123"},
+	{"{%if 1%}}true{%endif%}", "true"},
+	{"{%if x%}}true{%endif%}", "true"},
+	{"{%if y%}}false{%endif%}", ""},
 }

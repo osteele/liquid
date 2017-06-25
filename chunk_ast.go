@@ -8,7 +8,6 @@ import (
 
 type AST interface {
 	Render(io.Writer, Context) error
-	// String() string
 }
 
 type ASTSeq struct {
