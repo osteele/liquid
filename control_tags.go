@@ -8,7 +8,7 @@ import (
 func init() {
 	loopTags := []string{"break", "continue", "cycle"}
 	DefineControlTag("comment").Action(unimplementedControlTag)
-	DefineControlTag("if").Branch("else").Branch("elseif").Action(unimplementedControlTag)
+	DefineControlTag("if").Branch("else").Branch("elsif").Action(unimplementedControlTag)
 	DefineControlTag("unless").Action(unimplementedControlTag)
 	DefineControlTag("case").Branch("when").Action(unimplementedControlTag)
 	DefineControlTag("for").Governs(loopTags).Action(unimplementedControlTag)

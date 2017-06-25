@@ -64,7 +64,7 @@ func ScanChunks(data string, pathname string) []Chunk {
 			}
 			out = append(out, Chunk{TagChunk, sourceInfo, data[ts:te], data[m[4]:m[5]], args})
 		}
-		p = te + 1
+		p = te
 	}
 	if p < pe {
 		out = append(out, Chunk{TextChunk, sourceInfo, data[p:], "", ""})

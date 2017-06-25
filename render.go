@@ -53,8 +53,24 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 		if err != nil {
 			return err
 		}
-		if val != nil && val != false {
+		switch val {
+		default:
 			return writeASTs(w, n.body, ctx)
+		case nil, false:
+			for _, c := range n.branches {
+				switch c.chunk.Tag {
+				case "else":
+					val = true
+				case "elsif":
+					val, err = EvaluateExpr(c.chunk.Args, ctx)
+					if err != nil {
+						return err
+					}
+				}
+				if val != nil && val != false {
+					return writeASTs(w, c.body, ctx)
+				}
+			}
 		}
 		return nil
 	default:
