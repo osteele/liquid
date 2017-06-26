@@ -28,15 +28,6 @@ func (n *ASTText) Render(w io.Writer, _ Context) error {
 	return err
 }
 
-func EvaluateExpr(expr string, ctx Context) (interface{}, error) {
-	lexer := newLexer([]byte(expr + ";"))
-	n := yyParse(lexer)
-	if n != 0 {
-		return nil, fmt.Errorf("parse error in %s", expr)
-	}
-	return lexer.val(ctx), nil
-}
-
 func writeASTs(w io.Writer, seq []AST, ctx Context) error {
 	for _, n := range seq {
 		if err := n.Render(w, ctx); err != nil {

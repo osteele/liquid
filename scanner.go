@@ -303,7 +303,7 @@ _eof_trans:
 			if err != nil {
 				panic(err)
 			}
-			out.val = n
+			out.val = int(n)
 			( lex.p)++; goto _out
 
 		}

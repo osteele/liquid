@@ -33,18 +33,3 @@ func TestExpressionScanner(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, tokens, 3)
 }
-
-func TestExpressionParser(t *testing.T) {
-	ctx := Context{map[string]interface{}{
-		"abc": 123,
-	}}
-	lexer := newLexer([]byte(`12;`))
-	n := yyParse(lexer)
-	require.Zero(t, n)
-	require.Equal(t, float64(12), lexer.val(ctx))
-
-	lexer = newLexer([]byte(`abc;`))
-	n = yyParse(lexer)
-	require.Zero(t, n)
-	require.Equal(t, 123, lexer.val(ctx))
-}

@@ -1,16 +1,21 @@
 %{
 package main
 import (
-    _ "fmt"
+    "fmt"
 	"reflect"
 )
+
+func init() {
+	_ = fmt.Sprint("")
+}
+
 %}
 %union {
    name string
    val interface{}
    f func(Context) interface{}
 }
-%type <f> expr expr2
+%type <f> expr
 %token <val> LITERAL
 %token <name> IDENTIFIER RELATION
 %left '.'
@@ -23,17 +28,19 @@ expr:
 | expr '.' IDENTIFIER {
 	e, attr := $1, $3
 	$$ = func(ctx Context) interface{} {
-		input := e(ctx)
-		ref := reflect.ValueOf(input)
+		obj := e(ctx)
+		ref := reflect.ValueOf(obj)
 		switch ref.Kind() {
 		case reflect.Map:
-			return ref.MapIndex(reflect.ValueOf(attr)).Interface()
-		default:
-			return nil
+			val := ref.MapIndex(reflect.ValueOf(attr))
+			if val.Kind()!= reflect.Invalid {
+				return val.Interface()
+			}
 		}
+			return nil
 	}
 }
-| expr '[' expr2 ']' {
+| expr '[' expr ']' {
 	e, i := $1, $3
 	$$ = func(ctx Context) interface{} {
 		ref := reflect.ValueOf(e(ctx))
@@ -47,15 +54,9 @@ expr:
 						return ref.Index(n).Interface()
 					}
 			}
-			return nil
-		case reflect.Map:
-			return ref.MapIndex(reflect.ValueOf(index)).Interface()
-		default:
-			return nil
 		}
+		return nil
 	}
 }
 ;
-
-expr2: expr
 

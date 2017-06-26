@@ -5,11 +5,15 @@ import __yyfmt__ "fmt"
 
 //line expression_parser.y:2
 import (
-	_ "fmt"
+	"fmt"
 	"reflect"
 )
 
-//line expression_parser.y:8
+func init() {
+	_ = fmt.Sprint("")
+}
+
+//line expression_parser.y:13
 type yySymType struct {
 	yys  int
 	name string
@@ -48,39 +52,39 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 15
+const yyLast = 12
 
 var yyAct = [...]int{
 
-	6, 5, 7, 6, 11, 7, 2, 3, 4, 8,
-	1, 9, 0, 0, 10,
+	6, 2, 7, 10, 6, 5, 7, 3, 4, 9,
+	8, 1,
 }
 var yyPact = [...]int{
 
-	3, -1000, -7, -1000, -1000, -1000, 4, 3, -1000, -6,
-	-4, -1000,
+	3, -1000, -3, -1000, -1000, -1000, 5, 3, -1000, -7,
+	-1000,
 }
 var yyPgo = [...]int{
 
-	0, 6, 11, 10,
+	0, 1, 11,
 }
 var yyR1 = [...]int{
 
-	0, 3, 1, 1, 1, 1, 2,
+	0, 2, 1, 1, 1, 1,
 }
 var yyR2 = [...]int{
 
-	0, 2, 1, 1, 3, 4, 1,
+	0, 2, 1, 1, 3, 4,
 }
 var yyChk = [...]int{
 
-	-1000, -3, -1, 4, 5, 8, 7, 9, 5, -2,
-	-1, 10,
+	-1000, -2, -1, 4, 5, 8, 7, 9, 5, -1,
+	10,
 }
 var yyDef = [...]int{
 
 	0, -2, 0, 2, 3, 1, 0, 0, 4, 0,
-	6, 5,
+	5,
 }
 var yyTok1 = [...]int{
 
@@ -442,43 +446,45 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expression_parser.y:18
+		//line expression_parser.y:23
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:21
+		//line expression_parser.y:26
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:22
+		//line expression_parser.y:27
 		{
 			name := yyDollar[1].name
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[name] }
 		}
 	case 4:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:23
+		//line expression_parser.y:28
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
-				input := e(ctx)
-				ref := reflect.ValueOf(input)
+				obj := e(ctx)
+				ref := reflect.ValueOf(obj)
 				switch ref.Kind() {
 				case reflect.Map:
-					return ref.MapIndex(reflect.ValueOf(attr)).Interface()
-				default:
-					return nil
+					val := ref.MapIndex(reflect.ValueOf(attr))
+					if val.Kind() != reflect.Invalid {
+						return val.Interface()
+					}
 				}
+				return nil
 			}
 		}
 	case 5:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expression_parser.y:36
+		//line expression_parser.y:43
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -493,12 +499,8 @@ yydefault:
 							return ref.Index(n).Interface()
 						}
 					}
-					return nil
-				case reflect.Map:
-					return ref.MapIndex(reflect.ValueOf(index)).Interface()
-				default:
-					return nil
 				}
+				return nil
 			}
 		}
 	}
