@@ -15,7 +15,7 @@ type yySymType struct {
 	val  func(Context) interface{}
 }
 
-const NUMBER = 57346
+const LITERAL = 57346
 const IDENTIFIER = 57347
 const RELATION = 57348
 
@@ -23,7 +23,7 @@ var yyToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
-	"NUMBER",
+	"LITERAL",
 	"IDENTIFIER",
 	"RELATION",
 }

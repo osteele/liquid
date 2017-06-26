@@ -9,9 +9,9 @@ import (
    val func(Context) interface{}
 }
 %type <val> expr
-%token <val> NUMBER IDENTIFIER
+%token <val> LITERAL IDENTIFIER
 %token <name> RELATION
 %%
 top: expr { yylex.(*lexer).val = $1 };
 
-expr: NUMBER | IDENTIFIER;
+expr: LITERAL | IDENTIFIER;

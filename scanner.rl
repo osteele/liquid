@@ -33,6 +33,11 @@ func (lex *lexer) Lex(out *yySymType) int {
 	tok := 0
 
 	%%{
+		action Bool {
+			tok = LITERAL
+			val := string(lex.data[lex.ts:lex.te]) == "true"
+			out.val = func(_ Context) interface{} { return val }
+		}
 		action Ident {
 			tok = IDENTIFIER
 			name := string(lex.data[lex.ts:lex.te])
@@ -40,7 +45,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			fbreak;
 		}
 		action Number {
-			tok = NUMBER
+			tok = LITERAL
 			n, err := strconv.ParseFloat(string(lex.data[lex.ts:lex.te]), 64)
 			if err != nil {
 				panic(err)
@@ -54,10 +59,11 @@ func (lex *lexer) Lex(out *yySymType) int {
 		number = '-'? (digit+ ('.' digit*)?) ;
 
 		main := |*
-			ident => Ident; #{ tok = IDENTIFIER; out.name = string(lex.data[lex.ts:lex.te]); fbreak; };
 			number => Number;
+			("true" | "false") => Bool;
 			("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;
+			ident => Ident;
 			space+;
 		*|;
 
