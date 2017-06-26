@@ -24,6 +24,7 @@ type yySymType struct {
 const LITERAL = 57346
 const IDENTIFIER = 57347
 const RELATION = 57348
+const EQ = 57349
 
 var yyToknames = [...]string{
 	"$end",
@@ -32,7 +33,10 @@ var yyToknames = [...]string{
 	"LITERAL",
 	"IDENTIFIER",
 	"RELATION",
+	"EQ",
 	"'.'",
+	"'<'",
+	"'>'",
 	"';'",
 	"'['",
 	"']'",
@@ -52,39 +56,40 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 12
+const yyLast = 21
 
 var yyAct = [...]int{
 
-	6, 2, 7, 10, 6, 5, 7, 3, 4, 9,
-	8, 1,
+	9, 7, 10, 11, 7, 8, 3, 7, 8, 17,
+	12, 8, 6, 4, 5, 13, 14, 15, 16, 1,
+	2,
 }
 var yyPact = [...]int{
 
-	3, -1000, -3, -1000, -1000, -1000, 5, 3, -1000, -7,
-	-1000,
+	9, -1000, 1, -7, -1000, -1000, -1000, 5, 9, 9,
+	9, 9, -1000, -4, -1, -1, -1, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 1, 11,
+	0, 6, 20, 19,
 }
 var yyR1 = [...]int{
 
-	0, 2, 1, 1, 1, 1,
+	0, 3, 1, 1, 1, 1, 2, 2, 2, 2,
 }
 var yyR2 = [...]int{
 
-	0, 2, 1, 1, 3, 4,
+	0, 2, 1, 1, 3, 4, 1, 3, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -2, -1, 4, 5, 8, 7, 9, 5, -1,
-	10,
+	-1000, -3, -2, -1, 4, 5, 11, 8, 12, 7,
+	9, 10, 5, -1, -1, -1, -1, 13,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 2, 3, 1, 0, 0, 4, 0,
-	5,
+	0, -2, 0, 6, 2, 3, 1, 0, 0, 0,
+	0, 0, 4, 0, 7, 8, 9, 5,
 }
 var yyTok1 = [...]int{
 
@@ -92,16 +97,16 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 7, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 8,
+	3, 3, 3, 3, 3, 3, 8, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 11,
+	9, 3, 10, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 9, 3, 10,
+	3, 12, 3, 13,
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6,
+	2, 3, 4, 5, 6, 7,
 }
 var yyTok3 = [...]int{
 	0,
@@ -446,27 +451,27 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expression_parser.y:23
+		//line expression_parser.y:25
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:26
+		//line expression_parser.y:28
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:27
+		//line expression_parser.y:29
 		{
 			name := yyDollar[1].name
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[name] }
 		}
 	case 4:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:28
+		//line expression_parser.y:30
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
@@ -484,7 +489,7 @@ yydefault:
 		}
 	case 5:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expression_parser.y:43
+		//line expression_parser.y:45
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -501,6 +506,36 @@ yydefault:
 					}
 				}
 				return nil
+			}
+		}
+	case 7:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expression_parser.y:67
+		{
+			a, b := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+				return GenericCompare(aref, bref) == 0
+			}
+		}
+	case 8:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expression_parser.y:74
+		{
+			a, b := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+				return GenericCompare(aref, bref) < 0
+			}
+		}
+	case 9:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expression_parser.y:81
+		{
+			a, b := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+				return GenericCompare(aref, bref) > 0
 			}
 		}
 	}

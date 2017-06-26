@@ -15,12 +15,14 @@ func init() {
    val interface{}
    f func(Context) interface{}
 }
-%type <f> expr
+%type <f> expr rel
 %token <val> LITERAL
 %token <name> IDENTIFIER RELATION
+%token EQ
 %left '.'
+%left '<' '>'
 %%
-start: expr ';' { yylex.(*lexer).val = $1 };
+start: rel ';' { yylex.(*lexer).val = $1 };
 
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
@@ -56,6 +58,31 @@ expr:
 			}
 		}
 		return nil
+	}
+}
+;
+
+rel:
+  expr
+| expr EQ expr {
+	a, b := $1, $3
+	$$ = func(ctx Context) interface{} {
+		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+		return GenericCompare(aref, bref) == 0
+	}
+}
+| expr '<' expr {
+	a, b := $1, $3
+	$$ = func(ctx Context) interface{} {
+		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+		return GenericCompare(aref, bref) < 0
+	}
+}
+| expr '>' expr {
+	a, b := $1, $3
+	$$ = func(ctx Context) interface{} {
+		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
+		return GenericCompare(aref, bref) > 0
 	}
 }
 ;

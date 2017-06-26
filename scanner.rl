@@ -73,12 +73,14 @@ func (lex *lexer) Lex(out *yySymType) int {
 		main := |*
 			'-'? digit+ => Int;
 			float => Float;
-			[.;] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
+			[.;<>] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
 			("true" | "false") => Bool;
-			("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
+			"==" => { tok = EQ; fbreak; };
+			("!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;
 			ident => Ident;
 			space+;
+			any => { tok = int(lex.data[lex.ts]); fbreak; };
 		*|;
 
 		write exec;
