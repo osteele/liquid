@@ -1,8 +1,10 @@
 # Go Liquid Template Parser
 
-`goliquid` is a Go implementation of the [Shopify Liquid template language](https://shopify.github.io/liquid/tags/variable/), for use in [Gojekyll](https://github.com/osteele/gojekyll).
+`goliquid` is a very early-stage Go implementation of the [Shopify Liquid template language](https://shopify.github.io/liquid/tags/variable/), for use in [Gojekyll](https://github.com/osteele/gojekyll).
 
 ## Status
+[![Build Status](https://travis-ci.org/osteele/liquid.svg?branch=master)](https://travis-ci.org/osteele/liquid)
+[![Go Report Card](https://goreportcard.com/badge/github.com/osteele/liquid)](https://goreportcard.com/report/github.com/osteele/liquid)
 
 - [ ] Basics
   - [ ] Constants
