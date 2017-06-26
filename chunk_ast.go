@@ -33,8 +33,8 @@ type ASTControlTag struct {
 	branches []*ASTControlTag
 }
 
-func (n ASTSeq) String() string {
-	b, err := yaml.Marshal(n)
+func MustYAML(val interface{}) string {
+	b, err := yaml.Marshal(val)
 	if err != nil {
 		panic(err)
 	}

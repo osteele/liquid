@@ -12,7 +12,8 @@ import (
 type yySymType struct {
 	yys  int
 	name string
-	val  func(Context) interface{}
+	val  interface{}
+	f    func(Context) interface{}
 }
 
 const LITERAL = 57346
@@ -423,9 +424,21 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:15
+		//line expression_parser.y:16
 		{
-			yylex.(*lexer).val = yyDollar[1].val
+			yylex.(*lexer).val = yyDollar[1].f
+		}
+	case 2:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line expression_parser.y:19
+		{
+			yyVAL.f = func(_ Context) interface{} { return yyDollar[1].val }
+		}
+	case 3:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line expression_parser.y:20
+		{
+			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[yyDollar[1].name] }
 		}
 	}
 	goto yystack /* stack new state and value */

@@ -35,13 +35,12 @@ func (lex *lexer) Lex(out *yySymType) int {
 	%%{
 		action Bool {
 			tok = LITERAL
-			val := string(lex.data[lex.ts:lex.te]) == "true"
-			out.val = func(_ Context) interface{} { return val }
+			out.val = string(lex.data[lex.ts:lex.te]) == "true"
+			fbreak;
 		}
 		action Ident {
 			tok = IDENTIFIER
-			name := string(lex.data[lex.ts:lex.te])
-			out.val = func(ctx Context) interface{} { return ctx.Variables[name] }
+			out.name = string(lex.data[lex.ts:lex.te])
 			fbreak;
 		}
 		action Number {
@@ -50,7 +49,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			if err != nil {
 				panic(err)
 			}
-			out.val = func(_ Context) interface{} { return n }
+			out.val = n
 			fbreak;
 		}
 		action Relation { tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); fbreak; }

@@ -263,18 +263,18 @@ _eof_trans:
 //line scanner.rl:36
  lex.act = 2;
 		case 4:
-//line scanner.rl:56
+//line scanner.rl:55
  lex.act = 4;
 		case 5:
 //line scanner.rl:41
  lex.act = 5;
 		case 6:
-//line scanner.rl:56
+//line scanner.rl:55
  lex.te = ( lex.p)+1
 { tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); ( lex.p)++; goto _out
  }
 		case 7:
-//line scanner.rl:47
+//line scanner.rl:46
  lex.te = ( lex.p)
 ( lex.p)--
 {
@@ -283,12 +283,12 @@ _eof_trans:
 			if err != nil {
 				panic(err)
 			}
-			out.val = func(_ Context) interface{} { return n }
+			out.val = n
 			( lex.p)++; goto _out
 
 		}
 		case 8:
-//line scanner.rl:56
+//line scanner.rl:55
  lex.te = ( lex.p)
 ( lex.p)--
 { tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); ( lex.p)++; goto _out
@@ -299,13 +299,12 @@ _eof_trans:
 ( lex.p)--
 {
 			tok = IDENTIFIER
-			name := string(lex.data[lex.ts:lex.te])
-			out.val = func(ctx Context) interface{} { return ctx.Variables[name] }
+			out.name = string(lex.data[lex.ts:lex.te])
 			( lex.p)++; goto _out
 
 		}
 		case 10:
-//line scanner.rl:67
+//line scanner.rl:66
  lex.te = ( lex.p)
 ( lex.p)--
 
@@ -316,8 +315,9 @@ _eof_trans:
 	{( lex.p) = ( lex.te) - 1
 
 			tok = LITERAL
-			val := string(lex.data[lex.ts:lex.te]) == "true"
-			out.val = func(_ Context) interface{} { return val }
+			out.val = string(lex.data[lex.ts:lex.te]) == "true"
+			( lex.p)++; goto _out
+
 		}
 	case 4:
 	{( lex.p) = ( lex.te) - 1
@@ -327,14 +327,13 @@ _eof_trans:
 	{( lex.p) = ( lex.te) - 1
 
 			tok = IDENTIFIER
-			name := string(lex.data[lex.ts:lex.te])
-			out.val = func(ctx Context) interface{} { return ctx.Variables[name] }
+			out.name = string(lex.data[lex.ts:lex.te])
 			( lex.p)++; goto _out
 
 		}
 	}
 	
-//line scanner.go:338
+//line scanner.go:337
 		}
 	}
 
@@ -348,7 +347,7 @@ _again:
 //line NONE:1
  lex.ts = 0
 
-//line scanner.go:352
+//line scanner.go:351
 		}
 	}
 
@@ -370,7 +369,7 @@ _again:
 	_out: {}
 	}
 
-//line scanner.rl:71
+//line scanner.rl:70
 
 
 	return tok

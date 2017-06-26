@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -13,16 +14,18 @@ func TestChunkParser(t *testing.T) {
 	},
 	}
 
-	for _, test := range chunkTests {
-		tokens := ScanChunks(test.in, "")
-		// fmt.Println(tokens)
-		ast, err := Parse(tokens)
-		require.NoError(t, err, test.in)
-		// fmt.Println("%#v", ast)
-		buf := new(bytes.Buffer)
-		err = ast.Render(buf, ctx)
-		require.NoError(t, err, test.in)
-		require.Equal(t, test.expected, buf.String(), test.in)
+	for i, test := range chunkTests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			tokens := ScanChunks(test.in, "")
+			// fmt.Println(tokens)
+			ast, err := Parse(tokens)
+			require.NoErrorf(t, err, test.in)
+			// fmt.Println(MustYAML(ast))
+			buf := new(bytes.Buffer)
+			err = ast.Render(buf, ctx)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
 	}
 }
 
