@@ -65,16 +65,25 @@ func (lex *lexer) Lex(out *yySymType) int {
 			out.val = n
 			fbreak;
 		}
+		action String {
+			tok = LITERAL
+			// TODO unescape \x
+			out.val = string(lex.data[lex.ts+1:lex.te-1])
+			fbreak;
+		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
 		ident = (alpha | '_') . (alnum | '_')* ;
-		float = '-'? (digit+ '.' digit* | '.' digit+);
+		int = '-'? digit+ ;
+		float = '-'? (digit+ '.' digit* | '.' digit+) ;
+		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
 
 		main := |*
-			'-'? digit+ => Int;
+			int => Int;
 			float => Float;
-			[.;<>] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
+			string => String;
 			("true" | "false") => Bool;
+			[.;<>] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
 			"==" => { tok = EQ; fbreak; };
 			("!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;

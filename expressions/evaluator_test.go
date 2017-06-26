@@ -7,26 +7,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var evaluatorTestContext = Context{map[string]interface{}{
-	"n":  123,
-	"ar": []string{"first", "second", "third"},
-	"obj": map[string]interface{}{
-		"a": "first",
-		"b": map[string]interface{}{"c": "d"},
-		"c": []string{"r", "g", "b"},
-	},
-},
-}
-
 var evaluatorTests = []struct {
 	in       string
 	expected interface{}
 }{
-	// Constants
+	// Literals
 	{"12", 12},
 	{"12.3", 12.3},
 	{"true", true},
 	{"false", false},
+	{`'abc'`, "abc"},
+	{`"abc"`, "abc"},
 
 	// Variables
 	{"n", 123},
@@ -55,6 +46,17 @@ var evaluatorTests = []struct {
 	{"1 == 1.0", true},
 	{"1 < 2.0", true},
 	{"1.0 < 2", true},
+}
+
+var evaluatorTestContext = Context{map[string]interface{}{
+	"n":  123,
+	"ar": []string{"first", "second", "third"},
+	"obj": map[string]interface{}{
+		"a": "first",
+		"b": map[string]interface{}{"c": "d"},
+		"c": []string{"r", "g", "b"},
+	},
+},
 }
 
 func TestEvaluator(t *testing.T) {
