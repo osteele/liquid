@@ -2,91 +2,43 @@ package expressions
 
 import (
 	"fmt"
-	"reflect"
 )
 
+// Context is the expression evaluation context. It maps variables names to values.
+// It is currently a concrete type.
 type Context struct {
 	Variables map[string]interface{}
 }
 
-type Expression struct {
-	value func(Context) (interface{}, error)
+// Expression is a parsed expression.
+type Expression interface {
+	// Evaluate evaluates an expression in a context.
+	Evaluate(ctx Context) (interface{}, error)
 }
 
-func EvaluateExpr(expr string, ctx Context) (interface{}, error) {
-	lexer := newLexer([]byte(expr + ";"))
+type expression struct {
+	evaluator func(Context) interface{}
+}
+
+// Parse parses an expression string into an Expression.
+func Parse(source string) (Expression, error) {
+	lexer := newLexer([]byte(source + ";"))
 	n := yyParse(lexer)
 	if n != 0 {
-		return nil, fmt.Errorf("parse error in %s", expr)
+		return nil, fmt.Errorf("parse error in %s", source)
 	}
-	return lexer.val(ctx), nil
+	return &expression{lexer.val}, nil
 }
 
-func GenericCompare(a, b reflect.Value) int {
-	if a.Interface() == b.Interface() {
-		return 0
-	}
-	ak, bk := a.Kind(), b.Kind()
-	// _ = ak.Convert
-	switch a.Kind() {
-	case reflect.Bool:
-		if b.Kind() == reflect.Bool {
-			switch {
-			case a.Bool() && b.Bool():
-				return 0
-			case a.Bool():
-				return 1
-			case b.Bool():
-				return -1
-			default:
-				return 0
-			}
-		}
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if hasIntKind(b) {
-			if a.Int() < b.Int() {
-				return -1
-			}
-			if a.Int() > b.Int() {
-				return 1
-			}
-			return 0
-		}
-		if hasFloatKind(b) {
-			return GenericCompare(reflect.ValueOf(float64(a.Int())), b)
-		}
-	case reflect.Float32, reflect.Float64:
-		if hasIntKind(b) {
-			b = reflect.ValueOf(float64(b.Int()))
-		}
-		if hasFloatKind(b) {
-			if a.Float() < b.Float() {
-				return -1
-			}
-			if a.Float() > b.Float() {
-				return 1
-			}
-			return 0
-		}
-	}
-	panic(fmt.Errorf("unimplemented: comparison of %v<%s> with %v<%s>", a, ak, b, bk))
-	return 0
+func (e expression) Evaluate(ctx Context) (interface{}, error) {
+	return e.evaluator(ctx), nil
 }
 
-func hasIntKind(n reflect.Value) bool {
-	switch n.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return true
-	default:
-		return false
+// EvaluateExpr is a wrapper for Parse and Evaluate.
+func EvaluateExpr(source string, ctx Context) (interface{}, error) {
+	expr, err := Parse(source)
+	if err != nil {
+		return nil, err
 	}
-}
-
-func hasFloatKind(n reflect.Value) bool {
-	switch n.Kind() {
-	case reflect.Float32, reflect.Float64:
-		return true
-	default:
-		return false
-	}
+	return expr.Evaluate(ctx)
 }
