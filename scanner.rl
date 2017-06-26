@@ -47,7 +47,16 @@ func (lex *lexer) Lex(out *yySymType) int {
 			out.name = lex.token()
 			fbreak;
 		}
-		action Number {
+		action Int {
+			tok = LITERAL
+			n, err := strconv.ParseInt(lex.token(), 10, 64)
+			if err != nil {
+				panic(err)
+			}
+			out.val = n
+			fbreak;
+		}
+		action Float {
 			tok = LITERAL
 			n, err := strconv.ParseFloat(lex.token(), 64)
 			if err != nil {
@@ -59,12 +68,12 @@ func (lex *lexer) Lex(out *yySymType) int {
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
 		ident = (alpha | '_') . (alnum | '_')* ;
-		number = '-'? (digit+ ('.' digit*)?) ;
+		float = '-'? (digit+ '.' digit* | '.' digit+);
 
 		main := |*
-			number => Number;
-			'.' => { tok = DOT; fbreak; };
-			';' => { tok = ';'; fbreak; };
+			'-'? digit+ => Int;
+			float => Float;
+			[.;] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
 			("true" | "false") => Bool;
 			("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;
