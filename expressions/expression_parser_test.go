@@ -1,7 +1,7 @@
 //go:generate ragel -Z scanner.rl
-//go:generate goyacc expression_parser.y
+//go:generate goyacc expressions.y
 
-package main
+package expressions
 
 import (
 	"testing"

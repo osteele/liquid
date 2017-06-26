@@ -3,10 +3,16 @@ package main
 import (
 	"fmt"
 	"io"
+
+	"github.com/osteele/liquid/expressions"
 )
 
 type Context struct {
 	Variables map[string]interface{}
+}
+
+func (c *Context) EvaluateExpr(expr string) (interface{}, error) {
+	return expressions.EvaluateExpr(expr, expressions.Context{Variables: c.Variables})
 }
 
 func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
@@ -40,7 +46,7 @@ func writeASTs(w io.Writer, seq []AST, ctx Context) error {
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	switch n.chunk.Tag {
 	case "if", "unless":
-		val, err := EvaluateExpr(n.chunk.Args, ctx)
+		val, err := ctx.EvaluateExpr(n.chunk.Args)
 		if err != nil {
 			return err
 		}
@@ -56,7 +62,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 				case "else":
 					val = true
 				case "elsif":
-					val, err = EvaluateExpr(c.chunk.Args, ctx)
+					val, err = ctx.EvaluateExpr(c.chunk.Args)
 					if err != nil {
 						return err
 					}
@@ -74,7 +80,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 }
 
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
-	val, err := EvaluateExpr(n.chunk.Tag, ctx)
+	val, err := ctx.EvaluateExpr(n.chunk.Tag)
 	if err != nil {
 		return err
 	}

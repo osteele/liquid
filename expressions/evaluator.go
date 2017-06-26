@@ -1,9 +1,13 @@
-package main
+package expressions
 
 import (
 	"fmt"
 	"reflect"
 )
+
+type Context struct {
+	Variables map[string]interface{}
+}
 
 type Expression struct {
 	value func(Context) (interface{}, error)

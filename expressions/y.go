@@ -1,9 +1,9 @@
-//line expression_parser.y:2
-package main
+//line expressions.y:2
+package expressions
 
 import __yyfmt__ "fmt"
 
-//line expression_parser.y:2
+//line expressions.y:2
 import (
 	"fmt"
 	"reflect"
@@ -13,7 +13,7 @@ func init() {
 	_ = fmt.Sprint("")
 }
 
-//line expression_parser.y:13
+//line expressions.y:13
 type yySymType struct {
 	yys  int
 	name string
@@ -451,27 +451,27 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expression_parser.y:25
+		//line expressions.y:25
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:28
+		//line expressions.y:28
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:29
+		//line expressions.y:29
 		{
 			name := yyDollar[1].name
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[name] }
 		}
 	case 4:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:30
+		//line expressions.y:30
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
@@ -489,7 +489,7 @@ yydefault:
 		}
 	case 5:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expression_parser.y:45
+		//line expressions.y:45
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -510,7 +510,7 @@ yydefault:
 		}
 	case 7:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:67
+		//line expressions.y:67
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -520,7 +520,7 @@ yydefault:
 		}
 	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:74
+		//line expressions.y:74
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -530,7 +530,7 @@ yydefault:
 		}
 	case 9:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expression_parser.y:81
+		//line expressions.y:81
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

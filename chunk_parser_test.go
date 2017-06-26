@@ -8,31 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestChunkParser(t *testing.T) {
-	ctx := Context{map[string]interface{}{
-		"x":  123,
-		"ar": []string{"first", "second", "third"},
-		"page": map[string]interface{}{
-			"title": "Introduction",
-		},
-	},
-	}
-
-	for i, test := range chunkTests {
-		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			tokens := ScanChunks(test.in, "")
-			// fmt.Println(tokens)
-			ast, err := Parse(tokens)
-			require.NoErrorf(t, err, test.in)
-			// fmt.Println(MustYAML(ast))
-			buf := new(bytes.Buffer)
-			err = ast.Render(buf, ctx)
-			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.expected, buf.String(), test.in)
-		})
-	}
-}
-
 var chunkTests = []struct{ in, expected string }{
 	{"{{12}}", "12"},
 	{"{{x}}", "123"},
@@ -58,4 +33,30 @@ var chunkTests = []struct{ in, expected string }{
 	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
 	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
 	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+	// {"{%for a in ar%}{{a}} {{%endfor%}", "first second third "},
+}
+
+var chunkTestContext = Context{map[string]interface{}{
+	"x":  123,
+	"ar": []string{"first", "second", "third"},
+	"page": map[string]interface{}{
+		"title": "Introduction",
+	},
+},
+}
+
+func TestChunkParser(t *testing.T) {
+	for i, test := range chunkTests {
+		t.Run(fmt.Sprint(i), func(t *testing.T) {
+			tokens := ScanChunks(test.in, "")
+			// fmt.Println(tokens)
+			ast, err := Parse(tokens)
+			require.NoErrorf(t, err, test.in)
+			// fmt.Println(MustYAML(ast))
+			buf := new(bytes.Buffer)
+			err = ast.Render(buf, chunkTestContext)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
 }
