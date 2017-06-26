@@ -19,6 +19,10 @@ type lexer struct {
 		val func(Context) interface{}
 }
 
+func (l* lexer) token() string {
+	return string(l.data[l.ts:l.te])
+}
+
 func newLexer(data []byte) *lexer {
 	lex := &lexer{
 			data: data,
@@ -35,24 +39,24 @@ func (lex *lexer) Lex(out *yySymType) int {
 	%%{
 		action Bool {
 			tok = LITERAL
-			out.val = string(lex.data[lex.ts:lex.te]) == "true"
+			out.val = lex.token() == "true"
 			fbreak;
 		}
 		action Ident {
 			tok = IDENTIFIER
-			out.name = string(lex.data[lex.ts:lex.te])
+			out.name = lex.token()
 			fbreak;
 		}
 		action Number {
 			tok = LITERAL
-			n, err := strconv.ParseFloat(string(lex.data[lex.ts:lex.te]), 64)
+			n, err := strconv.ParseFloat(lex.token(), 64)
 			if err != nil {
 				panic(err)
 			}
 			out.val = n
 			fbreak;
 		}
-		action Relation { tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); fbreak; }
+		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
 		ident = (alpha | '_') . (alnum | '_')* ;
 		number = '-'? (digit+ ('.' digit*)?) ;

@@ -139,13 +139,17 @@ type lexer struct {
 		val func(Context) interface{}
 }
 
+func (l* lexer) token() string {
+	return string(l.data[l.ts:l.te])
+}
+
 func newLexer(data []byte) *lexer {
 	lex := &lexer{
 			data: data,
 			pe: len(data),
 	}
 	
-//line scanner.go:149
+//line scanner.go:153
 	{
 	 lex.cs = expression_start
 	 lex.ts = 0
@@ -153,7 +157,7 @@ func newLexer(data []byte) *lexer {
 	 lex.act = 0
 	}
 
-//line scanner.rl:28
+//line scanner.rl:32
 	return lex
 }
 
@@ -162,7 +166,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 	tok := 0
 
 	
-//line scanner.go:166
+//line scanner.go:170
 	{
 	var _klen int
 	var _trans int
@@ -185,7 +189,7 @@ _resume:
 //line NONE:1
  lex.ts = ( lex.p)
 
-//line scanner.go:189
+//line scanner.go:193
 		}
 	}
 
@@ -260,26 +264,26 @@ _eof_trans:
  lex.te = ( lex.p)+1
 
 		case 3:
-//line scanner.rl:36
+//line scanner.rl:40
  lex.act = 2;
 		case 4:
-//line scanner.rl:55
+//line scanner.rl:59
  lex.act = 4;
 		case 5:
-//line scanner.rl:41
+//line scanner.rl:45
  lex.act = 5;
 		case 6:
-//line scanner.rl:55
+//line scanner.rl:59
  lex.te = ( lex.p)+1
-{ tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); ( lex.p)++; goto _out
+{ tok = RELATION; out.name = lex.token(); ( lex.p)++; goto _out
  }
 		case 7:
-//line scanner.rl:46
+//line scanner.rl:50
  lex.te = ( lex.p)
 ( lex.p)--
 {
 			tok = LITERAL
-			n, err := strconv.ParseFloat(string(lex.data[lex.ts:lex.te]), 64)
+			n, err := strconv.ParseFloat(lex.token(), 64)
 			if err != nil {
 				panic(err)
 			}
@@ -288,23 +292,23 @@ _eof_trans:
 
 		}
 		case 8:
-//line scanner.rl:55
+//line scanner.rl:59
  lex.te = ( lex.p)
 ( lex.p)--
-{ tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); ( lex.p)++; goto _out
+{ tok = RELATION; out.name = lex.token(); ( lex.p)++; goto _out
  }
 		case 9:
-//line scanner.rl:41
+//line scanner.rl:45
  lex.te = ( lex.p)
 ( lex.p)--
 {
 			tok = IDENTIFIER
-			out.name = string(lex.data[lex.ts:lex.te])
+			out.name = lex.token()
 			( lex.p)++; goto _out
 
 		}
 		case 10:
-//line scanner.rl:66
+//line scanner.rl:70
  lex.te = ( lex.p)
 ( lex.p)--
 
@@ -315,25 +319,25 @@ _eof_trans:
 	{( lex.p) = ( lex.te) - 1
 
 			tok = LITERAL
-			out.val = string(lex.data[lex.ts:lex.te]) == "true"
+			out.val = lex.token() == "true"
 			( lex.p)++; goto _out
 
 		}
 	case 4:
 	{( lex.p) = ( lex.te) - 1
- tok = RELATION; out.name = string(lex.data[lex.ts:lex.te]); ( lex.p)++; goto _out
+ tok = RELATION; out.name = lex.token(); ( lex.p)++; goto _out
  }
 	case 5:
 	{( lex.p) = ( lex.te) - 1
 
 			tok = IDENTIFIER
-			out.name = string(lex.data[lex.ts:lex.te])
+			out.name = lex.token()
 			( lex.p)++; goto _out
 
 		}
 	}
 	
-//line scanner.go:337
+//line scanner.go:341
 		}
 	}
 
@@ -347,7 +351,7 @@ _again:
 //line NONE:1
  lex.ts = 0
 
-//line scanner.go:351
+//line scanner.go:355
 		}
 	}
 
@@ -369,7 +373,7 @@ _again:
 	_out: {}
 	}
 
-//line scanner.rl:70
+//line scanner.rl:74
 
 
 	return tok

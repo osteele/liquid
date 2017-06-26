@@ -6,9 +6,10 @@ import __yyfmt__ "fmt"
 //line expression_parser.y:2
 import (
 	_ "fmt"
+	_ "reflect"
 )
 
-//line expression_parser.y:7
+//line expression_parser.y:8
 type yySymType struct {
 	yys  int
 	name string
@@ -19,6 +20,7 @@ type yySymType struct {
 const LITERAL = 57346
 const IDENTIFIER = 57347
 const RELATION = 57348
+const DOT = 57349
 
 var yyToknames = [...]string{
 	"$end",
@@ -27,6 +29,7 @@ var yyToknames = [...]string{
 	"LITERAL",
 	"IDENTIFIER",
 	"RELATION",
+	"DOT",
 }
 var yyStatenames = [...]string{}
 
@@ -79,7 +82,7 @@ var yyTok1 = [...]int{
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6,
+	2, 3, 4, 5, 6, 7,
 }
 var yyTok3 = [...]int{
 	0,
@@ -424,19 +427,19 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:16
+		//line expression_parser.y:18
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:19
+		//line expression_parser.y:21
 		{
 			yyVAL.f = func(_ Context) interface{} { return yyDollar[1].val }
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expression_parser.y:20
+		//line expression_parser.y:22
 		{
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[yyDollar[1].name] }
 		}
