@@ -51,6 +51,7 @@ expr:
 			return nil
 	}
 }
+| expr '|' IDENTIFIER { $$ = makeFilter($1, $3) }
 | expr '[' expr ']' {
 	e, i := $1, $3
 	$$ = func(ctx Context) interface{} {

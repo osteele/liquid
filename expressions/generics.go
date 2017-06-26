@@ -5,6 +5,77 @@ import (
 	"reflect"
 )
 
+type sortable []interface{}
+
+// Len is part of sort.Interface.
+func (s sortable) Len() int {
+	return len(s)
+}
+
+// Swap is part of sort.Interface.
+func (s sortable) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
+}
+
+// Less is part of sort.Interface.
+func (s sortable) Less(i, j int) bool {
+	return genericSameTypeCompare(s[i], s[j]) < 0
+}
+
+// Convert val to the type. This is a more aggressive conversion, that will
+// recursively create new map and slice values as necessary. It doesn't
+// handle circular references.
+func convertType(val interface{}, t reflect.Type) reflect.Value {
+	r := reflect.ValueOf(val)
+	if r.Type().ConvertibleTo(t) {
+		return r.Convert(t)
+	}
+	switch t.Kind() {
+	case reflect.Slice:
+		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
+			break
+		}
+		x := reflect.MakeSlice(t, 0, r.Len())
+		for i := 0; i < r.Len(); i++ {
+			c := convertType(r.Index(i).Interface(), t.Elem())
+			x = reflect.Append(x, c)
+		}
+		return x
+	}
+	panic(fmt.Errorf("convertType: can't convert %v to %v", val, t))
+}
+
+// Convert args to match the input types of fr, which should be a function reflection.
+func convertArguments(fv reflect.Value, args []interface{}) []reflect.Value {
+	rt := fv.Type()
+	rs := make([]reflect.Value, rt.NumIn())
+	for i, arg := range args {
+		if i < rt.NumIn() {
+			rs[i] = convertType(arg, rt.In(i))
+		}
+	}
+	return rs
+}
+
+func genericSameTypeCompare(av, bv interface{}) int {
+	a, b := reflect.ValueOf(av), reflect.ValueOf(bv)
+	if a.Kind() != b.Kind() {
+		panic(fmt.Errorf("different types: %v and %v", a, b))
+	}
+	if a == b {
+		return 0
+	}
+	switch a.Kind() {
+	case reflect.String:
+		if a.String() < b.String() {
+			return -1
+		}
+	default:
+		panic(fmt.Errorf("unimplemented generic comparison for %s", a.Kind()))
+	}
+	return 1
+}
+
 func GenericCompare(a, b reflect.Value) int {
 	if a.Interface() == b.Interface() {
 		return 0
