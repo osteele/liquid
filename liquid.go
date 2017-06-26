@@ -1,3 +1,8 @@
+/*
+Package liquid is a very early-stage pure Go library that implements Shopify Liquid <https://shopify.github.io/liquid> templates.
+
+It's intended for use in for use in https://github.com/osteele/gojekyll.
+*/
 package liquid
 
 import (
@@ -6,13 +11,21 @@ import (
 	"github.com/osteele/liquid/chunks"
 )
 
+// Engine parses template source into renderable text.
+//
+// In the future, it will be configured with additional tags, filters, and the {%include%} search path.
 type Engine interface {
+	Parse(text []byte) (Template, error)
 	ParseAndRender(text []byte, scope map[string]interface{}) ([]byte, error)
-	ParseAndRenderString(text string, scope map[string]interface{}) ([]byte, error)
+	ParseAndRenderString(text string, scope map[string]interface{}) (string, error)
 }
 
+// Template renders a template according to scope.
+//
+// Scope is a map of liquid variable names to objects.
 type Template interface {
 	Render(scope map[string]interface{}) ([]byte, error)
+	RenderString(scope map[string]interface{}) (string, error)
 }
 
 type engine struct{}
@@ -21,6 +34,7 @@ type template struct {
 	ast chunks.AST
 }
 
+// NewEngine makes a new engine.
 func NewEngine() Engine {
 	return engine{}
 }
@@ -43,10 +57,16 @@ func (e engine) ParseAndRender(text []byte, scope map[string]interface{}) ([]byt
 	return t.Render(scope)
 }
 
-func (e engine) ParseAndRenderString(text string, scope map[string]interface{}) ([]byte, error) {
-	return e.ParseAndRender([]byte(text), scope)
+// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
+func (e engine) ParseAndRenderString(text string, scope map[string]interface{}) (string, error) {
+	b, err := e.ParseAndRender([]byte(text), scope)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
+// Render applies the template to the scope.
 func (t *template) Render(scope map[string]interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := t.ast.Render(buf, chunks.Context{scope})
@@ -54,4 +74,13 @@ func (t *template) Render(scope map[string]interface{}) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// RenderString is a convenience wrapper for Render, that has string input and output.
+func (t *template) RenderString(scope map[string]interface{}) (string, error) {
+	b, err := t.Render(scope)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
