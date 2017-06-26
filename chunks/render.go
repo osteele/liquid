@@ -7,14 +7,17 @@ import (
 	"github.com/osteele/liquid/expressions"
 )
 
+// Context is the evaluation context for chunk AST rendering.
 type Context struct {
 	Variables map[string]interface{}
 }
 
-func (c *Context) EvaluateExpr(expr string) (interface{}, error) {
-	return expressions.EvaluateExpr(expr, expressions.Context{Variables: c.Variables})
+// EvaluateExpr evaluates an expression within the template context.
+func (c *Context) EvaluateExpr(source string) (interface{}, error) {
+	return expressions.EvaluateExpr(source, expressions.Context{Variables: c.Variables})
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 	for _, c := range n.Children {
 		if err := c.Render(w, ctx); err != nil {
@@ -24,17 +27,20 @@ func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 	return nil
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTChunks) Render(w io.Writer, _ Context) error {
 	_, err := w.Write([]byte("{chunks}"))
 	return err
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTText) Render(w io.Writer, _ Context) error {
 	_, err := w.Write([]byte(n.chunk.Source))
 	return err
 }
 
-func writeASTs(w io.Writer, seq []AST, ctx Context) error {
+// Render evaluates an AST node and writes the result to an io.Writer.
+func renderASTSequence(w io.Writer, seq []ASTNode, ctx Context) error {
 	for _, n := range seq {
 		if err := n.Render(w, ctx); err != nil {
 			return err
@@ -43,6 +49,7 @@ func writeASTs(w io.Writer, seq []AST, ctx Context) error {
 	return nil
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	switch n.chunk.Tag {
 	case "if", "unless":
@@ -55,7 +62,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 		}
 		switch val {
 		default:
-			return writeASTs(w, n.body, ctx)
+			return renderASTSequence(w, n.body, ctx)
 		case nil, false:
 			for _, c := range n.branches {
 				switch c.chunk.Tag {
@@ -68,7 +75,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 					}
 				}
 				if val != nil && val != false {
-					return writeASTs(w, c.body, ctx)
+					return renderASTSequence(w, c.body, ctx)
 				}
 			}
 		}
@@ -79,8 +86,9 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	}
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
-	val, err := ctx.EvaluateExpr(n.chunk.Tag)
+	val, err := ctx.EvaluateExpr(n.chunk.Args)
 	if err != nil {
 		return err
 	}

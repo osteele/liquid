@@ -4,11 +4,12 @@ import (
 	"fmt"
 )
 
-func Parse(chunks []Chunk) (AST, error) {
+// Parse creates an AST from a sequence of Chunks.
+func Parse(chunks []Chunk) (ASTNode, error) {
 	type frame struct {
 		cd *ControlTagDefinition
 		cn *ASTControlTag
-		ap *[]AST
+		ap *[]ASTNode
 	}
 	var (
 		root  = &ASTSeq{}
@@ -19,11 +20,11 @@ func Parse(chunks []Chunk) (AST, error) {
 	)
 	for _, c := range chunks {
 		switch c.Type {
-		case ObjChunk:
+		case ObjChunkType:
 			*ap = append(*ap, &ASTObject{chunk: c})
-		case TextChunk:
+		case TextChunkType:
 			*ap = append(*ap, &ASTText{chunk: c})
-		case TagChunk:
+		case TagChunkType:
 			if cd, ok := FindControlDefinition(c.Tag); ok {
 				switch {
 				case cd.RequiresParent() && !cd.CompatibleParent(ccd):

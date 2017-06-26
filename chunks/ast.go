@@ -4,12 +4,13 @@ import (
 	"io"
 )
 
-type AST interface {
+// ASTNode is a node of an AST.
+type ASTNode interface {
 	Render(io.Writer, Context) error
 }
 
 type ASTSeq struct {
-	Children []AST
+	Children []ASTNode
 }
 
 type ASTChunks struct {
@@ -27,6 +28,6 @@ type ASTObject struct {
 type ASTControlTag struct {
 	chunk    Chunk
 	cd       *ControlTagDefinition
-	body     []AST
+	body     []ASTNode
 	branches []*ASTControlTag
 }

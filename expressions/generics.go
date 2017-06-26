@@ -31,6 +31,7 @@ func GenericCompare(a, b reflect.Value) int {
 				return -1
 			}
 			if a.Int() > b.Int() {
+				return 1
 			}
 			return 0
 		}

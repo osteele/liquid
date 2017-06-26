@@ -1,8 +1,12 @@
-// For debugging
 package chunks
 
-import yaml "gopkg.in/yaml.v2"
+import (
+	"fmt"
 
+	yaml "gopkg.in/yaml.v2"
+)
+
+// MustYAML returns the YAML of an interface.
 func MustYAML(val interface{}) string {
 	b, err := yaml.Marshal(val)
 	if err != nil {
@@ -11,10 +15,26 @@ func MustYAML(val interface{}) string {
 	return string(b)
 }
 
-func (n ASTChunks) MarshalYAML() (interface{}, error) {
-	return map[string]interface{}{"leaf": n.chunks}, nil
+// MarshalYAML is for debugging.
+func (c Chunk) MarshalYAML() (interface{}, error) {
+	switch c.Type {
+	case TextChunkType:
+		return map[string]interface{}{"text": c.Source}, nil
+	case TagChunkType:
+		return map[string]interface{}{"tag": c.Tag, "args": c.Args}, nil
+	case ObjChunkType:
+		return map[string]interface{}{"obj": c.Tag}, nil
+	default:
+		return nil, fmt.Errorf("unknown chunk tag type: %v", c.Type)
+	}
 }
 
+// MarshalYAML marshalls a chunk for debugging.
+func (n ASTChunks) MarshalYAML() (interface{}, error) {
+	return map[string]interface{}{"chunks": n.chunks}, nil
+}
+
+// MarshalYAML marshalls a chunk for debugging.
 func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.Name: {
@@ -24,10 +44,12 @@ func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 		}}, nil
 }
 
+// MarshalYAML marshalls a chunk for debugging.
 func (n ASTText) MarshalYAML() (interface{}, error) {
 	return n.chunk.MarshalYAML()
 }
 
+// MarshalYAML marshalls a chunk for debugging.
 func (n ASTObject) MarshalYAML() (interface{}, error) {
 	return n.chunk.MarshalYAML()
 }

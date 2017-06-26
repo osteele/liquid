@@ -31,7 +31,7 @@ type Template interface {
 type engine struct{}
 
 type template struct {
-	ast chunks.AST
+	ast chunks.ASTNode
 }
 
 // NewEngine makes a new engine.
