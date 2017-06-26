@@ -63,6 +63,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 		main := |*
 			number => Number;
+			'.' => { tok = DOT; fbreak; };
+			';' => { tok = ';'; fbreak; };
 			("true" | "false") => Bool;
 			("==" | "!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;

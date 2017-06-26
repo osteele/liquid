@@ -29,7 +29,7 @@ func (n *ASTText) Render(w io.Writer, _ Context) error {
 }
 
 func EvaluateExpr(expr string, ctx Context) (interface{}, error) {
-	lexer := newLexer([]byte(expr))
+	lexer := newLexer([]byte(expr + ";"))
 	n := yyParse(lexer)
 	if n != 0 {
 		return nil, fmt.Errorf("parse error in %s", expr)

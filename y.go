@@ -6,7 +6,7 @@ import __yyfmt__ "fmt"
 //line expression_parser.y:2
 import (
 	_ "fmt"
-	_ "reflect"
+	"reflect"
 )
 
 //line expression_parser.y:8
@@ -30,6 +30,7 @@ var yyToknames = [...]string{
 	"IDENTIFIER",
 	"RELATION",
 	"DOT",
+	"';'",
 }
 var yyStatenames = [...]string{}
 
@@ -46,39 +47,44 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 4
+const yyLast = 7
 
 var yyAct = [...]int{
 
-	3, 4, 1, 2,
+	6, 5, 3, 4, 7, 1, 2,
 }
 var yyPact = [...]int{
 
-	-4, -1000, -1000, -1000, -1000,
+	-2, -1000, -7, -1000, -1000, -1000, -1, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 3, 2,
+	0, 6, 5,
 }
 var yyR1 = [...]int{
 
-	0, 2, 1, 1,
+	0, 2, 1, 1, 1,
 }
 var yyR2 = [...]int{
 
-	0, 1, 1, 1,
+	0, 2, 1, 1, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -2, -1, 4, 5,
+	-1000, -2, -1, 4, 5, 8, 7, 5,
 }
 var yyDef = [...]int{
 
-	0, -2, 1, 2, 3,
+	0, -2, 0, 2, 3, 1, 0, 4,
 }
 var yyTok1 = [...]int{
 
-	1,
+	1, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 8,
 }
 var yyTok2 = [...]int{
 
@@ -426,7 +432,7 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		yyDollar = yyS[yypt-1 : yypt+1]
+		yyDollar = yyS[yypt-2 : yypt+1]
 		//line expression_parser.y:18
 		{
 			yylex.(*lexer).val = yyDollar[1].f
@@ -442,6 +448,22 @@ yydefault:
 		//line expression_parser.y:22
 		{
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[yyDollar[1].name] }
+		}
+	case 4:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expression_parser.y:23
+		{
+			e, a := yyDollar[1].f, yyDollar[3].name
+			yyVAL.f = func(ctx Context) interface{} {
+				input := e(ctx)
+				ref := reflect.ValueOf(input)
+				switch ref.Kind() {
+				case reflect.Map:
+					return ref.MapIndex(reflect.ValueOf(a)).Interface()
+				default:
+					return input
+				}
+			}
 		}
 	}
 	goto yystack /* stack new state and value */

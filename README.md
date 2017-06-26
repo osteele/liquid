@@ -6,7 +6,7 @@
 
 - [ ] Basics
   - [ ] Constants
-  - [ ] Variables
+  - [x] Variables
   - [ ] Operators
   - [ ] Arrays
   - [ ] Whitespace Control

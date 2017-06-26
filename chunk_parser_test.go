@@ -11,6 +11,9 @@ import (
 func TestChunkParser(t *testing.T) {
 	ctx := Context{map[string]interface{}{
 		"x": 123,
+		"page": map[string]interface{}{
+			"title": "Introduction",
+		},
 	},
 	}
 
@@ -32,6 +35,7 @@ func TestChunkParser(t *testing.T) {
 var chunkTests = []struct{ in, expected string }{
 	{"{{12}}", "12"},
 	{"{{x}}", "123"},
+	{"{{page.title}}", "Introduction"},
 	{"{%if true%}true{%endif%}", "true"},
 	{"{%if false%}false{%endif%}", ""},
 	{"{%if 0%}true{%endif%}", "true"},
