@@ -42,7 +42,7 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 	}
 }
 
-func ScanChunks(data string, pathname string) []Chunk {
+func Scan(data string, pathname string) []Chunk {
 	var (
 		sourceInfo = SourceInfo{pathname, 0}
 		out        = make([]Chunk, 0)

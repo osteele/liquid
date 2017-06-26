@@ -48,7 +48,7 @@ var chunkTestContext = Context{map[string]interface{}{
 func TestChunkParser(t *testing.T) {
 	for i, test := range chunkTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
-			tokens := ScanChunks(test.in, "")
+			tokens := Scan(test.in, "")
 			// fmt.Println(tokens)
 			ast, err := Parse(tokens)
 			require.NoErrorf(t, err, test.in)
