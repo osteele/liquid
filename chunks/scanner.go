@@ -1,6 +1,6 @@
 //go:generate stringer -type=ChunkType
 
-package main
+package chunks
 
 import (
 	"fmt"
