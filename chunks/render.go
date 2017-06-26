@@ -3,19 +3,7 @@ package chunks
 import (
 	"fmt"
 	"io"
-
-	"github.com/osteele/liquid/expressions"
 )
-
-// Context is the evaluation context for chunk AST rendering.
-type Context struct {
-	Variables map[string]interface{}
-}
-
-// EvaluateExpr evaluates an expression within the template context.
-func (c *Context) EvaluateExpr(source string) (interface{}, error) {
-	return expressions.EvaluateExpr(source, expressions.Context{Variables: c.Variables})
-}
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
@@ -29,8 +17,13 @@ func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTChunks) Render(w io.Writer, _ Context) error {
-	_, err := w.Write([]byte("{chunks}"))
-	return err
+	fmt.Println(MustYAML(n))
+	return fmt.Errorf("unimplemented: ASTChunks.Render")
+}
+
+// Render evaluates an AST node and writes the result to an io.Writer.
+func (n *ASTGenericTag) Render(w io.Writer, ctx Context) error {
+	return n.render(w, ctx)
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.
@@ -81,8 +74,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 		}
 		return nil
 	default:
-		_, err := w.Write([]byte("{control}"))
-		return err
+		return fmt.Errorf("unimplemented tag: %s", n.chunk.Tag)
 	}
 }
 

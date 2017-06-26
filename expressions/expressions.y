@@ -18,15 +18,24 @@ func init() {
 %type <f> expr rel
 %token <val> LITERAL
 %token <name> IDENTIFIER RELATION
+%token ASSIGN
 %token EQ
 %left '.'
 %left '<' '>'
 %%
-start: rel ';' { yylex.(*lexer).val = $1 };
+start:
+  rel ';' { yylex.(*lexer).val = $1 }
+| ASSIGN IDENTIFIER '=' expr ';' {
+	name, expr := $2, $4
+	yylex.(*lexer).val = func(ctx Context) interface{} {
+		ctx.Set(name, expr(ctx))
+		return nil
+	}
+};
 
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
-| IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Variables[name] } }
+| IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
 | expr '.' IDENTIFIER {
 	e, attr := $1, $3
 	$$ = func(ctx Context) interface{} {

@@ -15,7 +15,7 @@ import (
 //
 // In the future, it will be configured with additional tags, filters, and the {%include%} search path.
 type Engine interface {
-	Parse(text []byte) (Template, error)
+	ParseTemplate(text []byte) (Template, error)
 	ParseAndRender(text []byte, scope map[string]interface{}) ([]byte, error)
 	ParseAndRenderString(text string, scope map[string]interface{}) (string, error)
 }
@@ -39,9 +39,10 @@ func NewEngine() Engine {
 	return engine{}
 }
 
-func (e engine) Parse(text []byte) (Template, error) {
+func (e engine) ParseTemplate(text []byte) (Template, error) {
 	tokens := chunks.Scan(string(text), "")
 	ast, err := chunks.Parse(tokens)
+	// fmt.Println(chunks.MustYAML(ast))
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +51,7 @@ func (e engine) Parse(text []byte) (Template, error) {
 
 // ParseAndRender parses and then renders the template.
 func (e engine) ParseAndRender(text []byte, scope map[string]interface{}) ([]byte, error) {
-	t, err := e.Parse(text)
+	t, err := e.ParseTemplate(text)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +70,7 @@ func (e engine) ParseAndRenderString(text string, scope map[string]interface{}) 
 // Render applies the template to the scope.
 func (t *template) Render(scope map[string]interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := t.ast.Render(buf, chunks.Context{scope})
+	err := t.ast.Render(buf, chunks.NewContext(scope))
 	if err != nil {
 		return nil, err
 	}

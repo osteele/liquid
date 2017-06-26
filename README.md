@@ -7,10 +7,11 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/osteele/liquid)](https://goreportcard.com/report/github.com/osteele/liquid)
 
 - [ ] Basics
-  - [ ] Constants
+  - [x] Literals
+    - [ ] String Escapes
   - [x] Variables
   - [ ] Operators
-  - [ ] Arrays
+  - [x] Arrays
   - [ ] Whitespace Control
 - [ ] Tags
   - [ ] Comment
@@ -27,7 +28,7 @@
         - [ ] cycle
   - [ ] Raw
   - [ ] Variable
-    - [ ] Assign
+    - [x] Assign
     - [ ] Capture
 - [ ] Filters
 
@@ -49,14 +50,15 @@ Install Ragel. On macOS: `brew install ragel`.
 ### Workflow
 
 ```bash
-go generate
-go test
+go generate ./...
+go test ./...
 ```
 
 Test just the scanner:
 
 ```bash
-ragel -Z scanner.rl && go test -run TestExpressionParser
+cd expressions
+ragel -Z scanner.rl && go test
 ```
 
 ## Attribution

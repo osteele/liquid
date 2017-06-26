@@ -13,6 +13,7 @@ var chunkTests = []struct{ in, expected string }{
 	{"{{x}}", "123"},
 	{"{{page.title}}", "Introduction"},
 	{"{{ar[1]}}", "second"},
+
 	{"{%if true%}true{%endif%}", "true"},
 	{"{%if false%}false{%endif%}", ""},
 	{"{%if 0%}true{%endif%}", "true"},
@@ -26,6 +27,7 @@ var chunkTests = []struct{ in, expected string }{
 	{"{%if true%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
 	{"{%if false%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
 	{"{%if false%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+
 	{"{%unless true%}false{%endif%}", ""},
 	{"{%unless false%}true{%endif%}", "true"},
 	{"{%unless true%}false{%else%}true{%endif%}", "true"},
@@ -33,11 +35,18 @@ var chunkTests = []struct{ in, expected string }{
 	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
 	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
 	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+
+	{"{%assign av = 1%}{{av}}", "1"},
+	{"{%assign av = obj.a%}{{av}}", "1"},
+	// "{% assign var = obj.a | sort: 'weight' %}"
 	// {"{%for a in ar%}{{a}} {{%endfor%}", "first second third "},
 }
 
 var chunkTestContext = Context{map[string]interface{}{
-	"x":  123,
+	"x": 123,
+	"obj": map[string]interface{}{
+		"a": 1,
+	},
 	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",

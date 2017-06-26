@@ -46,16 +46,25 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					f := stack[len(stack)-1]
 					ccd, ccn, ap, stack = f.cd, f.cn, f.ap, stack[:len(stack)-1]
 				}
-			} else if len(*ap) > 0 {
-				switch n := ((*ap)[len(*ap)-1]).(type) {
-				case *ASTChunks:
-					n.chunks = append(n.chunks, c)
-				default:
-					*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
+			} else if td, ok := FindTagDefinition(c.Tag); ok {
+				f, err := td(c.Args)
+				if err != nil {
+					return nil, err
 				}
+				*ap = append(*ap, &ASTGenericTag{chunk: c, render: f})
 			} else {
-				*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
+				return nil, fmt.Errorf("unknown tag: %s", c.Tag)
 			}
+			// } else if len(*ap) > 0 {
+			// 	switch n := ((*ap)[len(*ap)-1]).(type) {
+			// 	case *ASTChunks:
+			// 		n.chunks = append(n.chunks, c)
+			// 	default:
+			// 		*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
+			// 	}
+			// } else {
+			// 	*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
+			// }
 		}
 	}
 	if ccd != nil {

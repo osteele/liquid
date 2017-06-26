@@ -24,7 +24,8 @@ type yySymType struct {
 const LITERAL = 57346
 const IDENTIFIER = 57347
 const RELATION = 57348
-const EQ = 57349
+const ASSIGN = 57349
+const EQ = 57350
 
 var yyToknames = [...]string{
 	"$end",
@@ -33,11 +34,13 @@ var yyToknames = [...]string{
 	"LITERAL",
 	"IDENTIFIER",
 	"RELATION",
+	"ASSIGN",
 	"EQ",
 	"'.'",
 	"'<'",
 	"'>'",
 	"';'",
+	"'='",
 	"'['",
 	"']'",
 }
@@ -56,40 +59,45 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 21
+const yyLast = 30
 
 var yyAct = [...]int{
 
-	9, 7, 10, 11, 7, 8, 3, 7, 8, 17,
-	12, 8, 6, 4, 5, 13, 14, 15, 16, 1,
-	2,
+	4, 11, 9, 12, 13, 9, 7, 10, 22, 1,
+	10, 16, 17, 18, 19, 20, 9, 14, 9, 5,
+	6, 10, 21, 10, 5, 6, 15, 3, 8, 2,
 }
 var yyPact = [...]int{
 
-	9, -1000, 1, -7, -1000, -1000, -1000, 5, 9, 9,
-	9, 9, -1000, -4, -1, -1, -1, -1000,
+	20, -1000, -6, 23, -7, -1000, -1000, -1000, 4, 21,
+	15, 15, 15, 15, 15, -1000, 7, 9, 9, 9,
+	-4, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 6, 20, 19,
+	0, 0, 29, 9,
 }
 var yyR1 = [...]int{
 
-	0, 3, 1, 1, 1, 1, 2, 2, 2, 2,
+	0, 3, 3, 1, 1, 1, 1, 2, 2, 2,
+	2,
 }
 var yyR2 = [...]int{
 
-	0, 2, 1, 1, 3, 4, 1, 3, 3, 3,
+	0, 2, 5, 1, 1, 3, 4, 1, 3, 3,
+	3,
 }
 var yyChk = [...]int{
 
-	-1000, -3, -2, -1, 4, 5, 11, 8, 12, 7,
-	9, 10, 5, -1, -1, -1, -1, 13,
+	-1000, -3, -2, 7, -1, 4, 5, 12, 5, 9,
+	14, 8, 10, 11, 13, 5, -1, -1, -1, -1,
+	-1, 15, 12,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 6, 2, 3, 1, 0, 0, 0,
-	0, 0, 4, 0, 7, 8, 9, 5,
+	0, -2, 0, 0, 7, 3, 4, 1, 0, 0,
+	0, 0, 0, 0, 0, 5, 0, 8, 9, 10,
+	0, 6, 2,
 }
 var yyTok1 = [...]int{
 
@@ -97,16 +105,16 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 8, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 11,
-	9, 3, 10, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 9, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 12,
+	10, 13, 11, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 12, 3, 13,
+	3, 14, 3, 15,
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6, 7,
+	2, 3, 4, 5, 6, 7, 8,
 }
 var yyTok3 = [...]int{
 	0,
@@ -451,27 +459,37 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:25
+		//line expressions.y:27
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
-		yyDollar = yyS[yypt-1 : yypt+1]
+		yyDollar = yyS[yypt-5 : yypt+1]
 		//line expressions.y:28
+		{
+			name, expr := yyDollar[2].name, yyDollar[4].f
+			yylex.(*lexer).val = func(ctx Context) interface{} {
+				ctx.Set(name, expr(ctx))
+				return nil
+			}
+		}
+	case 3:
+		yyDollar = yyS[yypt-1 : yypt+1]
+		//line expressions.y:37
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
-	case 3:
+	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expressions.y:29
+		//line expressions.y:38
 		{
 			name := yyDollar[1].name
-			yyVAL.f = func(ctx Context) interface{} { return ctx.Variables[name] }
+			yyVAL.f = func(ctx Context) interface{} { return ctx.Get(name) }
 		}
-	case 4:
+	case 5:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:30
+		//line expressions.y:39
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
@@ -487,9 +505,9 @@ yydefault:
 				return nil
 			}
 		}
-	case 5:
+	case 6:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:45
+		//line expressions.y:54
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -508,9 +526,9 @@ yydefault:
 				return nil
 			}
 		}
-	case 7:
+	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:67
+		//line expressions.y:76
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -518,9 +536,9 @@ yydefault:
 				return GenericCompare(aref, bref) == 0
 			}
 		}
-	case 8:
+	case 9:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:74
+		//line expressions.y:83
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -528,9 +546,9 @@ yydefault:
 				return GenericCompare(aref, bref) < 0
 			}
 		}
-	case 9:
+	case 10:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:81
+		//line expressions.y:90
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

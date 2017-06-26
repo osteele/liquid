@@ -4,12 +4,6 @@ import (
 	"fmt"
 )
 
-// Context is the expression evaluation context. It maps variables names to values.
-// It is currently a concrete type.
-type Context struct {
-	Variables map[string]interface{}
-}
-
 // Expression is a parsed expression.
 type Expression interface {
 	// Evaluate evaluates an expression in a context.

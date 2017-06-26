@@ -48,7 +48,7 @@ var evaluatorTests = []struct {
 	{"1.0 < 2", true},
 }
 
-var evaluatorTestContext = Context{map[string]interface{}{
+var evaluatorTestContext = NewContext(map[string]interface{}{
 	"n":  123,
 	"ar": []string{"first", "second", "third"},
 	"obj": map[string]interface{}{
@@ -56,8 +56,7 @@ var evaluatorTestContext = Context{map[string]interface{}{
 		"b": map[string]interface{}{"c": "d"},
 		"c": []string{"r", "g", "b"},
 	},
-},
-}
+})
 
 func TestEvaluator(t *testing.T) {
 	for i, test := range evaluatorTests {

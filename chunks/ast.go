@@ -17,6 +17,11 @@ type ASTChunks struct {
 	chunks []Chunk
 }
 
+type ASTGenericTag struct {
+	chunk Chunk
+	render func(io.Writer, Context) error
+}
+
 type ASTText struct {
 	chunk Chunk
 }

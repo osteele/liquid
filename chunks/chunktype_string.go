@@ -4,9 +4,9 @@ package chunks
 
 import "fmt"
 
-const _ChunkType_name = "TextChunkTagChunkObjChunk"
+const _ChunkType_name = "TextChunkTypeTagChunkTypeObjChunkType"
 
-var _ChunkType_index = [...]uint8{0, 9, 17, 25}
+var _ChunkType_index = [...]uint8{0, 13, 25, 37}
 
 func (i ChunkType) String() string {
 	if i < 0 || i >= ChunkType(len(_ChunkType_index)-1) {
