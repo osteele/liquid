@@ -37,4 +37,11 @@ var chunkTests = []struct{ in, expected string }{
 	{"{%if 1%}0{%elsif 1%}1{%else%}2{%endif%}", "0"},
 	{"{%if y%}0{%elsif 1%}1{%else%}2{%endif%}", "1"},
 	{"{%if y%}0{%elsif z%}1{%else%}2{%endif%}", "2"},
+	{"{%unless x%}false{%endif%}", ""},
+	{"{%unless y%}true{%endif%}", "true"},
+	{"{%unless x%}false{%else%}true{%endif%}", "true"},
+	{"{%unless y%}true{%else%}false{%endif%}", "true"},
+	{"{%unless y%}0{%elsif x%}1{%else%}2{%endif%}", "0"},
+	{"{%unless x%}0{%elsif x%}1{%else%}2{%endif%}", "1"},
+	{"{%unless x%}0{%elsif y%}1{%else%}2{%endif%}", "2"},
 }

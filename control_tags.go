@@ -9,7 +9,7 @@ func init() {
 	loopTags := []string{"break", "continue", "cycle"}
 	DefineControlTag("comment").Action(unimplementedControlTag)
 	DefineControlTag("if").Branch("else").Branch("elsif").Action(unimplementedControlTag)
-	DefineControlTag("unless").Action(unimplementedControlTag)
+	DefineControlTag("unless").SameSyntaxAs("if").Action(unimplementedControlTag)
 	DefineControlTag("case").Branch("when").Action(unimplementedControlTag)
 	DefineControlTag("for").Governs(loopTags).Action(unimplementedControlTag)
 	DefineControlTag("tablerow").Governs(loopTags).Action(unimplementedControlTag)
@@ -27,7 +27,18 @@ type ControlTagDefinition struct {
 	Name        string
 	IsBranchTag bool
 	IsEndTag    bool
+	SyntaxModel *ControlTagDefinition
 	Parent      *ControlTagDefinition
+}
+
+func (c *ControlTagDefinition) CompatibleParent(p *ControlTagDefinition) bool {
+	if p == nil {
+		return false
+	}
+	if p.SyntaxModel != nil {
+		p = p.SyntaxModel
+	}
+	return c.Parent == p
 }
 
 func (c *ControlTagDefinition) RequiresParent() bool {
@@ -61,6 +72,15 @@ func (ct *ControlTagDefinition) Branch(name string) *ControlTagDefinition {
 }
 
 func (ct *ControlTagDefinition) Governs(_ []string) *ControlTagDefinition {
+	return ct
+}
+
+func (ct *ControlTagDefinition) SameSyntaxAs(name string) *ControlTagDefinition {
+	ot := ControlTagDefinitions[name]
+	if ot == nil {
+		panic(fmt.Errorf("undefined: %s", name))
+	}
+	ct.SyntaxModel = ot
 	return ct
 }
 

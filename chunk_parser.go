@@ -26,7 +26,7 @@ func Parse(chunks []Chunk) (AST, error) {
 		case TagChunk:
 			if cd, ok := FindControlDefinition(c.Tag); ok {
 				switch {
-				case cd.RequiresParent() && cd.Parent != ccd:
+				case cd.RequiresParent() && !cd.CompatibleParent(ccd):
 					suffix := ""
 					if ccd != nil {
 						suffix = "; immediate parent is " + ccd.Name

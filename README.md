@@ -13,6 +13,9 @@
 - [ ] Tags
   - [ ] Comment
   - [ ] Control Flow
+    - [x] if/else/elsif
+    - [x] unless
+    - [ ] case/when
   - [ ] Iteration
         - [ ] for
             - [ ] limit, offset, range, reversed

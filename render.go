@@ -48,10 +48,13 @@ func writeASTs(w io.Writer, seq []AST, ctx Context) error {
 
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	switch n.chunk.Tag {
-	case "if":
+	case "if", "unless":
 		val, err := EvaluateExpr(n.chunk.Args, ctx)
 		if err != nil {
 			return err
+		}
+		if n.chunk.Tag == "unless" {
+			val = (val == nil || val == false)
 		}
 		switch val {
 		default:
