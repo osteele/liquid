@@ -37,7 +37,7 @@ type ASTObject struct {
 // ASTControlTag is a control tag.
 type ASTControlTag struct {
 	Chunk
-	cd       *ControlTagDefinition
+	cd       *controlTagDefinition
 	Body     []ASTNode
 	Branches []*ASTControlTag
 }

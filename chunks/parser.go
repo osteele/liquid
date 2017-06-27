@@ -7,14 +7,14 @@ import (
 // Parse creates an AST from a sequence of Chunks.
 func Parse(chunks []Chunk) (ASTNode, error) {
 	type frame struct {
-		cd *ControlTagDefinition
+		cd *controlTagDefinition
 		cn *ASTControlTag
 		ap *[]ASTNode
 	}
 	var (
 		root  = &ASTSeq{}
 		ap    = &root.Children // pointer to current node accumulation slice
-		ccd   *ControlTagDefinition
+		ccd   *controlTagDefinition
 		ccn   *ASTControlTag
 		stack []frame // stack of control structures
 	)
@@ -25,24 +25,24 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		case TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
 		case TagChunkType:
-			if cd, ok := FindControlDefinition(c.Tag); ok {
+			if cd, ok := findControlTagDefinition(c.Tag); ok {
 				switch {
-				case cd.RequiresParent() && !cd.CompatibleParent(ccd):
+				case cd.requiresParent() && !cd.compatibleParent(ccd):
 					suffix := ""
 					if ccd != nil {
-						suffix = "; immediate parent is " + ccd.Name
+						suffix = "; immediate parent is " + ccd.name
 					}
-					return nil, fmt.Errorf("%s not inside %s%s", cd.Name, cd.Parent.Name, suffix)
-				case cd.IsStartTag():
+					return nil, fmt.Errorf("%s not inside %s%s", cd.name, cd.parent.name, suffix)
+				case cd.isStartTag():
 					stack = append(stack, frame{cd: ccd, cn: ccn, ap: ap})
 					ccd, ccn = cd, &ASTControlTag{Chunk: c, cd: cd}
 					*ap = append(*ap, ccn)
 					ap = &ccn.Body
-				case cd.IsBranchTag:
+				case cd.isBranchTag:
 					n := &ASTControlTag{Chunk: c, cd: cd}
 					ccn.Branches = append(ccn.Branches, n)
 					ap = &n.Body
-				case cd.IsEndTag:
+				case cd.isEndTag:
 					f := stack[len(stack)-1]
 					ccd, ccn, ap, stack = f.cd, f.cn, f.ap, stack[:len(stack)-1]
 				}
@@ -68,7 +68,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		}
 	}
 	if ccd != nil {
-		return nil, fmt.Errorf("unterminated %s tag", ccd.Name)
+		return nil, fmt.Errorf("unterminated %s tag", ccd.name)
 	}
 	if len(root.Children) == 1 {
 		return root.Children[0], nil

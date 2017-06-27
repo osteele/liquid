@@ -37,7 +37,7 @@ func (n ASTChunks) MarshalYAML() (interface{}, error) {
 // MarshalYAML marshalls a chunk for debugging.
 func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
-		n.cd.Name: {
+		n.cd.name: {
 			"args":     n.Args,
 			"body":     n.Body,
 			"branches": n.Branches,

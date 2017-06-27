@@ -5,80 +5,81 @@ import (
 	"io"
 )
 
-// ControlTagDefinitions is a map of tag names to control tag definitions.
-var ControlTagDefinitions = map[string]*ControlTagDefinition{}
+// controlTagDefinitions is a map of tag names to control tag definitions.
+var controlTagDefinitions = map[string]*controlTagDefinition{}
 
 // ControlTagAction runs the interpreter.
 type ControlTagAction func(ASTControlTag) func(io.Writer, Context) error
 
-// ControlTagDefinition tells the parser how to parse control tags.
-type ControlTagDefinition struct {
-	Name        string
-	IsBranchTag bool
-	IsEndTag    bool
-	SyntaxModel *ControlTagDefinition
-	Parent      *ControlTagDefinition
+// controlTagDefinition tells the parser how to parse control tags.
+type controlTagDefinition struct {
+	name        string
+	isBranchTag, isEndTag bool
+	syntaxModel *controlTagDefinition
+	parent      *controlTagDefinition
 	action      ControlTagAction
 }
 
-func (c *ControlTagDefinition) CompatibleParent(p *ControlTagDefinition) bool {
+func (c *controlTagDefinition) compatibleParent(p *controlTagDefinition) bool {
 	if p == nil {
 		return false
 	}
-	if p.SyntaxModel != nil {
-		p = p.SyntaxModel
+	if p.syntaxModel != nil {
+		p = p.syntaxModel
 	}
-	return c.Parent == p
+	return c.parent == p
 }
 
-func (c *ControlTagDefinition) RequiresParent() bool {
-	return c.IsBranchTag || c.IsEndTag
+func (c *controlTagDefinition) requiresParent() bool {
+	return c.isBranchTag || c.isEndTag
 }
 
-func (c *ControlTagDefinition) IsStartTag() bool {
-	return !c.IsBranchTag && !c.IsEndTag
+func (c *controlTagDefinition) isStartTag() bool {
+	return !c.isBranchTag && !c.isEndTag
 }
 
-// DefineControlTag defines a control tag and its matching end tag.
-func DefineControlTag(name string) *ControlTagDefinition {
-	ct := &ControlTagDefinition{Name: name}
-	addControlTagDefinition(ct)
-	addControlTagDefinition(&ControlTagDefinition{Name: "end" + name, IsEndTag: true, Parent: ct})
-	return ct
+func addControlTagDefinition(ct *controlTagDefinition) {
+	controlTagDefinitions[ct.name] = ct
 }
 
-func FindControlDefinition(name string) (*ControlTagDefinition, bool) {
-	ct, found := ControlTagDefinitions[name]
+func findControlTagDefinition(name string) (*controlTagDefinition, bool) {
+	ct, found := controlTagDefinitions[name]
 	return ct, found
 }
 
-func addControlTagDefinition(ct *ControlTagDefinition) {
-	ControlTagDefinitions[ct.Name] = ct
+type tagBuilder struct {tag *controlTagDefinition}
+
+// DefineControlTag defines a control tag and its matching end tag.
+func DefineControlTag(name string) tagBuilder {
+	ct := &controlTagDefinition{name: name}
+	addControlTagDefinition(ct)
+	addControlTagDefinition(&controlTagDefinition{name: "end" + name, isEndTag: true, parent: ct})
+	return tagBuilder{ct}
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
 // so long as it is not nested within any other control tags.
-func (ct *ControlTagDefinition) Branch(name string) *ControlTagDefinition {
-	addControlTagDefinition(&ControlTagDefinition{Name: name, IsBranchTag: true, Parent: ct})
-	return ct
+func (b tagBuilder) Branch(name string) tagBuilder {
+	addControlTagDefinition(&controlTagDefinition{name: name, isBranchTag: true, parent: b.tag})
+	return b
 }
 
 // Governs tells the parser that the tags can appear anywhere between this tag and its end tag.
-func (ct *ControlTagDefinition) Governs(_ []string) *ControlTagDefinition {
-	return ct
+func (b tagBuilder) Governs(_ []string) tagBuilder {
+	return b
 }
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
-func (ct *ControlTagDefinition) SameSyntaxAs(name string) *ControlTagDefinition {
-	ot := ControlTagDefinitions[name]
+func (b tagBuilder) SameSyntaxAs(name string) tagBuilder {
+	ot := controlTagDefinitions[name]
 	if ot == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}
-	ct.SyntaxModel = ot
-	return ct
+	b.tag.syntaxModel = ot
+	return b
 }
 
 // Action sets the action for a control tag definition.
-func (ct *ControlTagDefinition) Action(fn ControlTagAction) {
-	ct.action = fn
+func (b tagBuilder) Action(fn ControlTagAction) {
+	b.tag.action = fn
 }
