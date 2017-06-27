@@ -6,6 +6,8 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
+			case InterpreterError:
+				err = e
 			case UnimplementedError:
 				err = e
 			case errors.UndefinedFilter:

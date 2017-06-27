@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/leekchan/timeutil"
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/generics"
 )
@@ -22,15 +23,22 @@ func DefineStandardFilters() {
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(in, format interface{}) interface{} {
-		if format != nil {
-			panic(expressions.UnimplementedError("date conversion format"))
+	expressions.DefineFilter("date", func(in, iformat interface{}) interface{} {
+		format, ok := iformat.(string)
+		if !ok {
+			format = "%a, %b %d, %y"
 		}
-		switch in := in.(type) {
+		switch date := in.(type) {
+		case string:
+			d, err := generics.ParseTime(date)
+			if err != nil {
+				panic(err)
+			}
+			return timeutil.Strftime(&d, format)
 		case time.Time:
-			return in.Format("Mon, Jan 2, 06")
+			return timeutil.Strftime(&date, format)
 		default:
-			panic(expressions.UnimplementedError("date conversion"))
+			panic(expressions.UnimplementedError(fmt.Sprintf("date conversion from %v", date)))
 		}
 	})
 

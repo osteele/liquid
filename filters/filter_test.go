@@ -22,10 +22,11 @@ var filterTests = []struct{ in, expected string }{
 
 	// date filters
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
-	// article.published_at | date: "%a, %b %d, %y"
-	// article.published_at | date: "%Y"
-	// "March 14, 2016" | date: "%b %d, %y"
-	// "now" | date: "%Y-%m-%d %H:%M" }
+	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
+	{`article.published_at | date: "%Y"`, "2015"},
+	{`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
+	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
+	// {`"now" | date: "%Y-%m-%d %H:%M" }`, ""},
 
 	// list filters
 	// site.pages | map: 'category' | compact | join "," %}

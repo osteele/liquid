@@ -3,6 +3,7 @@ package generics
 import (
 	"fmt"
 	"reflect"
+	"time"
 )
 
 // GenericError is an error regarding generic conversion.
@@ -54,4 +55,24 @@ func IsEmpty(in interface{}) bool {
 	default:
 		return false
 	}
+}
+
+var dateLayouts = []string{
+	"2006-01-02 15:04:05 -07:00",
+	"January 2, 2006",
+}
+
+// ParseTime tries a few heuristics to parse a date from a string
+func ParseTime(value string) (time.Time, error) {
+	if value == "now" {
+		return time.Now(), nil
+	}
+	for _, layout := range dateLayouts {
+		// fmt.Println(layout, time.Now().Format(layout), value)
+		time, err := time.Parse(layout, value)
+		if err == nil {
+			return time, nil
+		}
+	}
+	return time.Now(), genericErrorf("can't convert %s to a time", value)
 }
