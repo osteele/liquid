@@ -17,8 +17,10 @@ func init() {
    name string
    val interface{}
    f func(Context) interface{}
+   loopmods LoopModifiers
 }
 %type <f> expr rel expr1 loop
+%type<loopmods> loop_modifiers
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD RELATION
 %token ASSIGN LOOP
@@ -38,11 +40,21 @@ start:
 | LOOP loop { yylex.(*lexer).val = $2 }
 ;
 
-loop: IDENTIFIER IN expr1 ';' {
-	name, expr := $1, $3
+loop: IDENTIFIER IN expr1 loop_modifiers ';' {
+	name, expr, mods := $1, $3, $4
 	$$ = func(ctx Context) interface{} {
-		return &Loop{name, expr(ctx)}
+		return &Loop{name, expr(ctx), mods}
 	}
+}
+;
+
+loop_modifiers: /* empty */ { $$ = LoopModifiers{} }
+| loop_modifiers IDENTIFIER {
+	if $2 != "reversed" {
+		panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", $2)))
+	}
+	$1.Reversed = true
+	$$ = $1
 }
 ;
 

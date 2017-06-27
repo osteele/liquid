@@ -12,7 +12,9 @@ import (
 var parseErrorTests = []struct{ in, expected string }{
 	{"{%unknown_tag%}", "unknown tag"},
 	{"{%if syntax error%}", "unterminated if tag"},
+	// TODO once expression parsing is moved to template parse stage
 	// {"{%if syntax error%}{%endif%}", "parse error"},
+	// {"{%for a in ar unknown%}{{a}} {%endfor%}", "TODO"},
 }
 
 var tagTests = []struct{ in, expected string }{
@@ -45,6 +47,7 @@ var tagTests = []struct{ in, expected string }{
 	{"{%assign av = obj.a%}{{av}}", "1"},
 
 	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
+	{"{%for a in ar reversed%}{{a}} {%endfor%}", "third second first "},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{

@@ -32,7 +32,11 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 			return nil
 		}
 		for i := 0; i < rt.Len(); i++ {
-			ctx.Set(loop.Name, rt.Index(i).Interface())
+			j := i
+			if loop.Reversed {
+				j = rt.Len() - 1 - i
+			}
+			ctx.Set(loop.Name, rt.Index(j).Interface())
 			err := ctx.RenderASTSequence(w, node.Body)
 			if err != nil {
 				return err

@@ -18,10 +18,11 @@ func init() {
 
 //line expressions.y:16
 type yySymType struct {
-	yys  int
-	name string
-	val  interface{}
-	f    func(Context) interface{}
+	yys      int
+	name     string
+	val      interface{}
+	f        func(Context) interface{}
+	loopmods LoopModifiers
 }
 
 const LITERAL = 57346
@@ -71,50 +72,50 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 42
+const yyLast = 43
 
 var yyAct = [...]int{
 
 	29, 6, 16, 14, 5, 14, 14, 17, 18, 15,
-	32, 15, 15, 19, 9, 13, 24, 25, 26, 27,
-	20, 21, 22, 31, 28, 30, 13, 13, 23, 34,
-	33, 7, 8, 7, 8, 3, 4, 12, 10, 1,
-	11, 2,
+	32, 15, 15, 19, 36, 9, 24, 25, 26, 27,
+	13, 23, 20, 31, 28, 30, 35, 13, 7, 8,
+	33, 12, 3, 4, 21, 22, 7, 8, 10, 1,
+	34, 11, 2,
 }
 var yyPact = [...]int{
 
-	27, -1000, -3, 33, 32, 1, -8, -1000, -1000, -1000,
-	-5, -1000, 8, 16, 23, 29, 29, 29, 29, 29,
-	29, -1000, 29, -1000, -10, -7, -7, -7, 13, -7,
-	12, -7, -1000, -1000, -1000,
+	24, -1000, -2, 33, 26, 6, -8, -1000, -1000, -1000,
+	-5, -1000, 10, 29, 16, 32, 32, 32, 32, 32,
+	32, -1000, 32, -1000, -10, -7, -7, -7, 13, -7,
+	6, -7, -1000, -1000, 9, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 0, 41, 4, 40, 39,
+	0, 0, 42, 4, 41, 40, 39,
 }
 var yyR1 = [...]int{
 
-	0, 5, 5, 5, 4, 1, 1, 1, 1, 3,
-	3, 3, 2, 2, 2, 2,
+	0, 6, 6, 6, 4, 5, 5, 1, 1, 1,
+	1, 3, 3, 3, 2, 2, 2, 2,
 }
 var yyR2 = [...]int{
 
-	0, 2, 5, 2, 4, 1, 1, 3, 4, 1,
-	3, 4, 1, 3, 3, 3,
+	0, 2, 5, 2, 5, 0, 2, 1, 1, 3,
+	4, 1, 3, 4, 1, 3, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -5, -2, 8, 9, -3, -1, 4, 5, 17,
+	-1000, -6, -2, 8, 9, -3, -1, 4, 5, 17,
 	5, -4, 5, 14, 13, 19, 10, 15, 16, 18,
 	12, 5, 6, 5, -1, -1, -1, -1, -3, -1,
-	-3, -1, 20, 17, 17,
+	-3, -1, 20, 17, -5, 17, 5,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 0, 0, 12, 9, 5, 6, 1,
+	0, -2, 0, 0, 0, 14, 11, 7, 8, 1,
 	0, 3, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 10, 0, 7, 0, 13, 14, 15, 0, 9,
-	0, 11, 8, 2, 4,
+	0, 12, 0, 9, 0, 15, 16, 17, 0, 11,
+	5, 13, 10, 2, 0, 4, 6,
 }
 var yyTok1 = [...]int{
 
@@ -480,13 +481,13 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:30
+		//line expressions.y:32
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line expressions.y:31
+		//line expressions.y:33
 		{
 			name, expr := yyDollar[2].name, yyDollar[4].f
 			yylex.(*lexer).val = func(ctx Context) interface{} {
@@ -496,36 +497,52 @@ yydefault:
 		}
 	case 3:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:38
+		//line expressions.y:40
 		{
 			yylex.(*lexer).val = yyDollar[2].f
 		}
 	case 4:
-		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:41
+		yyDollar = yyS[yypt-5 : yypt+1]
+		//line expressions.y:43
 		{
-			name, expr := yyDollar[1].name, yyDollar[3].f
+			name, expr, mods := yyDollar[1].name, yyDollar[3].f, yyDollar[4].loopmods
 			yyVAL.f = func(ctx Context) interface{} {
-				return &Loop{name, expr(ctx)}
+				return &Loop{name, expr(ctx), mods}
 			}
 		}
 	case 5:
+		yyDollar = yyS[yypt-0 : yypt+1]
+		//line expressions.y:51
+		{
+			yyVAL.loopmods = LoopModifiers{}
+		}
+	case 6:
+		yyDollar = yyS[yypt-2 : yypt+1]
+		//line expressions.y:52
+		{
+			if yyDollar[2].name != "reversed" {
+				panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", yyDollar[2].name)))
+			}
+			yyDollar[1].loopmods.Reversed = true
+			yyVAL.loopmods = yyDollar[1].loopmods
+		}
+	case 7:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expressions.y:50
+		//line expressions.y:62
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
-	case 6:
+	case 8:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expressions.y:51
+		//line expressions.y:63
 		{
 			name := yyDollar[1].name
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Get(name) }
 		}
-	case 7:
+	case 9:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:52
+		//line expressions.y:64
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
@@ -541,9 +558,9 @@ yydefault:
 				return nil
 			}
 		}
-	case 8:
+	case 10:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:67
+		//line expressions.y:79
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -562,21 +579,21 @@ yydefault:
 				return nil
 			}
 		}
-	case 10:
+	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:88
+		//line expressions.y:100
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, nil)
 		}
-	case 11:
+	case 13:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:89
+		//line expressions.y:101
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, yyDollar[4].f)
 		}
-	case 13:
+	case 15:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:94
+		//line expressions.y:106
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -584,9 +601,9 @@ yydefault:
 				return generics.Equal(a, b)
 			}
 		}
-	case 14:
+	case 16:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:101
+		//line expressions.y:113
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -594,9 +611,9 @@ yydefault:
 				return generics.Less(a, b)
 			}
 		}
-	case 15:
+	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:108
+		//line expressions.y:120
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

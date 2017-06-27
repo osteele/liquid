@@ -21,7 +21,10 @@
     - [ ] case/when
   - [ ] Iteration
         - [x] for
-            - [ ] limit, offset, range, reversed
+            - [ ] limit
+            - [ ] offset
+            - [ ] range
+            - [x] reversed
         - [ ] break, continue
         - [ ] loop variables
         - [ ] tablerow

@@ -25,9 +25,3 @@ func (c *context) Get(name string) interface{} {
 func (c *context) Set(name string, value interface{}) {
 	c.vars[name] = value
 }
-
-// Loop describes the result of parsing and then evaluating a loop statement.
-type Loop struct {
-	Name string
-	Expr interface{}
-}
