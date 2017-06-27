@@ -14,7 +14,7 @@ func DefineStandardTags() {
 	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
 	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
 	chunks.DefineControlTag("case").Branch("when")
-	chunks.DefineControlTag("for").Governs(loopTags)
+	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
 	chunks.DefineControlTag("tablerow").Governs(loopTags)
 	chunks.DefineControlTag("capture")
 }

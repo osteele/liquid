@@ -80,14 +80,16 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 		main := |*
 			"%assign" => { tok = ASSIGN; fbreak; };
+			"%loop" => { tok = LOOP; fbreak; };
 			int => Int;
 			float => Float;
 			string => String;
 			("true" | "false") => Bool;
-			[.;<>] | '[' | ']' => { tok = int(lex.data[lex.ts]); fbreak; };
 			"==" => { tok = EQ; fbreak; };
-			("!=" | ">" | ">" | ">=" | "<=") => Relation;
+			("!=" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;
+			"for" => { tok = IN; fbreak; };
+			"in" => { tok = IN; fbreak; };
 			ident ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
 			ident => Ident;
 			space+;

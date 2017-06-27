@@ -29,3 +29,8 @@ func (c *context) Set(name string, value interface{}) {
 	// }
 	c.vars[name] = value
 }
+
+type Loop struct {
+	Name string
+	Expr interface{}
+}

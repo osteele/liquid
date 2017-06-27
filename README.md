@@ -20,7 +20,7 @@
     - [x] unless
     - [ ] case/when
   - [ ] Iteration
-        - [ ] for
+        - [x] for
             - [ ] limit, offset, range, reversed
         - [ ] break, continue
         - [ ] loop variables

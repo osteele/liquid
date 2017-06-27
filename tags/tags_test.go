@@ -41,7 +41,7 @@ var tagTests = []struct{ in, expected string }{
 	{"{%assign av = 1%}{{av}}", "1"},
 	{"{%assign av = obj.a%}{{av}}", "1"},
 
-	// {"{%for a in ar%}{{a}} {{%endfor%}", "first second third "},
+	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{

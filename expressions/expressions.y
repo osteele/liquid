@@ -18,11 +18,11 @@ func init() {
    val interface{}
    f func(Context) interface{}
 }
-%type <f> expr rel expr1
+%type <f> expr rel expr1 loop
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD RELATION
-%token ASSIGN
-%token EQ
+%token ASSIGN LOOP
+%token EQ FOR IN
 %left '.' '|'
 %left '<' '>'
 %%
@@ -34,7 +34,17 @@ start:
 		ctx.Set(name, expr(ctx))
 		return nil
 	}
-};
+}
+| LOOP loop { yylex.(*lexer).val = $2 }
+;
+
+loop: IDENTIFIER IN expr1 ';' {
+	name, expr := $1, $3
+	$$ = func(ctx Context) interface{} {
+		return &Loop{name, expr(ctx)}
+	}
+}
+;
 
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }

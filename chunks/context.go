@@ -21,6 +21,26 @@ func NewContext(scope map[string]interface{}) Context {
 	return Context{vars}
 }
 
+func (c *Context) Set(name string, value interface{}) {
+	c.vars[name] = value
+}
+
+// Evaluate evaluates an expression within the template context.
+func (c *Context) Evaluate(expr expressions.Expression) (out interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch e := r.(type) {
+			case expressions.InterpreterError:
+				err = e
+			default:
+				// fmt.Println(string(debug.Stack()))
+				panic(e)
+			}
+		}
+	}()
+	return expr.Evaluate(expressions.NewContext(c.vars))
+}
+
 // EvaluateExpr evaluates an expression within the template context.
 func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
 	defer func() {
