@@ -10,9 +10,12 @@ import (
 
 var parseErrorTests = []struct{ in, expected string }{
 	{"{%unknown_tag%}", "unknown tag"},
+	{"{%if syntax error%}", "unterminated if tag"},
+	// {"{%if syntax error%}{%endif%}", "parse error"},
 }
 
 var renderTests = []struct{ in, expected string }{
+	// {"{%if syntax error%}{%endif%}", "parse error"},
 	{"{{12}}", "12"},
 	{"{{x}}", "123"},
 	{"{{page.title}}", "Introduction"},

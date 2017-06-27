@@ -45,38 +45,12 @@ func renderASTSequence(w io.Writer, seq []ASTNode, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
-	switch n.chunk.Tag {
-	case "if", "unless":
-		val, err := ctx.EvaluateExpr(n.chunk.Args)
-		if err != nil {
-			return err
-		}
-		if n.chunk.Tag == "unless" {
-			val = (val == nil || val == false)
-		}
-		switch val {
-		default:
-			return renderASTSequence(w, n.body, ctx)
-		case nil, false:
-			for _, c := range n.branches {
-				switch c.chunk.Tag {
-				case "else":
-					val = true
-				case "elsif":
-					val, err = ctx.EvaluateExpr(c.chunk.Args)
-					if err != nil {
-						return err
-					}
-				}
-				if val != nil && val != false {
-					return renderASTSequence(w, c.body, ctx)
-				}
-			}
-		}
-		return nil
-	default:
+	cd, ok := FindControlDefinition(n.chunk.Tag)
+	if !ok {
 		return fmt.Errorf("unimplemented tag: %s", n.chunk.Tag)
 	}
+	f := cd.action(n)
+	return f(w, ctx)
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.

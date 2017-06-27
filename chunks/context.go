@@ -40,3 +40,13 @@ func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
 func (c *Context) evaluateStatement(tag, source string) (interface{}, error) {
 	return c.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source))
 }
+
+func makeExpressionValueFn(source string) (func(Context) (interface{}, error), error) {
+	expr, err := expressions.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+	return func(ctx Context) (interface{}, error) {
+		return expr.Evaluate(expressions.NewContext(ctx.vars))
+	}, nil
+}

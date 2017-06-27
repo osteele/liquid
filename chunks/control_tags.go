@@ -7,20 +7,20 @@ import (
 
 func init() {
 	loopTags := []string{"break", "continue", "cycle"}
-	DefineControlTag("comment").Action(unimplementedControlTag)
-	DefineControlTag("if").Branch("else").Branch("elsif").Action(unimplementedControlTag)
-	DefineControlTag("unless").SameSyntaxAs("if").Action(unimplementedControlTag)
-	DefineControlTag("case").Branch("when").Action(unimplementedControlTag)
-	DefineControlTag("for").Governs(loopTags).Action(unimplementedControlTag)
-	DefineControlTag("tablerow").Governs(loopTags).Action(unimplementedControlTag)
-	DefineControlTag("capture").Action(unimplementedControlTag)
+	DefineControlTag("comment") //.Action(unimplementedControlTag)
+	DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
+	DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
+	DefineControlTag("case").Branch("when")        //.Action(unimplementedControlTag)
+	DefineControlTag("for").Governs(loopTags)      //.Action(unimplementedControlTag)
+	DefineControlTag("tablerow").Governs(loopTags) //.Action(unimplementedControlTag)
+	DefineControlTag("capture")                    //.Action(unimplementedControlTag)
 }
 
 // ControlTagDefinitions is a map of tag names to control tag definitions.
 var ControlTagDefinitions = map[string]*ControlTagDefinition{}
 
 // ControlTagAction runs the interpreter.
-type ControlTagAction func(io.Writer, Context) error
+type ControlTagAction func(*ASTControlTag) func(io.Writer, Context) error
 
 // ControlTagDefinition tells the parser how to parse control tags.
 type ControlTagDefinition struct {
@@ -29,6 +29,7 @@ type ControlTagDefinition struct {
 	IsEndTag    bool
 	SyntaxModel *ControlTagDefinition
 	Parent      *ControlTagDefinition
+	action      ControlTagAction
 }
 
 func (c *ControlTagDefinition) CompatibleParent(p *ControlTagDefinition) bool {
@@ -66,15 +67,19 @@ func addControlTagDefinition(ct *ControlTagDefinition) {
 	ControlTagDefinitions[ct.Name] = ct
 }
 
+// Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
+// so long as it is not nested within any other control tags.
 func (ct *ControlTagDefinition) Branch(name string) *ControlTagDefinition {
 	addControlTagDefinition(&ControlTagDefinition{Name: name, IsBranchTag: true, Parent: ct})
 	return ct
 }
 
+// Governs tells the parser that the tags can appear anywhere between this tag and its end tag.
 func (ct *ControlTagDefinition) Governs(_ []string) *ControlTagDefinition {
 	return ct
 }
 
+// SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (ct *ControlTagDefinition) SameSyntaxAs(name string) *ControlTagDefinition {
 	ot := ControlTagDefinitions[name]
 	if ot == nil {
@@ -84,9 +89,49 @@ func (ct *ControlTagDefinition) SameSyntaxAs(name string) *ControlTagDefinition 
 	return ct
 }
 
-func (ct *ControlTagDefinition) Action(_ ControlTagAction) {
+// Action sets the action for a control tag definition.
+func (ct *ControlTagDefinition) Action(fn ControlTagAction) {
+	ct.action = fn
 }
 
-func unimplementedControlTag(io.Writer, Context) error {
-	return fmt.Errorf("unimplementedControlTag")
+// func unimplementedControlTag(io.Writer, Context) error {
+// 	return fmt.Errorf("unimplemented control tag")
+// }
+
+func ifTagAction(polarity bool) func(*ASTControlTag) func(io.Writer, Context) error {
+	return func(n *ASTControlTag) func(io.Writer, Context) error {
+		expr, err := makeExpressionValueFn(n.chunk.Args)
+		if err != nil {
+			return func(io.Writer, Context) error { return err }
+		}
+		return func(w io.Writer, ctx Context) error {
+			val, err := expr(ctx)
+			if err != nil {
+				return err
+			}
+			if !polarity {
+				val = (val == nil || val == false)
+			}
+			switch val {
+			default:
+				return renderASTSequence(w, n.body, ctx)
+			case nil, false:
+				for _, c := range n.branches {
+					switch c.chunk.Tag {
+					case "else":
+						val = true
+					case "elsif":
+						val, err = ctx.EvaluateExpr(c.chunk.Args)
+						if err != nil {
+							return err
+						}
+					}
+					if val != nil && val != false {
+						return renderASTSequence(w, c.body, ctx)
+					}
+				}
+			}
+			return nil
+		}
+	}
 }

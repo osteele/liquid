@@ -555,7 +555,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return a == b
+				return generics.Equal(a, b)
 			}
 		}
 	case 12:
