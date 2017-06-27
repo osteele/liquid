@@ -38,6 +38,6 @@ type ASTObject struct {
 type ASTControlTag struct {
 	Chunk
 	cd       *ControlTagDefinition
-	body     []ASTNode
-	branches []*ASTControlTag
+	Body     []ASTNode
+	Branches []*ASTControlTag
 }

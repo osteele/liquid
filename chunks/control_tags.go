@@ -5,22 +5,11 @@ import (
 	"io"
 )
 
-func init() {
-	loopTags := []string{"break", "continue", "cycle"}
-	DefineControlTag("comment") //.Action(unimplementedControlTag)
-	DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
-	DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
-	DefineControlTag("case").Branch("when")        //.Action(unimplementedControlTag)
-	DefineControlTag("for").Governs(loopTags)      //.Action(unimplementedControlTag)
-	DefineControlTag("tablerow").Governs(loopTags) //.Action(unimplementedControlTag)
-	DefineControlTag("capture")                    //.Action(unimplementedControlTag)
-}
-
 // ControlTagDefinitions is a map of tag names to control tag definitions.
 var ControlTagDefinitions = map[string]*ControlTagDefinition{}
 
 // ControlTagAction runs the interpreter.
-type ControlTagAction func(*ASTControlTag) func(io.Writer, Context) error
+type ControlTagAction func(ASTControlTag) func(io.Writer, Context) error
 
 // ControlTagDefinition tells the parser how to parse control tags.
 type ControlTagDefinition struct {
@@ -92,46 +81,4 @@ func (ct *ControlTagDefinition) SameSyntaxAs(name string) *ControlTagDefinition 
 // Action sets the action for a control tag definition.
 func (ct *ControlTagDefinition) Action(fn ControlTagAction) {
 	ct.action = fn
-}
-
-// func unimplementedControlTag(io.Writer, Context) error {
-// 	return fmt.Errorf("unimplemented control tag")
-// }
-
-func ifTagAction(polarity bool) func(*ASTControlTag) func(io.Writer, Context) error {
-	return func(n *ASTControlTag) func(io.Writer, Context) error {
-		expr, err := makeExpressionValueFn(n.Args)
-		if err != nil {
-			return func(io.Writer, Context) error { return err }
-		}
-		return func(w io.Writer, ctx Context) error {
-			val, err := expr(ctx)
-			if err != nil {
-				return err
-			}
-			if !polarity {
-				val = (val == nil || val == false)
-			}
-			switch val {
-			default:
-				return renderASTSequence(w, n.body, ctx)
-			case nil, false:
-				for _, c := range n.branches {
-					switch c.Tag {
-					case "else":
-						val = true
-					case "elsif":
-						val, err = ctx.EvaluateExpr(c.Args)
-						if err != nil {
-							return err
-						}
-					}
-					if val != nil && val != false {
-						return renderASTSequence(w, c.body, ctx)
-					}
-				}
-			}
-			return nil
-		}
-	}
 }

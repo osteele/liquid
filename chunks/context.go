@@ -41,7 +41,8 @@ func (c *Context) evaluateStatement(tag, source string) (interface{}, error) {
 	return c.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source))
 }
 
-func makeExpressionValueFn(source string) (func(Context) (interface{}, error), error) {
+// MakeExpressionValueFn parses source into an evaluation function
+func MakeExpressionValueFn(source string) (func(Context) (interface{}, error), error) {
 	expr, err := expressions.Parse(source)
 	if err != nil {
 		return nil, err

@@ -39,8 +39,8 @@ func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.Name: {
 			"args":     n.Args,
-			"body":     n.body,
-			"branches": n.branches,
+			"body":     n.Body,
+			"branches": n.Branches,
 		}}, nil
 }
 

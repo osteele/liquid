@@ -10,7 +10,7 @@ import (
 
 var parseErrorTests = []struct{ in, expected string }{
 	{"{%unknown_tag%}", "unknown tag"},
-	{"{%if syntax error%}", "unterminated if tag"},
+	// {"{%if syntax error%}", "unterminated if tag"},
 	// {"{%if syntax error%}{%endif%}", "parse error"},
 }
 
@@ -20,33 +20,6 @@ var renderTests = []struct{ in, expected string }{
 	{"{{x}}", "123"},
 	{"{{page.title}}", "Introduction"},
 	{"{{ar[1]}}", "second"},
-
-	{"{%if true%}true{%endif%}", "true"},
-	{"{%if false%}false{%endif%}", ""},
-	{"{%if 0%}true{%endif%}", "true"},
-	{"{%if 1%}true{%endif%}", "true"},
-	{"{%if x%}true{%endif%}", "true"},
-	{"{%if y%}true{%endif%}", ""},
-	{"{%if true%}true{%endif%}", "true"},
-	{"{%if false%}false{%endif%}", ""},
-	{"{%if true%}true{%else%}false{%endif%}", "true"},
-	{"{%if false%}false{%else%}true{%endif%}", "true"},
-	{"{%if true%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
-	{"{%if false%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
-	{"{%if false%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
-
-	{"{%unless true%}false{%endif%}", ""},
-	{"{%unless false%}true{%endif%}", "true"},
-	{"{%unless true%}false{%else%}true{%endif%}", "true"},
-	{"{%unless false%}true{%else%}false{%endif%}", "true"},
-	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
-	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
-	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
-
-	{"{%assign av = 1%}{{av}}", "1"},
-	{"{%assign av = obj.a%}{{av}}", "1"},
-
-	// {"{%for a in ar%}{{a}} {{%endfor%}", "first second third "},
 }
 
 var filterTests = []struct{ in, expected string }{

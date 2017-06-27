@@ -5,8 +5,13 @@ import (
 	"log"
 	"testing"
 
+	"github.com/osteele/liquid/tags"
 	"github.com/stretchr/testify/require"
 )
+
+func init() {
+	tags.DefineStandardTags()
+}
 
 var liquidTests = []struct{ in, expected string }{
 	{"{{page.title}}", "Introduction"},

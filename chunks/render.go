@@ -33,8 +33,8 @@ func (n *ASTText) Render(w io.Writer, _ Context) error {
 	return err
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
-func renderASTSequence(w io.Writer, seq []ASTNode, ctx Context) error {
+// RenderASTSequence renders a sequence of nodes.
+func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
 	for _, n := range seq {
 		if err := n.Render(w, ctx); err != nil {
 			return err
@@ -49,7 +49,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	if !ok {
 		return fmt.Errorf("unimplemented tag: %s", n.Tag)
 	}
-	f := cd.action(n)
+	f := cd.action(*n)
 	return f(w, ctx)
 }
 

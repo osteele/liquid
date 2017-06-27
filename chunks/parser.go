@@ -37,11 +37,11 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					stack = append(stack, frame{cd: ccd, cn: ccn, ap: ap})
 					ccd, ccn = cd, &ASTControlTag{Chunk: c, cd: cd}
 					*ap = append(*ap, ccn)
-					ap = &ccn.body
+					ap = &ccn.Body
 				case cd.IsBranchTag:
 					n := &ASTControlTag{Chunk: c, cd: cd}
-					ccn.branches = append(ccn.branches, n)
-					ap = &n.body
+					ccn.Branches = append(ccn.Branches, n)
+					ap = &n.Body
 				case cd.IsEndTag:
 					f := stack[len(stack)-1]
 					ccd, ccn, ap, stack = f.cd, f.cn, f.ap, stack[:len(stack)-1]
