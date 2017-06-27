@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/generics"
@@ -12,6 +13,27 @@ import (
 
 // DefineStandardFilters defines the standard Liquid filters.
 func DefineStandardFilters() {
+	// values
+	expressions.DefineFilter("default", func(in, defaultValue interface{}) interface{} {
+		if in == nil || in == false || generics.IsEmpty(in) {
+			in = defaultValue
+		}
+		return in
+	})
+
+	// dates
+	expressions.DefineFilter("date", func(in, format interface{}) interface{} {
+		if format != nil {
+			panic("date conversion format is not implemented")
+		}
+		switch in := in.(type) {
+		case time.Time:
+			return in.Format("Mon, Jan 2, 06")
+		default:
+			panic("unimplemented date conversion")
+		}
+	})
+
 	// lists
 	expressions.DefineFilter("join", joinFilter)
 	expressions.DefineFilter("sort", sortFilter)

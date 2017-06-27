@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/filters"
 	"github.com/osteele/liquid/tags"
 )
@@ -23,6 +24,7 @@ func init() {
 //
 // In the future, it will be configured with additional tags, filters, and the {%include%} search path.
 type Engine interface {
+	DefineFilter(name string, fn interface{})
 	DefineTag(string, func(form string) (func(io.Writer, chunks.Context) error, error))
 
 	ParseTemplate(text []byte) (Template, error)
@@ -43,7 +45,13 @@ func NewEngine() Engine {
 	return engine{}
 }
 
+func (e engine) DefineFilter(name string, fn interface{}) {
+	// TODO define this on the engine, not globally
+	expressions.DefineFilter(name, fn)
+}
+
 func (e engine) DefineTag(name string, td func(form string) (func(io.Writer, chunks.Context) error, error)) {
+	// TODO define this on the engine, not globally
 	chunks.DefineTag(name, chunks.TagDefinition(td))
 }
 

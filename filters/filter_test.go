@@ -3,6 +3,7 @@ package filters
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/stretchr/testify/require"
@@ -13,11 +14,18 @@ func init() {
 }
 
 var filterTests = []struct{ in, expected string }{
-	// Jekyll extensions
-	{`obj | inspect`, `{"a":1}`},
+	// values
+	{`4.99 | default: 2.99`, "4.99"},
+	{`undefined | default: 2.99`, "2.99"},
+	{`false | default: 2.99`, "2.99"},
+	{`empty_list | default: 2.99`, "2.99"},
 
-	// filters
-	// product_price | default: 2.99 }}
+	// date filters
+	{`article.published_at | date`, "Fri, Jul 17, 15"},
+	// article.published_at | date: "%a, %b %d, %y"
+	// article.published_at | date: "%Y"
+	// "March 14, 2016" | date: "%b %d, %y"
+	// "now" | date: "%Y-%m-%d %H:%M" }
 
 	// list filters
 	// site.pages | map: 'category' | compact | join "," %}
@@ -64,19 +72,28 @@ var filterTests = []struct{ in, expected string }{
 	// 183.357 | floor
 	// minus, modulo, plus, round,times
 
-	// date filters
-	// article.published_at | date: "%a, %b %d, %y"
-	// article.published_at | date: "%Y"
-	// "March 14, 2016" | date: "%b %d, %y"
-	// "now" | date: "%Y-%m-%d %H:%M" }
+	// Jekyll extensions
+	{`obj | inspect`, `{"a":1}`},
+}
+
+func timeMustParse(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
 
 var filterTestContext = expressions.NewContext(map[string]interface{}{
-	"x": 123,
+	"x":          123,
+	"empty_list": map[string]interface{}{},
 	"obj": map[string]interface{}{
 		"a": 1,
 	},
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
+	"article": map[string]interface{}{
+		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
+	},
 	"pages": []map[string]interface{}{
 		{"category": "business"},
 		{"category": "celebrities"},
@@ -103,7 +120,7 @@ func TestFilters(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
 			val, err := expressions.EvaluateExpr(test.in, filterTestContext)
 			require.NoErrorf(t, err, test.in)
-			actual := fmt.Sprintf("%s", val)
+			actual := fmt.Sprintf("%v", val)
 			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}

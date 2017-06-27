@@ -14,24 +14,6 @@ func genericErrorf(format string, a ...interface{}) error {
 	return GenericError(fmt.Sprintf(format, a...))
 }
 
-// Apply applies a function to arguments, converting them as necessary.
-// The conversion follows Liquid semantics, which are more aggressive than
-// Go conversion. The function should return one or two values; the second value,
-// if present, should be an error.
-func Apply(fn reflect.Value, args []interface{}) (interface{}, error) {
-	in := convertArguments(fn, args)
-	outs := fn.Call(in)
-	if len(outs) > 1 && outs[1].Interface() != nil {
-		switch e := outs[1].Interface().(type) {
-		case error:
-			return nil, e
-		default:
-			panic(e)
-		}
-	}
-	return outs[0].Interface(), nil
-}
-
 // Convert val to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
@@ -58,17 +40,18 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 	panic(genericErrorf("convertType: can't convert %#v<%s> to %v", val, r.Type(), t))
 }
 
-// Convert args to match the input types of function fn.
-func convertArguments(fn reflect.Value, in []interface{}) []reflect.Value {
-	rt := fn.Type()
-	out := make([]reflect.Value, rt.NumIn())
-	for i, arg := range in {
-		if i < rt.NumIn() {
-			out[i] = convertType(arg, rt.In(i))
-		}
+// IsEmpty returns a bool indicating whether the value is empty according to Liquid semantics.
+func IsEmpty(in interface{}) bool {
+	if in == nil {
+		return false
 	}
-	for i := len(in); i < rt.NumIn(); i++ {
-		out[i] = reflect.Zero(rt.In(i))
+	r := reflect.ValueOf(in)
+	switch r.Kind() {
+	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		return r.Len() == 0
+	case reflect.Bool:
+		return r.Bool() == false
+	default:
+		return false
 	}
-	return out
 }
