@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/osteele/liquid/errors"
+	"github.com/osteele/liquid/generics"
 )
 
 type InterpreterError string
@@ -33,9 +34,9 @@ func sortFilter(in []interface{}, key interface{}) []interface{} {
 		out[i] = v
 	}
 	if key == nil {
-		genericSort(out)
+		generics.Sort(out)
 	} else {
-		sortByProperty(out, key.(string))
+		generics.SortByProperty(out, key.(string))
 	}
 	return out
 }
@@ -87,7 +88,7 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 		defer func() {
 			if r := recover(); r != nil {
 				switch e := r.(type) {
-				case genericError:
+				case generics.GenericError:
 					panic(InterpreterError(e.Error()))
 				default:
 					// fmt.Println(string(debug.Stack()))
@@ -99,7 +100,7 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 		if param != nil {
 			args = append(args, param(ctx))
 		}
-		out, err := genericApply(fr, args)
+		out, err := generics.Apply(fr, args)
 		if err != nil {
 			panic(err)
 		}

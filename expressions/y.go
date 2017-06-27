@@ -6,14 +6,17 @@ import __yyfmt__ "fmt"
 //line expressions.y:2
 import (
 	"fmt"
+	"github.com/osteele/liquid/generics"
 	"reflect"
 )
 
 func init() {
+	// This allows adding and removing references to fmt in the rules below,
+	// without having to edit the import statement to avoid erorrs each time.
 	_ = fmt.Sprint("")
 }
 
-//line expressions.y:13
+//line expressions.y:16
 type yySymType struct {
 	yys  int
 	name string
@@ -466,13 +469,13 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:27
+		//line expressions.y:30
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line expressions.y:28
+		//line expressions.y:31
 		{
 			name, expr := yyDollar[2].name, yyDollar[4].f
 			yylex.(*lexer).val = func(ctx Context) interface{} {
@@ -482,21 +485,21 @@ yydefault:
 		}
 	case 3:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expressions.y:37
+		//line expressions.y:40
 		{
 			val := yyDollar[1].val
 			yyVAL.f = func(_ Context) interface{} { return val }
 		}
 	case 4:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line expressions.y:38
+		//line expressions.y:41
 		{
 			name := yyDollar[1].name
 			yyVAL.f = func(ctx Context) interface{} { return ctx.Get(name) }
 		}
 	case 5:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:39
+		//line expressions.y:42
 		{
 			e, attr := yyDollar[1].f, yyDollar[3].name
 			yyVAL.f = func(ctx Context) interface{} {
@@ -514,7 +517,7 @@ yydefault:
 		}
 	case 6:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:54
+		//line expressions.y:57
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -535,44 +538,44 @@ yydefault:
 		}
 	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:75
+		//line expressions.y:78
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, nil)
 		}
 	case 9:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:76
+		//line expressions.y:79
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, yyDollar[4].f)
 		}
 	case 11:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:81
+		//line expressions.y:84
 		{
-			a, b := yyDollar[1].f, yyDollar[3].f
+			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
-				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-				return GenericCompare(aref, bref) == 0
+				a, b := fa(ctx), fb(ctx)
+				return a == b
 			}
 		}
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:88
+		//line expressions.y:91
 		{
-			a, b := yyDollar[1].f, yyDollar[3].f
+			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
-				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-				return GenericCompare(aref, bref) < 0
+				a, b := fa(ctx), fb(ctx)
+				return generics.Less(a, b)
 			}
 		}
 	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:95
+		//line expressions.y:98
 		{
-			a, b := yyDollar[1].f, yyDollar[3].f
+			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
-				aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-				return GenericCompare(aref, bref) > 0
+				a, b := fa(ctx), fb(ctx)
+				return generics.Less(b, a)
 			}
 		}
 	}

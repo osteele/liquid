@@ -3,9 +3,12 @@ package expressions
 import (
     "fmt"
 	"reflect"
+	"github.com/osteele/liquid/generics"
 )
 
 func init() {
+	// This allows adding and removing references to fmt in the rules below,
+	// without having to edit the import statement to avoid erorrs each time.
 	_ = fmt.Sprint("")
 }
 
@@ -79,25 +82,24 @@ expr1:
 rel:
   expr1
 | expr EQ expr {
-	a, b := $1, $3
+	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
-		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-		return GenericCompare(aref, bref) == 0
+		a, b := fa(ctx), fb(ctx)
+		return generics.Equal(a, b)
 	}
 }
 | expr '<' expr {
-	a, b := $1, $3
+	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
-		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-		return GenericCompare(aref, bref) < 0
+		a, b := fa(ctx), fb(ctx)
+		return generics.Less(a, b)
 	}
 }
 | expr '>' expr {
-	a, b := $1, $3
+	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
-		aref, bref := reflect.ValueOf(a(ctx)), reflect.ValueOf(b(ctx))
-		return GenericCompare(aref, bref) > 0
+		a, b := fa(ctx), fb(ctx)
+		return generics.Less(b, a)
 	}
 }
 ;
-
