@@ -16,6 +16,7 @@ func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.
+// TODO probably safe to remove this type and method, once the test suite is larger
 func (n *ASTChunks) Render(w io.Writer, _ Context) error {
 	fmt.Println(MustYAML(n))
 	return fmt.Errorf("unimplemented: ASTChunks.Render")
@@ -80,6 +81,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
+	// TODO separate this into parse and evaluate stages.
 	val, err := ctx.EvaluateExpr(n.chunk.Args)
 	if err != nil {
 		return err

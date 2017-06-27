@@ -8,6 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var parseErrorTests = []struct{ in, expected string }{
+	{"{%unknown_tag%}", "unknown tag"},
+}
+
 var renderTests = []struct{ in, expected string }{
 	{"{{12}}", "12"},
 	{"{{x}}", "123"},
@@ -43,16 +47,20 @@ var renderTests = []struct{ in, expected string }{
 }
 
 var filterTests = []struct{ in, expected string }{
+	// Jekyll extensions
+	{`{{ obj | inspect }}`, `{"a":1}`},
+
 	// filters
 	// {{ product_price | default: 2.99 }}
 
 	// list filters
 	// {{ site.pages | map: 'category' | compact | join "," %}
 	// {% assign my_array = "apples, oranges, peaches, plums" | split: ", " %}{{ my_array.first }}
-	// {`{{"John, Paul, George, Ringo" | split: ", " }}`, "John and Paul and George and Ringo"},
 	{`{{"John, Paul, George, Ringo" | split: ", " | join: " and "}}`, "John and Paul and George and Ringo"},
 	{`{{ animals | sort | join: ", " }}`, "Sally Snake, giraffe, octopus, zebra"},
-	// join, last, map, slice, sort, sort_natural, reverse, size, uniq
+	// {`{{ sort_prop | sort: "weight" | inspect }}`, "Sally Snake, giraffe, octopus, zebra"},
+
+	// last, map, slice, sort_natural, reverse, size, uniq
 
 	// string filters
 	// {{ "/my/fancy/url" | append: ".html" }}
@@ -112,6 +120,12 @@ var renderTestContext = Context{map[string]interface{}{
 		{},
 		{"category": "technology"},
 	},
+	"sort_prop": []map[string]interface{}{
+		{"weight": 1},
+		{"weight": 5},
+		{"weight": 3},
+		{"weight": nil},
+	},
 	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
@@ -119,6 +133,17 @@ var renderTestContext = Context{map[string]interface{}{
 },
 }
 
+func TestParseErrors(t *testing.T) {
+	for i, test := range parseErrorTests {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			tokens := Scan(test.in, "")
+			ast, err := Parse(tokens)
+			require.Nilf(t, ast, test.in)
+			require.Errorf(t, err, test.in)
+			require.Containsf(t, err.Error(), test.expected, test.in)
+		})
+	}
+}
 func TestRender(t *testing.T) {
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {

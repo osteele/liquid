@@ -5,6 +5,13 @@ import (
 	"reflect"
 )
 
+type genericError struct{ message string }
+
+func (e *genericError) Error() string { return e.message }
+func genericErrorf(format string, a ...interface{}) error {
+	return &genericError{message: fmt.Sprintf(format, a...)}
+}
+
 type sortable []interface{}
 
 // Len is part of sort.Interface.
@@ -45,7 +52,7 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 		}
 		return x
 	}
-	panic(fmt.Errorf("convertType: can't convert %#v<%s> to %v", val, r.Type(), t))
+	panic(genericErrorf("convertType: can't convert %#v<%s> to %v", val, r.Type(), t))
 }
 
 // Convert args to match the input types of fr, which should be a function reflection.
@@ -63,7 +70,7 @@ func convertArguments(fv reflect.Value, args []interface{}) []reflect.Value {
 func genericSameTypeCompare(av, bv interface{}) int {
 	a, b := reflect.ValueOf(av), reflect.ValueOf(bv)
 	if a.Kind() != b.Kind() {
-		panic(fmt.Errorf("different types: %v and %v", a, b))
+		panic(genericErrorf("different types: %v and %v", a, b))
 	}
 	if a == b {
 		return 0
@@ -74,7 +81,7 @@ func genericSameTypeCompare(av, bv interface{}) int {
 			return -1
 		}
 	default:
-		panic(fmt.Errorf("unimplemented generic comparison for %s", a.Kind()))
+		panic(genericErrorf("unimplemented generic comparison for %s", a.Kind()))
 	}
 	return 1
 }
@@ -126,7 +133,7 @@ func GenericCompare(a, b reflect.Value) int {
 			return 0
 		}
 	}
-	panic(fmt.Errorf("unimplemented: comparison of %v<%s> with %v<%s>", a, ak, b, bk))
+	panic(genericErrorf("unimplemented: comparison of %v<%s> with %v<%s>", a, ak, b, bk))
 }
 
 func hasIntKind(n reflect.Value) bool {

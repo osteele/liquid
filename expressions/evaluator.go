@@ -2,6 +2,8 @@ package expressions
 
 import (
 	"fmt"
+
+	"github.com/osteele/liquid/errors"
 )
 
 // Expression is a parsed expression.
@@ -15,7 +17,17 @@ type expression struct {
 }
 
 // Parse parses an expression string into an Expression.
-func Parse(source string) (Expression, error) {
+func Parse(source string) (expr Expression, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch e := r.(type) {
+			case errors.UndefinedFilter:
+				err = e
+			default:
+				panic(r)
+			}
+		}
+	}()
 	lexer := newLexer([]byte(source + ";"))
 	n := yyParse(lexer)
 	if n != 0 {

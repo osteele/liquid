@@ -1,10 +1,13 @@
 package expressions
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
 	"strings"
+
+	"github.com/osteele/liquid/errors"
 )
 
 type valueFn func(Context) interface{}
@@ -41,9 +44,21 @@ func init() {
 }
 
 func DefineStandardFilters() {
+	// lists
 	DefineFilter("join", joinFilter)
 	DefineFilter("sort", sortFilter)
+
+	// strings
 	DefineFilter("split", splitFilter)
+
+	// Jekyll
+	DefineFilter("inspect", func(in interface{}) string {
+		b, err := json.Marshal(in)
+		if err != nil {
+			panic(err)
+		}
+		return string(b)
+	})
 }
 
 func DefineFilter(name string, fn interface{}) {
@@ -54,13 +69,27 @@ func DefineFilter(name string, fn interface{}) {
 	filters[name] = fn
 }
 
+type InterpreterError string
+
+func (e InterpreterError) Error() string { return string(e) }
+
 func makeFilter(f valueFn, name string, param valueFn) valueFn {
 	fn, ok := filters[name]
 	if !ok {
-		panic(fmt.Errorf("unknown filter: %s", name))
+		panic(errors.UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(fn)
 	return func(ctx Context) interface{} {
+		defer func() {
+			if r := recover(); r != nil {
+				switch e := r.(type) {
+				case *genericError:
+					panic(InterpreterError(e.Error()))
+				default:
+					panic(e)
+				}
+			}
+		}()
 		args := []interface{}{f(ctx)}
 		if param != nil {
 			args = append(args, param(ctx))

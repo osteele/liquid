@@ -22,10 +22,20 @@ func NewContext(scope map[string]interface{}) Context {
 }
 
 // EvaluateExpr evaluates an expression within the template context.
-func (c *Context) EvaluateExpr(source string) (interface{}, error) {
+func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch e := r.(type) {
+			case expressions.InterpreterError:
+				err = e
+			default:
+				panic(e)
+			}
+		}
+	}()
 	return expressions.EvaluateExpr(source, expressions.NewContext(c.vars))
 }
 
 func (c *Context) evaluateStatement(tag, source string) (interface{}, error) {
-	return expressions.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source), expressions.NewContext(c.vars))
+	return c.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source))
 }
