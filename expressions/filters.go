@@ -3,7 +3,6 @@ package expressions
 import (
 	"fmt"
 	"reflect"
-	"runtime/debug"
 
 	"github.com/osteele/liquid/errors"
 	"github.com/osteele/liquid/generics"
@@ -49,7 +48,7 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 				case generics.GenericError:
 					panic(InterpreterError(e.Error()))
 				default:
-					fmt.Println(string(debug.Stack()))
+					// fmt.Println(string(debug.Stack()))
 					panic(e)
 				}
 			}

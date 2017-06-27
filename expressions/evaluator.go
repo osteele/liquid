@@ -1,6 +1,20 @@
 package expressions
 
-func (e expression) Evaluate(ctx Context) (interface{}, error) {
+import "github.com/osteele/liquid/errors"
+
+func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch e := r.(type) {
+			case UnimplementedError:
+				err = e
+			case errors.UndefinedFilter:
+				err = e
+			default:
+				panic(r)
+			}
+		}
+	}()
 	return e.evaluator(ctx), nil
 }
 

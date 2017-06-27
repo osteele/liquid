@@ -21,6 +21,12 @@ type ParseError string
 
 func (e ParseError) Error() string { return string(e) }
 
+type UnimplementedError string
+
+func (e UnimplementedError) Error() string {
+	return fmt.Sprintf("unimplemented %s", string(e))
+}
+
 // Expression is a parsed expression.
 type Expression interface {
 	// Evaluate evaluates an expression in a context.
@@ -37,6 +43,8 @@ func Parse(source string) (expr Expression, err error) {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
 			case ParseError:
+				err = e
+			case UnimplementedError:
 				err = e
 			case errors.UndefinedFilter:
 				err = e

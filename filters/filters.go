@@ -24,13 +24,13 @@ func DefineStandardFilters() {
 	// dates
 	expressions.DefineFilter("date", func(in, format interface{}) interface{} {
 		if format != nil {
-			panic("date conversion format is not implemented")
+			panic(expressions.UnimplementedError("date conversion format"))
 		}
 		switch in := in.(type) {
 		case time.Time:
 			return in.Format("Mon, Jan 2, 06")
 		default:
-			panic("unimplemented date conversion")
+			panic(expressions.UnimplementedError("date conversion"))
 		}
 	})
 
