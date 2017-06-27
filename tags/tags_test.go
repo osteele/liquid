@@ -15,14 +15,36 @@ var parseErrorTests = []struct{ in, expected string }{
 	// {"{%if syntax error%}{%endif%}", "parse error"},
 }
 
-var renderTests = []struct{ in, expected string }{
-	{"{{12}}", "12"},
-	{"{{x}}", "123"},
-	{"{{page.title}}", "Introduction"},
-	{"{{ar[1]}}", "second"},
+var tagTests = []struct{ in, expected string }{
+	{"{%if true%}true{%endif%}", "true"},
+	{"{%if false%}false{%endif%}", ""},
+	{"{%if 0%}true{%endif%}", "true"},
+	{"{%if 1%}true{%endif%}", "true"},
+	{"{%if x%}true{%endif%}", "true"},
+	{"{%if y%}true{%endif%}", ""},
+	{"{%if true%}true{%endif%}", "true"},
+	{"{%if false%}false{%endif%}", ""},
+	{"{%if true%}true{%else%}false{%endif%}", "true"},
+	{"{%if false%}false{%else%}true{%endif%}", "true"},
+	{"{%if true%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
+	{"{%if false%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
+	{"{%if false%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+
+	{"{%unless true%}false{%endif%}", ""},
+	{"{%unless false%}true{%endif%}", "true"},
+	{"{%unless true%}false{%else%}true{%endif%}", "true"},
+	{"{%unless false%}true{%else%}false{%endif%}", "true"},
+	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
+	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
+	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+
+	{"{%assign av = 1%}{{av}}", "1"},
+	{"{%assign av = obj.a%}{{av}}", "1"},
+
+	// {"{%for a in ar%}{{a}} {{%endfor%}", "first second third "},
 }
 
-var renderTestContext = chunks.NewContext(map[string]interface{}{
+var tagTestContext = chunks.NewContext(map[string]interface{}{
 	"x": 123,
 	"obj": map[string]interface{}{
 		"a": 1,
@@ -64,7 +86,7 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 func TestRender(t *testing.T) {
-	for i, test := range renderTests {
+	for i, test := range tagTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
 			tokens := chunks.Scan(test.in, "")
 			// fmt.Println(tokens)
@@ -72,7 +94,7 @@ func TestRender(t *testing.T) {
 			require.NoErrorf(t, err, test.in)
 			// fmt.Println(MustYAML(ast))
 			buf := new(bytes.Buffer)
-			err = ast.Render(buf, renderTestContext)
+			err = ast.Render(buf, tagTestContext)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})
