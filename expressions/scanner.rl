@@ -88,6 +88,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			"==" => { tok = EQ; fbreak; };
 			("!=" | ">" | ">" | ">=" | "<=") => Relation;
 			("and" | "or" | "contains") => Relation;
+			ident ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
 			ident => Ident;
 			space+;
 			any => { tok = int(lex.data[lex.ts]); fbreak; };

@@ -23,9 +23,10 @@ type yySymType struct {
 
 const LITERAL = 57346
 const IDENTIFIER = 57347
-const RELATION = 57348
-const ASSIGN = 57349
-const EQ = 57350
+const KEYWORD = 57348
+const RELATION = 57349
+const ASSIGN = 57350
+const EQ = 57351
 
 var yyToknames = [...]string{
 	"$end",
@@ -33,15 +34,16 @@ var yyToknames = [...]string{
 	"$unk",
 	"LITERAL",
 	"IDENTIFIER",
+	"KEYWORD",
 	"RELATION",
 	"ASSIGN",
 	"EQ",
 	"'.'",
+	"'|'",
 	"'<'",
 	"'>'",
 	"';'",
 	"'='",
-	"'|'",
 	"'['",
 	"']'",
 }
@@ -64,42 +66,42 @@ const yyLast = 35
 
 var yyAct = [...]int{
 
-	12, 9, 13, 14, 4, 9, 10, 11, 9, 7,
-	10, 11, 23, 10, 11, 15, 18, 19, 20, 21,
-	22, 9, 5, 6, 24, 3, 10, 11, 5, 6,
-	17, 16, 8, 1, 2,
+	5, 13, 11, 11, 14, 15, 11, 4, 12, 12,
+	27, 8, 12, 20, 21, 22, 23, 25, 10, 26,
+	16, 28, 10, 19, 24, 6, 7, 17, 18, 3,
+	6, 7, 9, 1, 2,
 }
 var yyPact = [...]int{
 
-	18, -1000, -3, 27, -8, -1000, -1000, -1000, 2, 26,
-	25, 24, 24, 24, 24, 24, -1000, -1000, -4, -1,
-	-1, -1, 12, -1000, -1000,
+	21, -1000, -3, 27, 11, -8, -1000, -1000, -1000, 5,
+	22, 18, 26, 26, 26, 26, 26, -1000, 26, -1000,
+	-7, -4, -4, -4, 7, -4, -4, -1000, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 4, 34, 33,
+	0, 0, 34, 7, 33,
 }
 var yyR1 = [...]int{
 
-	0, 3, 3, 1, 1, 1, 1, 1, 2, 2,
-	2, 2,
+	0, 4, 4, 1, 1, 1, 1, 3, 3, 3,
+	2, 2, 2, 2,
 }
 var yyR2 = [...]int{
 
-	0, 2, 5, 1, 1, 3, 3, 4, 1, 3,
-	3, 3,
+	0, 2, 5, 1, 1, 3, 4, 1, 3, 4,
+	1, 3, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -3, -2, 7, -1, 4, 5, 12, 5, 9,
-	14, 15, 8, 10, 11, 13, 5, 5, -1, -1,
-	-1, -1, -1, 16, 12,
+	-1000, -4, -2, 8, -3, -1, 4, 5, 14, 5,
+	11, 10, 16, 9, 12, 13, 15, 5, 6, 5,
+	-1, -1, -1, -1, -3, -1, -1, 17, 14,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 0, 8, 3, 4, 1, 0, 0,
-	0, 0, 0, 0, 0, 0, 5, 6, 0, 9,
-	10, 11, 0, 7, 2,
+	0, -2, 0, 0, 10, 7, 3, 4, 1, 0,
+	0, 0, 0, 0, 0, 0, 0, 8, 0, 5,
+	0, 11, 12, 13, 0, 7, 9, 6, 2,
 }
 var yyTok1 = [...]int{
 
@@ -107,19 +109,19 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 9, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 12,
-	10, 13, 11, 3, 3, 3, 3, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 10, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 14,
+	12, 15, 13, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 15, 3, 16, 3, 3, 3, 3, 3, 3,
+	3, 16, 3, 17, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 14,
+	3, 3, 3, 3, 11,
 }
 var yyTok2 = [...]int{
 
-	2, 3, 4, 5, 6, 7, 8,
+	2, 3, 4, 5, 6, 7, 8, 9,
 }
 var yyTok3 = [...]int{
 	0,
@@ -511,14 +513,8 @@ yydefault:
 			}
 		}
 	case 6:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:54
-		{
-			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name)
-		}
-	case 7:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:55
+		//line expressions.y:54
 		{
 			e, i := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -537,9 +533,21 @@ yydefault:
 				return nil
 			}
 		}
-	case 9:
+	case 8:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:77
+		//line expressions.y:75
+		{
+			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, nil)
+		}
+	case 9:
+		yyDollar = yyS[yypt-4 : yypt+1]
+		//line expressions.y:76
+		{
+			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, yyDollar[4].f)
+		}
+	case 11:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expressions.y:81
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -547,9 +555,9 @@ yydefault:
 				return GenericCompare(aref, bref) == 0
 			}
 		}
-	case 10:
+	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:84
+		//line expressions.y:88
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -557,9 +565,9 @@ yydefault:
 				return GenericCompare(aref, bref) < 0
 			}
 		}
-	case 11:
+	case 13:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:91
+		//line expressions.y:95
 		{
 			a, b := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

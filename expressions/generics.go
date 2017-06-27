@@ -30,6 +30,9 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 	if r.Type().ConvertibleTo(t) {
 		return r.Convert(t)
 	}
+	if reflect.PtrTo(r.Type()) == t {
+		return reflect.ValueOf(&val)
+	}
 	switch t.Kind() {
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
@@ -42,7 +45,7 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 		}
 		return x
 	}
-	panic(fmt.Errorf("convertType: can't convert %v to %v", val, t))
+	panic(fmt.Errorf("convertType: can't convert %#v<%s> to %v", val, r.Type(), t))
 }
 
 // Convert args to match the input types of fr, which should be a function reflection.

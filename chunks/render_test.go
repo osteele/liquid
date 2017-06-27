@@ -49,9 +49,9 @@ var filterTests = []struct{ in, expected string }{
 	// list filters
 	// {{ site.pages | map: 'category' | compact | join "," %}
 	// {% assign my_array = "apples, oranges, peaches, plums" | split: ", " %}{{ my_array.first }}
-	// {`{{"John, Paul, George, Ringo" | split: ", " | join: "and"}}`, "John and Paul and George and Ringo"},
-	{`{{ animals | sort | join }}`, "Sally Snake, giraffe, octopus, zebra"},
-	// {`{{ animals | sort | join: "," }}`, "Sally Snake, giraffe, octopus, zebra"},
+	// {`{{"John, Paul, George, Ringo" | split: ", " }}`, "John and Paul and George and Ringo"},
+	{`{{"John, Paul, George, Ringo" | split: ", " | join: " and "}}`, "John and Paul and George and Ringo"},
+	{`{{ animals | sort | join: ", " }}`, "Sally Snake, giraffe, octopus, zebra"},
 	// join, last, map, slice, sort, sort_natural, reverse, size, uniq
 
 	// string filters

@@ -15,17 +15,17 @@ func init() {
    val interface{}
    f func(Context) interface{}
 }
-%type <f> expr rel
+%type <f> expr rel expr1
 %token <val> LITERAL
-%token <name> IDENTIFIER RELATION
+%token <name> IDENTIFIER KEYWORD RELATION
 %token ASSIGN
 %token EQ
-%left '.'
+%left '.' '|'
 %left '<' '>'
 %%
 start:
   rel ';' { yylex.(*lexer).val = $1 }
-| ASSIGN IDENTIFIER '=' expr ';' {
+| ASSIGN IDENTIFIER '=' expr1 ';' {
 	name, expr := $2, $4
 	yylex.(*lexer).val = func(ctx Context) interface{} {
 		ctx.Set(name, expr(ctx))
@@ -51,7 +51,6 @@ expr:
 			return nil
 	}
 }
-| expr '|' IDENTIFIER { $$ = makeFilter($1, $3) }
 | expr '[' expr ']' {
 	e, i := $1, $3
 	$$ = func(ctx Context) interface{} {
@@ -70,10 +69,15 @@ expr:
 		return nil
 	}
 }
+
+expr1:
+  expr
+| expr1 '|' IDENTIFIER { $$ = makeFilter($1, $3, nil) }
+| expr1 '|' KEYWORD expr { $$ = makeFilter($1, $3, $4) }
 ;
 
 rel:
-  expr
+  expr1
 | expr EQ expr {
 	a, b := $1, $3
 	$$ = func(ctx Context) interface{} {
