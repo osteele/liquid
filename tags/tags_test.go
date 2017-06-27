@@ -16,6 +16,9 @@ var parseErrorTests = []struct{ in, expected string }{
 }
 
 var tagTests = []struct{ in, expected string }{
+	// TODO test whether this requires matching interior tags
+	{"{%comment%}{{a}}{%unknown%}{%endcomment%}", ""},
+
 	{"{%if true%}true{%endif%}", "true"},
 	{"{%if false%}false{%endif%}", ""},
 	{"{%if 0%}true{%endif%}", "true"},

@@ -12,21 +12,28 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		ap *[]ASTNode
 	}
 	var (
-		root  = &ASTSeq{}
-		ap    = &root.Children // pointer to current node accumulation slice
-		ccd   *controlTagDefinition
-		ccn   *ASTControlTag
-		stack []frame // stack of control structures
+		root      = &ASTSeq{}
+		ap        = &root.Children // pointer to current node accumulation slice
+		ccd       *controlTagDefinition
+		ccn       *ASTControlTag
+		stack     []frame // stack of control structures
+		inComment = false
 	)
 	for _, c := range chunks {
-		switch c.Type {
-		case ObjChunkType:
+		switch {
+		case inComment:
+			if c.Type == TagChunkType && c.Tag == "endcomment" {
+				inComment = false
+			}
+		case c.Type == ObjChunkType:
 			*ap = append(*ap, &ASTObject{Chunk: c})
-		case TextChunkType:
+		case c.Type == TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
-		case TagChunkType:
+		case c.Type == TagChunkType:
 			if cd, ok := findControlTagDefinition(c.Tag); ok {
 				switch {
+				case c.Tag == "comment":
+					inComment = true
 				case cd.requiresParent() && !cd.compatibleParent(ccd):
 					suffix := ""
 					if ccd != nil {

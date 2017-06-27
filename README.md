@@ -14,7 +14,7 @@
   - [x] Arrays
   - [ ] Whitespace Control
 - [ ] Tags
-  - [ ] Comment
+  - [x] Comment
   - [ ] Control Flow
     - [x] if/else/elsif
     - [x] unless
