@@ -10,11 +10,13 @@ VERSION=0.0.0
 
 LDFLAGS=-ldflags "-X ${PACKAGE}.Version=${VERSION} -X ${PACKAGE}.BuildTime=${BUILD_TIME}"
 
-.DEFAULT_GOAL: $(LIBRARY)
-.PHONY: build clean dependencies setup install lint test help
+.DEFAULT_GOAL: ci
+.PHONY: build clean ci dependencies setup install lint test help
+
+ci: setup test #lint
 
 $(LIBRARY): $(SOURCES)
-	go build ${LDFLAGS} -o ${LIBRARY} ${PACKAGE}/cmd/liquid
+	go build ${LDFLAGS} -o ${LIBRARY} ${PACKAGE}
 
 build: $(LIBRARY) ## compile the package
 
