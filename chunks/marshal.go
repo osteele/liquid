@@ -38,7 +38,7 @@ func (n ASTChunks) MarshalYAML() (interface{}, error) {
 func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.Name: {
-			"args":     n.chunk.Args,
+			"args":     n.Args,
 			"body":     n.body,
 			"branches": n.branches,
 		}}, nil
@@ -46,10 +46,10 @@ func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 
 // MarshalYAML marshalls a chunk for debugging.
 func (n ASTText) MarshalYAML() (interface{}, error) {
-	return n.chunk.MarshalYAML()
+	return n.Chunk.MarshalYAML()
 }
 
 // MarshalYAML marshalls a chunk for debugging.
 func (n ASTObject) MarshalYAML() (interface{}, error) {
-	return n.chunk.MarshalYAML()
+	return n.Chunk.MarshalYAML()
 }

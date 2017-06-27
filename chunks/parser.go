@@ -21,9 +21,9 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 	for _, c := range chunks {
 		switch c.Type {
 		case ObjChunkType:
-			*ap = append(*ap, &ASTObject{chunk: c})
+			*ap = append(*ap, &ASTObject{Chunk: c})
 		case TextChunkType:
-			*ap = append(*ap, &ASTText{chunk: c})
+			*ap = append(*ap, &ASTText{Chunk: c})
 		case TagChunkType:
 			if cd, ok := FindControlDefinition(c.Tag); ok {
 				switch {
@@ -35,11 +35,11 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					return nil, fmt.Errorf("%s not inside %s%s", cd.Name, cd.Parent.Name, suffix)
 				case cd.IsStartTag():
 					stack = append(stack, frame{cd: ccd, cn: ccn, ap: ap})
-					ccd, ccn = cd, &ASTControlTag{chunk: c, cd: cd}
+					ccd, ccn = cd, &ASTControlTag{Chunk: c, cd: cd}
 					*ap = append(*ap, ccn)
 					ap = &ccn.body
 				case cd.IsBranchTag:
-					n := &ASTControlTag{chunk: c, cd: cd}
+					n := &ASTControlTag{Chunk: c, cd: cd}
 					ccn.branches = append(ccn.branches, n)
 					ap = &n.body
 				case cd.IsEndTag:
@@ -51,7 +51,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 				if err != nil {
 					return nil, err
 				}
-				*ap = append(*ap, &ASTGenericTag{chunk: c, render: f})
+				*ap = append(*ap, &ASTGenericTag{render: f})
 			} else {
 				return nil, fmt.Errorf("unknown tag: %s", c.Tag)
 			}

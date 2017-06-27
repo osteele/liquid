@@ -29,7 +29,7 @@ func (n *ASTGenericTag) Render(w io.Writer, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTText) Render(w io.Writer, _ Context) error {
-	_, err := w.Write([]byte(n.chunk.Source))
+	_, err := w.Write([]byte(n.Source))
 	return err
 }
 
@@ -45,9 +45,9 @@ func renderASTSequence(w io.Writer, seq []ASTNode, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
-	cd, ok := FindControlDefinition(n.chunk.Tag)
+	cd, ok := FindControlDefinition(n.Tag)
 	if !ok {
-		return fmt.Errorf("unimplemented tag: %s", n.chunk.Tag)
+		return fmt.Errorf("unimplemented tag: %s", n.Tag)
 	}
 	f := cd.action(n)
 	return f(w, ctx)
@@ -56,7 +56,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 	// TODO separate this into parse and evaluate stages.
-	val, err := ctx.EvaluateExpr(n.chunk.Args)
+	val, err := ctx.EvaluateExpr(n.Args)
 	if err != nil {
 		return err
 	}

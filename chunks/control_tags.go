@@ -100,7 +100,7 @@ func (ct *ControlTagDefinition) Action(fn ControlTagAction) {
 
 func ifTagAction(polarity bool) func(*ASTControlTag) func(io.Writer, Context) error {
 	return func(n *ASTControlTag) func(io.Writer, Context) error {
-		expr, err := makeExpressionValueFn(n.chunk.Args)
+		expr, err := makeExpressionValueFn(n.Args)
 		if err != nil {
 			return func(io.Writer, Context) error { return err }
 		}
@@ -117,11 +117,11 @@ func ifTagAction(polarity bool) func(*ASTControlTag) func(io.Writer, Context) er
 				return renderASTSequence(w, n.body, ctx)
 			case nil, false:
 				for _, c := range n.branches {
-					switch c.chunk.Tag {
+					switch c.Tag {
 					case "else":
 						val = true
 					case "elsif":
-						val, err = ctx.EvaluateExpr(c.chunk.Args)
+						val, err = ctx.EvaluateExpr(c.Args)
 						if err != nil {
 							return err
 						}
