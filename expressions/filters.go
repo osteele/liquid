@@ -10,6 +10,10 @@ import (
 	"github.com/osteele/liquid/errors"
 )
 
+type InterpreterError string
+
+func (e InterpreterError) Error() string { return string(e) }
+
 type valueFn func(Context) interface{}
 
 func joinFilter(in []interface{}, sep interface{}) interface{} {
@@ -24,13 +28,15 @@ func joinFilter(in []interface{}, sep interface{}) interface{} {
 	return strings.Join(a, s)
 }
 
+// func sortFilter(in []interface{}, key interface{}) []interface{} {
+// 	fmt.Println("sort", in, key)
 func sortFilter(in []interface{}) []interface{} {
-	a := make([]interface{}, len(in))
-	for i, x := range in {
-		a[i] = x
+	out := make([]interface{}, len(in))
+	for i, v := range in {
+		out[i] = v
 	}
-	sort.Sort(sortable(a))
-	return a
+	sort.Sort(genericSortable(out))
+	return out
 }
 
 func splitFilter(in, sep string) interface{} {
@@ -52,26 +58,23 @@ func DefineStandardFilters() {
 	DefineFilter("split", splitFilter)
 
 	// Jekyll
-	DefineFilter("inspect", func(in interface{}) string {
-		b, err := json.Marshal(in)
-		if err != nil {
-			panic(err)
-		}
-		return string(b)
-	})
+	DefineFilter("inspect", json.Marshal)
 }
 
 func DefineFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
-	if rf.Kind() != reflect.Func || rf.Type().NumIn() < 0 || rf.Type().NumOut() != 1 {
-		panic(fmt.Errorf("a filter must be a function with at least one input and exactly one output"))
+	switch {
+	case rf.Kind() != reflect.Func:
+		panic(fmt.Errorf("a filter must be a function"))
+	case rf.Type().NumIn() < 1:
+		panic(fmt.Errorf("a filter function must have at least one input"))
+	case rf.Type().NumOut() > 2:
+		panic(fmt.Errorf("a filter must be have one or two outputs"))
+		// case rf.Type().Out(1).Implements(…):
+		// 	panic(fmt.Errorf("a filter's second output must be type error"))
 	}
 	filters[name] = fn
 }
-
-type InterpreterError string
-
-func (e InterpreterError) Error() string { return string(e) }
 
 func makeFilter(f valueFn, name string, param valueFn) valueFn {
 	fn, ok := filters[name]
@@ -83,9 +86,10 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 		defer func() {
 			if r := recover(); r != nil {
 				switch e := r.(type) {
-				case *genericError:
+				case genericError:
 					panic(InterpreterError(e.Error()))
 				default:
+					// fmt.Println(string(debug.Stack()))
 					panic(e)
 				}
 			}
@@ -95,7 +99,16 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 			args = append(args, param(ctx))
 		}
 		in := convertArguments(fr, args)
-		r := fr.Call(in)[0]
-		return r.Interface()
+		outs := fr.Call(in)
+		if len(outs) > 1 && outs[1].Interface() != nil {
+			err := outs[1].Interface()
+			panic(err)
+		}
+		switch out := outs[0].Interface().(type) {
+		case []byte:
+			return string(out)
+		default:
+			return out
+		}
 	}
 }

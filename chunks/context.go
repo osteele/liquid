@@ -29,6 +29,7 @@ func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
 			case expressions.InterpreterError:
 				err = e
 			default:
+				// fmt.Println(string(debug.Stack()))
 				panic(e)
 			}
 		}

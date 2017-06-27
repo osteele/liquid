@@ -5,27 +5,28 @@ import (
 	"reflect"
 )
 
-type genericError struct{ message string }
+type genericError string
 
-func (e *genericError) Error() string { return e.message }
+func (e genericError) Error() string { return string(e) }
+
 func genericErrorf(format string, a ...interface{}) error {
-	return &genericError{message: fmt.Sprintf(format, a...)}
+	return genericError(fmt.Sprintf(format, a...))
 }
 
-type sortable []interface{}
+type genericSortable []interface{}
 
 // Len is part of sort.Interface.
-func (s sortable) Len() int {
+func (s genericSortable) Len() int {
 	return len(s)
 }
 
 // Swap is part of sort.Interface.
-func (s sortable) Swap(i, j int) {
+func (s genericSortable) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
 // Less is part of sort.Interface.
-func (s sortable) Less(i, j int) bool {
+func (s genericSortable) Less(i, j int) bool {
 	return genericSameTypeCompare(s[i], s[j]) < 0
 }
 
