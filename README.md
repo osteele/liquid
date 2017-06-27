@@ -41,8 +41,7 @@
 ### Setup
 
 ```bash
-go get golang.org/x/tools/cmd/stringer
-go install golang.org/x/tools/cmd/goyacc
+make setup
 ```
 
 Install Ragel. On macOS: `brew install ragel`.
