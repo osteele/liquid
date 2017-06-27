@@ -29,7 +29,7 @@ setup: ## install dependencies and development tools
 	gometalinter --install
 
 lint: ## lint the package
-	gometalinter ./... --exclude expressions/scanner.go --exclude expressions/scanner.go --exclude '.*_string.go'
+	gometalinter ./... --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go'
 
 test: ## test the package
 	go test ./...

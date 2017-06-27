@@ -1,4 +1,4 @@
-// The filters package defines the standard Liquid filters.
+// Package filters defines the standard Liquid filters.
 package filters
 
 import (

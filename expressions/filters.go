@@ -8,6 +8,9 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
+// An InterpreterError is an error during expression interpretation.
+// It is used for errors in the input expression, to distinguish them
+// from implementation errors in the interpreter.
 type InterpreterError string
 
 func (e InterpreterError) Error() string { return string(e) }
@@ -16,6 +19,7 @@ type valueFn func(Context) interface{}
 
 var filters = map[string]interface{}{}
 
+// DefineFilter defines a filter.
 func DefineFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {

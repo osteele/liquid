@@ -11,25 +11,22 @@ type context struct {
 	copied bool
 }
 
+// NewContext makes a new expression evaluation context.
 func NewContext(vars map[string]interface{}) Context {
 	return &context{vars, false}
 }
 
+// Get looks up a variable value in the expression context.
 func (c *context) Get(name string) interface{} {
 	return c.vars[name]
 }
 
+// Set sets a variable value in the expression context.
 func (c *context) Set(name string, value interface{}) {
-	// if !c.copied {
-	// 	vs := map[string]interface{}{}
-	// 	for k, v := range c.vars {
-	// 		vs[k] = v
-	// 	}
-	// 	c.vars, c.copied = vs, true
-	// }
 	c.vars[name] = value
 }
 
+// Loop describes the result of parsing and then evaluating a loop statement.
 type Loop struct {
 	Name string
 	Expr interface{}

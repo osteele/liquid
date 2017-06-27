@@ -14,6 +14,7 @@ type ASTSeq struct {
 	Children []ASTNode
 }
 
+// ASTChunks is a sequence of chunks.
 // TODO probably safe to remove this type and method, once the test suite is larger
 type ASTChunks struct {
 	chunks []Chunk

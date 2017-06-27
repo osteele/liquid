@@ -38,6 +38,7 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 				return err
 			}
 		}
+		ctx.Set(loop.Name, nil)
 		return nil
 	}
 }

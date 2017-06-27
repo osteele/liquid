@@ -11,6 +11,7 @@ type Context struct {
 	vars map[string]interface{}
 }
 
+// NewContext creates a new evaluation context.
 func NewContext(scope map[string]interface{}) Context {
 	// The assign tag modifies the scope, so make a copy first.
 	// TODO this isn't really the right place for this.
@@ -21,6 +22,7 @@ func NewContext(scope map[string]interface{}) Context {
 	return Context{vars}
 }
 
+// Set sets a variable value within an evalution context.
 func (c *Context) Set(name string, value interface{}) {
 	c.vars[name] = value
 }

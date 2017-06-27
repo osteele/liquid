@@ -6,10 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var scannerTests = []struct{ in, expected string }{
-	{"{{12}}", "12"},
-}
-
 func TestScanner(t *testing.T) {
 	tokens := Scan("12", "")
 	require.NotNil(t, tokens)
