@@ -50,6 +50,15 @@ var evaluatorTests = []struct {
 	{"1 == 1.0", true},
 	{"1 < 2.0", true},
 	{"1.0 < 2", true},
+
+	{"1 != 1", false},
+	{"1 != 2", true},
+
+	{"true and false", false},
+	{"true and true", true},
+	{"true and true and true", true},
+	{"false or false", false},
+	{"false or true", true},
 }
 
 var evaluatorTestContext = NewContext(map[string]interface{}{

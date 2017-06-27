@@ -45,11 +45,11 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 }
 
 // IsEmpty returns a bool indicating whether the value is empty according to Liquid semantics.
-func IsEmpty(in interface{}) bool {
-	if in == nil {
+func IsEmpty(value interface{}) bool {
+	if value == nil {
 		return false
 	}
-	r := reflect.ValueOf(in)
+	r := reflect.ValueOf(value)
 	switch r.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return r.Len() == 0
@@ -58,6 +58,11 @@ func IsEmpty(in interface{}) bool {
 	default:
 		return false
 	}
+}
+
+// IsTrue returns a bool indicating whether the value is true according to Liquid semantics.
+func IsTrue(value interface{}) bool {
+	return value != nil && value != false
 }
 
 var dateLayouts = []string{

@@ -19,17 +19,17 @@ func init() {
    f func(Context) interface{}
    loopmods LoopModifiers
 }
-%type <f> expr rel expr1 loop
+%type <f> expr rel expr1 expr2 loop
 %type<loopmods> loop_modifiers
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD RELATION
 %token ASSIGN LOOP
-%token EQ FOR IN
+%token EQ NEQ FOR IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
 %%
 start:
-  rel ';' { yylex.(*lexer).val = $1 }
+  expr2 ';' { yylex.(*lexer).val = $1 }
 | ASSIGN IDENTIFIER '=' expr1 ';' {
 	name, expr := $2, $4
 	yylex.(*lexer).val = func(ctx Context) interface{} {
@@ -110,7 +110,13 @@ rel:
 		return generics.Equal(a, b)
 	}
 }
-| expr '<' expr {
+| expr NEQ expr {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		a, b := fa(ctx), fb(ctx)
+		return !generics.Equal(a, b)
+	}
+}| expr '<' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
@@ -122,6 +128,22 @@ rel:
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
 		return generics.Less(b, a)
+	}
+}
+;
+
+expr2:
+  rel
+| expr2 AND rel {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		return generics.IsTrue(fa(ctx)) && generics.IsTrue(fb(ctx))
+	}
+}
+| expr2 OR rel {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		return generics.IsTrue(fa(ctx)) || generics.IsTrue(fb(ctx))
 	}
 }
 ;
