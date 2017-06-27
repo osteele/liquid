@@ -13,18 +13,18 @@ type ControlTagAction func(ASTControlTag) func(io.Writer, Context) error
 
 // controlTagDefinition tells the parser how to parse control tags.
 type controlTagDefinition struct {
-	name        string
+	name                  string
 	isBranchTag, isEndTag bool
-	syntaxModel *controlTagDefinition
-	parent      *controlTagDefinition
-	action      ControlTagAction
+	syntaxModel           *controlTagDefinition
+	parent                *controlTagDefinition
+	action                ControlTagAction
 }
 
 func (c *controlTagDefinition) compatibleParent(p *controlTagDefinition) bool {
 	if p == nil {
 		return false
 	}
-	if p.syntaxModel != nil {
+	if !c.isEndTag && p.syntaxModel != nil {
 		p = p.syntaxModel
 	}
 	return c.parent == p
@@ -47,7 +47,7 @@ func findControlTagDefinition(name string) (*controlTagDefinition, bool) {
 	return ct, found
 }
 
-type tagBuilder struct {tag *controlTagDefinition}
+type tagBuilder struct{ tag *controlTagDefinition }
 
 // DefineControlTag defines a control tag and its matching end tag.
 func DefineControlTag(name string) tagBuilder {

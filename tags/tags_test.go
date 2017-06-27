@@ -45,13 +45,13 @@ var tagTests = []struct{ in, expected string }{
 	{"pre{%raw%}{{a}}{%unknown%}{%endraw%}post", "pre{{a}}{%unknown%}post"},
 	{"pre{%raw%}{%if false%}anyway-{%endraw%}post", "pre{%if false%}anyway-post"},
 
-	{"{%unless true%}false{%endif%}", ""},
-	{"{%unless false%}true{%endif%}", "true"},
-	{"{%unless true%}false{%else%}true{%endif%}", "true"},
-	{"{%unless false%}true{%else%}false{%endif%}", "true"},
-	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
-	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
-	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+	{"{%unless true%}false{%endunless%}", ""},
+	{"{%unless false%}true{%endunless%}", "true"},
+	{"{%unless true%}false{%else%}true{%endunless%}", "true"},
+	{"{%unless false%}true{%else%}false{%endunless%}", "true"},
+	{"{%unless false%}0{%elsif true%}1{%else%}2{%endunless%}", "0"},
+	{"{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}", "1"},
+	{"{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}", "2"},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{
