@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 
 	"github.com/osteele/liquid/errors"
@@ -28,14 +27,16 @@ func joinFilter(in []interface{}, sep interface{}) interface{} {
 	return strings.Join(a, s)
 }
 
-// func sortFilter(in []interface{}, key interface{}) []interface{} {
-// 	fmt.Println("sort", in, key)
-func sortFilter(in []interface{}) []interface{} {
+func sortFilter(in []interface{}, key interface{}) []interface{} {
 	out := make([]interface{}, len(in))
 	for i, v := range in {
 		out[i] = v
 	}
-	sort.Sort(genericSortable(out))
+	if key == nil {
+		genericSort(out)
+	} else {
+		sortByProperty(out, key.(string))
+	}
 	return out
 }
 
@@ -98,13 +99,11 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 		if param != nil {
 			args = append(args, param(ctx))
 		}
-		in := convertArguments(fr, args)
-		outs := fr.Call(in)
-		if len(outs) > 1 && outs[1].Interface() != nil {
-			err := outs[1].Interface()
+		out, err := genericApply(fr, args)
+		if err != nil {
 			panic(err)
 		}
-		switch out := outs[0].Interface().(type) {
+		switch out := out.(type) {
 		case []byte:
 			return string(out)
 		default:

@@ -3,6 +3,7 @@ package expressions
 import (
 	"fmt"
 	"reflect"
+	"sort"
 )
 
 type genericError string
@@ -14,6 +15,10 @@ func genericErrorf(format string, a ...interface{}) error {
 }
 
 type genericSortable []interface{}
+
+func genericSort(data []interface{}) {
+	sort.Sort(genericSortable(data))
+}
 
 // Len is part of sort.Interface.
 func (s genericSortable) Len() int {
@@ -28,6 +33,67 @@ func (s genericSortable) Swap(i, j int) {
 // Less is part of sort.Interface.
 func (s genericSortable) Less(i, j int) bool {
 	return genericSameTypeCompare(s[i], s[j]) < 0
+}
+
+func sortByProperty(data []interface{}, key string) {
+	sort.Sort(sortableByProperty{data, key})
+}
+
+type sortableByProperty struct {
+	data []interface{}
+	key  string
+}
+
+// Len is part of sort.Interface.
+func (s sortableByProperty) Len() int {
+	return len(s.data)
+}
+
+// Swap is part of sort.Interface.
+func (s sortableByProperty) Swap(i, j int) {
+	data := s.data
+	data[i], data[j] = data[j], data[i]
+}
+
+// Less is part of sort.Interface.
+func (s sortableByProperty) Less(i, j int) bool {
+	// index returns the value at the s.key, if in is a map that contains this key
+	index := func(in interface{}) interface{} {
+		rt := reflect.ValueOf(in)
+		if rt.Kind() == reflect.Map && rt.Type().Key().Kind() == reflect.String {
+			return rt.MapIndex(reflect.ValueOf(s.key)).Interface()
+		}
+		return nil
+	}
+	a, b := index(s.data[i]), index(s.data[j])
+	// TODO implement nil-first vs. nil last
+	switch {
+	case a == nil:
+		return true
+	case b == nil:
+		return false
+	default:
+		// TODO relax same type requirement
+		return genericSameTypeCompare(a, b) < 0
+	}
+}
+
+// genericApply applies a function to arguments, converting them as necessary.
+// The conversion follows Liquid semantics, which are more aggressive than
+// Go conversion. The function should return one or two values; the second value,
+// if present, should be an error.
+func genericApply(fn reflect.Value, args []interface{}) (interface{}, error) {
+	in := convertArguments(fn, args)
+	outs := fn.Call(in)
+	if len(outs) > 1 && outs[1].Interface() != nil {
+		switch e := outs[1].Interface().(type) {
+		case error:
+			return nil, e
+		default:
+			panic(e)
+		}
+	}
+	return outs[0].Interface(), nil
 }
 
 // Convert val to the type. This is a more aggressive conversion, that will
@@ -56,33 +122,44 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 	panic(genericErrorf("convertType: can't convert %#v<%s> to %v", val, r.Type(), t))
 }
 
-// Convert args to match the input types of fr, which should be a function reflection.
-func convertArguments(fv reflect.Value, args []interface{}) []reflect.Value {
-	rt := fv.Type()
-	rs := make([]reflect.Value, rt.NumIn())
-	for i, arg := range args {
+// Convert args to match the input types of function fn.
+func convertArguments(fn reflect.Value, in []interface{}) []reflect.Value {
+	rt := fn.Type()
+	out := make([]reflect.Value, rt.NumIn())
+	for i, arg := range in {
 		if i < rt.NumIn() {
-			rs[i] = convertType(arg, rt.In(i))
+			out[i] = convertType(arg, rt.In(i))
 		}
 	}
-	return rs
+	for i := len(in); i < rt.NumIn(); i++ {
+		out[i] = reflect.Zero(rt.In(i))
+	}
+	return out
 }
 
 func genericSameTypeCompare(av, bv interface{}) int {
 	a, b := reflect.ValueOf(av), reflect.ValueOf(bv)
 	if a.Kind() != b.Kind() {
-		panic(genericErrorf("different types: %v and %v", a, b))
+		panic(fmt.Errorf("genericSameTypeCompare called on different types: %v and %v", a, b))
 	}
 	if a == b {
 		return 0
 	}
 	switch a.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		if a.Int() < b.Int() {
+			return -1
+		}
+	case reflect.Float32, reflect.Float64:
+		if a.Float() < b.Float() {
+			return -1
+		}
 	case reflect.String:
 		if a.String() < b.String() {
 			return -1
 		}
 	default:
-		panic(genericErrorf("unimplemented generic comparison for %s", a.Kind()))
+		panic(genericErrorf("unimplemented generic same-type comparison for %v and %v", a, b))
 	}
 	return 1
 }

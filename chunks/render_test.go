@@ -58,7 +58,7 @@ var filterTests = []struct{ in, expected string }{
 	// {% assign my_array = "apples, oranges, peaches, plums" | split: ", " %}{{ my_array.first }}
 	{`{{"John, Paul, George, Ringo" | split: ", " | join: " and "}}`, "John and Paul and George and Ringo"},
 	{`{{ animals | sort | join: ", " }}`, "Sally Snake, giraffe, octopus, zebra"},
-	// {`{{ sort_prop | sort: "weight" | inspect }}`, "Sally Snake, giraffe, octopus, zebra"},
+	{`{{ sort_prop | sort: "weight" | inspect }}`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
 
 	// last, map, slice, sort_natural, reverse, size, uniq
 
