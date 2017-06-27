@@ -46,7 +46,7 @@ func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	cd, ok := FindControlDefinition(n.Tag)
-	if !ok {
+	if !ok || cd.action == nil {
 		return fmt.Errorf("unimplemented tag: %s", n.Tag)
 	}
 	f := cd.action(*n)

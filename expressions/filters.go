@@ -1,10 +1,8 @@
 package expressions
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
-	"strings"
 
 	"github.com/osteele/liquid/errors"
 	"github.com/osteele/liquid/generics"
@@ -16,52 +14,7 @@ func (e InterpreterError) Error() string { return string(e) }
 
 type valueFn func(Context) interface{}
 
-func joinFilter(in []interface{}, sep interface{}) interface{} {
-	a := make([]string, len(in))
-	s := ", "
-	if sep != nil {
-		s = fmt.Sprint(sep)
-	}
-	for i, x := range in {
-		a[i] = fmt.Sprint(x)
-	}
-	return strings.Join(a, s)
-}
-
-func sortFilter(in []interface{}, key interface{}) []interface{} {
-	out := make([]interface{}, len(in))
-	for i, v := range in {
-		out[i] = v
-	}
-	if key == nil {
-		generics.Sort(out)
-	} else {
-		generics.SortByProperty(out, key.(string))
-	}
-	return out
-}
-
-func splitFilter(in, sep string) interface{} {
-	return strings.Split(in, sep)
-}
-
 var filters = map[string]interface{}{}
-
-func init() {
-	DefineStandardFilters()
-}
-
-func DefineStandardFilters() {
-	// lists
-	DefineFilter("join", joinFilter)
-	DefineFilter("sort", sortFilter)
-
-	// strings
-	DefineFilter("split", splitFilter)
-
-	// Jekyll
-	DefineFilter("inspect", json.Marshal)
-}
 
 func DefineFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)

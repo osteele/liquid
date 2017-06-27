@@ -1,3 +1,4 @@
+// The tags package defines the standard Liquid tags.
 package tags
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/osteele/liquid/chunks"
 )
 
+// DefineStandardTags defines the standard Liquid tags.
 func DefineStandardTags() {
 	loopTags := []string{"break", "continue", "cycle"}
 	chunks.DefineControlTag("comment")
@@ -16,7 +18,6 @@ func DefineStandardTags() {
 	chunks.DefineControlTag("tablerow").Governs(loopTags)
 	chunks.DefineControlTag("capture")
 }
-
 
 func ifTagAction(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 	return func(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {

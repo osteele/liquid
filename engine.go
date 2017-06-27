@@ -9,7 +9,15 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/filters"
+	"github.com/osteele/liquid/tags"
 )
+
+// TODO move the filters and tags from globals to the engine
+func init() {
+	tags.DefineStandardTags()
+	filters.DefineStandardFilters()
+}
 
 // Engine parses template source into renderable text.
 //
