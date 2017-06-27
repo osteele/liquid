@@ -18,10 +18,15 @@ func assignTagDef(source string) (func(io.Writer, Context) error, error) {
 	}, nil
 }
 
+var tagDefinitions = map[string]TagDefinition{
+	"assign": assignTagDef,
+}
+
+func DefineTag(name string, td TagDefinition) {
+	tagDefinitions[name] = td
+}
+
 func FindTagDefinition(name string) (TagDefinition, bool) {
-	switch name {
-	case "assign":
-		return assignTagDef, true
-	}
-	return nil, false
+	td, ok := tagDefinitions[name]
+	return td, ok
 }
