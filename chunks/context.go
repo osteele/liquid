@@ -22,7 +22,13 @@ func NewContext(scope map[string]interface{}) Context {
 	return Context{vars}
 }
 
-// Set sets a variable value within an evalution context.
+// GetVariableMap returns the variable map. This is required by some tangled code
+// in Jekyll includes, that should hopefully get better.
+func (c *Context) GetVariableMap() map[string]interface{} {
+	return c.vars
+}
+
+// Set sets a variable value within an evaluation context.
 func (c *Context) Set(name string, value interface{}) {
 	c.vars[name] = value
 }

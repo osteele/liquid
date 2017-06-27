@@ -44,6 +44,7 @@ func DefineStandardFilters() {
 
 	// lists
 	expressions.DefineFilter("join", joinFilter)
+	expressions.DefineFilter("reverse", reverseFilter)
 	expressions.DefineFilter("sort", sortFilter)
 
 	// strings
@@ -63,6 +64,14 @@ func joinFilter(in []interface{}, sep interface{}) interface{} {
 		a[i] = fmt.Sprint(x)
 	}
 	return strings.Join(a, s)
+}
+
+func reverseFilter(in []interface{}) interface{} {
+	out := make([]interface{}, len(in))
+	for i, x := range in {
+		out[len(out)-1-i] = x
+	}
+	return out
 }
 
 func sortFilter(in []interface{}, key interface{}) []interface{} {

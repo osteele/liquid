@@ -34,8 +34,8 @@ var filterTests = []struct{ in, expected string }{
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
 	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
-
-	// last, map, slice, sort_natural, reverse, size, uniq
+	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
+	// last, map, slice, sort_natural, size, uniq
 
 	// string filters
 	// "/my/fancy/url" | append: ".html"
@@ -86,14 +86,15 @@ func timeMustParse(s string) time.Time {
 }
 
 var filterTestContext = expressions.NewContext(map[string]interface{}{
-	"x":          123,
-	"empty_list": map[string]interface{}{},
-	"obj": map[string]interface{}{
-		"a": 1,
-	},
+	"x":       123,
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
 	"article": map[string]interface{}{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
+	},
+	"empty_list": map[string]interface{}{},
+	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
+	"obj": map[string]interface{}{
+		"a": 1,
 	},
 	"pages": []map[string]interface{}{
 		{"category": "business"},
@@ -119,9 +120,12 @@ var filterTestContext = expressions.NewContext(map[string]interface{}{
 func TestFilters(t *testing.T) {
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
-			val, err := expressions.EvaluateExpr(test.in, filterTestContext)
+			value, err := expressions.EvaluateExpr(test.in, filterTestContext)
 			require.NoErrorf(t, err, test.in)
-			actual := fmt.Sprintf("%v", val)
+			actual := fmt.Sprintf("%v", value)
+			if value == nil {
+				actual = ""
+			}
 			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}

@@ -1,11 +1,16 @@
 package expressions
 
-import "github.com/osteele/liquid/errors"
+import (
+	"github.com/osteele/liquid/errors"
+	"github.com/osteele/liquid/generics"
+)
 
 func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
+			case generics.GenericError:
+				err = e
 			case InterpreterError:
 				err = e
 			case UnimplementedError:

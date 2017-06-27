@@ -29,6 +29,10 @@ var evaluatorTests = []struct {
 	{"ar[100]", nil},
 	{"obj[1]", nil},
 	{"obj.c[0]", "r"},
+	// {`fruits.first`, "apples"},
+	// {`fruits.last`, "plums"},
+	// {`empty_list.first`, ""},
+	// {`empty_list.last`, ""},
 
 	// Operators
 	{"1 == 1", true},
@@ -49,8 +53,10 @@ var evaluatorTests = []struct {
 }
 
 var evaluatorTestContext = NewContext(map[string]interface{}{
-	"n":  123,
-	"ar": []string{"first", "second", "third"},
+	"n":          123,
+	"ar":         []string{"first", "second", "third"},
+	"empty_list": map[string]interface{}{},
+	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
 	"obj": map[string]interface{}{
 		"a": "first",
 		"b": map[string]interface{}{"c": "d"},

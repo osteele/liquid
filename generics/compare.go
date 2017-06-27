@@ -16,6 +16,14 @@ func Less(a, b interface{}) bool {
 }
 
 func genericSameTypeCompare(av, bv interface{}) int {
+	switch {
+	case av == nil && bv == nil:
+		return 0
+	case av == nil:
+		return -1
+	case bv == nil:
+		return 1
+	}
 	a, b := reflect.ValueOf(av), reflect.ValueOf(bv)
 	if a.Kind() != b.Kind() {
 		panic(fmt.Errorf("genericSameTypeCompare called on different types: %v and %v", a, b))
@@ -37,7 +45,7 @@ func genericSameTypeCompare(av, bv interface{}) int {
 			return -1
 		}
 	default:
-		panic(genericErrorf("unimplemented generic same-type comparison for %v and %v", a, b))
+		panic(genericErrorf("unimplemented generic same-type comparison for %v<%s> and %v<%s>", a, a.Type(), b.Type()))
 	}
 	return 1
 }
@@ -45,6 +53,9 @@ func genericSameTypeCompare(av, bv interface{}) int {
 func genericCompare(a, b reflect.Value) int {
 	if a.Interface() == b.Interface() {
 		return 0
+	}
+	if a.Type() == b.Type() {
+		return genericSameTypeCompare(a.Interface(), b.Interface())
 	}
 	ak, bk := a.Kind(), b.Kind()
 	// _ = ak.Convert

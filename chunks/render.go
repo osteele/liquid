@@ -3,6 +3,8 @@ package chunks
 import (
 	"fmt"
 	"io"
+
+	"github.com/osteele/liquid/generics"
 )
 
 // Render evaluates an AST node and writes the result to an io.Writer.
@@ -56,10 +58,13 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 	// TODO separate this into parse and evaluate stages.
-	val, err := ctx.EvaluateExpr(n.Args)
+	value, err := ctx.EvaluateExpr(n.Args)
 	if err != nil {
 		return err
 	}
-	_, err = w.Write([]byte(fmt.Sprint(val)))
+	if generics.IsEmpty(value) {
+		return nil
+	}
+	_, err = w.Write([]byte(fmt.Sprint(value)))
 	return err
 }

@@ -26,6 +26,9 @@ func convertType(val interface{}, t reflect.Type) reflect.Value {
 	if reflect.PtrTo(r.Type()) == t {
 		return reflect.ValueOf(&val)
 	}
+	// if r.Kind() == reflect.String && t.Name() == "time.Time" {
+	// 	fmt.Println("ok")
+	// }
 	switch t.Kind() {
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
@@ -60,6 +63,7 @@ func IsEmpty(in interface{}) bool {
 var dateLayouts = []string{
 	"2006-01-02 15:04:05 -07:00",
 	"January 2, 2006",
+	"2006-01-2",
 }
 
 // ParseTime tries a few heuristics to parse a date from a string
