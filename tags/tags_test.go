@@ -18,8 +18,14 @@ var parseErrorTests = []struct{ in, expected string }{
 }
 
 var tagTests = []struct{ in, expected string }{
+	{"{%assign av = 1%}{{av}}", "1"},
+	{"{%assign av = obj.a%}{{av}}", "1"},
+
 	// TODO test whether this requires matching interior tags
 	{"{%comment%}{{a}}{%unknown%}{%endcomment%}", ""},
+
+	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
+	{"{%for a in ar reversed%}{{a}} {%endfor%}", "third second first "},
 
 	{"{%if true%}true{%endif%}", "true"},
 	{"{%if false%}false{%endif%}", ""},
@@ -35,6 +41,10 @@ var tagTests = []struct{ in, expected string }{
 	{"{%if false%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
 	{"{%if false%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
 
+	// TODO test whether this requires matching interior tags
+	{"pre{%raw%}{{a}}{%unknown%}{%endraw%}post", "pre{{a}}{%unknown%}post"},
+	{"pre{%raw%}{%if false%}anyway-{%endraw%}post", "pre{%if false%}anyway-post"},
+
 	{"{%unless true%}false{%endif%}", ""},
 	{"{%unless false%}true{%endif%}", "true"},
 	{"{%unless true%}false{%else%}true{%endif%}", "true"},
@@ -42,12 +52,6 @@ var tagTests = []struct{ in, expected string }{
 	{"{%unless false%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
 	{"{%unless true%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
 	{"{%unless true%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
-
-	{"{%assign av = 1%}{{av}}", "1"},
-	{"{%assign av = obj.a%}{{av}}", "1"},
-
-	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
-	{"{%for a in ar reversed%}{{a}} {%endfor%}", "third second first "},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{

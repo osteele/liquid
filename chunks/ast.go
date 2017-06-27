@@ -9,6 +9,11 @@ type ASTNode interface {
 	Render(io.Writer, Context) error
 }
 
+// ASTRaw holds the text between the start and end of a raw tag.
+type ASTRaw struct {
+	slices []string
+}
+
 // ASTSeq is a sequence of nodes.
 type ASTSeq struct {
 	Children []ASTNode

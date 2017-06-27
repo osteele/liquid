@@ -9,14 +9,17 @@ import (
 
 // DefineStandardTags defines the standard Liquid tags.
 func DefineStandardTags() {
+	// The parser only recognize the comment and raw tags if they've been defined,
+	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	chunks.DefineControlTag("comment")
-	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
-	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
-	chunks.DefineControlTag("case").Branch("when")
-	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
-	chunks.DefineControlTag("tablerow").Governs(loopTags)
 	chunks.DefineControlTag("capture")
+	chunks.DefineControlTag("case").Branch("when")
+	chunks.DefineControlTag("comment")
+	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
+	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
+	chunks.DefineControlTag("raw")
+	chunks.DefineControlTag("tablerow").Governs(loopTags)
+	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
 }
 
 func ifTagAction(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {

@@ -29,11 +29,13 @@
         - [ ] loop variables
         - [ ] tablerow
         - [ ] cycle
-  - [ ] Raw
+  - [x] Raw
   - [ ] Variable
     - [x] Assign
     - [ ] Capture
 - [ ] Filters
+  - [x] some
+  - [ ] all
 
 ## Install
 

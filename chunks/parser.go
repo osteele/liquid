@@ -17,13 +17,21 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		ccd       *controlTagDefinition
 		ccn       *ASTControlTag
 		stack     []frame // stack of control structures
+		rawTag    *ASTRaw
 		inComment = false
+		inRaw     = false
 	)
 	for _, c := range chunks {
 		switch {
 		case inComment:
 			if c.Type == TagChunkType && c.Tag == "endcomment" {
 				inComment = false
+			}
+		case inRaw:
+			if c.Type == TagChunkType && c.Tag == "endraw" {
+				inComment = false
+			} else {
+				rawTag.slices = append(rawTag.slices, c.Source)
 			}
 		case c.Type == ObjChunkType:
 			*ap = append(*ap, &ASTObject{Chunk: c})
@@ -34,6 +42,10 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 				switch {
 				case c.Tag == "comment":
 					inComment = true
+				case c.Tag == "raw":
+					inRaw = true
+					rawTag = &ASTRaw{}
+					*ap = append(*ap, rawTag)
 				case cd.requiresParent() && !cd.compatibleParent(ccd):
 					suffix := ""
 					if ccd != nil {

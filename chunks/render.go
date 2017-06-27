@@ -35,6 +35,17 @@ func (n *ASTText) Render(w io.Writer, _ Context) error {
 	return err
 }
 
+// Render evaluates an AST node and writes the result to an io.Writer.
+func (n *ASTRaw) Render(w io.Writer, _ Context) error {
+	for _, s := range n.slices {
+		_, err := w.Write([]byte(s))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // RenderASTSequence renders a sequence of nodes.
 func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
 	for _, n := range seq {
