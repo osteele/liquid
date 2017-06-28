@@ -1,7 +1,9 @@
 /*
-Package liquid is a very early-stage pure Go library that implements Shopify Liquid <https://shopify.github.io/liquid> templates.
+Package liquid is a pure Go implementation of Shopify Liquid templates.
 
 It's intended for use in for use in https://github.com/osteele/gojekyll.
+
+See the project README https://github.com/osteele/liquid for additional information and implementation status.
 */
 package liquid
 

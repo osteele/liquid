@@ -1,6 +1,7 @@
 # Go Liquid Template Parser
+[![GoDoc](https://godoc.org/github.com/osteele/liquid?status.svg)](http://godoc.org/github.com/osteele/liquid)
 
-`goliquid` is a very early-stage Go implementation of the [Shopify Liquid template language](https://shopify.github.io/liquid), for use in [Gojekyll](https://github.com/osteele/gojekyll).
+`goliquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid), for use in [gojekyll](https://github.com/osteele/gojekyll).
 
 ## Status
 [![Build Status](https://travis-ci.org/osteele/liquid.svg?branch=master)](https://travis-ci.org/osteele/liquid)
@@ -10,7 +11,7 @@
   - [x] Literals
     - [ ] String Escapes
   - [x] Variables
-  - [ ] Operators
+  - [ ] Operators (partial)
   - [x] Arrays
   - [ ] Whitespace Control
 - [ ] Tags
@@ -30,12 +31,10 @@
       - [ ] `tablerow`
       - [ ] `cycle`
   - [x] Raw
-  - [ ] Variable
+  - [ ] Variables
     - [x] Assign
     - [ ] Capture
-- [ ] Filters
-  - [x] some
-  - [ ] all
+- [ ] Filters (partial)
 
 ## Install
 
@@ -83,6 +82,16 @@ Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medi
 The [original Liquid engine](https://shopify.github.io/liquid), of course, for the design and documentation of the Liquid template language.
 
 (That said, this is a clean-room implementation to make sure it just implements the documented design.)
+
+## Other Implementations
+
+Go:
+
+* <https://godoc.org/github.com/karlseguin/liquid> is a partial implementation.
+* <https://godoc.org/github.com/acstech/liquid> is a more active fork of Karl Seguin's implementation.
+* <https://godoc.org/github.com/hownowstephen/go-liquid> is a more recent entry.
+
+<https://github.com/Shopify/liquid/wiki/Ports-of-Liquid-to-other-environments> lists ports to other languages.
 
 ## License
 
