@@ -58,7 +58,7 @@ func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
-				panic(e)
+				panic(fmt.Errorf("%s during evaluation of %s", e, source))
 			}
 		}
 	}()

@@ -51,22 +51,17 @@ func (s sortableByProperty) Swap(i, j int) {
 // Less is part of sort.Interface.
 func (s sortableByProperty) Less(i, j int) bool {
 	// index returns the value at the s.key, if in is a map that contains this key
-	index := func(in interface{}) interface{} {
-		rt := reflect.ValueOf(in)
+	index := func(i int) interface{} {
+		value := s.data[i]
+		rt := reflect.ValueOf(value)
 		if rt.Kind() == reflect.Map && rt.Type().Key().Kind() == reflect.String {
-			return rt.MapIndex(reflect.ValueOf(s.key)).Interface()
+			elem := rt.MapIndex(reflect.ValueOf(s.key))
+			if elem.IsValid() {
+				return elem.Interface()
+			}
 		}
 		return nil
 	}
-	a, b := index(s.data[i]), index(s.data[j])
-	// TODO implement nil-first vs. nil last
-	switch {
-	case a == nil:
-		return true
-	case b == nil:
-		return false
-	default:
-		// TODO relax same type requirement
-		return genericSameTypeCompare(a, b) < 0
-	}
+	a, b := index(i), index(j)
+	return Less(a, b)
 }

@@ -12,7 +12,16 @@ func Equal(a, b interface{}) bool {
 
 // Less returns a bool indicating whether a < b.
 func Less(a, b interface{}) bool {
-	return genericCompare(reflect.ValueOf(a), reflect.ValueOf(b)) < 0
+	switch {
+	case a == nil && b == nil:
+		return false
+	case a == nil:
+		return true
+	case b == nil:
+		return false
+	}
+	c := genericCompare(reflect.ValueOf(a), reflect.ValueOf(b)) < 0
+	return c
 }
 
 func genericSameTypeCompare(av, bv interface{}) int {
@@ -32,6 +41,10 @@ func genericSameTypeCompare(av, bv interface{}) int {
 		return 0
 	}
 	switch a.Kind() {
+	case reflect.Bool:
+		if !a.Bool() && b.Bool() {
+			return -1
+		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		if a.Int() < b.Int() {
 			return -1
@@ -45,7 +58,7 @@ func genericSameTypeCompare(av, bv interface{}) int {
 			return -1
 		}
 	default:
-		panic(genericErrorf("unimplemented generic same-type comparison for %v<%s> and %v<%s>", a, a.Type(), b.Type()))
+		panic(genericErrorf("unimplemented generic same-type comparison for %v<%s> and %v<%s>", a, a.Type(), b, b.Type()))
 	}
 	return 1
 }
@@ -55,6 +68,7 @@ func genericCompare(a, b reflect.Value) int {
 		return 0
 	}
 	if a.Type() == b.Type() {
+		fmt.Println("cf", a, b, a.Type(), b.Type())
 		return genericSameTypeCompare(a.Interface(), b.Interface())
 	}
 	ak, bk := a.Kind(), b.Kind()
