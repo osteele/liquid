@@ -13,12 +13,14 @@ func init() {
 
 %}
 %union {
-   name string
-   val interface{}
-   f func(Context) interface{}
+   name     string
+   val      interface{}
+   f        func(Context) interface{}
    loopmods LoopModifiers
+   filter_params []valueFn
 }
-%type <f> expr rel expr1 expr2 loop
+%type <f> expr rel filtered cond loop
+%type<filter_params> filter_params
 %type<loopmods> loop_modifiers
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD RELATION
@@ -28,8 +30,8 @@ func init() {
 %left '<' '>'
 %%
 start:
-  expr2 ';' { yylex.(*lexer).val = $1 }
-| ASSIGN IDENTIFIER '=' expr1 ';' {
+  cond ';' { yylex.(*lexer).val = $1 }
+| ASSIGN IDENTIFIER '=' filtered ';' {
 	name, expr := $2, $4
 	yylex.(*lexer).val = func(ctx Context) interface{} {
 		ctx.Set(name, expr(ctx))
@@ -39,7 +41,7 @@ start:
 | LOOP loop { yylex.(*lexer).val = $2 }
 ;
 
-loop: IDENTIFIER IN expr1 loop_modifiers ';' {
+loop: IDENTIFIER IN filtered loop_modifiers ';' {
 	name, expr, mods := $1, $3, $4
 	$$ = func(ctx Context) interface{} {
 		return &Loop{name, expr(ctx), mods}
@@ -64,14 +66,19 @@ expr:
 | expr '[' expr ']' { $$ = makeIndexEvaluator($1, $3) }
 ;
 
-expr1:
+filtered:
   expr
-| expr1 '|' IDENTIFIER { $$ = makeFilter($1, $3, nil) }
-| expr1 '|' KEYWORD expr { $$ = makeFilter($1, $3, $4) }
+| filtered '|' IDENTIFIER { $$ = makeFilter($1, $3, nil) }
+| filtered '|' KEYWORD filter_params { $$ = makeFilter($1, $3, $4) }
 ;
 
+filter_params:
+  expr { $$ = []valueFn{$1} }
+| filter_params ',' expr
+  { $$ = append($1, $3) }
+
 rel:
-  expr1
+  filtered
 | expr EQ expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
@@ -101,15 +108,15 @@ rel:
 }
 ;
 
-expr2:
+cond:
   rel
-| expr2 AND rel {
+| cond AND rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		return generics.IsTrue(fa(ctx)) && generics.IsTrue(fb(ctx))
 	}
 }
-| expr2 OR rel {
+| cond OR rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		return generics.IsTrue(fa(ctx)) || generics.IsTrue(fb(ctx))

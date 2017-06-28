@@ -24,17 +24,17 @@ func NewContext(scope map[string]interface{}) Context {
 
 // GetVariableMap returns the variable map. This is required by some tangled code
 // in Jekyll includes, that should hopefully get better.
-func (c *Context) GetVariableMap() map[string]interface{} {
+func (c Context) GetVariableMap() map[string]interface{} {
 	return c.vars
 }
 
 // Set sets a variable value within an evaluation context.
-func (c *Context) Set(name string, value interface{}) {
+func (c Context) Set(name string, value interface{}) {
 	c.vars[name] = value
 }
 
 // Evaluate evaluates an expression within the template context.
-func (c *Context) Evaluate(expr expressions.Expression) (out interface{}, err error) {
+func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
@@ -50,7 +50,7 @@ func (c *Context) Evaluate(expr expressions.Expression) (out interface{}, err er
 }
 
 // EvaluateExpr evaluates an expression within the template context.
-func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
+func (c Context) EvaluateExpr(source string) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
@@ -65,7 +65,7 @@ func (c *Context) EvaluateExpr(source string) (out interface{}, err error) {
 	return expressions.EvaluateExpr(source, expressions.NewContext(c.vars))
 }
 
-func (c *Context) evaluateStatement(tag, source string) (interface{}, error) {
+func (c Context) evaluateStatement(tag, source string) (interface{}, error) {
 	return c.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source))
 }
 

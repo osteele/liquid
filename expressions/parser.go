@@ -27,16 +27,6 @@ func (e UnimplementedError) Error() string {
 	return fmt.Sprintf("unimplemented %s", string(e))
 }
 
-// Expression is a parsed expression.
-type Expression interface {
-	// Evaluate evaluates an expression in a context.
-	Evaluate(ctx Context) (interface{}, error)
-}
-
-type expression struct {
-	evaluator func(Context) interface{}
-}
-
 // Parse parses an expression string into an Expression.
 func Parse(source string) (expr Expression, err error) {
 	defer func() {

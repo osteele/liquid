@@ -35,7 +35,13 @@ func DefineFilter(name string, fn interface{}) {
 	filters[name] = fn
 }
 
-func makeFilter(f valueFn, name string, param valueFn) valueFn {
+func isClosureInterfaceType(t reflect.Type) bool {
+	closureType := reflect.TypeOf(closure{})
+	interfaceType := reflect.TypeOf([]interface{}{}).Elem()
+	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
+}
+
+func makeFilter(f valueFn, name string, params []valueFn) valueFn {
 	fn, ok := filters[name]
 	if !ok {
 		panic(errors.UndefinedFilter(name))
@@ -54,8 +60,16 @@ func makeFilter(f valueFn, name string, param valueFn) valueFn {
 			}
 		}()
 		args := []interface{}{f(ctx)}
-		if param != nil {
-			args = append(args, param(ctx))
+		for i, param := range params {
+			if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
+				expr, err := Parse(param(ctx).(string))
+				if err != nil {
+					panic(err)
+				}
+				args = append(args, closure{expr, ctx})
+			} else {
+				args = append(args, param(ctx))
+			}
 		}
 		out, err := generics.Call(fr, args)
 		if err != nil {
