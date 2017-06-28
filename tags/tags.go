@@ -2,6 +2,7 @@
 package tags
 
 import (
+	"bytes"
 	"io"
 
 	"github.com/osteele/liquid/chunks"
@@ -12,7 +13,7 @@ func DefineStandardTags() {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	chunks.DefineControlTag("capture")
+	chunks.DefineControlTag("capture").Action(captureTag)
 	chunks.DefineControlTag("case").Branch("when")
 	chunks.DefineControlTag("comment")
 	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
@@ -20,6 +21,19 @@ func DefineStandardTags() {
 	chunks.DefineControlTag("raw")
 	chunks.DefineControlTag("tablerow").Governs(loopTags)
 	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
+}
+
+func captureTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+	// TODO verify syntax
+	varname := node.Args
+	return func(w io.Writer, ctx chunks.Context) error {
+		buf := new(bytes.Buffer)
+		if err := ctx.RenderASTSequence(buf, node.Body); err != nil {
+			return err
+		}
+		ctx.Set(varname, buf.String())
+		return nil
+	}
 }
 
 func ifTagAction(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {

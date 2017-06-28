@@ -33,7 +33,7 @@
   - [x] Raw
   - [ ] Variables
     - [x] Assign
-    - [ ] Capture
+    - [x] Capture
 - [ ] Filters (partial)
 
 ## Install

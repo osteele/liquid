@@ -24,6 +24,8 @@ var tagTests = []struct{ in, expected string }{
 	// TODO test whether this requires matching interior tags
 	{"{%comment%}{{a}}{%unknown%}{%endcomment%}", ""},
 
+	{"{%capture x%}captured{%endcapture%}{{x}}", "captured"},
+
 	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
 	{"{%for a in ar reversed%}{{a}} {%endfor%}", "third second first "},
 
