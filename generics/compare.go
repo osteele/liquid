@@ -7,6 +7,9 @@ import (
 
 // Equal returns a bool indicating whether a == b after conversion.
 func Equal(a, b interface{}) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
 	return genericCompare(reflect.ValueOf(a), reflect.ValueOf(b)) == 0
 }
 
@@ -71,7 +74,6 @@ func genericCompare(a, b reflect.Value) int {
 		return genericSameTypeCompare(a.Interface(), b.Interface())
 	}
 	ak, bk := a.Kind(), b.Kind()
-	// _ = ak.Convert
 	switch a.Kind() {
 	case reflect.Bool:
 		if b.Kind() == reflect.Bool {
