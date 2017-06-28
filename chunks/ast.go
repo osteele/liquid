@@ -2,6 +2,8 @@ package chunks
 
 import (
 	"io"
+
+	"github.com/osteele/liquid/expressions"
 )
 
 // ASTNode is a node of an AST.
@@ -25,8 +27,9 @@ type ASTChunks struct {
 	chunks []Chunk
 }
 
-// ASTGenericTag renders itself via a render function that is created during parsing.
-type ASTGenericTag struct {
+// ASTFunctional renders itself via a render function that is created during parsing.
+type ASTFunctional struct {
+	Chunk
 	render func(io.Writer, Context) error
 }
 
@@ -38,6 +41,7 @@ type ASTText struct {
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
 	Chunk
+	expr expressions.Expression
 }
 
 // ASTControlTag is a control tag.

@@ -25,8 +25,12 @@ func (n *ASTChunks) Render(w io.Writer, _ Context) error {
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.
-func (n *ASTGenericTag) Render(w io.Writer, ctx Context) error {
-	return n.render(w, ctx)
+func (n *ASTFunctional) Render(w io.Writer, ctx Context) error {
+	err := n.render(w, ctx)
+	if err != nil {
+		fmt.Println("while parsing", n.Source)
+	}
+	return err
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.
@@ -46,16 +50,6 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 	return nil
 }
 
-// RenderASTSequence renders a sequence of nodes.
-func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
-	for _, n := range seq {
-		if err := n.Render(w, ctx); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	cd, ok := findControlTagDefinition(n.Tag)
@@ -68,14 +62,23 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
-	// TODO separate this into parse and evaluate stages.
-	value, err := ctx.EvaluateExpr(n.Args)
+	value, err := ctx.Evaluate(n.expr)
 	if err != nil {
-		return err
+		return fmt.Errorf("%s in %s", err, n.Source)
 	}
 	if generics.IsEmpty(value) {
 		return nil
 	}
 	_, err = w.Write([]byte(fmt.Sprint(value)))
 	return err
+}
+
+// RenderASTSequence renders a sequence of nodes.
+func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
+	for _, n := range seq {
+		if err := n.Render(w, ctx); err != nil {
+			return err
+		}
+	}
+	return nil
 }

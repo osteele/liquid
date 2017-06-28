@@ -16,19 +16,19 @@
 - [ ] Tags
   - [x] Comment
   - [ ] Control Flow
-    - [x] if/else/elsif
-    - [x] unless
-    - [ ] case/when
+    - [x] `if`/`else`/`elsif`
+    - [x] `unless`
+    - [ ] `case`/`when`
   - [ ] Iteration
-        - [x] for
-            - [ ] limit
-            - [ ] offset
-            - [ ] range
-            - [x] reversed
-        - [ ] break, continue
-        - [ ] loop variables
-        - [ ] tablerow
-        - [ ] cycle
+      - [x] modifiers
+          - [ ] `limit`
+          - [ ] `offset`
+          - [ ] `range`
+          - [x] `reversed`
+      - [ ] `break`, `continue`
+      - [ ] loop variables
+      - [ ] `tablerow`
+      - [ ] `cycle`
   - [x] Raw
   - [ ] Variable
     - [x] Assign

@@ -2,6 +2,8 @@ package chunks
 
 import (
 	"fmt"
+
+	"github.com/osteele/liquid/expressions"
 )
 
 // Parse creates an AST from a sequence of Chunks.
@@ -34,7 +36,11 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 				rawTag.slices = append(rawTag.slices, c.Source)
 			}
 		case c.Type == ObjChunkType:
-			*ap = append(*ap, &ASTObject{Chunk: c})
+			expr, err := expressions.Parse(c.Args)
+			if err != nil {
+				return nil, err
+			}
+			*ap = append(*ap, &ASTObject{c, expr})
 		case c.Type == TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
 		case c.Type == TagChunkType:
@@ -70,7 +76,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 				if err != nil {
 					return nil, err
 				}
-				*ap = append(*ap, &ASTGenericTag{render: f})
+				*ap = append(*ap, &ASTFunctional{c, f})
 			} else {
 				return nil, fmt.Errorf("unknown tag: %s", c.Tag)
 			}
