@@ -2,10 +2,19 @@ package generics
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+var convertTests = []struct {
+	value, proto, expected interface{}
+}{
+	{1, 1.0, float64(1)},
+	{"2", 1, int(2)},
+	{"1.2", 1.0, float64(1.2)},
+}
 
 var eqTests = []struct {
 	a, b     interface{}
@@ -50,6 +59,16 @@ var lessTests = []struct {
 	{"a", "b", true},
 	{"b", "a", false},
 	{[]string{"a"}, []string{"a"}, false},
+}
+
+func TestConvert(t *testing.T) {
+	for i, test := range convertTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			typ := reflect.TypeOf(test.proto)
+			value := Convert(test.value, typ).Interface()
+			require.Equalf(t, test.expected, value, "Convert %#v -> %#v", test.value, test, typ)
+		})
+	}
 }
 
 func TestEqual(t *testing.T) {

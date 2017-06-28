@@ -2,6 +2,7 @@ package generics
 
 import (
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -10,6 +11,8 @@ var timeType = reflect.TypeOf(time.Now())
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
+//
+// TODO It's weird that this takes an interface{} but returns a Value
 func Convert(value interface{}, t reflect.Type) reflect.Value {
 	r := reflect.ValueOf(value)
 	if r.Type().ConvertibleTo(t) {
@@ -26,6 +29,18 @@ func Convert(value interface{}, t reflect.Type) reflect.Value {
 		return reflect.ValueOf(v)
 	}
 	switch t.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		n, err := strconv.Atoi(value.(string))
+		if err != nil {
+			panic(err)
+		}
+		return reflect.ValueOf(n)
+	case reflect.Float32, reflect.Float64:
+		n, err := strconv.ParseFloat(value.(string), 64)
+		if err != nil {
+			panic(err)
+		}
+		return reflect.ValueOf(n)
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
 			break

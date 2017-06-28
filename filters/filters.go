@@ -4,8 +4,10 @@ package filters
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/leekchan/timeutil"
 	"github.com/osteele/liquid/expressions"
@@ -36,8 +38,65 @@ func DefineStandardFilters() {
 	expressions.DefineFilter("reverse", reverseFilter)
 	expressions.DefineFilter("sort", sortFilter)
 
+	// numbers
+	expressions.DefineFilter("abs", math.Abs)
+	expressions.DefineFilter("ceil", math.Ceil)
+	expressions.DefineFilter("floor", math.Floor)
+
 	// strings
+	expressions.DefineFilter("append", func(s, suffix string) string {
+		return s + suffix
+	})
+	expressions.DefineFilter("capitalize", func(s, suffix string) string {
+		if len(s) < 1 {
+			return s
+		}
+		return strings.ToUpper(s[:1]) + s[1:]
+	})
+	expressions.DefineFilter("downcase", func(s, suffix string) string {
+		return strings.ToLower(s)
+	})
+	// expressions.DefineFilter("escape", func(s, suffix string) string {
+	// 	buf := new(bytes.Buffer)
+	// 	template.HTMLEscape(buf, []byte(s))
+	// 	return buf.String()
+	// })
+	expressions.DefineFilter("prepend", func(s, prefix string) string {
+		return prefix + s
+	})
+	expressions.DefineFilter("remove", func(s, old string) string {
+		return strings.Replace(s, old, "", -1)
+	})
+	expressions.DefineFilter("remove_first", func(s, old string) string {
+		return strings.Replace(s, old, "", 1)
+	})
+	expressions.DefineFilter("replace", func(s, old, new string) string {
+		return strings.Replace(s, old, new, -1)
+	})
+	expressions.DefineFilter("replace_first", func(s, old, new string) string {
+		return strings.Replace(s, old, new, 1)
+	})
 	expressions.DefineFilter("split", splitFilter)
+	expressions.DefineFilter("strip", strings.TrimSpace)
+	expressions.DefineFilter("lstrip", func(s string) string {
+		return strings.TrimLeftFunc(s, unicode.IsSpace)
+	})
+	expressions.DefineFilter("rstrip", func(s string) string {
+		return strings.TrimRightFunc(s, unicode.IsSpace)
+	})
+	expressions.DefineFilter("truncate", func(s string, n int, ellipsis interface{}) string {
+		el, ok := ellipsis.(string)
+		if !ok {
+			el = "..."
+		}
+		if len(s) > n {
+			s = s[:n-len(el)] + el
+		}
+		return s
+	})
+	expressions.DefineFilter("upcase", func(s, suffix string) string {
+		return strings.ToUpper(s)
+	})
 
 	// Jekyll
 	expressions.DefineFilter("inspect", json.Marshal)
