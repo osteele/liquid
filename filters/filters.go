@@ -74,6 +74,34 @@ func DefineStandardFilters() {
 	expressions.DefineFilter("abs", math.Abs)
 	expressions.DefineFilter("ceil", math.Ceil)
 	expressions.DefineFilter("floor", math.Floor)
+	expressions.DefineFilter("modulo", math.Mod)
+	expressions.DefineFilter("minus", func(a, b float64) float64 {
+		return a - b
+	})
+	expressions.DefineFilter("plus", func(a, b float64) float64 {
+		return a + b
+	})
+	expressions.DefineFilter("times", func(a, b float64) float64 {
+		return a * b
+	})
+	expressions.DefineFilter("divided_by", func(a float64, b interface{}) interface{} {
+		switch bt := b.(type) {
+		case int, int16, int32, int64:
+			return int(a) / bt.(int)
+		case float32, float64:
+			return a / float64(b.(float64))
+		default:
+			return nil
+		}
+	})
+	expressions.DefineFilter("round", func(n float64, places interface{}) float64 {
+		pl, ok := places.(int)
+		if !ok {
+			pl = 0
+		}
+		exp := math.Pow10(pl)
+		return math.Floor(n*exp+0.5) / exp
+	})
 
 	// sequences
 	expressions.DefineFilter("size", generics.Length)

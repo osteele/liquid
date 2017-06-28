@@ -19,7 +19,9 @@
   - [ ] Control Flow
     - [x] `if`/`else`/`elsif`
     - [x] `unless`
-    - [ ] `case`/`when`
+    - [ ] `case`
+      - [x] `when`
+      - [ ] `else`
   - [ ] Iteration
       - [x] modifiers (`limit`, `reversed`, `offset`)
       - [ ] `range`
@@ -28,10 +30,12 @@
       - [ ] `tablerow`
       - [ ] `cycle`
   - [x] Raw
-  - [ ] Variables
+  - [x] Variables
     - [x] Assign
     - [x] Capture
-- [ ] Filters (partial)
+- [ ] Filters
+  - [ ] `sort_natural`, `uniq`, `escape`, `truncatewords`, `url_decode`, `url_encode`
+  - [x] everything else
 
 ## Install
 
@@ -76,7 +80,7 @@ Kyoung-chan Lee's <https://github.com/leekchan/timeutil> for formatting dates.
 
 Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.
 
-The [original Liquid engine](https://shopify.github.io/liquid), of course, for the design and documentation of the Liquid template language.
+The [original Liquid engine](https://shopify.github.io/liquid), of course, for the design and documentation of the Liquid template language. Many of the tag and filter test cases are taken directly from the Liquid documentation.
 
 (That said, this is a clean-room implementation to make sure it just implements the documented design.)
 

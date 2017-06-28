@@ -86,14 +86,33 @@ var filterTests = []struct {
 	{`183.357 | ceil`, 184},
 	{`"3.5" | ceil`, 4},
 
-	// {`16 | divided_by: 4`, 4},
-	// {`5 | divided_by: 3`, 1},
-	// {`20 | divided_by: 7.0`, 123},
-
 	{`1.2 | floor`, 1},
 	{`2.0 | floor`, 2},
 	{`183.357 | floor`, 183},
-	// TODO divided_by, minus, modulo, plus, round,times
+
+	{`4 | plus: 2`, 6},
+	{`183.357 | plus: 12`, 195.357},
+
+	{`4 | minus: 2`, 2},
+	{`16 | minus: 4`, 12},
+	{`183.357 | minus: 12`, 171.357},
+
+	{`3 | times: 2`, 6},
+	{`24 | times: 7`, 168},
+	{`183.357 | times: 12`, 2200.284},
+
+	{`3 | modulo: 2`, 1},
+	{`24 | modulo: 7`, 3},
+	// {`183.357 | modulo: 12`, 3.357}, // TODO test suit use inexact
+
+	{`16 | divided_by: 4`, 4},
+	{`5 | divided_by: 3`, 1},
+	{`20 | divided_by: 7`, 2},
+	{`20 | divided_by: 7.0`, 2.857142857142857},
+
+	{`1.2 | round`, 1},
+	{`2.7 | round`, 3},
+	{`183.357 | round: 2`, 183.36},
 
 	// Jekyll extensions; added here for convenient testing
 	// TODO add this just to the test environment
