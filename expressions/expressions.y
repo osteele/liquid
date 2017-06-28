@@ -2,7 +2,6 @@
 package expressions
 import (
     "fmt"
-	"reflect"
 	"github.com/osteele/liquid/generics"
 )
 
@@ -61,39 +60,9 @@ loop_modifiers: /* empty */ { $$ = LoopModifiers{} }
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
-| expr '.' IDENTIFIER {
-	e, attr := $1, $3
-	$$ = func(ctx Context) interface{} {
-		obj := e(ctx)
-		ref := reflect.ValueOf(obj)
-		switch ref.Kind() {
-		case reflect.Map:
-			val := ref.MapIndex(reflect.ValueOf(attr))
-			if val.Kind()!= reflect.Invalid {
-				return val.Interface()
-			}
-		}
-			return nil
-	}
-}
-| expr '[' expr ']' {
-	e, i := $1, $3
-	$$ = func(ctx Context) interface{} {
-		ref := reflect.ValueOf(e(ctx))
-		index := reflect.ValueOf(i(ctx))
-		switch ref.Kind() {
-		case reflect.Array, reflect.Slice:
-			switch index.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-					n := int(index.Int())
-					if 0 <= n && n < ref.Len() {
-						return ref.Index(n).Interface()
-					}
-			}
-		}
-		return nil
-	}
-}
+| expr '.' IDENTIFIER { $$ = makeObjectPropertyEvaluator($1, $3) }
+| expr '[' expr ']' { $$ = makeIndexEvaluator($1, $3) }
+;
 
 expr1:
   expr

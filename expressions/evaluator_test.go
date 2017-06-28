@@ -25,7 +25,7 @@ var evaluatorTests = []struct {
 	{"obj.b.c", "d"},
 	{"obj.x", nil},
 	{"ar[1]", "second"},
-	{"ar[-1]", nil},
+	{"ar[-1]", "third"}, // undocumented
 	{"ar[100]", nil},
 	{"obj[1]", nil},
 	{"obj.c[0]", "r"},
