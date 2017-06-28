@@ -31,7 +31,16 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 		if rt.Kind() != reflect.Array && rt.Kind() != reflect.Slice {
 			return nil
 		}
-		for i := 0; i < rt.Len(); i++ {
+		start := loop.Offset
+		limit := rt.Len()
+		if loop.Limit != nil {
+			limit = *loop.Limit
+		}
+		for i := start; i < rt.Len(); i++ {
+			if limit == 0 {
+				break
+			}
+			limit--
 			j := i
 			if loop.Reversed {
 				j = rt.Len() - 1 - i

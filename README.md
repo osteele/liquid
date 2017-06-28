@@ -21,11 +21,8 @@
     - [x] `unless`
     - [ ] `case`/`when`
   - [ ] Iteration
-      - [x] modifiers
-          - [ ] `limit`
-          - [ ] `offset`
-          - [ ] `range`
-          - [x] `reversed`
+      - [x] modifiers (`limit`, `reversed`, `offset`)
+      - [ ] `range`
       - [ ] `break`, `continue`
       - [ ] loop variables
       - [ ] `tablerow`

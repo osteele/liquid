@@ -51,10 +51,31 @@ loop: IDENTIFIER IN filtered loop_modifiers ';' {
 
 loop_modifiers: /* empty */ { $$ = LoopModifiers{} }
 | loop_modifiers IDENTIFIER {
-	if $2 != "reversed" {
+	switch $2 {
+	case "reversed":
+		$1.Reversed = true
+	default:
 		panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", $2)))
 	}
-	$1.Reversed = true
+	$$ = $1
+}
+| loop_modifiers KEYWORD LITERAL { // TODO can this be a variable?
+	switch $2 {
+	case "limit":
+		limit, ok := $3.(int)
+		if !ok {
+			panic(ParseError(fmt.Sprintf("loop limit must an integer")))
+		}
+		$1.Limit = &limit
+	case "offset":
+		offset, ok := $3.(int)
+		if !ok {
+			panic(ParseError(fmt.Sprintf("loop offset must an integer")))
+		}
+		$1.Offset = offset
+	default:
+		panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", $2)))
+	}
 	$$ = $1
 }
 ;

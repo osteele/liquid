@@ -14,6 +14,8 @@ type Loop struct {
 }
 
 type LoopModifiers struct {
+	Limit    *int
+	Offset   int
 	Reversed bool
 }
 

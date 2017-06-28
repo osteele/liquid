@@ -33,6 +33,12 @@ var tagTests = []struct{ in, expected string }{
 
 	{`{%for a in ar%}{{a}} {%endfor%}`, "first second third "},
 	{`{%for a in ar reversed%}{{a}} {%endfor%}`, "third second first "},
+	{`{%for a in ar limit:2%}{{a}} {%endfor%}`, "first second "},
+	{`{%for a in ar offset:1%}{{a}} {%endfor%}`, "second third "},
+	{`{%for a in ar reversed offset:1%}{{a}} {%endfor%}`, "second first "},
+	{`{%for a in ar reversed limit:1%}{{a}} {%endfor%}`, "third "},
+	{`{%for a in ar limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
+	{`{%for a in ar reversed limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
 
 	{`{%if true%}true{%endif%}`, "true"},
 	{`{%if false%}false{%endif%}`, ""},
