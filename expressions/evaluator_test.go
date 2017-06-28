@@ -29,10 +29,10 @@ var evaluatorTests = []struct {
 	{"ar[100]", nil},
 	{"obj[1]", nil},
 	{"obj.c[0]", "r"},
-	// {`fruits.first`, "apples"},
-	// {`fruits.last`, "plums"},
-	// {`empty_list.first`, ""},
-	// {`empty_list.last`, ""},
+	{`fruits.first`, "apples"},
+	{`fruits.last`, "plums"},
+	{`empty_list.first`, nil},
+	{`empty_list.last`, nil},
 
 	// Operators
 	{"1 == 1", true},
