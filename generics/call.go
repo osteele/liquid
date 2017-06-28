@@ -33,7 +33,7 @@ func convertArguments(fn reflect.Value, in []interface{}) []reflect.Value {
 			if arg == nil {
 				out[i] = reflect.Zero(rt.In(i))
 			} else {
-				out[i] = convertType(arg, rt.In(i))
+				out[i] = Convert(arg, rt.In(i))
 			}
 		}
 	}

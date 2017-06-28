@@ -23,23 +23,12 @@ func DefineStandardFilters() {
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(in, iformat interface{}) interface{} {
-		format, ok := iformat.(string)
+	expressions.DefineFilter("date", func(value time.Time, format interface{}) interface{} {
+		form, ok := format.(string)
 		if !ok {
-			format = "%a, %b %d, %y"
+			form = "%a, %b %d, %y"
 		}
-		switch date := in.(type) {
-		case string:
-			d, err := generics.ParseTime(date)
-			if err != nil {
-				panic(err)
-			}
-			return timeutil.Strftime(&d, format)
-		case time.Time:
-			return timeutil.Strftime(&date, format)
-		default:
-			panic(expressions.UnimplementedError(fmt.Sprintf("date conversion from %v", date)))
-		}
+		return timeutil.Strftime(&value, form)
 	})
 
 	// lists
