@@ -24,7 +24,7 @@ func (s genericSortable) Swap(i, j int) {
 
 // Less is part of sort.Interface.
 func (s genericSortable) Less(i, j int) bool {
-	return genericSameTypeCompare(s[i], s[j]) < 0
+	return Less(s[i], s[j])
 }
 
 // SortByProperty sorts maps on their key indices.
@@ -63,5 +63,14 @@ func (s sortableByProperty) Less(i, j int) bool {
 		return nil
 	}
 	a, b := index(i), index(j)
+	nilFirst := true
+	switch {
+	case a == nil && b == nil:
+		return false
+	case a == nil:
+		return nilFirst
+	case b == nil:
+		return !nilFirst
+	}
 	return Less(a, b)
 }

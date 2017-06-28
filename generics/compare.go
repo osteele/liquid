@@ -1,8 +1,12 @@
 package generics
 
 import (
-	"fmt"
 	"reflect"
+)
+
+var (
+	int64Type   = reflect.TypeOf(int64(0))
+	float64Type = reflect.TypeOf(float64(0))
 )
 
 // Equal returns a bool indicating whether a == b after conversion.
@@ -10,116 +14,77 @@ func Equal(a, b interface{}) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
-	return genericCompare(reflect.ValueOf(a), reflect.ValueOf(b)) == 0
+	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
+	switch joinKind(ra.Kind(), rb.Kind()) {
+	case reflect.Array, reflect.Slice:
+		if ra.Len() != rb.Len() {
+			return false
+		}
+		for i := 0; i < ra.Len(); i++ {
+			if !Equal(ra.Index(i).Interface(), rb.Index(i).Interface()) {
+				return false
+			}
+		}
+		return true
+	case reflect.Bool:
+		return ra.Bool() == rb.Bool()
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return ra.Convert(int64Type).Int() == rb.Convert(int64Type).Int()
+	case reflect.Float32, reflect.Float64:
+		return ra.Convert(float64Type).Float() == rb.Convert(float64Type).Float()
+	case reflect.String:
+		return ra.String() == rb.String()
+	default:
+		return a == b
+	}
 }
 
 // Less returns a bool indicating whether a < b.
 func Less(a, b interface{}) bool {
-	switch {
-	case a == nil && b == nil:
-		return false
-	case a == nil:
-		return true
-	case b == nil:
+	if a == nil || b == nil {
 		return false
 	}
-	c := genericCompare(reflect.ValueOf(a), reflect.ValueOf(b)) < 0
-	return c
-}
-
-func genericSameTypeCompare(av, bv interface{}) int {
-	switch {
-	case av == nil && bv == nil:
-		return 0
-	case av == nil:
-		return -1
-	case bv == nil:
-		return 1
-	}
-	a, b := reflect.ValueOf(av), reflect.ValueOf(bv)
-	if a.Kind() != b.Kind() {
-		panic(fmt.Errorf("genericSameTypeCompare called on different types: %v and %v", a, b))
-	}
-	if a == b {
-		return 0
-	}
-	switch a.Kind() {
+	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
+	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Bool:
-		if !a.Bool() && b.Bool() {
-			return -1
-		}
+		return !ra.Bool() && rb.Bool()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if a.Int() < b.Int() {
-			return -1
-		}
+		return ra.Convert(int64Type).Int() < rb.Convert(int64Type).Int()
 	case reflect.Float32, reflect.Float64:
-		if a.Float() < b.Float() {
-			return -1
-		}
+		return ra.Convert(float64Type).Float() < rb.Convert(float64Type).Float()
 	case reflect.String:
-		if a.String() < b.String() {
-			return -1
-		}
+		return ra.String() < rb.String()
 	default:
-		panic(genericErrorf("unimplemented generic same-type comparison for %v<%s> and %v<%s>", a, a.Type(), b, b.Type()))
+		return false
 	}
-	return 1
 }
 
-func genericCompare(a, b reflect.Value) int {
-	if a.Interface() == b.Interface() {
-		return 0
+func joinKind(a, b reflect.Kind) reflect.Kind {
+	if a == b {
+		return a
 	}
-	if a.Type() == b.Type() {
-		return genericSameTypeCompare(a.Interface(), b.Interface())
-	}
-	ak, bk := a.Kind(), b.Kind()
-	switch a.Kind() {
-	case reflect.Bool:
-		if b.Kind() == reflect.Bool {
-			switch {
-			case a.Bool() && b.Bool():
-				return 0
-			case a.Bool():
-				return 1
-			case b.Bool():
-				return -1
-			default:
-				return 0
-			}
+	switch a {
+	case reflect.Array, reflect.Slice:
+		if b == reflect.Array || b == reflect.Slice {
+			return reflect.Slice
 		}
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		if hasIntKind(b) {
-			if a.Int() < b.Int() {
-				return -1
-			}
-			if a.Int() > b.Int() {
-				return 1
-			}
-			return 0
+		if isIntKind(b) {
+			return reflect.Int64
 		}
-		if hasFloatKind(b) {
-			return genericCompare(reflect.ValueOf(float64(a.Int())), b)
+		if isFloatKind(b) {
+			return reflect.Float64
 		}
 	case reflect.Float32, reflect.Float64:
-		if hasIntKind(b) {
-			b = reflect.ValueOf(float64(b.Int()))
-		}
-		if hasFloatKind(b) {
-			if a.Float() < b.Float() {
-				return -1
-			}
-			if a.Float() > b.Float() {
-				return 1
-			}
-			return 0
+		if isIntKind(b) || isFloatKind(b) {
+			return reflect.Float64
 		}
 	}
-	panic(genericErrorf("unimplemented: comparison of %v<%s> with %v<%s>", a, ak, b, bk))
+	return reflect.Invalid
 }
 
-func hasIntKind(n reflect.Value) bool {
-	switch n.Kind() {
+func isIntKind(k reflect.Kind) bool {
+	switch k {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return true
 	default:
@@ -127,8 +92,8 @@ func hasIntKind(n reflect.Value) bool {
 	}
 }
 
-func hasFloatKind(n reflect.Value) bool {
-	switch n.Kind() {
+func isFloatKind(k reflect.Kind) bool {
+	switch k {
 	case reflect.Float32, reflect.Float64:
 		return true
 	default:
