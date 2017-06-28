@@ -57,8 +57,14 @@ func Convert(value interface{}, t reflect.Type) reflect.Value {
 
 var dateLayouts = []string{
 	"2006-01-02 15:04:05 -07:00",
-	"January 2, 2006",
+	"2006-01-02 15:04:05 -4",
+	"2006-01-02 15:04:05",
+	"2006-01-02 15:04",
 	"2006-01-02",
+	"January 2, 2006",
+	"January 2 2006",
+	"Jan 2, 2006",
+	"Jan 2 2006",
 }
 
 // ParseTime tries a few heuristics to parse a date from a string

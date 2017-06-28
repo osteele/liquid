@@ -4,7 +4,9 @@ package filters
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"math"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -89,11 +91,14 @@ func DefineStandardFilters() {
 	expressions.DefineFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
 	})
-	// expressions.DefineFilter("escape", func(s, suffix string) string {
-	// 	buf := new(bytes.Buffer)
-	// 	template.HTMLEscape(buf, []byte(s))
-	// 	return buf.String()
-	// })
+	expressions.DefineFilter("escape", html.EscapeString)
+	expressions.DefineFilter("escape_once", func(s, suffix string) string {
+		return html.EscapeString(html.UnescapeString(s))
+	})
+	// TODO test case for this
+	expressions.DefineFilter("newline_to_br", func(s string) string {
+		return strings.Replace(s, "\n", "<br />", -1)
+	})
 	expressions.DefineFilter("prepend", func(s, prefix string) string {
 		return prefix + s
 	})
@@ -126,6 +131,14 @@ func DefineStandardFilters() {
 		return s[start : start+n]
 	})
 	expressions.DefineFilter("split", splitFilter)
+	expressions.DefineFilter("strip_html", func(s string) string {
+		// TODO this probably isn't sufficient
+		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
+	})
+	// TODO test case for this
+	expressions.DefineFilter("strip_newlines", func(s string) string {
+		return strings.Replace(s, "\n", "", -1)
+	})
 	expressions.DefineFilter("strip", strings.TrimSpace)
 	expressions.DefineFilter("lstrip", func(s string) string {
 		return strings.TrimLeftFunc(s, unicode.IsSpace)

@@ -49,6 +49,7 @@ var filterTests = []struct {
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
 
 	// string filters
+	// TODO escape, truncatewords, url_decode, url_encode
 	{`"Take my protein pills and put my helmet on" | replace: "my", "your"`, "Take your protein pills and put your helmet on"},
 	{`"Take my protein pills and put my helmet on" | replace_first: "my", "your"`, "Take your protein pills and put my helmet on"},
 	{`"/my/fancy/url" | append: ".html"`, "/my/fancy/url.html"},
@@ -56,10 +57,9 @@ var filterTests = []struct {
 	{`"title" | capitalize`, "Title"},
 	{`"my great title" | capitalize`, "My great title"},
 	{`"Parker Moore" | downcase`, "parker moore"},
-	{`"Parker Moore" | upcase`, "PARKER MOORE"},
-	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
-	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
-	{`"          So much room for activities!          " | rstrip`, "          So much room for activities!"},
+	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
+	{`"1 < 2 & 3" | escape_once`, "1 &lt; 2 &amp; 3"},
+	{`"1 &lt; 2 &amp; 3" | escape_once`, "1 &lt; 2 &amp; 3"},
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
 	{`"I strained to see the train through the rain" | remove_first: "rain"`, "I sted to see the train through the rain"},
@@ -67,13 +67,14 @@ var filterTests = []struct {
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+	{`"Have <em>you</em> read <strong>Ulysses</strong>?" | strip_html`, "Have you read Ulysses?"},
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
-	// TODO escape, newline_to_br, strip_html, strip_newlines, truncatewords, url_decode, url_encode
-	// {`"Have you read 'James & the Giant Peach'?" | escape`, ""},
-	// {`"1 < 2 & 3" | escape_once`, ""},
-	// {`"1 &lt; 2 &amp; 3" | escape_once`, ""},
+	{`"Parker Moore" | upcase`, "PARKER MOORE"},
+	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
+	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
+	{`"          So much room for activities!          " | rstrip`, "          So much room for activities!"},
 
 	// number filters
 	{`-17 | abs`, 17},
