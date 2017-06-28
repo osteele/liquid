@@ -18,42 +18,47 @@ var parseErrorTests = []struct{ in, expected string }{
 }
 
 var tagTests = []struct{ in, expected string }{
-	{"{%assign av = 1%}{{av}}", "1"},
-	{"{%assign av = obj.a%}{{av}}", "1"},
+	{`{%assign av = 1%}{{av}}`, "1"},
+	{`{%assign av = obj.a%}{{av}}`, "1"},
 
 	// TODO test whether this requires matching interior tags
-	{"{%comment%}{{a}}{%unknown%}{%endcomment%}", ""},
+	{`{%comment%}{{a}}{%unknown%}{%endcomment%}`, ""},
 
-	{"{%capture x%}captured{%endcapture%}{{x}}", "captured"},
+	{`{%capture x%}captured{%endcapture%}{{x}}`, "captured"},
 
-	{"{%for a in ar%}{{a}} {%endfor%}", "first second third "},
-	{"{%for a in ar reversed%}{{a}} {%endfor%}", "third second first "},
+	{`{%case 1%}{%when 1%}a{%when 2%}b{%endcase%}`, "a"},
+	{`{%case 2%}{%when 1%}a{%when 2%}b{%endcase%}`, "b"},
+	{`{%case 3%}{%when 1%}a{%when 2%}b{%endcase%}`, ""},
+	// {`{%case 2%}{%when 1%}a{%else 2%}b{%endcase%}`, "captured"},
 
-	{"{%if true%}true{%endif%}", "true"},
-	{"{%if false%}false{%endif%}", ""},
-	{"{%if 0%}true{%endif%}", "true"},
-	{"{%if 1%}true{%endif%}", "true"},
-	{"{%if x%}true{%endif%}", "true"},
-	{"{%if y%}true{%endif%}", ""},
-	{"{%if true%}true{%endif%}", "true"},
-	{"{%if false%}false{%endif%}", ""},
-	{"{%if true%}true{%else%}false{%endif%}", "true"},
-	{"{%if false%}false{%else%}true{%endif%}", "true"},
-	{"{%if true%}0{%elsif true%}1{%else%}2{%endif%}", "0"},
-	{"{%if false%}0{%elsif true%}1{%else%}2{%endif%}", "1"},
-	{"{%if false%}0{%elsif false%}1{%else%}2{%endif%}", "2"},
+	{`{%for a in ar%}{{a}} {%endfor%}`, "first second third "},
+	{`{%for a in ar reversed%}{{a}} {%endfor%}`, "third second first "},
+
+	{`{%if true%}true{%endif%}`, "true"},
+	{`{%if false%}false{%endif%}`, ""},
+	{`{%if 0%}true{%endif%}`, "true"},
+	{`{%if 1%}true{%endif%}`, "true"},
+	{`{%if x%}true{%endif%}`, "true"},
+	{`{%if y%}true{%endif%}`, ""},
+	{`{%if true%}true{%endif%}`, "true"},
+	{`{%if false%}false{%endif%}`, ""},
+	{`{%if true%}true{%else%}false{%endif%}`, "true"},
+	{`{%if false%}false{%else%}true{%endif%}`, "true"},
+	{`{%if true%}0{%elsif true%}1{%else%}2{%endif%}`, "0"},
+	{`{%if false%}0{%elsif true%}1{%else%}2{%endif%}`, "1"},
+	{`{%if false%}0{%elsif false%}1{%else%}2{%endif%}`, "2"},
 
 	// TODO test whether this requires matching interior tags
-	{"pre{%raw%}{{a}}{%unknown%}{%endraw%}post", "pre{{a}}{%unknown%}post"},
-	{"pre{%raw%}{%if false%}anyway-{%endraw%}post", "pre{%if false%}anyway-post"},
+	{`pre{%raw%}{{a}}{%unknown%}{%endraw%}post`, "pre{{a}}{%unknown%}post"},
+	{`pre{%raw%}{%if false%}anyway-{%endraw%}post`, "pre{%if false%}anyway-post"},
 
-	{"{%unless true%}false{%endunless%}", ""},
-	{"{%unless false%}true{%endunless%}", "true"},
-	{"{%unless true%}false{%else%}true{%endunless%}", "true"},
-	{"{%unless false%}true{%else%}false{%endunless%}", "true"},
-	{"{%unless false%}0{%elsif true%}1{%else%}2{%endunless%}", "0"},
-	{"{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}", "1"},
-	{"{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}", "2"},
+	{`{%unless true%}false{%endunless%}`, ""},
+	{`{%unless false%}true{%endunless%}`, "true"},
+	{`{%unless true%}false{%else%}true{%endunless%}`, "true"},
+	{`{%unless false%}true{%else%}false{%endunless%}`, "true"},
+	{`{%unless false%}0{%elsif true%}1{%else%}2{%endunless%}`, "0"},
+	{`{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}`, "1"},
+	{`{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}`, "2"},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{

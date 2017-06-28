@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/generics"
 )
 
 // DefineStandardTags defines the standard Liquid tags.
@@ -14,13 +15,13 @@ func DefineStandardTags() {
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
 	chunks.DefineControlTag("capture").Action(captureTag)
-	chunks.DefineControlTag("case").Branch("when")
+	chunks.DefineControlTag("case").Branch("when").Action(caseTag)
 	chunks.DefineControlTag("comment")
 	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
-	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTagAction(true))
+	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTag(true))
 	chunks.DefineControlTag("raw")
 	chunks.DefineControlTag("tablerow").Governs(loopTags)
-	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTagAction(false))
+	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTag(false))
 }
 
 func captureTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
@@ -36,10 +37,51 @@ func captureTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error
 	}
 }
 
-func ifTagAction(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+func caseTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+	// TODO parse error on non-empty node.Body
+	// TODO case can include an else
+	expr, err := chunks.MakeExpressionValueFn(node.Args)
+	// TODO change the API to let this return the error directly
+	if err != nil {
+		return func(io.Writer, chunks.Context) error { return err }
+	}
+	type branchRec struct {
+		fn   func(chunks.Context) (interface{}, error)
+		node *chunks.ASTControlTag
+	}
+	cases := []branchRec{}
+	for _, branch := range node.Branches {
+		bfn, err := chunks.MakeExpressionValueFn(branch.Args)
+		if err != nil {
+			return func(io.Writer, chunks.Context) error { return err }
+		}
+		cases = append(cases, branchRec{bfn, branch})
+	}
+	return func(w io.Writer, ctx chunks.Context) error {
+		value, err := expr(ctx)
+		if err != nil {
+			return err
+		}
+		for _, branch := range cases {
+			b, err := branch.fn(ctx)
+			if err != nil {
+				return err
+			}
+			if generics.Equal(value, b) {
+				return ctx.RenderASTSequence(w, branch.node.Body)
+			}
+		}
+		return nil
+	}
+}
+
+func ifTag(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+	// TODO parse error if the order of branches is other than ifelse*else?
+	// TODO parse the tests into a table evaluator -> []AST
 	return func(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 		expr, err := chunks.MakeExpressionValueFn(node.Args)
 		if err != nil {
+			// TODO allow these to return the error directly
 			return func(io.Writer, chunks.Context) error { return err }
 		}
 		return func(w io.Writer, ctx chunks.Context) error {
