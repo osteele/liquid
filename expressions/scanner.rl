@@ -73,7 +73,10 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
-		ident = (alpha | '_') . (alnum | '_')* ;
+		# TODO this allows medial '-' because some themes allow it in properties.
+		# Is this a general feature of Liquid identifiers, or is it limited to
+		# property names?
+		ident = (alpha | '_') . (alnum | '_' | '-')* ;
 		int = '-'? digit+ ;
 		float = '-'? (digit+ '.' digit* | '.' digit+) ;
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
