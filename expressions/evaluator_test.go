@@ -21,18 +21,25 @@ var evaluatorTests = []struct {
 
 	// Variables
 	{"n", 123},
+
+	// Attributes
 	{"obj.a", "first"},
 	{"obj.b.c", "d"},
 	{"obj.x", nil},
+	{`fruits.first`, "apples"},
+	{`fruits.last`, "plums"},
+	{`empty_list.first`, nil},
+	{`empty_list.last`, nil},
+
+	// Indices
 	{"ar[1]", "second"},
 	{"ar[-1]", "third"}, // undocumented
 	{"ar[100]", nil},
 	{"obj[1]", nil},
 	{"obj.c[0]", "r"},
-	{`fruits.first`, "apples"},
-	{`fruits.last`, "plums"},
-	{`empty_list.first`, nil},
-	{`empty_list.last`, nil},
+
+	// Expressions
+	{"(n)", 123},
 
 	// Operators
 	{"1 == 1", true},

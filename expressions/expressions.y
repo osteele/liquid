@@ -64,6 +64,7 @@ expr:
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
 | expr '.' IDENTIFIER { $$ = makeObjectPropertyEvaluator($1, $3) }
 | expr '[' expr ']' { $$ = makeIndexEvaluator($1, $3) }
+| '(' cond ')' { $$ = $2 }
 ;
 
 filtered:
