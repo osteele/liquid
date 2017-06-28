@@ -23,9 +23,9 @@ func init() {
 %type<filter_params> filter_params
 %type<loopmods> loop_modifiers
 %token <val> LITERAL
-%token <name> IDENTIFIER KEYWORD RELATION
+%token <name> IDENTIFIER KEYWORD
 %token ASSIGN LOOP
-%token EQ NEQ FOR IN AND OR CONTAINS
+%token EQ NEQ GE LE FOR IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
 %%
@@ -114,18 +114,39 @@ rel:
 		a, b := fa(ctx), fb(ctx)
 		return !generics.Equal(a, b)
 	}
-}| expr '<' expr {
-	fa, fb := $1, $3
-	$$ = func(ctx Context) interface{} {
-		a, b := fa(ctx), fb(ctx)
-		return generics.Less(a, b)
-	}
 }
 | expr '>' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
 		return generics.Less(b, a)
+	}
+}
+| expr '<' expr {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		a, b := fa(ctx), fb(ctx)
+		return generics.Less(a, b)
+	}
+}
+| expr GE expr {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		a, b := fa(ctx), fb(ctx)
+		return generics.Less(b, a) || generics.Equal(a, b)
+	}
+}
+| expr LE expr {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		a, b := fa(ctx), fb(ctx)
+		return generics.Less(a, b) || generics.Equal(a, b)
+	}
+}
+| expr CONTAINS expr {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) interface{} {
+		return generics.Contains(fa(ctx), fb(ctx))
 	}
 }
 ;

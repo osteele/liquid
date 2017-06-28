@@ -28,16 +28,17 @@ type yySymType struct {
 const LITERAL = 57346
 const IDENTIFIER = 57347
 const KEYWORD = 57348
-const RELATION = 57349
-const ASSIGN = 57350
-const LOOP = 57351
-const EQ = 57352
-const NEQ = 57353
-const FOR = 57354
-const IN = 57355
-const AND = 57356
-const OR = 57357
-const CONTAINS = 57358
+const ASSIGN = 57349
+const LOOP = 57350
+const EQ = 57351
+const NEQ = 57352
+const GE = 57353
+const LE = 57354
+const FOR = 57355
+const IN = 57356
+const AND = 57357
+const OR = 57358
+const CONTAINS = 57359
 
 var yyToknames = [...]string{
 	"$end",
@@ -46,11 +47,12 @@ var yyToknames = [...]string{
 	"LITERAL",
 	"IDENTIFIER",
 	"KEYWORD",
-	"RELATION",
 	"ASSIGN",
 	"LOOP",
 	"EQ",
 	"NEQ",
+	"GE",
+	"LE",
 	"FOR",
 	"IN",
 	"AND",
@@ -83,60 +85,60 @@ var yyExca = [...]int{
 
 const yyPrivate = 57344
 
-const yyLast = 62
+const yyLast = 69
 
 var yyAct = [...]int{
 
-	7, 12, 13, 46, 6, 8, 9, 27, 18, 3,
-	4, 17, 18, 37, 19, 43, 8, 9, 19, 28,
-	32, 33, 34, 35, 36, 31, 10, 17, 39, 39,
-	44, 42, 38, 40, 16, 20, 21, 10, 48, 49,
-	2, 14, 18, 51, 22, 23, 5, 50, 19, 12,
-	13, 24, 29, 30, 47, 1, 11, 45, 41, 25,
-	26, 15,
+	7, 12, 13, 52, 6, 30, 8, 9, 18, 3,
+	4, 8, 9, 43, 19, 49, 17, 17, 31, 50,
+	35, 36, 37, 38, 39, 40, 41, 42, 10, 32,
+	33, 45, 45, 10, 48, 44, 46, 20, 21, 24,
+	25, 18, 54, 55, 2, 26, 18, 19, 23, 22,
+	12, 13, 19, 56, 5, 27, 34, 11, 16, 53,
+	14, 57, 1, 51, 47, 15, 0, 28, 29,
 }
 var yyPact = [...]int{
 
-	1, -1000, 35, 36, 29, -1000, -7, 25, -1000, -1000,
-	12, -1000, 12, 12, -15, -1000, 6, 47, 20, 12,
-	12, 12, 12, 12, -13, -1000, -1000, 12, 12, -1000,
-	12, -1000, -9, -5, -5, -5, -5, -1000, 9, -5,
-	-7, -24, -5, -1000, -1000, 33, 12, -1000, -1000, 39,
-	-5, -1000,
+	2, -1000, 35, 55, 53, -1000, -2, 28, -1000, -1000,
+	7, -1000, 7, 7, -18, -1000, 4, 24, 51, 7,
+	7, 7, 7, 7, 7, 7, 7, -14, -1000, -1000,
+	7, 7, -1000, 7, -1000, -10, 23, 23, 23, 23,
+	23, 23, 23, -1000, -3, 23, -2, -25, 23, -1000,
+	-1000, 37, 7, -1000, -1000, 57, 23, -1000,
 }
 var yyPgo = [...]int{
 
-	0, 0, 46, 4, 40, 61, 58, 57, 55,
+	0, 0, 54, 4, 44, 65, 64, 63, 62,
 }
 var yyR1 = [...]int{
 
 	0, 8, 8, 8, 5, 7, 7, 7, 1, 1,
 	1, 1, 1, 3, 3, 3, 6, 6, 2, 2,
-	2, 2, 2, 4, 4, 4,
+	2, 2, 2, 2, 2, 2, 4, 4, 4,
 }
 var yyR2 = [...]int{
 
 	0, 2, 5, 2, 5, 0, 2, 3, 1, 1,
 	3, 4, 3, 1, 3, 4, 1, 3, 1, 3,
-	3, 3, 3, 1, 3, 3,
+	3, 3, 3, 3, 3, 3, 1, 3, 3,
 }
 var yyChk = [...]int{
 
-	-1000, -8, -4, 8, 9, -2, -3, -1, 4, 5,
-	25, 21, 14, 15, 5, -5, 5, 18, 17, 23,
-	10, 11, 19, 20, -4, -2, -2, 22, 13, 5,
-	6, 5, -1, -1, -1, -1, -1, 26, -3, -1,
-	-3, -6, -1, 24, 21, -7, 27, 21, 5, 6,
-	-1, 4,
+	-1000, -8, -4, 7, 8, -2, -3, -1, 4, 5,
+	26, 22, 15, 16, 5, -5, 5, 19, 18, 24,
+	9, 10, 21, 20, 11, 12, 17, -4, -2, -2,
+	23, 14, 5, 6, 5, -1, -1, -1, -1, -1,
+	-1, -1, -1, 27, -3, -1, -3, -6, -1, 25,
+	22, -7, 28, 22, 5, 6, -1, 4,
 }
 var yyDef = [...]int{
 
-	0, -2, 0, 0, 0, 23, 18, 13, 8, 9,
+	0, -2, 0, 0, 0, 26, 18, 13, 8, 9,
 	0, 1, 0, 0, 0, 3, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 24, 25, 0, 0, 14,
-	0, 10, 0, 19, 20, 21, 22, 12, 0, 13,
-	5, 15, 16, 11, 2, 0, 0, 4, 6, 0,
-	17, 7,
+	0, 0, 0, 0, 0, 0, 0, 0, 27, 28,
+	0, 0, 14, 0, 10, 0, 19, 20, 21, 22,
+	23, 24, 25, 12, 0, 13, 5, 15, 16, 11,
+	2, 0, 0, 4, 6, 0, 17, 7,
 }
 var yyTok1 = [...]int{
 
@@ -144,20 +146,20 @@ var yyTok1 = [...]int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	25, 26, 3, 3, 27, 3, 17, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 21,
-	19, 22, 20, 3, 3, 3, 3, 3, 3, 3,
+	26, 27, 3, 3, 28, 3, 18, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 22,
+	20, 23, 21, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 23, 3, 24, 3, 3, 3, 3, 3, 3,
+	3, 24, 3, 25, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 18,
+	3, 3, 3, 3, 19,
 }
 var yyTok2 = [...]int{
 
 	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-	12, 13, 14, 15, 16,
+	12, 13, 14, 15, 16, 17,
 }
 var yyTok3 = [...]int{
 	0,
@@ -649,17 +651,7 @@ yydefault:
 		}
 	case 21:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:117
-		{
-			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
-				a, b := fa(ctx), fb(ctx)
-				return generics.Less(a, b)
-			}
-		}
-	case 22:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:124
+		//line expressions.y:118
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -667,18 +659,57 @@ yydefault:
 				return generics.Less(b, a)
 			}
 		}
+	case 22:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expressions.y:125
+		{
+			fa, fb := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				a, b := fa(ctx), fb(ctx)
+				return generics.Less(a, b)
+			}
+		}
+	case 23:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expressions.y:132
+		{
+			fa, fb := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				a, b := fa(ctx), fb(ctx)
+				return generics.Less(b, a) || generics.Equal(a, b)
+			}
+		}
 	case 24:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:135
+		//line expressions.y:139
+		{
+			fa, fb := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				a, b := fa(ctx), fb(ctx)
+				return generics.Less(a, b) || generics.Equal(a, b)
+			}
+		}
+	case 25:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expressions.y:146
+		{
+			fa, fb := yyDollar[1].f, yyDollar[3].f
+			yyVAL.f = func(ctx Context) interface{} {
+				return generics.Contains(fa(ctx), fb(ctx))
+			}
+		}
+	case 27:
+		yyDollar = yyS[yypt-3 : yypt+1]
+		//line expressions.y:156
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				return generics.IsTrue(fa(ctx)) && generics.IsTrue(fb(ctx))
 			}
 		}
-	case 25:
+	case 28:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:141
+		//line expressions.y:162
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

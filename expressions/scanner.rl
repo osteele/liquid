@@ -90,7 +90,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 			("true" | "false") => Bool;
 			"==" => { tok = EQ; fbreak; };
 			"!=" => { tok = NEQ; fbreak; };
-			(">=" | "<=") => Relation;
+			">=" => { tok = GE; fbreak; };
+			"<=" => { tok = LE; fbreak; };
 			"and" => { tok = AND; fbreak; };
 			"or" => { tok = OR; fbreak; };
 			"contains" => { tok = CONTAINS; fbreak; };

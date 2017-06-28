@@ -14,6 +14,20 @@ func genericErrorf(format string, a ...interface{}) error {
 	return GenericError(fmt.Sprintf(format, a...))
 }
 
+// Contains returns a boolean indicating whether array is a sequence that contains item.
+func Contains(array interface{}, item interface{}) bool {
+	ref := reflect.ValueOf(array)
+	switch ref.Kind() {
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < ref.Len(); i++ {
+			if ref.Index(i).Interface() == item {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // IsEmpty returns a bool indicating whether the value is empty according to Liquid semantics.
 func IsEmpty(value interface{}) bool {
 	if value == nil {
@@ -40,9 +54,9 @@ func IsTrue(value interface{}) bool {
 func Length(value interface{}) int {
 	ref := reflect.ValueOf(value)
 	switch ref.Kind() {
-		case reflect.Array, reflect.Slice, reflect.String:
-		return ref.Len();
-		default:
+	case reflect.Array, reflect.Slice, reflect.String:
+		return ref.Len()
+	default:
 		return 0
 	}
 }
