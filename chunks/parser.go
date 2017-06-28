@@ -69,7 +69,8 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					ap = &n.Body
 				case cd.isEndTag:
 					f := stack[len(stack)-1]
-					ccd, ccn, ap, stack = f.cd, f.cn, f.ap, stack[:len(stack)-1]
+					stack = stack[:len(stack)-1]
+					ccd, ccn, ap = f.cd, f.cn, f.ap
 				}
 			} else if td, ok := FindTagDefinition(c.Tag); ok {
 				f, err := td(c.Args)

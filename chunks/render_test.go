@@ -8,12 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var parseErrorTests = []struct{ in, expected string }{
-	{"{%unknown_tag%}", "unknown tag"},
-	// {"{%if syntax error%}", "unterminated if tag"},
-	// {"{%if syntax error%}{%endif%}", "parse error"},
-}
-
 var renderTests = []struct{ in, expected string }{
 	// {"{%if syntax error%}{%endif%}", "parse error"},
 	{"{{12}}", "12"},
@@ -50,17 +44,6 @@ var renderTestContext = Context{map[string]interface{}{
 },
 }
 
-func TestParseErrors(t *testing.T) {
-	for i, test := range parseErrorTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
-			tokens := Scan(test.in, "")
-			ast, err := Parse(tokens)
-			require.Nilf(t, ast, test.in)
-			require.Errorf(t, err, test.in)
-			require.Containsf(t, err.Error(), test.expected, test.in)
-		})
-	}
-}
 func TestRender(t *testing.T) {
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {

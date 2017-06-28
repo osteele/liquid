@@ -1,10 +1,26 @@
 package chunks
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+var scannerCountTests = []struct {
+	in  string
+	len int
+}{
+	{`{% tag arg %}`, 1},
+	{`{% tag arg %}{% tag %}`, 2},
+	{`{% tag arg %}{% tag arg %}{% tag %}`, 3},
+	{`{% tag %}{% tag %}`, 2},
+	{`{% tag arg %}{% tag arg %}{% tag %}{% tag %}`, 4},
+	{`{{ expr }}`, 1},
+	{`{{ expr arg }}`, 1},
+	{`{{ expr }}{{ expr }}`, 2},
+	{`{{ expr arg }}{{ expr arg }}`, 2},
+}
 
 func TestScanner(t *testing.T) {
 	tokens := Scan("12", "")
@@ -38,4 +54,11 @@ func TestScanner(t *testing.T) {
 	require.Equal(t, TagChunkType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Tag)
 	require.Equal(t, "args", tokens[0].Args)
+
+	for i, test := range scannerCountTests {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			tokens := Scan(test.in, "")
+			require.Len(t, tokens, test.len)
+		})
+	}
 }

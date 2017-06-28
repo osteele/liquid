@@ -68,7 +68,6 @@ func genericCompare(a, b reflect.Value) int {
 		return 0
 	}
 	if a.Type() == b.Type() {
-		fmt.Println("cf", a, b, a.Type(), b.Type())
 		return genericSameTypeCompare(a.Interface(), b.Interface())
 	}
 	ak, bk := a.Kind(), b.Kind()

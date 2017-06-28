@@ -3,6 +3,7 @@
 package chunks
 
 import (
+	"fmt"
 	"regexp"
 )
 
@@ -13,6 +14,19 @@ type Chunk struct {
 	Source     string // Source is the entirety of the chunk, including the "{{", "{%", etc. markers.
 	Tag        string // Tag is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
 	Args       string // Args is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
+}
+
+func (c Chunk) String() string {
+	switch c.Type {
+	case TextChunkType:
+		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
+	case TagChunkType:
+		return fmt.Sprintf("%s{Tag:%#v, Args:%#v}", c.Type, c.Tag, c.Args)
+	case ObjChunkType:
+		return fmt.Sprintf("%s{%#v}", c.Type, c.Args)
+	default:
+		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
+	}
 }
 
 // SourceInfo contains a Chunk's source information
@@ -30,7 +44,7 @@ const (
 	ObjChunkType                   // TextChunkType is the type of an object Chunk "{{…}}"
 )
 
-var chunkMatcher = regexp.MustCompile(`{{\s*(.+?)\s*}}|{%\s*(\w+)(?:\s+(.+?))?\s*%}`)
+var chunkMatcher = regexp.MustCompile(`{{\s*(.+?)\s*}}|{%\s*(\w+)(?:\s+((?:[^%]|%[^}])+?))?\s*%}`)
 
 // Scan breaks a string into a sequence of Chunks.
 func Scan(data string, pathname string) []Chunk {
