@@ -34,3 +34,15 @@ func IsEmpty(value interface{}) bool {
 func IsTrue(value interface{}) bool {
 	return value != nil && value != false
 }
+
+// Length returns the length of a string or array. In keeping with Liquid semantics,
+// and contra Go, it does not return the size of a map.
+func Length(value interface{}) int {
+	ref := reflect.ValueOf(value)
+	switch ref.Kind() {
+		case reflect.Array, reflect.Slice, reflect.String:
+		return ref.Len();
+		default:
+		return 0
+	}
+}

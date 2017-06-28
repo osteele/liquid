@@ -88,3 +88,9 @@ func TestLess(t *testing.T) {
 		})
 	}
 }
+
+func TestLength(t *testing.T) {
+	require.Equal(t, 3, Length([]int{1, 2, 3}))
+	require.Equal(t, 3, Length("abc"))
+	require.Equal(t, 0, Length(map[string]int{"a": 1}))
+}

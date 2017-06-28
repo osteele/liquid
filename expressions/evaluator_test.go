@@ -30,6 +30,8 @@ var evaluatorTests = []struct {
 	{`fruits.last`, "plums"},
 	{`empty_list.first`, nil},
 	{`empty_list.last`, nil},
+	{`"abc".size`, 3},
+	{`fruits.size`, 4},
 
 	// Indices
 	{"ar[1]", "second"},
@@ -71,7 +73,7 @@ var evaluatorTests = []struct {
 var evaluatorTestContext = NewContext(map[string]interface{}{
 	"n":          123,
 	"ar":         []string{"first", "second", "third"},
-	"empty_list": map[string]interface{}{},
+	"empty_list": []interface{}{},
 	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
 	"obj": map[string]interface{}{
 		"a": "first",

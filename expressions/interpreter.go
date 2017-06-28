@@ -17,6 +17,12 @@ func makeObjectPropertyEvaluator(obj func(Context) interface{}, attr string) fun
 				return ref.Index(0).Interface()
 			case "last":
 				return ref.Index(ref.Len() - 1).Interface()
+			case "size":
+				return ref.Len()
+			}
+		case reflect.String:
+			if attr == "size" {
+				return ref.Len()
 			}
 		case reflect.Map:
 			value := ref.MapIndex(reflect.ValueOf(attr))

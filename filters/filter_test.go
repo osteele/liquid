@@ -32,12 +32,21 @@ var filterTests = []struct {
 	// {`"now" | date: "%Y-%m-%d %H:%M"`, "2017-06-28 13:27"},
 
 	// list filters
-	// site.pages | map: 'category' | compact | join "," %}
+	// TODO sort_natural, uniq
+	{`pages | map: 'category' | join`, "business, celebrities, <nil>, lifestyle, sports, <nil>, technology"},
+	{`pages | map: 'category' | compact | join`, "business, celebrities, lifestyle, sports, technology"},
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
 	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
-	// map, slice, sort_natural, size, uniq
+	{`fruits | first`, "apples"},
+	{`fruits | last`, "plums"},
+	{`empty_list | first`, nil},
+	{`empty_list | last`, nil},
+
+	// sequence filters
+	{`"Ground control to Major Tom." | size`, 28},
+	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
 
 	// string filters
 	{`"Take my protein pills and put my helmet on" | replace: "my", "your"`, "Take your protein pills and put your helmet on"},
@@ -54,13 +63,17 @@ var filterTests = []struct {
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
 	{`"I strained to see the train through the rain" | remove_first: "rain"`, "I sted to see the train through the rain"},
+	{`"Liquid" | slice: 0`, "L"},
+	{`"Liquid" | slice: 2`, "q"},
+	{`"Liquid" | slice: 2, 5`, "quid"},
+	{`"Liquid" | slice: -3, 2`, "ui"},
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
+	// TODO escape, newline_to_br, strip_html, strip_newlines, truncatewords, url_decode, url_encode
 	// {`"Have you read 'James & the Giant Peach'?" | escape`, ""},
 	// {`"1 < 2 & 3" | escape_once`, ""},
 	// {`"1 &lt; 2 &amp; 3" | escape_once`, ""},
-	// newline_to_br,strip_html, strip_newlines, truncatewords, // url_decode, url_encode
 
 	// number filters
 	{`-17 | abs`, 17},
@@ -79,7 +92,7 @@ var filterTests = []struct {
 	{`1.2 | floor`, 1},
 	{`2.0 | floor`, 2},
 	{`183.357 | floor`, 183},
-	// minus, modulo, plus, round,times
+	// TODO divided_by, minus, modulo, plus, round,times
 
 	// Jekyll extensions; added here for convenient testing
 	// TODO add this just to the test environment
@@ -100,19 +113,19 @@ var filterTestContext = expressions.NewContext(map[string]interface{}{
 	"article": map[string]interface{}{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
 	},
-	"empty_list": map[string]interface{}{},
+	"empty_list": []interface{}{},
 	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
 	"obj": map[string]interface{}{
 		"a": 1,
 	},
 	"pages": []map[string]interface{}{
-		{"category": "business"},
-		{"category": "celebrities"},
-		{},
-		{"category": "lifestyle"},
-		{"category": "sports"},
-		{},
-		{"category": "technology"},
+		{"name": "page 1", "category": "business"},
+		{"name": "page 2", "category": "celebrities"},
+		{"name": "page 3"},
+		{"name": "page 4", "category": "lifestyle"},
+		{"name": "page 5", "category": "sports"},
+		{"name": "page 6"},
+		{"name": "page 7", "category": "technology"},
 	},
 	"sort_prop": []map[string]interface{}{
 		{"weight": 1},
@@ -128,10 +141,14 @@ var filterTestContext = expressions.NewContext(map[string]interface{}{
 
 func TestFilters(t *testing.T) {
 	for i, test := range filterTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			value, err := expressions.EvaluateExpr(test.in, filterTestContext)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
+			switch v := value.(type) {
+			case int:
+				value = float64(v)
+			}
 			switch ex := expected.(type) {
 			case int:
 				expected = float64(ex)

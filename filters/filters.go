@@ -34,14 +34,47 @@ func DefineStandardFilters() {
 	})
 
 	// lists
+	expressions.DefineFilter("compact", func(values []interface{}) interface{} {
+		out := []interface{}{}
+		for _, value := range values {
+			if value != nil {
+				out = append(out, value)
+			}
+		}
+		return out
+	})
 	expressions.DefineFilter("join", joinFilter)
+	expressions.DefineFilter("map", func(values []map[string]interface{}, key string) interface{} {
+		out := []interface{}{}
+		for _, obj := range values {
+			out = append(out, obj[key])
+		}
+		return out
+	})
 	expressions.DefineFilter("reverse", reverseFilter)
 	expressions.DefineFilter("sort", sortFilter)
+	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
+	// but https://help.shopify.com/themes/liquid/filters/array-filters does
+	expressions.DefineFilter("first", func(values []interface{}) interface{} {
+		if len(values) == 0 {
+			return nil
+		}
+		return values[0]
+	})
+	expressions.DefineFilter("last", func(values []interface{}) interface{} {
+		if len(values) == 0 {
+			return nil
+		}
+		return values[len(values)-1]
+	})
 
 	// numbers
 	expressions.DefineFilter("abs", math.Abs)
 	expressions.DefineFilter("ceil", math.Ceil)
 	expressions.DefineFilter("floor", math.Floor)
+
+	// sequences
+	expressions.DefineFilter("size", generics.Length)
 
 	// strings
 	expressions.DefineFilter("append", func(s, suffix string) string {
@@ -75,6 +108,22 @@ func DefineStandardFilters() {
 	})
 	expressions.DefineFilter("replace_first", func(s, old, new string) string {
 		return strings.Replace(s, old, new, 1)
+	})
+	expressions.DefineFilter("slice", func(s string, start int, length interface{}) string {
+		n, ok := length.(int)
+		if !ok {
+			n = 1
+		}
+		if start < 0 {
+			start = len(s) + start
+		}
+		if start >= len(s) {
+			return ""
+		}
+		if start+n > len(s) {
+			return s[start:]
+		}
+		return s[start : start+n]
 	})
 	expressions.DefineFilter("split", splitFilter)
 	expressions.DefineFilter("strip", strings.TrimSpace)
