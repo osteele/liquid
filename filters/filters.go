@@ -20,15 +20,15 @@ import (
 // DefineStandardFilters defines the standard Liquid filters.
 func DefineStandardFilters() {
 	// values
-	expressions.DefineFilter("default", func(in, defaultValue interface{}) interface{} {
-		if in == nil || in == false || generics.IsEmpty(in) {
-			in = defaultValue
+	expressions.DefineFilter("default", func(value, defaultValue interface{}) interface{} {
+		if value == nil || value == false || generics.IsEmpty(value) {
+			value = defaultValue
 		}
-		return in
+		return value
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(value time.Time, format interface{}) interface{} {
+	expressions.DefineFilter("date", func(date time.Time, format interface{}) interface{} {
 		form, ok := format.(string)
 		if !ok {
 			form = "%a, %b %d, %y"
@@ -36,23 +36,23 @@ func DefineStandardFilters() {
 		// FIXME All the libraries I could find format 09:00 with "%-H" as "H" instead of "9".
 		// This renders it as "09" instead of "9", which is still bad but better.
 		form = strings.Replace(form, "%-", "%", -1)
-		return timeutil.Strftime(&value, form)
+		return timeutil.Strftime(&date, form)
 	})
 
 	// lists
-	expressions.DefineFilter("compact", func(values []interface{}) interface{} {
+	expressions.DefineFilter("compact", func(array []interface{}) interface{} {
 		out := []interface{}{}
-		for _, value := range values {
-			if value != nil {
-				out = append(out, value)
+		for _, item := range array {
+			if item != nil {
+				out = append(out, item)
 			}
 		}
 		return out
 	})
 	expressions.DefineFilter("join", joinFilter)
-	expressions.DefineFilter("map", func(values []map[string]interface{}, key string) interface{} {
+	expressions.DefineFilter("map", func(array []map[string]interface{}, key string) interface{} {
 		out := []interface{}{}
-		for _, obj := range values {
+		for _, obj := range array {
 			out = append(out, obj[key])
 		}
 		return out
@@ -61,17 +61,17 @@ func DefineStandardFilters() {
 	expressions.DefineFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	expressions.DefineFilter("first", func(values []interface{}) interface{} {
-		if len(values) == 0 {
+	expressions.DefineFilter("first", func(array []interface{}) interface{} {
+		if len(array) == 0 {
 			return nil
 		}
-		return values[0]
+		return array[0]
 	})
-	expressions.DefineFilter("last", func(values []interface{}) interface{} {
-		if len(values) == 0 {
+	expressions.DefineFilter("last", func(array []interface{}) interface{} {
+		if len(array) == 0 {
 			return nil
 		}
-		return values[len(values)-1]
+		return array[len(array)-1]
 	})
 
 	// numbers
@@ -206,29 +206,29 @@ func DefineStandardFilters() {
 	})
 }
 
-func joinFilter(in []interface{}, sep interface{}) interface{} {
-	a := make([]string, len(in))
+func joinFilter(array []interface{}, sep interface{}) interface{} {
+	a := make([]string, len(array))
 	s := ", "
 	if sep != nil {
 		s = fmt.Sprint(sep)
 	}
-	for i, x := range in {
+	for i, x := range array {
 		a[i] = fmt.Sprint(x)
 	}
 	return strings.Join(a, s)
 }
 
-func reverseFilter(in []interface{}) interface{} {
-	out := make([]interface{}, len(in))
-	for i, x := range in {
+func reverseFilter(array []interface{}) interface{} {
+	out := make([]interface{}, len(array))
+	for i, x := range array {
 		out[len(out)-1-i] = x
 	}
 	return out
 }
 
-func sortFilter(in []interface{}, key interface{}) []interface{} {
-	out := make([]interface{}, len(in))
-	copy(out, in)
+func sortFilter(array []interface{}, key interface{}) []interface{} {
+	out := make([]interface{}, len(array))
+	copy(out, array)
 	if key == nil {
 		generics.Sort(out)
 	} else {
@@ -237,6 +237,12 @@ func sortFilter(in []interface{}, key interface{}) []interface{} {
 	return out
 }
 
-func splitFilter(in, sep string) interface{} {
-	return strings.Split(in, sep)
+func splitFilter(s, sep string) interface{} {
+	out := strings.Split(s, sep)
+	// This matches Jekyll's observed behavior.
+	// TODO test case
+	if len(out) > 0 && out[len(out)-1] == "" {
+		out = out[:len(out)-1]
+	}
+	return out
 }
