@@ -38,7 +38,7 @@ func IsEmpty(value interface{}) bool {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
 		return r.Len() == 0
 	case reflect.Bool:
-		return r.Bool() == false
+		return !r.Bool()
 	default:
 		return false
 	}

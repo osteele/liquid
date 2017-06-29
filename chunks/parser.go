@@ -68,13 +68,6 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					ccn.Branches = append(ccn.Branches, n)
 					ap = &n.Body
 				case cd.isEndTag:
-					// if ccn != nil && cd.parser != nil {
-					// 	renderer, err := cd.parser(*ccn)
-					// 	if err != nil {
-					// 		return nil, err
-					// 	}
-					// 	ccn.renderer = renderer
-					// }
 					f := stack[len(stack)-1]
 					stack = stack[:len(stack)-1]
 					ccd, ccn, ap = f.cd, f.cn, f.ap
@@ -88,16 +81,6 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 			} else {
 				return nil, fmt.Errorf("unknown tag: %s", c.Name)
 			}
-			// } else if len(*ap) > 0 {
-			// 	switch n := ((*ap)[len(*ap)-1]).(type) {
-			// 	case *ASTChunks:
-			// 		n.chunks = append(n.chunks, c)
-			// 	default:
-			// 		*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
-			// 	}
-			// } else {
-			// 	*ap = append(*ap, &ASTChunks{chunks: []Chunk{c}})
-			// }
 		}
 	}
 	if ccd != nil {

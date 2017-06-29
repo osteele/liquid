@@ -8,6 +8,7 @@ import (
 
 // ASTNode is a node of an AST.
 type ASTNode interface {
+	// Render evaluates an AST node and writes the result to an io.Writer.
 	Render(io.Writer, Context) error
 }
 
@@ -19,12 +20,6 @@ type ASTRaw struct {
 // ASTSeq is a sequence of nodes.
 type ASTSeq struct {
 	Children []ASTNode
-}
-
-// ASTChunks is a sequence of chunks.
-// TODO probably safe to remove this type and method, once the test suite is larger
-type ASTChunks struct {
-	chunks []Chunk
 }
 
 // ASTFunctional renders itself via a render function that is created during parsing.

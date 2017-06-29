@@ -7,7 +7,7 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 	for _, c := range n.Children {
 		if err := c.Render(w, ctx); err != nil {
@@ -17,29 +17,23 @@ func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 	return nil
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
-// TODO probably safe to remove this type and method, once the test suite is larger
-func (n *ASTChunks) Render(w io.Writer, _ Context) error {
-	fmt.Println(MustYAML(n))
-	return fmt.Errorf("unimplemented: ASTChunks.Render")
-}
-
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTFunctional) Render(w io.Writer, ctx Context) error {
 	err := n.render(w, ctx)
+	// TODO restore something like this
 	// if err != nil {
 	// 	fmt.Println("while parsing", n.Source)
 	// }
 	return err
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTText) Render(w io.Writer, _ Context) error {
 	_, err := w.Write([]byte(n.Source))
 	return err
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 	for _, s := range n.slices {
 		_, err := w.Write([]byte(s))
@@ -50,7 +44,7 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 	return nil
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	cd, ok := findControlTagDefinition(n.Name)
 	if !ok || cd.parser == nil {
@@ -59,12 +53,11 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	renderer := n.renderer
 	if renderer == nil {
 		panic(fmt.Errorf("unset renderer for %v", n))
-		return nil
 	}
 	return renderer(w, ctx)
 }
 
-// Render evaluates an AST node and writes the result to an io.Writer.
+// Render is in the ASTNode interface.
 func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 	value, err := ctx.Evaluate(n.expr)
 	if err != nil {

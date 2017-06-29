@@ -93,7 +93,7 @@ func DefineStandardFilters() {
 		case int, int16, int32, int64:
 			return int(a) / bt.(int)
 		case float32, float64:
-			return a / float64(b.(float64))
+			return a / b.(float64)
 		default:
 			return nil
 		}

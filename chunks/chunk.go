@@ -34,7 +34,10 @@ type SourceInfo struct {
 type ChunkType int
 
 const (
-	TextChunkType ChunkType = iota // TextChunkType is the type of a text Chunk
-	TagChunkType                   // TagChunkType is the type of a tag Chunk "{%…%}"
-	ObjChunkType                   // TextChunkType is the type of an object Chunk "{{…}}"
+	// TextChunkType is the type of a text Chunk
+	TextChunkType ChunkType = iota
+	// TagChunkType is the type of a tag Chunk "{%…%}"
+	TagChunkType
+	// TextChunkType is the type of an object Chunk "{{…}}"
+	ObjChunkType
 )
