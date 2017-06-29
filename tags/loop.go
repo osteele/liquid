@@ -47,10 +47,18 @@ func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 		if rt.Kind() != reflect.Array && rt.Kind() != reflect.Slice {
 			return nil
 		}
-		start := loop.Offset
-		limit := rt.Len()
+		if loop.Offset > 0 {
+			if loop.Offset > rt.Len() {
+				return nil
+			}
+			rt = rt.Slice(loop.Offset, rt.Len())
+		}
+		length := rt.Len()
 		if loop.Limit != nil {
-			limit = *loop.Limit
+			length = *loop.Limit
+			if length > rt.Len() {
+				length = rt.Len()
+			}
 		}
 		const forloopName = "forloop"
 		defer func(index, forloop interface{}) {
@@ -58,31 +66,21 @@ func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 			ctx.Set(loop.Variable, forloop)
 		}(ctx.Get(forloopName), ctx.Get(loop.Variable))
 		// for forloop variable
-		var (
-			first  = true
-			index  = 1
-			length = limit
-		)
-		for i := start; i < rt.Len(); i++ {
-			if limit == 0 {
-				break
-			}
-			limit--
+		for i := 0; i < length; i++ {
 			j := i
 			if loop.Reversed {
 				j = rt.Len() - 1 - i
 			}
 			ctx.Set(loop.Variable, rt.Index(j).Interface())
 			ctx.Set(forloopName, map[string]interface{}{
-				"first":   first,
-				"last":    limit == 0,
-				"index":   index,
-				"index0":  index - 1,
-				"rindex":  length + 1 - index,
-				"rindex0": length - index,
+				"first":   i == 0,
+				"last":    i == length-1,
+				"index":   i + 1,
+				"index0":  i,
+				"rindex":  length - i,
+				"rindex0": length - i - 1,
 				"length":  length,
 			})
-			first, index = false, index+1
 			err := ctx.RenderASTSequence(w, node.Body)
 			if err == errLoopBreak {
 				break
