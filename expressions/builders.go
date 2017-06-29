@@ -50,6 +50,13 @@ func makeIndexEvaluator(obj, index func(Context) interface{}) func(Context) inte
 					return ref.Index(n).Interface()
 				}
 			}
+		case reflect.Map:
+			if i.Type().ConvertibleTo(ref.Type().Key()) {
+				item := ref.MapIndex(i.Convert(ref.Type().Key()))
+				if item.IsValid() {
+					return item.Interface()
+				}
+			}
 		}
 		return nil
 	}
