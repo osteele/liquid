@@ -1,3 +1,7 @@
+// Package chunks parses and evaluates template strings.
+//
+// A template string is composed of a sequence of chunk.
+// Each chunk is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
 package chunks
 
 import "fmt"

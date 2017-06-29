@@ -1,3 +1,4 @@
+// Package expressions parses and evaluates the expression language that is used in objects {{a.b[c]}} and tag parameters {%assign pages = site.pages | reverse%}.
 package expressions
 
 import (

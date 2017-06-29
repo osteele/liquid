@@ -65,6 +65,13 @@ cd expressions
 ragel -Z scanner.rl && go test
 ```
 
+Preview the documentation:
+
+```bash
+godoc -http=:6060&
+open http://localhost:6060/pkg/github.com/osteele/liquid/
+```
+
 ## References
 
 <https://shopify.github.io/liquid>

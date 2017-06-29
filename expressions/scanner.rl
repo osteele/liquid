@@ -1,5 +1,5 @@
-// Adapted from https://github.com/mhamrah/thermostat
 package expressions
+// Adapted from https://github.com/mhamrah/thermostat
 
 import "fmt"
 import "strconv"

@@ -40,12 +40,12 @@ func TestChunkParser(t *testing.T) {
 func Example() {
 	engine := NewEngine()
 	template := `<h1>{{page.title}}</h1>`
-	scope := map[string]interface{}{
+	bindings := map[string]interface{}{
 		"page": map[string]interface{}{
 			"title": "Introduction",
 		},
 	}
-	out, err := engine.ParseAndRenderString(template, scope)
+	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
