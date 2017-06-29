@@ -29,6 +29,8 @@ var filterTests = []struct {
 	{`article.published_at | date: "%Y"`, "2015"},
 	{`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
 	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
+	{`"2017-02-08 09:00:00" | date: "%H:%M"`, "09:00"},
+	// {`"2017-02-08 09:00:00" | date: "%-H:%M"`, "9:00"},
 	// {`"now" | date: "%Y-%m-%d %H:%M"`, "2017-06-28 13:27"},
 
 	// list filters

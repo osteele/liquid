@@ -33,6 +33,9 @@ func DefineStandardFilters() {
 		if !ok {
 			form = "%a, %b %d, %y"
 		}
+		// FIXME All the libraries I could find format 09:00 with "%-H" as "H" instead of "9".
+		// This renders it as "09" instead of "9", which is still bad but better.
+		form = strings.Replace(form, "%-", "%", -1)
 		return timeutil.Strftime(&value, form)
 	})
 
