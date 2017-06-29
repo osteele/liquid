@@ -44,17 +44,17 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 	if err != nil {
 		return nil, err
 	}
-	type branchRec struct {
+	type caseRec struct {
 		fn   func(chunks.Context) (interface{}, error)
 		node *chunks.ASTControlTag
 	}
-	cases := []branchRec{}
+	cases := []caseRec{}
 	for _, branch := range node.Branches {
 		bfn, err := chunks.MakeExpressionValueFn(branch.Args)
 		if err != nil {
 			return nil, err
 		}
-		cases = append(cases, branchRec{bfn, branch})
+		cases = append(cases, caseRec{bfn, branch})
 	}
 	return func(w io.Writer, ctx chunks.Context) error {
 		value, err := expr(ctx)
@@ -74,39 +74,57 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 	}, nil
 }
 
+func constTrueExpr(_ chunks.Context) (interface{}, error) { return true, nil }
+
+func negateExpr(f func(chunks.Context) (interface{}, error)) func(chunks.Context) (interface{}, error) {
+	return func(ctx chunks.Context) (interface{}, error) {
+		value, err := f(ctx)
+		if err != nil {
+			return nil, err
+		}
+		return value == nil || value == false, nil
+	}
+}
+
 func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
-	// TODO parse error if the order of branches is other than ifelse*else?
-	// TODO parse the tests into a table evaluator -> []AST
 	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+		type branchRec struct {
+			test func(chunks.Context) (interface{}, error)
+			body []chunks.ASTNode
+		}
 		expr, err := chunks.MakeExpressionValueFn(node.Args)
 		if err != nil {
 			return nil, err
 		}
-		return func(w io.Writer, ctx chunks.Context) error {
-			val, err := expr(ctx)
-			if err != nil {
-				return err
-			}
-			if !polarity {
-				val = (val == nil || val == false)
-			}
-			switch val {
+		if !polarity {
+			expr = negateExpr(expr)
+		}
+		branches := []branchRec{
+			{expr, node.Body},
+		}
+		for _, c := range node.Branches {
+			test := constTrueExpr
+			switch c.Tag {
+			case "else":
+			// TODO parse error if this isn't the last branch
+			case "elsif":
+				t, err := chunks.MakeExpressionValueFn(c.Args)
+				if err != nil {
+					return nil, err
+				}
+				test = t
 			default:
-				return ctx.RenderASTSequence(w, node.Body)
-			case nil, false:
-				for _, c := range node.Branches {
-					switch c.Tag {
-					case "else":
-						val = true
-					case "elsif":
-						val, err = ctx.EvaluateExpr(c.Args)
-						if err != nil {
-							return err
-						}
-					}
-					if val != nil && val != false {
-						return ctx.RenderASTSequence(w, c.Body)
-					}
+			}
+			branches = append(branches, branchRec{test, c.Body})
+		}
+		return func(w io.Writer, ctx chunks.Context) error {
+			for _, b := range branches {
+				value, err := b.test(ctx)
+				if err != nil {
+					return err
+				}
+				if value != nil && value != false {
+					return ctx.RenderASTSequence(w, b.body)
 				}
 			}
 			return nil
