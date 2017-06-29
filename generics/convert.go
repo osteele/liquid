@@ -1,21 +1,13 @@
 package generics
 
 import (
+	"fmt"
 	"reflect"
 	"strconv"
 	"time"
 )
 
 var timeType = reflect.TypeOf(time.Now())
-
-// MustConvert converts a value to the type.
-func MustConvert(value interface{}, t reflect.Type) interface{} {
-	out, err := Convert(value, t)
-	if err != nil {
-		panic(err)
-	}
-	return out
-}
 
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
@@ -33,9 +25,22 @@ func Convert(value interface{}, t reflect.Type) (interface{}, error) {
 	}
 	switch t.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return strconv.Atoi(value.(string))
+		switch value := value.(type) {
+		case bool:
+			if value {
+				return 1, nil
+			}
+			return 0, nil
+		case string:
+			return strconv.Atoi(value)
+		}
 	case reflect.Float32, reflect.Float64:
-		return strconv.ParseFloat(value.(string), 64)
+		switch value := value.(type) {
+		case int:
+			return float64(value), nil
+		case string:
+			return strconv.ParseFloat(value, 64)
+		}
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
 			break
@@ -51,6 +56,24 @@ func Convert(value interface{}, t reflect.Type) (interface{}, error) {
 		return out.Interface(), nil
 	}
 	return nil, genericErrorf("generic.Convert can't convert %#v<%s> to %v", value, r.Type(), t)
+}
+
+// MustConvert wraps Convert, but panics on error.
+func MustConvert(value interface{}, t reflect.Type) interface{} {
+	out, err := Convert(value, t)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+// MustConvertItem converts item to conform to array, else panics.
+func MustConvertItem(item interface{}, array []interface{}) interface{} {
+	item, err := Convert(item, reflect.TypeOf(array).Elem())
+	if err != nil {
+		panic(fmt.Errorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
+	}
+	return item
 }
 
 var dateLayouts = []string{
