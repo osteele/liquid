@@ -3,8 +3,7 @@ package chunks
 import (
 	"fmt"
 	"io"
-
-	"github.com/osteele/liquid/generics"
+	"reflect"
 )
 
 // Render is in the ASTNode interface.
@@ -63,11 +62,30 @@ func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 	if err != nil {
 		return fmt.Errorf("%s in %s", err, n.Source)
 	}
-	if generics.IsEmpty(value) {
+	return writeValue(value, w)
+}
+
+func writeValue(value interface{}, w io.Writer) error {
+	if value == nil {
 		return nil
 	}
-	_, err = w.Write([]byte(fmt.Sprint(value)))
-	return err
+	rt := reflect.ValueOf(value)
+	switch rt.Kind() {
+	// TODO test case for this
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < rt.Len(); i++ {
+			item := rt.Index(i)
+			if item.IsValid() {
+				if err := writeValue(item.Interface(), w); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	default:
+		_, err := w.Write([]byte(fmt.Sprint(value)))
+		return err
+	}
 }
 
 // RenderASTSequence renders a sequence of nodes.
