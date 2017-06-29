@@ -8,51 +8,49 @@ import (
 
 var timeType = reflect.TypeOf(time.Now())
 
+// MustConvert converts a value to the type.
+func MustConvert(value interface{}, t reflect.Type) interface{} {
+	out, err := Convert(value, t)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-//
-// TODO It's weird that this takes an interface{} but returns a Value
-func Convert(value interface{}, t reflect.Type) reflect.Value {
+func Convert(value interface{}, t reflect.Type) (interface{}, error) {
 	r := reflect.ValueOf(value)
 	if r.Type().ConvertibleTo(t) {
-		return r.Convert(t)
+		return r.Convert(t).Interface(), nil
 	}
 	if reflect.PtrTo(r.Type()) == t {
-		return reflect.ValueOf(&value)
+		return &value, nil
 	}
 	if r.Kind() == reflect.String && t == timeType {
-		v, err := ParseTime(value.(string))
-		if err != nil {
-			panic(err)
-		}
-		return reflect.ValueOf(v)
+		return ParseTime(value.(string))
 	}
 	switch t.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		n, err := strconv.Atoi(value.(string))
-		if err != nil {
-			panic(err)
-		}
-		return reflect.ValueOf(n)
+		return strconv.Atoi(value.(string))
 	case reflect.Float32, reflect.Float64:
-		n, err := strconv.ParseFloat(value.(string), 64)
-		if err != nil {
-			panic(err)
-		}
-		return reflect.ValueOf(n)
+		return strconv.ParseFloat(value.(string), 64)
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
 			break
 		}
-		x := reflect.MakeSlice(t, 0, r.Len())
+		out := reflect.MakeSlice(t, 0, r.Len())
 		for i := 0; i < r.Len(); i++ {
-			c := Convert(r.Index(i).Interface(), t.Elem())
-			x = reflect.Append(x, c)
+			item, err := Convert(r.Index(i).Interface(), t.Elem())
+			if err != nil {
+				return nil, err
+			}
+			out = reflect.Append(out, reflect.ValueOf(item))
 		}
-		return x
+		return out.Interface(), nil
 	}
-	panic(genericErrorf("generic.Convert can't convert %#v<%s> to %v", value, r.Type(), t))
+	return nil, genericErrorf("generic.Convert can't convert %#v<%s> to %v", value, r.Type(), t)
 }
 
 var dateLayouts = []string{

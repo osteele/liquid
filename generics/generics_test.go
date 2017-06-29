@@ -65,7 +65,8 @@ func TestConvert(t *testing.T) {
 	for i, test := range convertTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			typ := reflect.TypeOf(test.proto)
-			value := Convert(test.value, typ).Interface()
+			value, err := Convert(test.value, typ)
+			require.NoError(t, err)
 			require.Equalf(t, test.expected, value, "Convert %#v -> %#v", test.value, test, typ)
 		})
 	}
