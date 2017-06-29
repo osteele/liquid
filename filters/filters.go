@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"math"
+	"reflect"
 	"regexp"
 	"strings"
 	"time"
@@ -188,8 +189,18 @@ func DefineStandardFilters() {
 		return strings.ToUpper(s)
 	})
 
-	// Jekyll
-	expressions.DefineFilter("inspect", json.Marshal)
+	// debugging extensions
+	// inspect is from Jekyll
+	expressions.DefineFilter("inspect", func(value interface{}) string {
+		s, err := json.Marshal(value)
+		if err != nil {
+			return fmt.Sprintf("%#v", value)
+		}
+		return string(s)
+	})
+	expressions.DefineFilter("type", func(value interface{}) string {
+		return reflect.TypeOf(value).String()
+	})
 }
 
 func joinFilter(in []interface{}, sep interface{}) interface{} {
