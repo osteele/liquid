@@ -231,7 +231,7 @@ func sortFilter(in []interface{}, key interface{}) []interface{} {
 	if key == nil {
 		generics.Sort(out)
 	} else {
-		generics.SortByProperty(out, key.(string))
+		generics.SortByProperty(out, key.(string), true)
 	}
 	return out
 }

@@ -28,13 +28,14 @@ func (s genericSortable) Less(i, j int) bool {
 }
 
 // SortByProperty sorts maps on their key indices.
-func SortByProperty(data []interface{}, key string) {
-	sort.Sort(sortableByProperty{data, key})
+func SortByProperty(data []interface{}, key string, nilFirst bool) {
+	sort.Sort(sortableByProperty{data, key, nilFirst})
 }
 
 type sortableByProperty struct {
-	data []interface{}
-	key  string
+	data     []interface{}
+	key      string
+	nilFirst bool
 }
 
 // Len is part of sort.Interface.
@@ -63,14 +64,13 @@ func (s sortableByProperty) Less(i, j int) bool {
 		return nil
 	}
 	a, b := index(i), index(j)
-	nilFirst := true
 	switch {
 	case a == nil && b == nil:
 		return false
 	case a == nil:
-		return nilFirst
+		return s.nilFirst
 	case b == nil:
-		return !nilFirst
+		return !s.nilFirst
 	}
 	return Less(a, b)
 }
