@@ -8,8 +8,8 @@ import (
 // controlTagDefinitions is a map of tag names to control tag definitions.
 var controlTagDefinitions = map[string]*controlTagDefinition{}
 
-// ControlTagAction runs the interpreter.
-type ControlTagAction func(ASTControlTag) func(io.Writer, Context) error
+// ControlTagParser runs the interpreter.
+type ControlTagParser func(ASTControlTag) (func(io.Writer, Context) error, error)
 
 // controlTagDefinition tells the parser how to parse control tags.
 type controlTagDefinition struct {
@@ -17,7 +17,7 @@ type controlTagDefinition struct {
 	isBranchTag, isEndTag bool
 	syntaxModel           *controlTagDefinition
 	parent                *controlTagDefinition
-	action                ControlTagAction
+	parser                ControlTagParser
 }
 
 func (c *controlTagDefinition) compatibleParent(p *controlTagDefinition) bool {
@@ -79,7 +79,7 @@ func (b tagBuilder) SameSyntaxAs(name string) tagBuilder {
 	return b
 }
 
-// Action sets the action for a control tag definition.
-func (b tagBuilder) Action(fn ControlTagAction) {
-	b.tag.action = fn
+// Parser sets the parser for a control tag definition.
+func (b tagBuilder) Parser(fn ControlTagParser) {
+	b.tag.parser = fn
 }

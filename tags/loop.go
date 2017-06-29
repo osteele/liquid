@@ -16,10 +16,10 @@ func parseLoop(source string) (expressions.Expression, error) {
 	return expr, nil
 }
 
-func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	expr, err := parseLoop(node.Args)
 	if err != nil {
-		return func(io.Writer, chunks.Context) error { return err }
+		return nil, err
 	}
 	return func(w io.Writer, ctx chunks.Context) error {
 		val, err := ctx.Evaluate(expr)
@@ -73,5 +73,5 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 			}
 		}
 		return nil
-	}
+	}, nil
 }

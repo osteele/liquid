@@ -14,17 +14,17 @@ func DefineStandardTags() {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	chunks.DefineControlTag("capture").Action(captureTag)
-	chunks.DefineControlTag("case").Branch("when").Action(caseTag)
+	chunks.DefineControlTag("capture").Parser(captureTagParser)
+	chunks.DefineControlTag("case").Branch("when").Parser(caseTagParser)
 	chunks.DefineControlTag("comment")
-	chunks.DefineControlTag("for").Governs(loopTags).Action(loopTag)
-	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Action(ifTag(true))
+	chunks.DefineControlTag("for").Governs(loopTags).Parser(loopTagParser)
+	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
 	chunks.DefineControlTag("raw")
 	chunks.DefineControlTag("tablerow").Governs(loopTags)
-	chunks.DefineControlTag("unless").SameSyntaxAs("if").Action(ifTag(false))
+	chunks.DefineControlTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
-func captureTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	// TODO verify syntax
 	varname := node.Args
 	return func(w io.Writer, ctx chunks.Context) error {
@@ -34,16 +34,15 @@ func captureTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error
 		}
 		ctx.Set(varname, buf.String())
 		return nil
-	}
+	}, nil
 }
 
-func caseTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
 	expr, err := chunks.MakeExpressionValueFn(node.Args)
-	// TODO change the API to let this return the error directly
 	if err != nil {
-		return func(io.Writer, chunks.Context) error { return err }
+		return nil, err
 	}
 	type branchRec struct {
 		fn   func(chunks.Context) (interface{}, error)
@@ -53,7 +52,7 @@ func caseTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 	for _, branch := range node.Branches {
 		bfn, err := chunks.MakeExpressionValueFn(branch.Args)
 		if err != nil {
-			return func(io.Writer, chunks.Context) error { return err }
+			return nil, err
 		}
 		cases = append(cases, branchRec{bfn, branch})
 	}
@@ -72,17 +71,16 @@ func caseTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 			}
 		}
 		return nil
-	}
+	}, nil
 }
 
-func ifTag(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	// TODO parse error if the order of branches is other than ifelse*else?
 	// TODO parse the tests into a table evaluator -> []AST
-	return func(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
+	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 		expr, err := chunks.MakeExpressionValueFn(node.Args)
 		if err != nil {
-			// TODO allow these to return the error directly
-			return func(io.Writer, chunks.Context) error { return err }
+			return nil, err
 		}
 		return func(w io.Writer, ctx chunks.Context) error {
 			val, err := expr(ctx)
@@ -112,6 +110,6 @@ func ifTag(polarity bool) func(chunks.ASTControlTag) func(io.Writer, chunks.Cont
 				}
 			}
 			return nil
-		}
+		}, nil
 	}
 }
