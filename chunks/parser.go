@@ -26,17 +26,17 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 	for _, c := range chunks {
 		switch {
 		case inComment:
-			if c.Type == TagChunkType && c.Tag == "endcomment" {
+			if c.Type == TagChunkType && c.Name == "endcomment" {
 				inComment = false
 			}
 		case inRaw:
-			if c.Type == TagChunkType && c.Tag == "endraw" {
+			if c.Type == TagChunkType && c.Name == "endraw" {
 				inComment = false
 			} else {
 				rawTag.slices = append(rawTag.slices, c.Source)
 			}
 		case c.Type == ObjChunkType:
-			expr, err := expressions.Parse(c.Args)
+			expr, err := expressions.Parse(c.Parameters)
 			if err != nil {
 				return nil, err
 			}
@@ -44,11 +44,11 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		case c.Type == TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
 		case c.Type == TagChunkType:
-			if cd, ok := findControlTagDefinition(c.Tag); ok {
+			if cd, ok := findControlTagDefinition(c.Name); ok {
 				switch {
-				case c.Tag == "comment":
+				case c.Name == "comment":
 					inComment = true
-				case c.Tag == "raw":
+				case c.Name == "raw":
 					inRaw = true
 					rawTag = &ASTRaw{}
 					*ap = append(*ap, rawTag)
@@ -79,14 +79,14 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					stack = stack[:len(stack)-1]
 					ccd, ccn, ap = f.cd, f.cn, f.ap
 				}
-			} else if td, ok := FindTagDefinition(c.Tag); ok {
-				f, err := td(c.Args)
+			} else if td, ok := FindTagDefinition(c.Name); ok {
+				f, err := td(c.Parameters)
 				if err != nil {
 					return nil, err
 				}
 				*ap = append(*ap, &ASTFunctional{c, f})
 			} else {
-				return nil, fmt.Errorf("unknown tag: %s", c.Tag)
+				return nil, fmt.Errorf("unknown tag: %s", c.Name)
 			}
 			// } else if len(*ap) > 0 {
 			// 	switch n := ((*ap)[len(*ap)-1]).(type) {
@@ -125,7 +125,7 @@ func evaluateBuilders(n ASTNode) error {
 				return err
 			}
 		}
-		cd, ok := findControlTagDefinition(n.Tag)
+		cd, ok := findControlTagDefinition(n.Name)
 		if ok && cd.parser != nil {
 			renderer, err := cd.parser(*n)
 			if err != nil {

@@ -27,9 +27,9 @@ func (n *ASTChunks) Render(w io.Writer, _ Context) error {
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTFunctional) Render(w io.Writer, ctx Context) error {
 	err := n.render(w, ctx)
-	if err != nil {
-		fmt.Println("while parsing", n.Source)
-	}
+	// if err != nil {
+	// 	fmt.Println("while parsing", n.Source)
+	// }
 	return err
 }
 
@@ -52,9 +52,9 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 
 // Render evaluates an AST node and writes the result to an io.Writer.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
-	cd, ok := findControlTagDefinition(n.Tag)
+	cd, ok := findControlTagDefinition(n.Name)
 	if !ok || cd.parser == nil {
-		return fmt.Errorf("unimplemented tag: %s", n.Tag)
+		return fmt.Errorf("unimplemented tag: %s", n.Name)
 	}
 	renderer := n.renderer
 	if renderer == nil {

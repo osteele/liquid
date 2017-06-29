@@ -14,8 +14,8 @@ var convertTests = []struct {
 	{1, 1.0, float64(1)},
 	{"2", 1, int(2)},
 	{"1.2", 1.0, float64(1.2)},
-	{true, 1, float64(1)},
-	{false, 1, float64(0)},
+	{true, 1, 1},
+	{false, 1, 0},
 }
 
 var eqTests = []struct {

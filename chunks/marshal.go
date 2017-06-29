@@ -21,9 +21,9 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 	case TextChunkType:
 		return map[string]interface{}{"text": c.Source}, nil
 	case TagChunkType:
-		return map[string]interface{}{"tag": c.Tag, "args": c.Args}, nil
+		return map[string]interface{}{"tag": c.Name, "args": c.Parameters}, nil
 	case ObjChunkType:
-		return map[string]interface{}{"obj": c.Tag}, nil
+		return map[string]interface{}{"obj": c.Name}, nil
 	default:
 		return nil, fmt.Errorf("unknown chunk tag type: %v", c.Type)
 	}
@@ -38,7 +38,7 @@ func (n ASTChunks) MarshalYAML() (interface{}, error) {
 func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.name: {
-			"args":     n.Args,
+			"args":     n.Parameters,
 			"body":     n.Body,
 			"branches": n.Branches,
 		}}, nil

@@ -33,27 +33,27 @@ func TestScanner(t *testing.T) {
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, ObjChunkType, tokens[0].Type)
-	require.Equal(t, "obj", tokens[0].Args)
+	require.Equal(t, "obj", tokens[0].Parameters)
 
 	tokens = Scan("{{ obj }}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, ObjChunkType, tokens[0].Type)
-	require.Equal(t, "obj", tokens[0].Args)
+	require.Equal(t, "obj", tokens[0].Parameters)
 
 	tokens = Scan("{%tag args%}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, TagChunkType, tokens[0].Type)
-	require.Equal(t, "tag", tokens[0].Tag)
-	require.Equal(t, "args", tokens[0].Args)
+	require.Equal(t, "tag", tokens[0].Name)
+	require.Equal(t, "args", tokens[0].Parameters)
 
 	tokens = Scan("{% tag args %}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, TagChunkType, tokens[0].Type)
-	require.Equal(t, "tag", tokens[0].Tag)
-	require.Equal(t, "args", tokens[0].Args)
+	require.Equal(t, "tag", tokens[0].Name)
+	require.Equal(t, "args", tokens[0].Parameters)
 
 	for i, test := range scannerCountTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {

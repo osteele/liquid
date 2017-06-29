@@ -25,7 +25,7 @@
   - [ ] Iteration
       - [x] modifiers (`limit`, `reversed`, `offset`)
       - [ ] `range`
-      - [ ] `break`, `continue`
+      - [x] `break`, `continue`
       - [x] loop variables
       - [ ] `tablerow`
       - [ ] `cycle`

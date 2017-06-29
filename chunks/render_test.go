@@ -10,10 +10,10 @@ import (
 
 var renderTests = []struct{ in, expected string }{
 	// {"{%if syntax error%}{%endif%}", "parse error"},
-	{"{{12}}", "12"},
-	{"{{x}}", "123"},
-	{"{{page.title}}", "Introduction"},
-	{"{{ar[1]}}", "second"},
+	{`{{ 12 }}`, "12"},
+	{`{{ x }}`, "123"},
+	{`{{ page.title }}`, "Introduction"},
+	{`{{ ar[1] }}`, "second"},
 }
 
 var renderTestContext = Context{map[string]interface{}{
@@ -46,7 +46,7 @@ var renderTestContext = Context{map[string]interface{}{
 
 func TestRender(t *testing.T) {
 	for i, test := range renderTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			tokens := Scan(test.in, "")
 			// fmt.Println(tokens)
 			ast, err := Parse(tokens)

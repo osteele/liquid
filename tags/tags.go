@@ -14,19 +14,21 @@ func DefineStandardTags() {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	chunks.DefineControlTag("capture").Parser(captureTagParser)
-	chunks.DefineControlTag("case").Branch("when").Parser(caseTagParser)
-	chunks.DefineControlTag("comment")
-	chunks.DefineControlTag("for").Governs(loopTags).Parser(loopTagParser)
-	chunks.DefineControlTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
-	chunks.DefineControlTag("raw")
-	chunks.DefineControlTag("tablerow").Governs(loopTags)
-	chunks.DefineControlTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+	chunks.DefineTag("break", breakTag)
+	chunks.DefineTag("continue", continueTag)
+	chunks.DefineStartTag("capture").Parser(captureTagParser)
+	chunks.DefineStartTag("case").Branch("when").Parser(caseTagParser)
+	chunks.DefineStartTag("comment")
+	chunks.DefineStartTag("for").Governs(loopTags).Parser(loopTagParser)
+	chunks.DefineStartTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
+	chunks.DefineStartTag("raw")
+	chunks.DefineStartTag("tablerow").Governs(loopTags)
+	chunks.DefineStartTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
 func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	// TODO verify syntax
-	varname := node.Args
+	varname := node.Parameters
 	return func(w io.Writer, ctx chunks.Context) error {
 		buf := new(bytes.Buffer)
 		if err := ctx.RenderASTSequence(buf, node.Body); err != nil {
@@ -40,7 +42,7 @@ func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context
 func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
-	expr, err := chunks.MakeExpressionValueFn(node.Args)
+	expr, err := chunks.MakeExpressionValueFn(node.Parameters)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +52,7 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
-		bfn, err := chunks.MakeExpressionValueFn(branch.Args)
+		bfn, err := chunks.MakeExpressionValueFn(branch.Parameters)
 		if err != nil {
 			return nil, err
 		}
@@ -80,7 +82,7 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 			test func(chunks.Context) (interface{}, error)
 			body []chunks.ASTNode
 		}
-		expr, err := chunks.MakeExpressionValueFn(node.Args)
+		expr, err := chunks.MakeExpressionValueFn(node.Parameters)
 		if err != nil {
 			return nil, err
 		}
@@ -92,11 +94,11 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 		}
 		for _, c := range node.Branches {
 			test := chunks.True
-			switch c.Tag {
+			switch c.Name {
 			case "else":
 			// TODO parse error if this isn't the last branch
 			case "elsif":
-				t, err := chunks.MakeExpressionValueFn(c.Args)
+				t, err := chunks.MakeExpressionValueFn(c.Parameters)
 				if err != nil {
 					return nil, err
 				}

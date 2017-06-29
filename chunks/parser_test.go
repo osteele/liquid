@@ -8,11 +8,11 @@ import (
 )
 
 func init() {
-	DefineControlTag("case").Branch("when")
-	DefineControlTag("comment")
-	DefineControlTag("for").Governs([]string{"break"})
-	DefineControlTag("if").Branch("else").Branch("elsif")
-	DefineControlTag("raw")
+	DefineStartTag("case").Branch("when")
+	DefineStartTag("comment")
+	DefineStartTag("for").Governs([]string{"break"})
+	DefineStartTag("if").Branch("else").Branch("elsif")
+	DefineStartTag("raw")
 }
 
 var parseErrorTests = []struct{ in, expected string }{

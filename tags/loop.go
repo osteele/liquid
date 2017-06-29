@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 
@@ -8,7 +9,22 @@ import (
 	"github.com/osteele/liquid/expressions"
 )
 
-func parseLoop(source string) (expressions.Expression, error) {
+var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
+var errLoopBreak = fmt.Errorf("break outside a loop")
+
+func breakTag(parameters string) (func(io.Writer, chunks.Context) error, error) {
+	return func(io.Writer, chunks.Context) error {
+		return errLoopBreak
+	}, nil
+}
+
+func continueTag(parameters string) (func(io.Writer, chunks.Context) error, error) {
+	return func(io.Writer, chunks.Context) error {
+		return errLoopContinueLoop
+	}, nil
+}
+
+func parseLoopExpression(source string) (expressions.Expression, error) {
 	expr, err := expressions.Parse("%loop " + source)
 	if err != nil {
 		return nil, err
@@ -17,7 +33,7 @@ func parseLoop(source string) (expressions.Expression, error) {
 }
 
 func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
-	expr, err := parseLoop(node.Args)
+	expr, err := parseLoopExpression(node.Parameters)
 	if err != nil {
 		return nil, err
 	}
@@ -68,6 +84,12 @@ func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 			})
 			first, index = false, index+1
 			err := ctx.RenderASTSequence(w, node.Body)
+			if err == errLoopBreak {
+				break
+			}
+			if err == errLoopContinueLoop {
+				continue
+			}
 			if err != nil {
 				return err
 			}

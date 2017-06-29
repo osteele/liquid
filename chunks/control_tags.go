@@ -49,8 +49,8 @@ func findControlTagDefinition(name string) (*controlTagDefinition, bool) {
 
 type tagBuilder struct{ tag *controlTagDefinition }
 
-// DefineControlTag defines a control tag and its matching end tag.
-func DefineControlTag(name string) tagBuilder {
+// DefineStartTag defines a control tag and its matching end tag.
+func DefineStartTag(name string) tagBuilder {
 	ct := &controlTagDefinition{name: name}
 	addControlTagDefinition(ct)
 	addControlTagDefinition(&controlTagDefinition{name: "end" + name, isEndTag: true, parent: ct})
@@ -82,4 +82,12 @@ func (b tagBuilder) SameSyntaxAs(name string) tagBuilder {
 // Parser sets the parser for a control tag definition.
 func (b tagBuilder) Parser(fn ControlTagParser) {
 	b.tag.parser = fn
+}
+
+// Renderer sets the render action for a control tag definition.
+func (b tagBuilder) Renderer(fn func(io.Writer, Context) error) {
+	b.tag.parser = func(node ASTControlTag) (func(io.Writer, Context) error, error) {
+		// TODO parse error if there are arguments?
+		return fn, nil
+	}
 }
