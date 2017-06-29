@@ -74,18 +74,6 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 	}, nil
 }
 
-func constTrueExpr(_ chunks.Context) (interface{}, error) { return true, nil }
-
-func negateExpr(f func(chunks.Context) (interface{}, error)) func(chunks.Context) (interface{}, error) {
-	return func(ctx chunks.Context) (interface{}, error) {
-		value, err := f(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return value == nil || value == false, nil
-	}
-}
-
 func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
 		type branchRec struct {
@@ -97,13 +85,13 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 			return nil, err
 		}
 		if !polarity {
-			expr = negateExpr(expr)
+			expr = chunks.Negate(expr)
 		}
 		branches := []branchRec{
 			{expr, node.Body},
 		}
 		for _, c := range node.Branches {
-			test := constTrueExpr
+			test := chunks.True
 			switch c.Tag {
 			case "else":
 			// TODO parse error if this isn't the last branch

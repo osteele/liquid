@@ -54,8 +54,8 @@ func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err err
 	return expr.Evaluate(expressions.NewContext(c.vars))
 }
 
-// EvaluateExpr evaluates an expression within the template context.
-func (c Context) EvaluateExpr(source string) (out interface{}, err error) {
+// EvaluateString evaluates an expression within the template context.
+func (c Context) EvaluateString(source string) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
@@ -67,11 +67,11 @@ func (c Context) EvaluateExpr(source string) (out interface{}, err error) {
 			}
 		}
 	}()
-	return expressions.EvaluateExpr(source, expressions.NewContext(c.vars))
+	return expressions.EvaluateString(source, expressions.NewContext(c.vars))
 }
 
 func (c Context) evaluateStatement(tag, source string) (interface{}, error) {
-	return c.EvaluateExpr(fmt.Sprintf("%%%s %s", tag, source))
+	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
 }
 
 // MakeExpressionValueFn parses source into an evaluation function

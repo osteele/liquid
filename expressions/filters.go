@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/osteele/liquid/errors"
 	"github.com/osteele/liquid/generics"
 )
 
@@ -14,6 +13,13 @@ import (
 type InterpreterError string
 
 func (e InterpreterError) Error() string { return string(e) }
+
+// UndefinedFilter is an error that the named filter is not defined.
+type UndefinedFilter string
+
+func (e UndefinedFilter) Error() string {
+	return fmt.Sprintf("undefined filter: %s", string(e))
+}
 
 type valueFn func(Context) interface{}
 
@@ -44,7 +50,7 @@ func isClosureInterfaceType(t reflect.Type) bool {
 func makeFilter(f valueFn, name string, params []valueFn) valueFn {
 	fn, ok := filters[name]
 	if !ok {
-		panic(errors.UndefinedFilter(name))
+		panic(UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(fn)
 	return func(ctx Context) interface{} {

@@ -162,7 +162,7 @@ var filterTestContext = expressions.NewContext(map[string]interface{}{
 func TestFilters(t *testing.T) {
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			value, err := expressions.EvaluateExpr(test.in, filterTestContext)
+			value, err := expressions.EvaluateString(test.in, filterTestContext)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
 			switch v := value.(type) {

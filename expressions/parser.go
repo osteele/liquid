@@ -2,8 +2,6 @@ package expressions
 
 import (
 	"fmt"
-
-	"github.com/osteele/liquid/errors"
 )
 
 // Loop describes the result of parsing and then evaluating a loop statement.
@@ -38,7 +36,7 @@ func Parse(source string) (expr Expression, err error) {
 				err = e
 			case UnimplementedError:
 				err = e
-			case errors.UndefinedFilter:
+			case UndefinedFilter:
 				err = e
 			default:
 				panic(r)
@@ -51,4 +49,13 @@ func Parse(source string) (expr Expression, err error) {
 		return nil, fmt.Errorf("parse error in %s", source)
 	}
 	return &expression{lexer.val}, nil
+}
+
+// EvaluateString is a wrapper for Parse and Evaluate.
+func EvaluateString(source string, ctx Context) (interface{}, error) {
+	expr, err := Parse(source)
+	if err != nil {
+		return nil, err
+	}
+	return expr.Evaluate(ctx)
 }

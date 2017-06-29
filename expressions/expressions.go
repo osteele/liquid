@@ -1,7 +1,6 @@
 package expressions
 
 import (
-	"github.com/osteele/liquid/errors"
 	"github.com/osteele/liquid/generics"
 )
 
@@ -46,7 +45,7 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 				err = e
 			case UnimplementedError:
 				err = e
-			case errors.UndefinedFilter:
+			case UndefinedFilter:
 				err = e
 			default:
 				panic(r)
@@ -54,13 +53,4 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 		}
 	}()
 	return e.evaluator(ctx), nil
-}
-
-// EvaluateExpr is a wrapper for Parse and Evaluate.
-func EvaluateExpr(source string, ctx Context) (interface{}, error) {
-	expr, err := Parse(source)
-	if err != nil {
-		return nil, err
-	}
-	return expr.Evaluate(ctx)
 }

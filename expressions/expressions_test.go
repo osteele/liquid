@@ -108,7 +108,7 @@ var evaluatorTestContext = NewContext(map[string]interface{}{
 func TestEvaluator(t *testing.T) {
 	for i, test := range evaluatorTests {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			val, err := EvaluateExpr(test.in, evaluatorTestContext)
+			val, err := EvaluateString(test.in, evaluatorTestContext)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, val, test.in)
 		})
