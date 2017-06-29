@@ -228,9 +228,7 @@ func reverseFilter(in []interface{}) interface{} {
 
 func sortFilter(in []interface{}, key interface{}) []interface{} {
 	out := make([]interface{}, len(in))
-	for i, v := range in {
-		out[i] = v
-	}
+	copy(out, in)
 	if key == nil {
 		generics.Sort(out)
 	} else {

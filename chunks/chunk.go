@@ -42,6 +42,6 @@ const (
 	TextChunkType ChunkType = iota
 	// TagChunkType is the type of a tag Chunk "{%…%}"
 	TagChunkType
-	// TextChunkType is the type of an object Chunk "{{…}}"
+	// ObjChunkType is the type of an object Chunk "{{…}}"
 	ObjChunkType
 )

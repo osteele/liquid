@@ -14,7 +14,7 @@ import (
 // 	{"{{x}}", "1"},
 // }
 
-func ScanExpression(data string) ([]yySymType, error) {
+func scanExpression(data string) ([]yySymType, error) {
 	l := newLexer([]byte(data))
 	var symbols []yySymType
 	var s yySymType
@@ -29,7 +29,7 @@ func ScanExpression(data string) ([]yySymType, error) {
 }
 
 func TestExpressionScanner(t *testing.T) {
-	tokens, err := ScanExpression("abc > 123")
+	tokens, err := scanExpression("abc > 123")
 	require.NoError(t, err)
 	require.Len(t, tokens, 3)
 }
