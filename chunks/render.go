@@ -56,11 +56,12 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	if !ok || cd.parser == nil {
 		return fmt.Errorf("unimplemented tag: %s", n.Tag)
 	}
-	f, err := cd.parser(*n)
-	if err != nil {
-		return err
+	renderer := n.renderer
+	if renderer == nil {
+		panic(fmt.Errorf("unset renderer for %v", n))
+		return nil
 	}
-	return f(w, ctx)
+	return renderer(w, ctx)
 }
 
 // Render evaluates an AST node and writes the result to an io.Writer.

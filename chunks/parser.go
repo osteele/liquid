@@ -68,6 +68,13 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					ccn.Branches = append(ccn.Branches, n)
 					ap = &n.Body
 				case cd.isEndTag:
+					// if ccn != nil && cd.parser != nil {
+					// 	renderer, err := cd.parser(*ccn)
+					// 	if err != nil {
+					// 		return nil, err
+					// 	}
+					// 	ccn.renderer = renderer
+					// }
 					f := stack[len(stack)-1]
 					stack = stack[:len(stack)-1]
 					ccd, ccn, ap = f.cd, f.cn, f.ap
@@ -96,8 +103,42 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 	if ccd != nil {
 		return nil, fmt.Errorf("unterminated %s tag", ccd.name)
 	}
+	if err := evaluateBuilders(root); err != nil {
+		return nil, err
+	}
 	if len(root.Children) == 1 {
 		return root.Children[0], nil
 	}
 	return root, nil
+}
+
+func evaluateBuilders(n ASTNode) error {
+	switch n := n.(type) {
+	case *ASTControlTag:
+		for _, child := range n.Body {
+			if err := evaluateBuilders(child); err != nil {
+				return err
+			}
+		}
+		for _, branch := range n.Branches {
+			if err := evaluateBuilders(branch); err != nil {
+				return err
+			}
+		}
+		cd, ok := findControlTagDefinition(n.Tag)
+		if ok && cd.parser != nil {
+			renderer, err := cd.parser(*n)
+			if err != nil {
+				return err
+			}
+			n.renderer = renderer
+		}
+	case *ASTSeq:
+		for _, child := range n.Children {
+			if error := evaluateBuilders(child); error != nil {
+				return error
+			}
+		}
+	}
+	return nil
 }

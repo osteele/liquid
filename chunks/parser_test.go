@@ -18,7 +18,7 @@ func init() {
 var parseErrorTests = []struct{ in, expected string }{
 	{"{%unknown_tag%}", "unknown tag"},
 	{"{%if test%}", "unterminated if tag"},
-	// {"{%if syntax error%}{%endif%}", "parse error"},
+	// {"{%for syntax error%}{%endfor%}", "parse error"},
 }
 
 var parserTests = []struct{ in string }{
@@ -30,7 +30,7 @@ var parserTests = []struct{ in string }{
 
 func TestParseErrors(t *testing.T) {
 	for i, test := range parseErrorTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			tokens := Scan(test.in, "")
 			ast, err := Parse(tokens)
 			require.Nilf(t, ast, test.in)
@@ -42,7 +42,7 @@ func TestParseErrors(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	for i, test := range parserTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			tokens := Scan(test.in, "")
 			_, err := Parse(tokens)
 			require.NoError(t, err, test.in)

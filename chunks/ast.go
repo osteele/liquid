@@ -47,6 +47,7 @@ type ASTObject struct {
 // ASTControlTag is a control tag.
 type ASTControlTag struct {
 	Chunk
+	renderer func(io.Writer, Context) error
 	cd       *controlTagDefinition
 	Body     []ASTNode
 	Branches []*ASTControlTag
