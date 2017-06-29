@@ -23,6 +23,9 @@ build: $(LIBRARY) ## compile the package
 clean: ## remove binary files
 	rm -fI ${LIBRARY}
 
+deps: ## list dependencies
+	go list -f '{{join .Imports "\n"}}' ./... | grep -v ${PACKAGE} | grep '\.' | sort | uniq
+
 setup: ## install dependencies and development tools
 	go get -t ./...
 	go get github.com/alecthomas/gometalinter

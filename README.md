@@ -76,7 +76,11 @@ ragel -Z scanner.rl && go test
 
 ## Attribution
 
-Kyoung-chan Lee's <https://github.com/leekchan/timeutil> for formatting dates.
+| Package | Author | Description |
+| --- | --- | --- |
+| [github.com/leekchan/timeutil](https://github.com/leekchan/timeutil) | Kyoung-chan Lee | formatting dates |
+| [gopkg.in/yaml.v2](https://github.com/go-yaml) | Canonical | YAML support |
+| [Ragel](http://www.colm.net/open-source/ragel/) | Adrian Thurston | scanning expressions |
 
 Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.
 
