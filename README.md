@@ -26,7 +26,7 @@
       - [x] modifiers (`limit`, `reversed`, `offset`)
       - [ ] `range`
       - [ ] `break`, `continue`
-      - [ ] loop variables
+      - [x] loop variables
       - [ ] `tablerow`
       - [ ] `cycle`
   - [x] Raw

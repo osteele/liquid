@@ -16,7 +16,7 @@ func init() {
    name     string
    val      interface{}
    f        func(Context) interface{}
-   loopmods LoopModifiers
+   loopmods loopModifiers
    filter_params []valueFn
 }
 %type <f> expr rel filtered cond loop
@@ -49,7 +49,7 @@ loop: IDENTIFIER IN filtered loop_modifiers ';' {
 }
 ;
 
-loop_modifiers: /* empty */ { $$ = LoopModifiers{} }
+loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 | loop_modifiers IDENTIFIER {
 	switch $2 {
 	case "reversed":

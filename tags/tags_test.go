@@ -18,27 +18,19 @@ var parseErrorTests = []struct{ in, expected string }{
 }
 
 var tagTests = []struct{ in, expected string }{
+	// variables
 	{`{%assign av = 1%}{{av}}`, "1"},
 	{`{%assign av = obj.a%}{{av}}`, "1"},
+	{`{%capture x%}captured{%endcapture%}{{x}}`, "captured"},
 
 	// TODO test whether this requires matching interior tags
 	{`{%comment%}{{a}}{%unknown%}{%endcomment%}`, ""},
 
-	{`{%capture x%}captured{%endcapture%}{{x}}`, "captured"},
-
+	// conditionals
 	{`{%case 1%}{%when 1%}a{%when 2%}b{%endcase%}`, "a"},
 	{`{%case 2%}{%when 1%}a{%when 2%}b{%endcase%}`, "b"},
 	{`{%case 3%}{%when 1%}a{%when 2%}b{%endcase%}`, ""},
 	// {`{%case 2%}{%when 1%}a{%else 2%}b{%endcase%}`, "captured"},
-
-	{`{%for a in ar%}{{a}} {%endfor%}`, "first second third "},
-	{`{%for a in ar reversed%}{{a}} {%endfor%}`, "third second first "},
-	{`{%for a in ar limit:2%}{{a}} {%endfor%}`, "first second "},
-	{`{%for a in ar offset:1%}{{a}} {%endfor%}`, "second third "},
-	{`{%for a in ar reversed offset:1%}{{a}} {%endfor%}`, "second first "},
-	{`{%for a in ar reversed limit:1%}{{a}} {%endfor%}`, "third "},
-	{`{%for a in ar limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
-	{`{%for a in ar reversed limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
 
 	{`{%if true%}true{%endif%}`, "true"},
 	{`{%if false%}false{%endif%}`, ""},
@@ -54,10 +46,6 @@ var tagTests = []struct{ in, expected string }{
 	{`{%if false%}0{%elsif true%}1{%else%}2{%endif%}`, "1"},
 	{`{%if false%}0{%elsif false%}1{%else%}2{%endif%}`, "2"},
 
-	// TODO test whether this requires matching interior tags
-	{`pre{%raw%}{{a}}{%unknown%}{%endraw%}post`, "pre{{a}}{%unknown%}post"},
-	{`pre{%raw%}{%if false%}anyway-{%endraw%}post`, "pre{%if false%}anyway-post"},
-
 	{`{%unless true%}false{%endunless%}`, ""},
 	{`{%unless false%}true{%endunless%}`, "true"},
 	{`{%unless true%}false{%else%}true{%endunless%}`, "true"},
@@ -65,6 +53,39 @@ var tagTests = []struct{ in, expected string }{
 	{`{%unless false%}0{%elsif true%}1{%else%}2{%endunless%}`, "0"},
 	{`{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}`, "1"},
 	{`{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}`, "2"},
+
+	// loops
+	{`{%for a in ar%}{{a}} {%endfor%}`, "first second third "},
+
+	// loop modifiers
+	{`{%for a in ar reversed%}{{a}} {%endfor%}`, "third second first "},
+	{`{%for a in ar limit:2%}{{a}} {%endfor%}`, "first second "},
+	{`{%for a in ar offset:1%}{{a}} {%endfor%}`, "second third "},
+	{`{%for a in ar reversed offset:1%}{{a}} {%endfor%}`, "second first "},
+	{`{%for a in ar reversed limit:1%}{{a}} {%endfor%}`, "third "},
+	{`{%for a in ar limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
+	{`{%for a in ar reversed limit:1 offset:1%}{{a}} {%endfor%}`, "second "},
+
+	// loop variables
+	{`{%for a in ar%}{{forloop.index}}:{{forloop.first}} {%endfor%}`, "1:true 2: 3: "},
+	{`{%for a in ar%}{{forloop.index}}:{{forloop.last}} {%endfor%}`, "1: 2: 3:true "},
+	{`{%for a in ar%}{{forloop.index}} {%endfor%}`, "1 2 3 "},
+	{`{%for a in ar%}{{forloop.index0}} {%endfor%}`, "0 1 2 "},
+	{`{%for a in ar%}{{forloop.rindex}} {%endfor%}`, "3 2 1 "},
+	{`{%for a in ar%}{{forloop.rindex0}} {%endfor%}`, "2 1 0 "},
+	{`{%for a in ar%}{{forloop.length}} {%endfor%}`, "3 3 3 "},
+	{`{%for i in ar%}{{forloop.index}}[{%for j in ar%}{{forloop.index}}{%endfor%}]{{forloop.index}} {%endfor%}`,
+		"1[123]1 2[123]2 3[123]3 "},
+	{`{%for a in ar reversed%}{{forloop.index}} {%endfor%}`, "1 2 3 "},
+	{`{%for a in ar reversed%}{{forloop.rindex}} {%endfor%}`, "3 2 1 "},
+	{`{%for a in ar reversed%}{{forloop.length}} {%endfor%}`, "3 3 3 "},
+	{`{%for a in ar limit:2%}{{forloop.index}} {%endfor%}`, "1 2 "},
+	{`{%for a in ar limit:2%}{{forloop.rindex}} {%endfor%}`, "2 1 "},
+	{`{%for a in ar limit:2%}{{forloop.length}} {%endfor%}`, "2 2 "},
+
+	// TODO test whether this requires matching interior tags
+	{`pre{%raw%}{{a}}{%unknown%}{%endraw%}post`, "pre{{a}}{%unknown%}post"},
+	{`pre{%raw%}{%if false%}anyway-{%endraw%}post`, "pre{%if false%}anyway-post"},
 }
 
 var tagTestContext = chunks.NewContext(map[string]interface{}{

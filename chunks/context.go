@@ -28,7 +28,12 @@ func (c Context) GetVariableMap() map[string]interface{} {
 	return c.vars
 }
 
-// Set sets a variable value within an evaluation context.
+// Get gets a variable value within an evaluation context.
+func (c Context) Get(name string) interface{} {
+	return c.vars[name]
+}
+
+// Set sets a variable value from an evaluation context.
 func (c Context) Set(name string, value interface{}) {
 	c.vars[name] = value
 }

@@ -21,7 +21,7 @@ type yySymType struct {
 	name          string
 	val           interface{}
 	f             func(Context) interface{}
-	loopmods      LoopModifiers
+	loopmods      loopModifiers
 	filter_params []valueFn
 }
 
@@ -537,7 +537,7 @@ yydefault:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		//line expressions.y:52
 		{
-			yyVAL.loopmods = LoopModifiers{}
+			yyVAL.loopmods = loopModifiers{}
 		}
 	case 6:
 		yyDollar = yyS[yypt-2 : yypt+1]

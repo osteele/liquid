@@ -36,6 +36,17 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 		if loop.Limit != nil {
 			limit = *loop.Limit
 		}
+		const forloopName = "forloop"
+		defer func(index, forloop interface{}) {
+			ctx.Set(forloopName, index)
+			ctx.Set(loop.Variable, forloop)
+		}(ctx.Get(forloopName), ctx.Get(loop.Variable))
+		// for forloop variable
+		var (
+			first  = true
+			index  = 1
+			length = limit
+		)
 		for i := start; i < rt.Len(); i++ {
 			if limit == 0 {
 				break
@@ -45,13 +56,22 @@ func loopTag(node chunks.ASTControlTag) func(io.Writer, chunks.Context) error {
 			if loop.Reversed {
 				j = rt.Len() - 1 - i
 			}
-			ctx.Set(loop.Name, rt.Index(j).Interface())
+			ctx.Set(loop.Variable, rt.Index(j).Interface())
+			ctx.Set(forloopName, map[string]interface{}{
+				"first":   first,
+				"last":    limit == 0,
+				"index":   index,
+				"index0":  index - 1,
+				"rindex":  length + 1 - index,
+				"rindex0": length - index,
+				"length":  length,
+			})
+			first, index = false, index+1
 			err := ctx.RenderASTSequence(w, node.Body)
 			if err != nil {
 				return err
 			}
 		}
-		ctx.Set(loop.Name, nil)
 		return nil
 	}
 }
