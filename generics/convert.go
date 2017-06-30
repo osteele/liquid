@@ -35,6 +35,8 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 		return ParseTime(value.(string))
 	}
 	switch target.Kind() {
+	case reflect.Bool:
+		return !(value == nil || value == false), nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		switch value := value.(type) {
 		case bool:
@@ -73,18 +75,28 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 		}
 		return out.Interface(), nil
 	case reflect.Slice:
-		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
-			break
-		}
-		out := reflect.MakeSlice(target, 0, r.Len())
-		for i := 0; i < r.Len(); i++ {
-			item, err := Convert(r.Index(i).Interface(), target.Elem())
-			if err != nil {
-				return nil, err
+		switch r.Kind() {
+		case reflect.Array, reflect.Slice:
+			out := reflect.MakeSlice(target, 0, r.Len())
+			for i := 0; i < r.Len(); i++ {
+				item, err := Convert(r.Index(i).Interface(), target.Elem())
+				if err != nil {
+					return nil, err
+				}
+				out = reflect.Append(out, reflect.ValueOf(item))
 			}
-			out = reflect.Append(out, reflect.ValueOf(item))
+			return out.Interface(), nil
+		case reflect.Map:
+			out := reflect.MakeSlice(target, 0, r.Len())
+			for _, key := range r.MapKeys() {
+				item, err := Convert(r.MapIndex(key).Interface(), target.Elem())
+				if err != nil {
+					return nil, err
+				}
+				out = reflect.Append(out, reflect.ValueOf(item))
+				return out.Interface(), nil
+			}
 		}
-		return out.Interface(), nil
 	}
 	return nil, conversionError("", value, target)
 }
