@@ -5,11 +5,20 @@ import (
 	"reflect"
 	"strconv"
 	"time"
-
-	"github.com/jeffjen/datefmt"
 )
 
 var timeType = reflect.TypeOf(time.Now())
+
+func conversionError(modifier string, value interface{}, typ reflect.Type) error {
+	if modifier != "" {
+		modifier += " "
+	}
+	switch ref := value.(type) {
+	case reflect.Value:
+		value = ref.Interface()
+	}
+	return genericErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
+}
 
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
@@ -46,16 +55,23 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 	case reflect.Map:
 		out := reflect.MakeMap(target)
 		for _, key := range r.MapKeys() {
+			if target.Key().Kind() == reflect.String {
+				key = reflect.ValueOf(fmt.Sprint(key))
+			}
 			if !key.Type().ConvertibleTo(target.Key()) {
-				return nil, genericErrorf("generic.Convert can't convert %#v map key %#v to type %s", value, key.Interface(), target.Key())
+				return nil, conversionError("map key", key, target.Key())
 			}
 			key = key.Convert(target.Key())
 			value := r.MapIndex(key)
-			if !value.Type().ConvertibleTo(target.Key()) {
-				return nil, genericErrorf("generic.Convert can't convert %#v map value %#v to type %s", value, value.Interface(), target.Elem())
+			if target.Elem().Kind() == reflect.String {
+				value = reflect.ValueOf(fmt.Sprint(value))
+			}
+			if !value.Type().ConvertibleTo(target.Elem()) {
+				return nil, conversionError("map value", value, target.Elem())
 			}
 			out.SetMapIndex(key, value.Convert(target.Elem()))
 		}
+		return out.Interface(), nil
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
 			break
@@ -70,7 +86,7 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 		}
 		return out.Interface(), nil
 	}
-	return nil, genericErrorf("generic.Convert can't convert %#v of type %s / kind %s to type %s", value, r.Type(), r.Kind(), target)
+	return nil, conversionError("", value, target)
 }
 
 // MustConvert wraps Convert, but panics on error.
@@ -89,44 +105,4 @@ func MustConvertItem(item interface{}, array []interface{}) interface{} {
 		panic(fmt.Errorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
 	}
 	return item
-}
-
-var dateFormats = []string{
-	"%Y-%m-%d %H:%M:%S %Z",
-}
-
-var dateLayouts = []string{
-	"2006-01-02 15:04:05 -07:00",
-	"2006-01-02 15:04:05 -0700",
-	"2006-01-02 15:04:05 -7",
-	"2006-01-02 15:04:05",
-	"2006-01-02 15:04",
-	"2006-01-02",
-	"January 2, 2006",
-	"January 2 2006",
-	"Jan 2, 2006",
-	"Jan 2 2006",
-}
-
-// ParseTime tries a few heuristics to parse a date from a string
-func ParseTime(s string) (time.Time, error) {
-	if s == "now" {
-		return time.Now(), nil
-	}
-	for _, layout := range dateLayouts {
-		// fmt.Printf("%s\n%s\n\n", time.Now().Format(layout), s)
-		t, err := time.Parse(layout, s)
-		if err == nil {
-			return t, nil
-		}
-	}
-	for _, format := range dateFormats {
-		// xx, _ := datefmt.Strftime(format, time.Now())
-		// fmt.Printf("%s\n%s\n\n", xx, s)
-		t, err := datefmt.Strptime(format, s)
-		if err == nil {
-			return t, nil
-		}
-	}
-	return time.Unix(0, 0), genericErrorf("can't convert %s to a time", s)
 }

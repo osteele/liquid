@@ -73,6 +73,34 @@ func TestConvert(t *testing.T) {
 		})
 	}
 }
+func TestConvertMap(t *testing.T) {
+	m := map[interface{}]interface{}{"key": "value"}
+	typ := reflect.TypeOf(map[string]string{})
+	a, err := Convert(m, typ)
+	require.NoError(t, err)
+	switch a := a.(type) {
+	case map[string]string:
+		require.Len(t, a, 1)
+		require.Equal(t, "value", a["key"])
+	default:
+		require.Equal(t, typ.String(), reflect.TypeOf(a).String())
+	}
+}
+
+func TestConvertMapSynonym(t *testing.T) {
+	type VariableMap map[interface{}]interface{}
+	m := VariableMap{"key": "value"}
+	typ := reflect.TypeOf(map[string]string{})
+	a, err := Convert(m, typ)
+	require.NoError(t, err)
+	switch a := a.(type) {
+	case map[string]string:
+		require.Len(t, a, 1)
+		require.Equal(t, "value", a["key"])
+	default:
+		require.Equal(t, typ.String(), reflect.TypeOf(a).String())
+	}
+}
 
 func TestEqual(t *testing.T) {
 	for i, test := range eqTests {
