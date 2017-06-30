@@ -45,7 +45,7 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) {
 				rawTag.slices = append(rawTag.slices, c.Source)
 			}
 		case c.Type == ObjChunkType:
-			expr, err := expressions.Parse(c.Parameters)
+			expr, err := expressions.Parse(c.Args)
 			if err != nil {
 				return nil, err
 			}
@@ -82,7 +82,7 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) {
 					ccd, ccn, ap = f.cd, f.cn, f.ap
 				}
 			} else if td, ok := s.FindTagDefinition(c.Name); ok {
-				f, err := td(c.Parameters)
+				f, err := td(c.Args)
 				if err != nil {
 					return nil, err
 				}

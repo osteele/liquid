@@ -11,7 +11,7 @@ type Chunk struct {
 	Type       ChunkType
 	SourceInfo SourceInfo
 	Name       string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
-	Parameters string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
+	Args       string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
 	Source     string // Source is the entirety of the chunk, including the "{{", "{%", etc. markers.
 }
 
@@ -38,9 +38,9 @@ func (c Chunk) String() string {
 	case TextChunkType:
 		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
 	case TagChunkType:
-		return fmt.Sprintf("%s{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Parameters)
+		return fmt.Sprintf("%s{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
 	case ObjChunkType:
-		return fmt.Sprintf("%s{%#v}", c.Type, c.Parameters)
+		return fmt.Sprintf("%s{%#v}", c.Type, c.Args)
 	default:
 		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
 	}

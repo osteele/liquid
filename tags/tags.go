@@ -28,7 +28,7 @@ func AddStandardTags(settings chunks.Settings) {
 
 func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO verify syntax
-	varname := node.Parameters
+	varname := node.Args
 	return func(w io.Writer, ctx chunks.RenderContext) error {
 		s, err := ctx.InnerString()
 		if err != nil {
@@ -42,7 +42,7 @@ func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderC
 func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
-	expr, err := expressions.Parse(node.Parameters)
+	expr, err := expressions.Parse(node.Args)
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
-		bfn, err := expressions.Parse(branch.Parameters)
+		bfn, err := expressions.Parse(branch.Args)
 		if err != nil {
 			return nil, err
 		}
@@ -82,7 +82,7 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 			test expressions.Expression
 			body *chunks.ASTControlTag
 		}
-		expr, err := expressions.Parse(node.Parameters)
+		expr, err := expressions.Parse(node.Args)
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 			case "else":
 			// TODO parse error if this isn't the last branch
 			case "elsif":
-				t, err := expressions.Parse(c.Parameters)
+				t, err := expressions.Parse(c.Args)
 				if err != nil {
 					return nil, err
 				}

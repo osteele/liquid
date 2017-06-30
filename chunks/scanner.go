@@ -31,7 +31,7 @@ func Scan(data string, pathname string) []Chunk {
 				Type:       ObjChunkType,
 				SourceInfo: si,
 				Source:     source,
-				Parameters: data[m[2]:m[3]],
+				Args:       data[m[2]:m[3]],
 			})
 		case '%':
 			c := Chunk{
@@ -41,7 +41,7 @@ func Scan(data string, pathname string) []Chunk {
 				Name:       data[m[4]:m[5]],
 			}
 			if m[6] > 0 {
-				c.Parameters = data[m[6]:m[7]]
+				c.Args = data[m[6]:m[7]]
 			}
 			out = append(out, c)
 		}

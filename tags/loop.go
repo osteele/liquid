@@ -33,7 +33,7 @@ func parseLoopExpression(source string) (expressions.Expression, error) {
 }
 
 func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
-	expr, err := parseLoopExpression(node.Parameters)
+	expr, err := parseLoopExpression(node.Args)
 	if err != nil {
 		return nil, err
 	}

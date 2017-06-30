@@ -21,7 +21,7 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 	case TextChunkType:
 		return map[string]interface{}{"text": c.Source}, nil
 	case TagChunkType:
-		return map[string]interface{}{"tag": c.Name, "args": c.Parameters}, nil
+		return map[string]interface{}{"tag": c.Name, "args": c.Args}, nil
 	case ObjChunkType:
 		return map[string]interface{}{"obj": c.Name}, nil
 	default:
@@ -33,7 +33,7 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 func (n ASTControlTag) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.name: {
-			"args":     n.Parameters,
+			"args":     n.Args,
 			"body":     n.Body,
 			"branches": n.Branches,
 		}}, nil

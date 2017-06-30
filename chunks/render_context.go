@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/osteele/liquid/expressions"
 )
@@ -16,10 +17,10 @@ type RenderContext interface {
 	Evaluate(expr expressions.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
+	InnerString() (string, error)
+	ParseTagArgs() (string, error)
 	RenderChild(io.Writer, *ASTControlTag) error
 	RenderChildren(io.Writer) error
-	// RenderTemplate(io.Writer, filename string) (string, error)
-	InnerString() (string, error)
 }
 
 type renderContext struct {
@@ -82,10 +83,6 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 	return c.ctx.RenderASTSequence(w, c.cn.Body)
 }
 
-// func (c renderContext) RenderTemplate(w io.Writer, filename string) (string, error) {
-// 	// TODO use the tags and filters from the current context
-// }
-
 // InnerString renders the children to a string.
 func (c renderContext) InnerString() (string, error) {
 	buf := new(bytes.Buffer)
@@ -93,4 +90,27 @@ func (c renderContext) InnerString() (string, error) {
 		return "", err
 	}
 	return buf.String(), nil
+}
+
+func (c renderContext) ParseTagArgs() (string, error) {
+	var args string
+	switch {
+	case c.node != nil:
+		args = c.node.Chunk.Args
+	case c.cn != nil:
+		args = c.cn.Chunk.Args
+	}
+	if strings.Contains(args, "{{") {
+		p, err := c.ctx.settings.Parse(args)
+		if err != nil {
+			return "", err
+		}
+		buf := new(bytes.Buffer)
+		err = p.Render(buf, c.ctx)
+		if err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
+	return args, nil
 }
