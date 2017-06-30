@@ -12,18 +12,18 @@ var timeType = reflect.TypeOf(time.Now())
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, t reflect.Type) (interface{}, error) {
+func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 	r := reflect.ValueOf(value)
-	if r.Type().ConvertibleTo(t) {
-		return r.Convert(t).Interface(), nil
+	if r.Type().ConvertibleTo(target) {
+		return r.Convert(target).Interface(), nil
 	}
-	if reflect.PtrTo(r.Type()) == t {
+	if reflect.PtrTo(r.Type()) == target {
 		return &value, nil
 	}
-	if r.Kind() == reflect.String && t == timeType {
+	if r.Kind() == reflect.String && target == timeType {
 		return ParseTime(value.(string))
 	}
-	switch t.Kind() {
+	switch target.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		switch value := value.(type) {
 		case bool:
@@ -41,13 +41,26 @@ func Convert(value interface{}, t reflect.Type) (interface{}, error) {
 		case string:
 			return strconv.ParseFloat(value, 64)
 		}
+	case reflect.Map:
+		out := reflect.MakeMap(target)
+		for _, key := range r.MapKeys() {
+			if !key.Type().ConvertibleTo(target.Key()) {
+				return nil, genericErrorf("generic.Convert can't convert %#v map key %#v to type %s", value, key.Interface(), target.Key())
+			}
+			key = key.Convert(target.Key())
+			value := r.MapIndex(key)
+			if !value.Type().ConvertibleTo(target.Key()) {
+				return nil, genericErrorf("generic.Convert can't convert %#v map value %#v to type %s", value, value.Interface(), target.Elem())
+			}
+			out.SetMapIndex(key, value.Convert(target.Elem()))
+		}
 	case reflect.Slice:
 		if r.Kind() != reflect.Array && r.Kind() != reflect.Slice {
 			break
 		}
-		out := reflect.MakeSlice(t, 0, r.Len())
+		out := reflect.MakeSlice(target, 0, r.Len())
 		for i := 0; i < r.Len(); i++ {
-			item, err := Convert(r.Index(i).Interface(), t.Elem())
+			item, err := Convert(r.Index(i).Interface(), target.Elem())
 			if err != nil {
 				return nil, err
 			}
@@ -55,7 +68,7 @@ func Convert(value interface{}, t reflect.Type) (interface{}, error) {
 		}
 		return out.Interface(), nil
 	}
-	return nil, genericErrorf("generic.Convert can't convert %#v<%s> to %v", value, r.Type(), t)
+	return nil, genericErrorf("generic.Convert can't convert %#v of type %s / kind %s to type %s", value, r.Type(), r.Kind(), target)
 }
 
 // MustConvert wraps Convert, but panics on error.
