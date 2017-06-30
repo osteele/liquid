@@ -28,14 +28,14 @@ func DefineStandardFilters() {
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(date time.Time, format interface{}) (string, error) {
+	expressions.DefineFilter("date", func(t time.Time, format interface{}) (string, error) {
 		form, ok := format.(string)
 		if !ok {
 			form = "%a, %b %d, %y"
 		}
 		// TODO %\d*N -> truncated fractional seconds, default 9
 		form = strings.Replace(form, "%N", "", -1)
-		return datefmt.Strftime(form, date)
+		return datefmt.Strftime(form, t)
 	})
 
 	// lists

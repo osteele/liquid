@@ -7,7 +7,7 @@ import (
 	"github.com/jeffjen/datefmt"
 )
 
-var zeroTime = time.Unix(0, 0)
+var zeroTime time.Time
 
 var dateFormats = []string{
 	"%Y-%m-%d %H:%M:%S %Z",
