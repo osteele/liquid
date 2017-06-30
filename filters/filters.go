@@ -12,7 +12,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/leekchan/timeutil"
+	"github.com/jeffjen/datefmt"
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/generics"
 )
@@ -28,15 +28,14 @@ func DefineStandardFilters() {
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(date time.Time, format interface{}) interface{} {
+	expressions.DefineFilter("date", func(date time.Time, format interface{}) (string, error) {
 		form, ok := format.(string)
 		if !ok {
 			form = "%a, %b %d, %y"
 		}
-		// FIXME All the libraries I could find format 09:00 with "%-H" as "H" instead of "9".
-		// This renders it as "09" instead of "9", which is still bad but better.
-		form = strings.Replace(form, "%-", "%", -1)
-		return timeutil.Strftime(&date, form)
+		// TODO %\d*N -> truncated fractional seconds, default 9
+		form = strings.Replace(form, "%N", "", -1)
+		return datefmt.Strftime(form, date)
 	})
 
 	// lists

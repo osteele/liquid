@@ -17,24 +17,13 @@ var filterTests = []struct {
 	in       string
 	expected interface{}
 }{
-	// values
+	// value filters
 	{`4.99 | default: 2.99`, 4.99},
 	{`undefined | default: 2.99`, 2.99},
 	{`false | default: 2.99`, 2.99},
 	{`empty_list | default: 2.99`, 2.99},
 
-	// date filters
-	{`article.published_at | date`, "Fri, Jul 17, 15"},
-	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
-	{`article.published_at | date: "%Y"`, "2015"},
-	{`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
-	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
-	{`"2017-02-08 09:00:00" | date: "%H:%M"`, "09:00"},
-	{`"2017-05-04 08:00:00 -04:00" | date: "%b %d, %Y"`, "May 04, 2017"},
-	// {`"2017-02-08 09:00:00" | date: "%-H:%M"`, "9:00"},
-	// {`"now" | date: "%Y-%m-%d %H:%M"`, "2017-06-28 13:27"},
-
-	// list filters
+	// array filters
 	// TODO sort_natural, uniq
 	{`pages | map: 'category' | join`, "business, celebrities, <nil>, lifestyle, sports, <nil>, technology"},
 	{`pages | map: 'category' | compact | join`, "business, celebrities, lifestyle, sports, technology"},
@@ -47,7 +36,18 @@ var filterTests = []struct {
 	{`empty_list | first`, nil},
 	{`empty_list | last`, nil},
 
-	// sequence filters
+	// date filters
+	{`article.published_at | date`, "Fri, Jul 17, 15"},
+	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
+	{`article.published_at | date: "%Y"`, "2015"},
+	{`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
+	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
+	{`"2017-02-08 09:00:00" | date: "%H:%M"`, "09:00"},
+	{`"2017-05-04 08:00:00 -04:00" | date: "%b %d, %Y"`, "May 04, 2017"},
+	// {`"2017-02-08 09:00:00" | date: "%-H:%M"`, "9:00"},
+	// {`"now" | date: "%Y-%m-%d %H:%M"`, "2017-06-28 13:27"},
+
+	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
 

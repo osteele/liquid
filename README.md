@@ -85,7 +85,6 @@ open http://localhost:6060/pkg/github.com/osteele/liquid/
 
 | Package | Author | Description |
 | --- | --- | --- |
-| [github.com/leekchan/timeutil](https://github.com/leekchan/timeutil) | Kyoung-chan Lee | formatting dates |
 | [gopkg.in/yaml.v2](https://github.com/go-yaml) | Canonical | YAML support |
 | [Ragel](http://www.colm.net/open-source/ragel/) | Adrian Thurston | scanning expressions |
 
