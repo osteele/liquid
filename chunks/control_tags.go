@@ -5,11 +5,11 @@ import (
 	"io"
 )
 
+// ControlTagParser builds a renderer for the tag instance.
+type ControlTagParser func(ASTControlTag) (func(io.Writer, RenderContext) error, error)
+
 // controlTagDefinitions is a map of tag names to control tag definitions.
 var controlTagDefinitions = map[string]*controlTagDefinition{}
-
-// ControlTagParser builds a renderer for the tag instance.
-type ControlTagParser func(ASTControlTag) (func(io.Writer, Context) error, error)
 
 // controlTagDefinition tells the parser how to parse control tags.
 type controlTagDefinition struct {
@@ -85,8 +85,8 @@ func (b tagBuilder) Parser(fn ControlTagParser) {
 }
 
 // Renderer sets the render action for a control tag definition.
-func (b tagBuilder) Renderer(fn func(io.Writer, Context) error) {
-	b.tag.parser = func(node ASTControlTag) (func(io.Writer, Context) error, error) {
+func (b tagBuilder) Renderer(fn func(io.Writer, RenderContext) error) {
+	b.tag.parser = func(node ASTControlTag) (func(io.Writer, RenderContext) error, error) {
 		// TODO parse error if there are arguments?
 		return fn, nil
 	}

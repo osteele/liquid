@@ -2,10 +2,10 @@
 package tags
 
 import (
-	"bytes"
 	"io"
 
 	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/generics"
 )
 
@@ -26,95 +26,95 @@ func DefineStandardTags() {
 	chunks.DefineStartTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
-func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO verify syntax
 	varname := node.Parameters
-	return func(w io.Writer, ctx chunks.Context) error {
-		buf := new(bytes.Buffer)
-		if err := ctx.RenderASTSequence(buf, node.Body); err != nil {
+	return func(w io.Writer, ctx chunks.RenderContext) error {
+		s, err := ctx.InnerString()
+		if err != nil {
 			return err
 		}
-		ctx.Set(varname, buf.String())
+		ctx.Set(varname, s)
 		return nil
 	}, nil
 }
 
-func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
-	expr, err := chunks.MakeExpressionValueFn(node.Parameters)
+	expr, err := expressions.Parse(node.Parameters)
 	if err != nil {
 		return nil, err
 	}
 	type caseRec struct {
-		fn   func(chunks.Context) (interface{}, error)
+		expr expressions.Expression
 		node *chunks.ASTControlTag
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
-		bfn, err := chunks.MakeExpressionValueFn(branch.Parameters)
+		bfn, err := expressions.Parse(branch.Parameters)
 		if err != nil {
 			return nil, err
 		}
 		cases = append(cases, caseRec{bfn, branch})
 	}
-	return func(w io.Writer, ctx chunks.Context) error {
-		value, err := expr(ctx)
+	return func(w io.Writer, ctx chunks.RenderContext) error {
+		value, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
 		}
 		for _, branch := range cases {
-			b, err := branch.fn(ctx)
+			b, err := ctx.Evaluate(branch.expr)
 			if err != nil {
 				return err
 			}
 			if generics.Equal(value, b) {
-				return ctx.RenderASTSequence(w, branch.node.Body)
+				return ctx.RenderBranch(w, branch.node)
 			}
 		}
 		return nil
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
-	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 		type branchRec struct {
-			test func(chunks.Context) (interface{}, error)
-			body []chunks.ASTNode
+			test expressions.Expression
+			body *chunks.ASTControlTag
 		}
-		expr, err := chunks.MakeExpressionValueFn(node.Parameters)
+		expr, err := expressions.Parse(node.Parameters)
 		if err != nil {
 			return nil, err
 		}
 		if !polarity {
-			expr = chunks.Negate(expr)
+			expr = expressions.Negate(expr)
 		}
 		branches := []branchRec{
-			{expr, node.Body},
+			{expr, &node},
 		}
 		for _, c := range node.Branches {
-			test := chunks.True
+			test := expressions.Constant(true)
 			switch c.Name {
 			case "else":
 			// TODO parse error if this isn't the last branch
 			case "elsif":
-				t, err := chunks.MakeExpressionValueFn(c.Parameters)
+				t, err := expressions.Parse(c.Parameters)
 				if err != nil {
 					return nil, err
 				}
 				test = t
 			default:
 			}
-			branches = append(branches, branchRec{test, c.Body})
+			branches = append(branches, branchRec{test, c})
 		}
-		return func(w io.Writer, ctx chunks.Context) error {
+		return func(w io.Writer, ctx chunks.RenderContext) error {
 			for _, b := range branches {
-				value, err := b.test(ctx)
+				value, err := ctx.Evaluate(b.test)
 				if err != nil {
 					return err
 				}
 				if value != nil && value != false {
-					return ctx.RenderASTSequence(w, b.body)
+					return ctx.RenderBranch(w, b.body)
 				}
 			}
 			return nil

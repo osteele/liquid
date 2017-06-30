@@ -12,14 +12,14 @@ import (
 var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
 var errLoopBreak = fmt.Errorf("break outside a loop")
 
-func breakTag(parameters string) (func(io.Writer, chunks.Context) error, error) {
-	return func(io.Writer, chunks.Context) error {
+func breakTag(parameters string) (func(io.Writer, chunks.RenderContext) error, error) {
+	return func(io.Writer, chunks.RenderContext) error {
 		return errLoopBreak
 	}, nil
 }
 
-func continueTag(parameters string) (func(io.Writer, chunks.Context) error, error) {
-	return func(io.Writer, chunks.Context) error {
+func continueTag(parameters string) (func(io.Writer, chunks.RenderContext) error, error) {
+	return func(io.Writer, chunks.RenderContext) error {
 		return errLoopContinueLoop
 	}, nil
 }
@@ -32,12 +32,12 @@ func parseLoopExpression(source string) (expressions.Expression, error) {
 	return expr, nil
 }
 
-func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 	expr, err := parseLoopExpression(node.Parameters)
 	if err != nil {
 		return nil, err
 	}
-	return func(w io.Writer, ctx chunks.Context) error {
+	return func(w io.Writer, ctx chunks.RenderContext) error {
 		val, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
@@ -81,7 +81,7 @@ func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.Context) e
 				"rindex0": length - i - 1,
 				"length":  length,
 			})
-			err := ctx.RenderASTSequence(w, node.Body)
+			err := ctx.RenderChildren(w)
 			if err == errLoopBreak {
 				break
 			}

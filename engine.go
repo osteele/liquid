@@ -29,8 +29,8 @@ func NewEngine() Engine {
 
 // DefineStartTag is in the Engine interface.
 func (e engine) DefineStartTag(name string, td TagDefinition) {
-	chunks.DefineStartTag(name).Parser(func(c chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
-		return func(io.Writer, chunks.Context) error {
+	chunks.DefineStartTag(name).Parser(func(c chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+		return func(io.Writer, chunks.RenderContext) error {
 			fmt.Println("unimplemented tag:", name)
 			return nil
 		}, nil

@@ -18,7 +18,7 @@ func (n *ASTSeq) Render(w io.Writer, ctx Context) error {
 
 // Render is in the ASTNode interface.
 func (n *ASTFunctional) Render(w io.Writer, ctx Context) error {
-	err := n.render(w, ctx)
+	err := n.render(w, renderContext{ctx, n, nil})
 	// TODO restore something like this
 	// if err != nil {
 	// 	fmt.Println("while parsing", n.Source)
@@ -53,7 +53,7 @@ func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	if renderer == nil {
 		panic(fmt.Errorf("unset renderer for %v", n))
 	}
-	return renderer(w, ctx)
+	return renderer(w, renderContext{ctx, nil, n})
 }
 
 // Render is in the ASTNode interface.
@@ -62,21 +62,21 @@ func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 	if err != nil {
 		return fmt.Errorf("%s in %s", err, n.Source)
 	}
-	return writeValue(value, w)
+	return writeObject(value, w)
 }
 
-func writeValue(value interface{}, w io.Writer) error {
+// writeObject writes a value used in an object node
+func writeObject(value interface{}, w io.Writer) error {
 	if value == nil {
 		return nil
 	}
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
-	// TODO test case for this
 	case reflect.Array, reflect.Slice:
 		for i := 0; i < rt.Len(); i++ {
 			item := rt.Index(i)
 			if item.IsValid() {
-				if err := writeValue(item.Interface(), w); err != nil {
+				if err := writeObject(item.Interface(), w); err != nil {
 					return err
 				}
 			}
@@ -89,9 +89,9 @@ func writeValue(value interface{}, w io.Writer) error {
 }
 
 // RenderASTSequence renders a sequence of nodes.
-func (ctx Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
+func (c Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
 	for _, n := range seq {
-		if err := n.Render(w, ctx); err != nil {
+		if err := n.Render(w, c); err != nil {
 			return err
 		}
 	}

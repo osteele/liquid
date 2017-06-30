@@ -25,7 +25,7 @@ type ASTSeq struct {
 // ASTFunctional renders itself via a render function that is created during parsing.
 type ASTFunctional struct {
 	Chunk
-	render func(io.Writer, Context) error
+	render func(io.Writer, RenderContext) error
 }
 
 // ASTText is a text chunk, that is rendered verbatim.
@@ -42,7 +42,7 @@ type ASTObject struct {
 // ASTControlTag is a control tag.
 type ASTControlTag struct {
 	Chunk
-	renderer func(io.Writer, Context) error
+	renderer func(io.Writer, RenderContext) error
 	cd       *controlTagDefinition
 	Body     []ASTNode
 	Branches []*ASTControlTag

@@ -1,8 +1,6 @@
 package chunks
 
 import (
-	"fmt"
-
 	"github.com/osteele/liquid/expressions"
 )
 
@@ -22,22 +20,6 @@ func NewContext(scope map[string]interface{}) Context {
 	return Context{vars}
 }
 
-// GetVariableMap returns the variable map. This is required by some tangled code
-// in Jekyll includes, that should hopefully get better.
-func (c Context) GetVariableMap() map[string]interface{} {
-	return c.vars
-}
-
-// Get gets a variable value within an evaluation context.
-func (c Context) Get(name string) interface{} {
-	return c.vars[name]
-}
-
-// Set sets a variable value from an evaluation context.
-func (c Context) Set(name string, value interface{}) {
-	c.vars[name] = value
-}
-
 // Evaluate evaluates an expression within the template context.
 func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err error) {
 	defer func() {
@@ -52,35 +34,4 @@ func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err err
 		}
 	}()
 	return expr.Evaluate(expressions.NewContext(c.vars))
-}
-
-// EvaluateString evaluates an expression within the template context.
-func (c Context) EvaluateString(source string) (out interface{}, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch e := r.(type) {
-			case expressions.InterpreterError:
-				err = e
-			default:
-				// fmt.Println(string(debug.Stack()))
-				panic(fmt.Errorf("%s during evaluation of %s", e, source))
-			}
-		}
-	}()
-	return expressions.EvaluateString(source, expressions.NewContext(c.vars))
-}
-
-func (c Context) evaluateStatement(tag, source string) (interface{}, error) {
-	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
-}
-
-// MakeExpressionValueFn parses source into an evaluation function
-func MakeExpressionValueFn(source string) (func(Context) (interface{}, error), error) {
-	expr, err := expressions.Parse(source)
-	if err != nil {
-		return nil, err
-	}
-	return func(ctx Context) (interface{}, error) {
-		return expr.Evaluate(expressions.NewContext(ctx.vars))
-	}, nil
 }
