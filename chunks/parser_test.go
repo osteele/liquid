@@ -26,6 +26,7 @@ var parserTests = []struct{ in string }{
 	{`{% if test %}{% else %}{% endif %}`},
 	{`{% if test %}{% if test %}{% endif %}{% endif %}`},
 	{`{% for item in list %}{% if test %}{% else %}{% endif x %}{% endfor %}`},
+	{`{% if true %}{% raw %}{% endraw %}{% endif %}`},
 }
 
 func TestParseErrors(t *testing.T) {

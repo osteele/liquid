@@ -13,9 +13,11 @@ func init() {
 	tags.DefineStandardTags()
 }
 
+// There's a lot more tests in the filters and tags sub-packages.
+// This collects a minimal set for testing end-to-end.
 var liquidTests = []struct{ in, expected string }{
-	{"{{page.title}}", "Introduction"},
-	{"{%if x%}true{%endif%}", "true"},
+	{`{{ page.title }}`, "Introduction"},
+	{`{% if x%}true{%endif %}`, "true"},
 }
 
 var liquidTestScope = map[string]interface{}{

@@ -35,7 +35,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 			}
 		case inRaw:
 			if c.Type == TagChunkType && c.Name == "endraw" {
-				inComment = false
+				inRaw = false
 			} else {
 				rawTag.slices = append(rawTag.slices, c.Source)
 			}
