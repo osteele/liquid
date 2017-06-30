@@ -16,8 +16,9 @@ type RenderContext interface {
 	Evaluate(expr expressions.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
-	RenderBranch(io.Writer, *ASTControlTag) error
+	RenderChild(io.Writer, *ASTControlTag) error
 	RenderChildren(io.Writer) error
+	// RenderTemplate(io.Writer, filename string) (string, error)
 	InnerString() (string, error)
 }
 
@@ -45,7 +46,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.vars))
+	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.vars, c.ctx.settings.ExpressionSettings))
 }
 
 func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {
@@ -68,6 +69,11 @@ func (c renderContext) Set(name string, value interface{}) {
 	c.ctx.vars[name] = value
 }
 
+// RenderChild renders a node.
+func (c renderContext) RenderChild(w io.Writer, b *ASTControlTag) error {
+	return c.ctx.RenderASTSequence(w, b.Body)
+}
+
 // RenderChildren renders the current node's children.
 func (c renderContext) RenderChildren(w io.Writer) error {
 	if c.cn == nil {
@@ -76,9 +82,9 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 	return c.ctx.RenderASTSequence(w, c.cn.Body)
 }
 
-func (c renderContext) RenderBranch(w io.Writer, b *ASTControlTag) error {
-	return c.ctx.RenderASTSequence(w, b.Body)
-}
+// func (c renderContext) RenderTemplate(w io.Writer, filename string) (string, error) {
+// 	// TODO use the tags and filters from the current context
+// }
 
 // InnerString renders the children to a string.
 func (c renderContext) InnerString() (string, error) {

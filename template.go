@@ -16,10 +16,15 @@ type Template interface {
 	RenderString(bindings map[string]interface{}) (string, error)
 }
 
+type template struct {
+	ast      chunks.ASTNode
+	settings chunks.Settings
+}
+
 // Render executes the template within the bindings environment.
 func (t *template) Render(bindings map[string]interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := t.ast.Render(buf, chunks.NewContext(bindings))
+	err := t.ast.Render(buf, chunks.NewContext(bindings, t.settings))
 	if err != nil {
 		return nil, err
 	}

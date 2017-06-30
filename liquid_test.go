@@ -17,7 +17,8 @@ func init() {
 // This collects a minimal set for testing end-to-end.
 var liquidTests = []struct{ in, expected string }{
 	{`{{ page.title }}`, "Introduction"},
-	{`{% if x%}true{%endif %}`, "true"},
+	{`{% if x %}true{% endif %}`, "true"},
+	{`{{ "upper" | upcase }}`, "UPPER"},
 }
 
 var liquidTestScope = map[string]interface{}{
@@ -28,10 +29,10 @@ var liquidTestScope = map[string]interface{}{
 	},
 }
 
-func TestChunkParser(t *testing.T) {
+func TestLiquid(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
-		t.Run(fmt.Sprint(i), func(t *testing.T) {
+		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, liquidTestScope)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, out, test.in)

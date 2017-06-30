@@ -69,7 +69,7 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 				return err
 			}
 			if generics.Equal(value, b) {
-				return ctx.RenderBranch(w, branch.node)
+				return ctx.RenderChild(w, branch.node)
 			}
 		}
 		return nil
@@ -114,7 +114,7 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 					return err
 				}
 				if value != nil && value != false {
-					return ctx.RenderBranch(w, b.body)
+					return ctx.RenderChild(w, b.body)
 				}
 			}
 			return nil

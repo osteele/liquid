@@ -4,16 +4,34 @@ package expressions
 type Context interface {
 	Get(string) interface{}
 	Set(string, interface{})
+	Filters() *FilterDictionary
 }
 
 type context struct {
 	vars   map[string]interface{}
 	copied bool
+	Settings
+}
+
+type Settings struct {
+	filters *FilterDictionary
+}
+
+func NewSettings() Settings {
+	return Settings{NewFilterDictionary()}
+}
+
+func (s Settings) AddFilter(name string, fn interface{}) {
+	s.filters.AddFilter(name, fn)
 }
 
 // NewContext makes a new expression evaluation context.
-func NewContext(vars map[string]interface{}) Context {
-	return &context{vars, false}
+func NewContext(vars map[string]interface{}, s Settings) Context {
+	return &context{vars, false, s}
+}
+
+func (c *context) Filters() *FilterDictionary {
+	return c.filters
 }
 
 // Get looks up a variable value in the expression context.

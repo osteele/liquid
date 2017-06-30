@@ -9,10 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	DefineStandardFilters()
-}
-
 var filterTests = []struct {
 	in       string
 	expected interface{}
@@ -130,7 +126,7 @@ func timeMustParse(s string) time.Time {
 	return t
 }
 
-var filterTestContext = expressions.NewContext(map[string]interface{}{
+var filterTestBindings = map[string]interface{}{
 	"x":       123,
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
 	"article": map[string]interface{}{
@@ -160,12 +156,16 @@ var filterTestContext = expressions.NewContext(map[string]interface{}{
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-})
+}
 
 func TestFilters(t *testing.T) {
+	settings := expressions.NewSettings()
+	AddStandardFilters(settings)
+	context := expressions.NewContext(filterTestBindings, settings)
+
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			value, err := expressions.EvaluateString(test.in, filterTestContext)
+			value, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
 			switch v := value.(type) {

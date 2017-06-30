@@ -17,10 +17,10 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
-// DefineStandardFilters defines the standard Liquid filters.
-func DefineStandardFilters() {
+// StandardFilters defines the standard Liquid filters.
+func AddStandardFilters(settings expressions.Settings) {
 	// values
-	expressions.DefineFilter("default", func(value, defaultValue interface{}) interface{} {
+	settings.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || generics.IsEmpty(value) {
 			value = defaultValue
 		}
@@ -28,7 +28,7 @@ func DefineStandardFilters() {
 	})
 
 	// dates
-	expressions.DefineFilter("date", func(t time.Time, format interface{}) (string, error) {
+	settings.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
 		form, ok := format.(string)
 		if !ok {
 			form = "%a, %b %d, %y"
@@ -39,7 +39,7 @@ func DefineStandardFilters() {
 	})
 
 	// lists
-	expressions.DefineFilter("compact", func(array []interface{}) interface{} {
+	settings.AddFilter("compact", func(array []interface{}) interface{} {
 		out := []interface{}{}
 		for _, item := range array {
 			if item != nil {
@@ -48,25 +48,25 @@ func DefineStandardFilters() {
 		}
 		return out
 	})
-	expressions.DefineFilter("join", joinFilter)
-	expressions.DefineFilter("map", func(array []map[string]interface{}, key string) interface{} {
+	settings.AddFilter("join", joinFilter)
+	settings.AddFilter("map", func(array []map[string]interface{}, key string) interface{} {
 		out := []interface{}{}
 		for _, obj := range array {
 			out = append(out, obj[key])
 		}
 		return out
 	})
-	expressions.DefineFilter("reverse", reverseFilter)
-	expressions.DefineFilter("sort", sortFilter)
+	settings.AddFilter("reverse", reverseFilter)
+	settings.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	expressions.DefineFilter("first", func(array []interface{}) interface{} {
+	settings.AddFilter("first", func(array []interface{}) interface{} {
 		if len(array) == 0 {
 			return nil
 		}
 		return array[0]
 	})
-	expressions.DefineFilter("last", func(array []interface{}) interface{} {
+	settings.AddFilter("last", func(array []interface{}) interface{} {
 		if len(array) == 0 {
 			return nil
 		}
@@ -74,20 +74,20 @@ func DefineStandardFilters() {
 	})
 
 	// numbers
-	expressions.DefineFilter("abs", math.Abs)
-	expressions.DefineFilter("ceil", math.Ceil)
-	expressions.DefineFilter("floor", math.Floor)
-	expressions.DefineFilter("modulo", math.Mod)
-	expressions.DefineFilter("minus", func(a, b float64) float64 {
+	settings.AddFilter("abs", math.Abs)
+	settings.AddFilter("ceil", math.Ceil)
+	settings.AddFilter("floor", math.Floor)
+	settings.AddFilter("modulo", math.Mod)
+	settings.AddFilter("minus", func(a, b float64) float64 {
 		return a - b
 	})
-	expressions.DefineFilter("plus", func(a, b float64) float64 {
+	settings.AddFilter("plus", func(a, b float64) float64 {
 		return a + b
 	})
-	expressions.DefineFilter("times", func(a, b float64) float64 {
+	settings.AddFilter("times", func(a, b float64) float64 {
 		return a * b
 	})
-	expressions.DefineFilter("divided_by", func(a float64, b interface{}) interface{} {
+	settings.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
 		switch bt := b.(type) {
 		case int, int16, int32, int64:
 			return int(a) / bt.(int)
@@ -97,7 +97,7 @@ func DefineStandardFilters() {
 			return nil
 		}
 	})
-	expressions.DefineFilter("round", func(n float64, places interface{}) float64 {
+	settings.AddFilter("round", func(n float64, places interface{}) float64 {
 		pl, ok := places.(int)
 		if !ok {
 			pl = 0
@@ -107,45 +107,45 @@ func DefineStandardFilters() {
 	})
 
 	// sequences
-	expressions.DefineFilter("size", generics.Length)
+	settings.AddFilter("size", generics.Length)
 
 	// strings
-	expressions.DefineFilter("append", func(s, suffix string) string {
+	settings.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
-	expressions.DefineFilter("capitalize", func(s, suffix string) string {
+	settings.AddFilter("capitalize", func(s, suffix string) string {
 		if len(s) < 1 {
 			return s
 		}
 		return strings.ToUpper(s[:1]) + s[1:]
 	})
-	expressions.DefineFilter("downcase", func(s, suffix string) string {
+	settings.AddFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
 	})
-	expressions.DefineFilter("escape", html.EscapeString)
-	expressions.DefineFilter("escape_once", func(s, suffix string) string {
+	settings.AddFilter("escape", html.EscapeString)
+	settings.AddFilter("escape_once", func(s, suffix string) string {
 		return html.EscapeString(html.UnescapeString(s))
 	})
 	// TODO test case for this
-	expressions.DefineFilter("newline_to_br", func(s string) string {
+	settings.AddFilter("newline_to_br", func(s string) string {
 		return strings.Replace(s, "\n", "<br />", -1)
 	})
-	expressions.DefineFilter("prepend", func(s, prefix string) string {
+	settings.AddFilter("prepend", func(s, prefix string) string {
 		return prefix + s
 	})
-	expressions.DefineFilter("remove", func(s, old string) string {
+	settings.AddFilter("remove", func(s, old string) string {
 		return strings.Replace(s, old, "", -1)
 	})
-	expressions.DefineFilter("remove_first", func(s, old string) string {
+	settings.AddFilter("remove_first", func(s, old string) string {
 		return strings.Replace(s, old, "", 1)
 	})
-	expressions.DefineFilter("replace", func(s, old, new string) string {
+	settings.AddFilter("replace", func(s, old, new string) string {
 		return strings.Replace(s, old, new, -1)
 	})
-	expressions.DefineFilter("replace_first", func(s, old, new string) string {
+	settings.AddFilter("replace_first", func(s, old, new string) string {
 		return strings.Replace(s, old, new, 1)
 	})
-	expressions.DefineFilter("slice", func(s string, start int, length interface{}) string {
+	settings.AddFilter("slice", func(s string, start int, length interface{}) string {
 		n, ok := length.(int)
 		if !ok {
 			n = 1
@@ -161,23 +161,23 @@ func DefineStandardFilters() {
 		}
 		return s[start : start+n]
 	})
-	expressions.DefineFilter("split", splitFilter)
-	expressions.DefineFilter("strip_html", func(s string) string {
+	settings.AddFilter("split", splitFilter)
+	settings.AddFilter("strip_html", func(s string) string {
 		// TODO this probably isn't sufficient
 		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
 	})
 	// TODO test case for this
-	expressions.DefineFilter("strip_newlines", func(s string) string {
+	settings.AddFilter("strip_newlines", func(s string) string {
 		return strings.Replace(s, "\n", "", -1)
 	})
-	expressions.DefineFilter("strip", strings.TrimSpace)
-	expressions.DefineFilter("lstrip", func(s string) string {
+	settings.AddFilter("strip", strings.TrimSpace)
+	settings.AddFilter("lstrip", func(s string) string {
 		return strings.TrimLeftFunc(s, unicode.IsSpace)
 	})
-	expressions.DefineFilter("rstrip", func(s string) string {
+	settings.AddFilter("rstrip", func(s string) string {
 		return strings.TrimRightFunc(s, unicode.IsSpace)
 	})
-	expressions.DefineFilter("truncate", func(s string, n int, ellipsis interface{}) string {
+	settings.AddFilter("truncate", func(s string, n int, ellipsis interface{}) string {
 		el, ok := ellipsis.(string)
 		if !ok {
 			el = "..."
@@ -187,20 +187,20 @@ func DefineStandardFilters() {
 		}
 		return s
 	})
-	expressions.DefineFilter("upcase", func(s, suffix string) string {
+	settings.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)
 	})
 
 	// debugging extensions
 	// inspect is from Jekyll
-	expressions.DefineFilter("inspect", func(value interface{}) string {
+	settings.AddFilter("inspect", func(value interface{}) string {
 		s, err := json.Marshal(value)
 		if err != nil {
 			return fmt.Sprintf("%#v", value)
 		}
 		return string(s)
 	})
-	expressions.DefineFilter("type", func(value interface{}) string {
+	settings.AddFilter("type", func(value interface{}) string {
 		return reflect.TypeOf(value).String()
 	})
 }

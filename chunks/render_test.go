@@ -16,7 +16,7 @@ var renderTests = []struct{ in, expected string }{
 	{`{{ ar[1] }}`, "second"},
 }
 
-var renderTestContext = Context{map[string]interface{}{
+var renderTestContext = NewContext(map[string]interface{}{
 	"x": 123,
 	"obj": map[string]interface{}{
 		"a": 1,
@@ -41,8 +41,7 @@ var renderTestContext = Context{map[string]interface{}{
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-},
-}
+}, NewSettings())
 
 func TestRender(t *testing.T) {
 	for i, test := range renderTests {

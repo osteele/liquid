@@ -13,6 +13,12 @@ func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{
 	}
 }
 
+func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
+	return func(ctx Context) interface{} {
+		return ctx.Filters().runFilter(ctx, fn, name, args)
+	}
+}
+
 func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface{} {
 	return func(ctx Context) interface{} {
 		ref := reflect.ValueOf(obj(ctx))

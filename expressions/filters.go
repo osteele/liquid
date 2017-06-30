@@ -23,10 +23,16 @@ func (e UndefinedFilter) Error() string {
 
 type valueFn func(Context) interface{}
 
-var filters = map[string]interface{}{}
+type FilterDictionary struct {
+	filters map[string]interface{}
+}
 
-// DefineFilter defines a filter.
-func DefineFilter(name string, fn interface{}) {
+func NewFilterDictionary() *FilterDictionary {
+	return &FilterDictionary{map[string]interface{}{}}
+}
+
+// AddFilter defines a filter.
+func (d *FilterDictionary) AddFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
@@ -38,7 +44,7 @@ func DefineFilter(name string, fn interface{}) {
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(fmt.Errorf("a filter's second output must be type error"))
 	}
-	filters[name] = fn
+	d.filters[name] = fn
 }
 
 func isClosureInterfaceType(t reflect.Type) bool {
@@ -47,45 +53,32 @@ func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func makeFilter(f valueFn, name string, params []valueFn) valueFn {
-	fn, ok := filters[name]
+func (d *FilterDictionary) runFilter(ctx Context, f valueFn, name string, params []valueFn) interface{} {
+	filter, ok := d.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
 	}
-	fr := reflect.ValueOf(fn)
-	return func(ctx Context) interface{} {
-		defer func() {
-			if r := recover(); r != nil {
-				switch e := r.(type) {
-				case generics.GenericError:
-					panic(InterpreterError(e.Error()))
-				default:
-					// fmt.Println(string(debug.Stack()))
-					panic(e)
-				}
+	fr := reflect.ValueOf(filter)
+	args := []interface{}{f(ctx)}
+	for i, param := range params {
+		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
+			expr, err := Parse(param(ctx).(string))
+			if err != nil {
+				panic(err)
 			}
-		}()
-		args := []interface{}{f(ctx)}
-		for i, param := range params {
-			if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
-				expr, err := Parse(param(ctx).(string))
-				if err != nil {
-					panic(err)
-				}
-				args = append(args, closure{expr, ctx})
-			} else {
-				args = append(args, param(ctx))
-			}
+			args = append(args, closure{expr, ctx})
+		} else {
+			args = append(args, param(ctx))
 		}
-		out, err := generics.Call(fr, args)
-		if err != nil {
-			panic(err)
-		}
-		switch out := out.(type) {
-		case []byte:
-			return string(out)
-		default:
-			return out
-		}
+	}
+	out, err := generics.Call(fr, args)
+	if err != nil {
+		panic(err)
+	}
+	switch out := out.(type) {
+	case []byte:
+		return string(out)
+	default:
+		return out
 	}
 }

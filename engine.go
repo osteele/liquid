@@ -5,26 +5,16 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/chunks"
-	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/filters"
-	"github.com/osteele/liquid/tags"
 )
 
-// TODO move the filters and tags from globals to the engine
-func init() {
-	tags.DefineStandardTags()
-	filters.DefineStandardFilters()
-}
-
-type engine struct{}
-
-type template struct {
-	ast chunks.ASTNode
-}
+type engine struct{ settings chunks.Settings }
 
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
-	return engine{}
+	e := engine{chunks.NewSettings()}
+	filters.AddStandardFilters(e.settings.ExpressionSettings)
+	return e
 }
 
 // DefineStartTag is in the Engine interface.
@@ -40,7 +30,7 @@ func (e engine) DefineStartTag(name string, td TagDefinition) {
 // DefineFilter is in the Engine interface.
 func (e engine) DefineFilter(name string, fn interface{}) {
 	// TODO define this on the engine, not globally
-	expressions.DefineFilter(name, fn)
+	e.settings.AddFilter(name, fn)
 }
 
 // ParseAndRenderString is in the Engine interface.
@@ -56,7 +46,7 @@ func (e engine) ParseTemplate(text []byte) (Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &template{ast}, nil
+	return &template{ast, e.settings}, nil
 }
 
 // ParseAndRender is in the Engine interface.

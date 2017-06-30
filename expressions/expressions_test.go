@@ -103,7 +103,7 @@ var evaluatorTestContext = NewContext(map[string]interface{}{
 		"b": map[string]interface{}{"c": "d"},
 		"c": []string{"r", "g", "b"},
 	},
-})
+}, NewSettings())
 
 func TestEvaluator(t *testing.T) {
 	for i, test := range evaluatorTests {

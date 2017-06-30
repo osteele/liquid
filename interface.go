@@ -23,8 +23,6 @@ import (
 // If it returns two outputs, the second must be an error.
 type Engine interface {
 	// DefineFilter defines a filter function e.g. {{ value | filter: arg }}.
-	//
-	// Note: Although this function is defined on the engine, its effect is currently global.
 	DefineFilter(name string, fn interface{})
 	// DefineTag defines a tag function e.g. {% tag %}.
 	//

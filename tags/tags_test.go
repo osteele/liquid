@@ -130,7 +130,7 @@ var tagTestContext = chunks.NewContext(map[string]interface{}{
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-})
+}, chunks.NewSettings())
 
 func init() {
 	DefineStandardTags()
