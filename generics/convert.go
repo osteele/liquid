@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	"github.com/jeffjen/datefmt"
 )
 
 var timeType = reflect.TypeOf(time.Now())
@@ -89,9 +91,14 @@ func MustConvertItem(item interface{}, array []interface{}) interface{} {
 	return item
 }
 
+var dateFormats = []string{
+	"%Y-%m-%d %H:%M:%S %Z",
+}
+
 var dateLayouts = []string{
 	"2006-01-02 15:04:05 -07:00",
-	"2006-01-02 15:04:05 -4",
+	"2006-01-02 15:04:05 -0700",
+	"2006-01-02 15:04:05 -7",
 	"2006-01-02 15:04:05",
 	"2006-01-02 15:04",
 	"2006-01-02",
@@ -102,16 +109,24 @@ var dateLayouts = []string{
 }
 
 // ParseTime tries a few heuristics to parse a date from a string
-func ParseTime(value string) (time.Time, error) {
-	if value == "now" {
+func ParseTime(s string) (time.Time, error) {
+	if s == "now" {
 		return time.Now(), nil
 	}
 	for _, layout := range dateLayouts {
-		// fmt.Println(layout, time.Now().Format(layout), value)
-		time, err := time.Parse(layout, value)
+		// fmt.Printf("%s\n%s\n\n", time.Now().Format(layout), s)
+		t, err := time.Parse(layout, s)
 		if err == nil {
-			return time, nil
+			return t, nil
 		}
 	}
-	return time.Now(), genericErrorf("can't convert %s to a time", value)
+	for _, format := range dateFormats {
+		// xx, _ := datefmt.Strftime(format, time.Now())
+		// fmt.Printf("%s\n%s\n\n", xx, s)
+		t, err := datefmt.Strptime(format, s)
+		if err == nil {
+			return t, nil
+		}
+	}
+	return time.Unix(0, 0), genericErrorf("can't convert %s to a time", s)
 }
