@@ -591,13 +591,13 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line expressions.y:86
 		{
-			yyVAL.f = makeObjectPropertyEvaluator(yyDollar[1].f, yyDollar[3].name)
+			yyVAL.f = makeObjectPropertyExpr(yyDollar[1].f, yyDollar[3].name)
 		}
 	case 11:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		//line expressions.y:87
 		{
-			yyVAL.f = makeIndexEvaluator(yyDollar[1].f, yyDollar[3].f)
+			yyVAL.f = makeIndexExpr(yyDollar[1].f, yyDollar[3].f)
 		}
 	case 12:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -693,14 +693,11 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line expressions.y:146
 		{
-			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
-				return generics.Contains(fa(ctx), fb(ctx))
-			}
+			yyVAL.f = makeContainsExpr(yyDollar[1].f, yyDollar[3].f)
 		}
 	case 27:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:156
+		//line expressions.y:151
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
@@ -709,7 +706,7 @@ yydefault:
 		}
 	case 28:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:162
+		//line expressions.y:157
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {

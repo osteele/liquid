@@ -34,9 +34,9 @@ var evaluatorTests = []struct {
 	{`fruits.size`, 4},
 
 	// Indices
-	{`ar[1]`, "second"},
-	{`ar[-1]`, "third"}, // undocumented
-	{`ar[100]`, nil},
+	{`array[1]`, "second"},
+	{`array[-1]`, "third"}, // undocumented
+	{`array[100]`, nil},
 	{`obj[1]`, nil},
 	{`obj.c[0]`, "r"},
 
@@ -89,13 +89,13 @@ var evaluatorTests = []struct {
 	{`false or false`, false},
 	{`false or true`, true},
 
-	{`ar contains "first"`, true},
-	{`ar contains "missing"`, false},
+	{`"seafood" contains "foo"`, true},
+	{`"seafood" contains "bar"`, false},
 }
 
 var evaluatorTestContext = NewContext(map[string]interface{}{
 	"n":          123,
-	"ar":         []string{"first", "second", "third"},
+	"array":      []string{"first", "second", "third"},
 	"empty_list": []interface{}{},
 	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
 	"obj": map[string]interface{}{

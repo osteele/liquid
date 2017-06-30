@@ -2,9 +2,46 @@ package expressions
 
 import (
 	"reflect"
+	"strings"
 )
 
-func makeObjectPropertyEvaluator(obj func(Context) interface{}, attr string) func(Context) interface{} {
+func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} {
+	return func(ctx Context) interface{} {
+		a, aok := e1(ctx).(string)
+		b, bok := e2(ctx).(string)
+		return aok && bok && strings.Contains(a, b)
+	}
+}
+
+func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface{} {
+	return func(ctx Context) interface{} {
+		ref := reflect.ValueOf(obj(ctx))
+		i := reflect.ValueOf(index(ctx))
+		switch ref.Kind() {
+		case reflect.Array, reflect.Slice:
+			switch i.Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				n := int(i.Int())
+				if n < 0 {
+					n = ref.Len() + n
+				}
+				if 0 <= n && n < ref.Len() {
+					return ref.Index(n).Interface()
+				}
+			}
+		case reflect.Map:
+			if i.Type().ConvertibleTo(ref.Type().Key()) {
+				item := ref.MapIndex(i.Convert(ref.Type().Key()))
+				if item.IsValid() {
+					return item.Interface()
+				}
+			}
+		}
+		return nil
+	}
+}
+
+func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Context) interface{} {
 	return func(ctx Context) interface{} {
 		ref := reflect.ValueOf(obj(ctx))
 		switch ref.Kind() {
@@ -28,34 +65,6 @@ func makeObjectPropertyEvaluator(obj func(Context) interface{}, attr string) fun
 			value := ref.MapIndex(reflect.ValueOf(attr))
 			if value.Kind() != reflect.Invalid {
 				return value.Interface()
-			}
-		}
-		return nil
-	}
-}
-
-func makeIndexEvaluator(obj, index func(Context) interface{}) func(Context) interface{} {
-	return func(ctx Context) interface{} {
-		ref := reflect.ValueOf(obj(ctx))
-		i := reflect.ValueOf(index(ctx))
-		switch ref.Kind() {
-		case reflect.Array, reflect.Slice:
-			switch i.Kind() {
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				n := int(i.Int())
-				if n < 0 {
-					n = ref.Len() + n
-				}
-				if 0 <= n && n < ref.Len() {
-					return ref.Index(n).Interface()
-				}
-			}
-		case reflect.Map:
-			if i.Type().ConvertibleTo(ref.Type().Key()) {
-				item := ref.MapIndex(i.Convert(ref.Type().Key()))
-				if item.IsValid() {
-					return item.Interface()
-				}
 			}
 		}
 		return nil

@@ -83,8 +83,8 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
-| expr '.' IDENTIFIER { $$ = makeObjectPropertyEvaluator($1, $3) }
-| expr '[' expr ']' { $$ = makeIndexEvaluator($1, $3) }
+| expr '.' IDENTIFIER { $$ = makeObjectPropertyExpr($1, $3) }
+| expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
 | '(' cond ')' { $$ = $2 }
 ;
 
@@ -143,12 +143,7 @@ rel:
 		return generics.Less(a, b) || generics.Equal(a, b)
 	}
 }
-| expr CONTAINS expr {
-	fa, fb := $1, $3
-	$$ = func(ctx Context) interface{} {
-		return generics.Contains(fa(ctx), fb(ctx))
-	}
-}
+| expr CONTAINS expr { $$ = makeContainsExpr($1, $3) }
 ;
 
 cond:
