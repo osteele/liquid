@@ -45,7 +45,7 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 
 // Render is in the ASTNode interface.
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
-	cd, ok := findControlTagDefinition(n.Name)
+	cd, ok := ctx.settings.findControlTagDefinition(n.Name)
 	if !ok || cd.parser == nil {
 		return fmt.Errorf("unimplemented tag: %s", n.Name)
 	}

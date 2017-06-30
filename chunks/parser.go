@@ -7,7 +7,7 @@ import (
 )
 
 // Parse creates an AST from a sequence of Chunks.
-func Parse(chunks []Chunk) (ASTNode, error) {
+func (s Settings) Parse(chunks []Chunk) (ASTNode, error) {
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		cd *controlTagDefinition // saved local ccd
@@ -48,7 +48,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		case c.Type == TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
 		case c.Type == TagChunkType:
-			if cd, ok := findControlTagDefinition(c.Name); ok {
+			if cd, ok := s.findControlTagDefinition(c.Name); ok {
 				switch {
 				case c.Name == "comment":
 					inComment = true
@@ -76,7 +76,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 					stack = stack[:len(stack)-1]
 					ccd, ccn, ap = f.cd, f.cn, f.ap
 				}
-			} else if td, ok := FindTagDefinition(c.Name); ok {
+			} else if td, ok := s.FindTagDefinition(c.Name); ok {
 				f, err := td(c.Parameters)
 				if err != nil {
 					return nil, err
@@ -90,7 +90,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 	if ccd != nil {
 		return nil, fmt.Errorf("unterminated %s tag at %s", ccd.name, ccn.SourceInfo)
 	}
-	if err := evaluateBuilders(root); err != nil {
+	if err := s.evaluateBuilders(root); err != nil {
 		return nil, err
 	}
 	if len(root.Children) == 1 {
@@ -99,20 +99,20 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 	return root, nil
 }
 
-func evaluateBuilders(n ASTNode) error {
+func (s Settings) evaluateBuilders(n ASTNode) error {
 	switch n := n.(type) {
 	case *ASTControlTag:
 		for _, child := range n.Body {
-			if err := evaluateBuilders(child); err != nil {
+			if err := s.evaluateBuilders(child); err != nil {
 				return err
 			}
 		}
 		for _, branch := range n.Branches {
-			if err := evaluateBuilders(branch); err != nil {
+			if err := s.evaluateBuilders(branch); err != nil {
 				return err
 			}
 		}
-		cd, ok := findControlTagDefinition(n.Name)
+		cd, ok := s.findControlTagDefinition(n.Name)
 		if ok && cd.parser != nil {
 			renderer, err := cd.parser(*n)
 			if err != nil {
@@ -122,7 +122,7 @@ func evaluateBuilders(n ASTNode) error {
 		}
 	case *ASTSeq:
 		for _, child := range n.Children {
-			if error := evaluateBuilders(child); error != nil {
+			if error := s.evaluateBuilders(child); error != nil {
 				return error
 			}
 		}

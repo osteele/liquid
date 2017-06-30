@@ -12,6 +12,8 @@ type Context struct {
 
 type Settings struct {
 	ExpressionSettings expressions.Settings
+	tags map[string]TagDefinition
+	controlTags map[string]*controlTagDefinition
 }
 
 func (s Settings) AddFilter(name string, fn interface{}) {
@@ -19,7 +21,13 @@ func (s Settings) AddFilter(name string, fn interface{}) {
 }
 
 func NewSettings() Settings {
-	return Settings{expressions.NewSettings()}
+	s:= Settings{
+		expressions.NewSettings(),
+		map[string]TagDefinition{},
+		map[string]*controlTagDefinition{},
+	}
+	s.AddTag( "assign", assignTagDef)
+	return s
 }
 
 // NewContext creates a new evaluation context.

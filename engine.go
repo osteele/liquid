@@ -1,11 +1,11 @@
 package liquid
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/osteele/liquid/chunks"
 	"github.com/osteele/liquid/filters"
+	"github.com/osteele/liquid/tags"
 )
 
 type engine struct{ settings chunks.Settings }
@@ -14,17 +14,13 @@ type engine struct{ settings chunks.Settings }
 func NewEngine() Engine {
 	e := engine{chunks.NewSettings()}
 	filters.AddStandardFilters(e.settings.ExpressionSettings)
+	tags.AddStandardTags(e.settings)
 	return e
 }
 
 // DefineStartTag is in the Engine interface.
-func (e engine) DefineStartTag(name string, td TagDefinition) {
-	chunks.DefineStartTag(name).Parser(func(c chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
-		return func(io.Writer, chunks.RenderContext) error {
-			fmt.Println("unimplemented tag:", name)
-			return nil
-		}, nil
-	})
+func (e engine) DefineStartTag(name string, td func(io.Writer, chunks.RenderContext) error) {
+	e.settings.AddStartTag(name).Renderer(td)
 }
 
 // DefineFilter is in the Engine interface.
@@ -36,13 +32,13 @@ func (e engine) DefineFilter(name string, fn interface{}) {
 // ParseAndRenderString is in the Engine interface.
 func (e engine) DefineTag(name string, td TagDefinition) {
 	// TODO define this on the engine, not globally
-	chunks.DefineTag(name, chunks.TagDefinition(td))
+	e.settings.AddTag(name, chunks.TagDefinition(td))
 }
 
 // ParseTemplate is in the Engine interface.
 func (e engine) ParseTemplate(text []byte) (Template, error) {
 	tokens := chunks.Scan(string(text), "")
-	ast, err := chunks.Parse(tokens)
+	ast, err := e.settings.Parse(tokens)
 	if err != nil {
 		return nil, err
 	}

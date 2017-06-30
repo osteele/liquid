@@ -105,7 +105,7 @@ var tagTests = []struct{ in, expected string }{
 	{`pre{%raw%}{%if false%}anyway-{%endraw%}post`, "pre{%if false%}anyway-post"},
 }
 
-var tagTestContext = chunks.NewContext(map[string]interface{}{
+var bindings = map[string]interface{}{
 	"x": 123,
 	"obj": map[string]interface{}{
 		"a": 1,
@@ -130,16 +130,15 @@ var tagTestContext = chunks.NewContext(map[string]interface{}{
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-}, chunks.NewSettings())
-
-func init() {
-	DefineStandardTags()
 }
+
 func TestParseErrors(t *testing.T) {
+	settings := chunks.NewSettings()
+	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			tokens := chunks.Scan(test.in, "")
-			ast, err := chunks.Parse(tokens)
+			ast, err := settings.Parse(tokens)
 			require.Nilf(t, ast, test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
@@ -147,15 +146,16 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 func TestRender(t *testing.T) {
+	settings := chunks.NewSettings()
+	AddStandardTags(settings)
+	context := chunks.NewContext(bindings, settings)
 	for i, test := range tagTests {
-		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			tokens := chunks.Scan(test.in, "")
-			// fmt.Println(tokens)
-			ast, err := chunks.Parse(tokens)
+			ast, err := settings.Parse(tokens)
 			require.NoErrorf(t, err, test.in)
-			// fmt.Println(MustYAML(ast))
 			buf := new(bytes.Buffer)
-			err = ast.Render(buf, tagTestContext)
+			err = ast.Render(buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})

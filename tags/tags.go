@@ -9,21 +9,21 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
-// DefineStandardTags defines the standard Liquid tags.
-func DefineStandardTags() {
+// AddStandardTags defines the standard Liquid tags.
+func AddStandardTags(settings chunks.Settings) {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	chunks.DefineTag("break", breakTag)
-	chunks.DefineTag("continue", continueTag)
-	chunks.DefineStartTag("capture").Parser(captureTagParser)
-	chunks.DefineStartTag("case").Branch("when").Parser(caseTagParser)
-	chunks.DefineStartTag("comment")
-	chunks.DefineStartTag("for").Governs(loopTags).Parser(loopTagParser)
-	chunks.DefineStartTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
-	chunks.DefineStartTag("raw")
-	chunks.DefineStartTag("tablerow").Governs(loopTags)
-	chunks.DefineStartTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+	settings.AddTag("break", breakTag)
+	settings.AddTag("continue", continueTag)
+	settings.AddStartTag("capture").Parser(captureTagParser)
+	settings.AddStartTag("case").Branch("when").Parser(caseTagParser)
+	settings.AddStartTag("comment")
+	settings.AddStartTag("for").Governs(loopTags).Parser(loopTagParser)
+	settings.AddStartTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
+	settings.AddStartTag("raw")
+	settings.AddStartTag("tablerow").Governs(loopTags)
+	settings.AddStartTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
 func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {

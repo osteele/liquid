@@ -5,13 +5,8 @@ import (
 	"log"
 	"testing"
 
-	"github.com/osteele/liquid/tags"
 	"github.com/stretchr/testify/require"
 )
-
-func init() {
-	tags.DefineStandardTags()
-}
 
 // There's a lot more tests in the filters and tags sub-packages.
 // This collects a minimal set for testing end-to-end.

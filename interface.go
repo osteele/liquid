@@ -25,11 +25,8 @@ type Engine interface {
 	// DefineFilter defines a filter function e.g. {{ value | filter: arg }}.
 	DefineFilter(name string, fn interface{})
 	// DefineTag defines a tag function e.g. {% tag %}.
-	//
-	// Note: Although this function is defined on the engine, its effect is currently global.
 	DefineTag(string, TagDefinition)
-	// Note: Although this function is defined on the engine, its effect is currently global.
-	DefineStartTag(string, TagDefinition)
+	DefineStartTag(string, func(io.Writer, chunks.RenderContext) error)
 
 	ParseTemplate(b []byte) (Template, error)
 	// ParseAndRender parses and then renders the template.
@@ -43,4 +40,4 @@ type Renderer func(io.Writer, chunks.Context) error
 
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.
-type TagDefinition func(parameters string) (func(io.Writer, chunks.RenderContext) error, error)
+type TagDefinition func(args string) (func(io.Writer, chunks.RenderContext) error, error)

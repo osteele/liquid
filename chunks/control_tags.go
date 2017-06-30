@@ -8,9 +8,6 @@ import (
 // ControlTagParser builds a renderer for the tag instance.
 type ControlTagParser func(ASTControlTag) (func(io.Writer, RenderContext) error, error)
 
-// controlTagDefinitions is a map of tag names to control tag definitions.
-var controlTagDefinitions = map[string]*controlTagDefinition{}
-
 // controlTagDefinition tells the parser how to parse control tags.
 type controlTagDefinition struct {
 	name                  string
@@ -38,29 +35,32 @@ func (c *controlTagDefinition) isStartTag() bool {
 	return !c.isBranchTag && !c.isEndTag
 }
 
-func addControlTagDefinition(ct *controlTagDefinition) {
-	controlTagDefinitions[ct.name] = ct
+func (s Settings) addControlTagDefinition(ct *controlTagDefinition) {
+	s.controlTags[ct.name] = ct
 }
 
-func findControlTagDefinition(name string) (*controlTagDefinition, bool) {
-	ct, found := controlTagDefinitions[name]
+func (s Settings) findControlTagDefinition(name string) (*controlTagDefinition, bool) {
+	ct, found := s.controlTags[name]
 	return ct, found
 }
 
-type tagBuilder struct{ tag *controlTagDefinition }
+type tagBuilder struct {
+	s   Settings
+	tag *controlTagDefinition
+}
 
 // DefineStartTag defines a control tag and its matching end tag.
-func DefineStartTag(name string) tagBuilder {
+func (s Settings) AddStartTag(name string) tagBuilder {
 	ct := &controlTagDefinition{name: name}
-	addControlTagDefinition(ct)
-	addControlTagDefinition(&controlTagDefinition{name: "end" + name, isEndTag: true, parent: ct})
-	return tagBuilder{ct}
+	s.addControlTagDefinition(ct)
+	s.addControlTagDefinition(&controlTagDefinition{name: "end" + name, isEndTag: true, parent: ct})
+	return tagBuilder{s, ct}
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
 // so long as it is not nested within any other control tags.
 func (b tagBuilder) Branch(name string) tagBuilder {
-	addControlTagDefinition(&controlTagDefinition{name: name, isBranchTag: true, parent: b.tag})
+	b.s.addControlTagDefinition(&controlTagDefinition{name: name, isBranchTag: true, parent: b.tag})
 	return b
 }
 
@@ -71,7 +71,7 @@ func (b tagBuilder) Governs(_ []string) tagBuilder {
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (b tagBuilder) SameSyntaxAs(name string) tagBuilder {
-	ot := controlTagDefinitions[name]
+	ot := b.s.controlTags[name]
 	if ot == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}
