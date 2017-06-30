@@ -137,8 +137,7 @@ func TestParseErrors(t *testing.T) {
 	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			tokens := chunks.Scan(test.in, "")
-			ast, err := settings.Parse(tokens)
+			ast, err := settings.Parse(test.in)
 			require.Nilf(t, ast, test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
@@ -151,8 +150,7 @@ func TestRender(t *testing.T) {
 	context := chunks.NewContext(bindings, settings)
 	for i, test := range tagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			tokens := chunks.Scan(test.in, "")
-			ast, err := settings.Parse(tokens)
+			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
 			err = ast.Render(buf, context)

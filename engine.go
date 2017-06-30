@@ -37,8 +37,7 @@ func (e engine) DefineTag(name string, td TagDefinition) {
 
 // ParseTemplate is in the Engine interface.
 func (e engine) ParseTemplate(text []byte) (Template, error) {
-	tokens := chunks.Scan(string(text), "")
-	ast, err := e.settings.Parse(tokens)
+	ast, err := e.settings.Parse(string(text))
 	if err != nil {
 		return nil, err
 	}

@@ -34,8 +34,7 @@ func TestParseErrors(t *testing.T) {
 	addTestTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			tokens := Scan(test.in, "")
-			ast, err := settings.Parse(tokens)
+			ast, err := settings.Parse(test.in)
 			require.Nilf(t, ast, test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
@@ -48,8 +47,7 @@ func TestParser(t *testing.T) {
 	addTestTags(settings)
 	for i, test := range parserTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			tokens := Scan(test.in, "")
-			_, err := settings.Parse(tokens)
+			_, err := settings.Parse(test.in)
 			require.NoError(t, err, test.in)
 			// require.Containsf(t, err.Error(), test.expected, test.in)
 		})

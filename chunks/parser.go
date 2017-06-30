@@ -6,8 +6,13 @@ import (
 	"github.com/osteele/liquid/expressions"
 )
 
+func (s Settings) Parse(source string) (ASTNode, error) {
+	tokens := Scan(source, "")
+	return s.parseChunks(tokens)
+}
+
 // Parse creates an AST from a sequence of Chunks.
-func (s Settings) Parse(chunks []Chunk) (ASTNode, error) {
+func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) {
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		cd *controlTagDefinition // saved local ccd

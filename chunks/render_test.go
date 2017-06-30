@@ -48,8 +48,7 @@ func TestRender(t *testing.T) {
 	context := NewContext(renderTestBindings, settings)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			tokens := Scan(test.in, "")
-			ast, err := settings.Parse(tokens)
+			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
 			err = ast.Render(buf, context)
