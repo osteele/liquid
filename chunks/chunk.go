@@ -15,6 +15,24 @@ type Chunk struct {
 	Source     string // Source is the entirety of the chunk, including the "{{", "{%", etc. markers.
 }
 
+// ChunkType is the type of a Chunk
+type ChunkType int
+
+const (
+	// TextChunkType is the type of a text Chunk
+	TextChunkType ChunkType = iota
+	// TagChunkType is the type of a tag Chunk "{%…%}"
+	TagChunkType
+	// ObjChunkType is the type of an object Chunk "{{…}}"
+	ObjChunkType
+)
+
+// SourceInfo contains a Chunk's source information
+type SourceInfo struct {
+	Pathname string
+	lineNo   int
+}
+
 func (c Chunk) String() string {
 	switch c.Type {
 	case TextChunkType:
@@ -28,20 +46,9 @@ func (c Chunk) String() string {
 	}
 }
 
-// SourceInfo contains a Chunk's source information
-type SourceInfo struct {
-	Pathname string
-	lineNo   int
+func (s SourceInfo) String() string {
+	if s.Pathname != "" {
+		return fmt.Sprintf("%s:%d", s.Pathname, s.lineNo)
+	}
+	return fmt.Sprintf("line %d", s.lineNo)
 }
-
-// ChunkType is the type of a Chunk
-type ChunkType int
-
-const (
-	// TextChunkType is the type of a text Chunk
-	TextChunkType ChunkType = iota
-	// TagChunkType is the type of a tag Chunk "{%…%}"
-	TagChunkType
-	// ObjChunkType is the type of an object Chunk "{{…}}"
-	ObjChunkType
-)

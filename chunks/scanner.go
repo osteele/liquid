@@ -4,6 +4,7 @@ package chunks
 
 import (
 	"regexp"
+	"strings"
 )
 
 var chunkMatcher = regexp.MustCompile(`{{\s*(.+?)\s*}}|{%\s*(\w+)(?:\s+((?:[^%]|%[^}])+?))?\s*%}`)
@@ -13,29 +14,30 @@ func Scan(data string, pathname string) []Chunk {
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	var (
-		sourceInfo = SourceInfo{pathname, 0}
-		out        = make([]Chunk, 0)
-		p, pe      = 0, len(data)
-		matches    = chunkMatcher.FindAllStringSubmatchIndex(data, -1)
+		p, pe = 0, len(data)
+		si    = SourceInfo{pathname, 1}
+		out   = make([]Chunk, 0)
 	)
-	for _, m := range matches {
+	for _, m := range chunkMatcher.FindAllStringSubmatchIndex(data, -1) {
 		ts, te := m[0], m[1]
 		if p < ts {
-			out = append(out, Chunk{Type: TextChunkType, SourceInfo: sourceInfo, Source: data[p:ts]})
+			out = append(out, Chunk{Type: TextChunkType, SourceInfo: si, Source: data[p:ts]})
+			si.lineNo += strings.Count(data[p:ts], "\n")
 		}
+		source := data[ts:te]
 		switch data[ts+1] {
 		case '{':
 			out = append(out, Chunk{
 				Type:       ObjChunkType,
-				SourceInfo: sourceInfo,
-				Source:     data[ts:te],
+				SourceInfo: si,
+				Source:     source,
 				Parameters: data[m[2]:m[3]],
 			})
 		case '%':
 			c := Chunk{
 				Type:       TagChunkType,
-				SourceInfo: sourceInfo,
-				Source:     data[ts:te],
+				SourceInfo: si,
+				Source:     source,
 				Name:       data[m[4]:m[5]],
 			}
 			if m[6] > 0 {
@@ -43,10 +45,11 @@ func Scan(data string, pathname string) []Chunk {
 			}
 			out = append(out, c)
 		}
+		si.lineNo += strings.Count(source, "\n")
 		p = te
 	}
 	if p < pe {
-		out = append(out, Chunk{Type: TextChunkType, SourceInfo: sourceInfo, Source: data[p:]})
+		out = append(out, Chunk{Type: TextChunkType, SourceInfo: si, Source: data[p:]})
 	}
 	return out
 }

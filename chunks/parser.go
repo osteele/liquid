@@ -8,23 +8,27 @@ import (
 
 // Parse creates an AST from a sequence of Chunks.
 func Parse(chunks []Chunk) (ASTNode, error) {
+	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
-		cd *controlTagDefinition
-		cn *ASTControlTag
-		ap *[]ASTNode
+		cd *controlTagDefinition // saved local ccd
+		cn *ASTControlTag        // saved local cn
+		ap *[]ASTNode            // saved local ap
 	}
 	var (
-		root      = &ASTSeq{}
-		ap        = &root.Children // pointer to current node accumulation slice
-		ccd       *controlTagDefinition
-		ccn       *ASTControlTag
-		stack     []frame // stack of control structures
-		rawTag    *ASTRaw
+		root      = &ASTSeq{}           // root of AST; will be returned
+		ap        = &root.Children      // newly-constructed nodes are appended here
+		ccd       *controlTagDefinition // current control tag definition
+		ccn       *ASTControlTag        // current control node
+		stack     []frame               // stack of control structures
+		rawTag    *ASTRaw               // current raw tag
 		inComment = false
 		inRaw     = false
 	)
 	for _, c := range chunks {
 		switch {
+		// The parser needs to know about comment and raw, because tags inside
+		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
+		// TODO is this true?
 		case inComment:
 			if c.Type == TagChunkType && c.Name == "endcomment" {
 				inComment = false
@@ -84,7 +88,7 @@ func Parse(chunks []Chunk) (ASTNode, error) {
 		}
 	}
 	if ccd != nil {
-		return nil, fmt.Errorf("unterminated %s tag", ccd.name)
+		return nil, fmt.Errorf("unterminated %s tag at %s", ccd.name, ccn.SourceInfo)
 	}
 	if err := evaluateBuilders(root); err != nil {
 		return nil, err
