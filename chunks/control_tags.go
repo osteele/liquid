@@ -8,7 +8,7 @@ import (
 // controlTagDefinitions is a map of tag names to control tag definitions.
 var controlTagDefinitions = map[string]*controlTagDefinition{}
 
-// ControlTagParser runs the interpreter.
+// ControlTagParser builds a renderer for the tag instance.
 type ControlTagParser func(ASTControlTag) (func(io.Writer, Context) error, error)
 
 // controlTagDefinition tells the parser how to parse control tags.

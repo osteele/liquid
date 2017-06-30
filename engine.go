@@ -6,6 +6,7 @@ See the project README https://github.com/osteele/liquid for additional informat
 package liquid
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/osteele/liquid/chunks"
@@ -39,6 +40,8 @@ type Engine interface {
 	//
 	// Note: Although this function is defined on the engine, its effect is currently global.
 	DefineTag(string, TagDefinition)
+	// Note: Although this function is defined on the engine, its effect is currently global.
+	DefineStartTag(string, TagDefinition)
 
 	ParseTemplate(b []byte) (Template, error)
 	// ParseAndRender parses and then renders the template.
@@ -63,6 +66,16 @@ type template struct {
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
 	return engine{}
+}
+
+// DefineStartTag is in the Engine interface.
+func (e engine) DefineStartTag(name string, td TagDefinition) {
+	chunks.DefineStartTag(name).Parser(func(c chunks.ASTControlTag) (func(io.Writer, chunks.Context) error, error) {
+		return func(io.Writer, chunks.Context) error {
+			fmt.Println("unimplemented tag:", name)
+			return nil
+		}, nil
+	})
 }
 
 // DefineFilter is in the Engine interface.
