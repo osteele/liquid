@@ -6,14 +6,14 @@ import (
 
 // Context is the evaluation context for chunk AST rendering.
 type Context struct {
-	vars     map[string]interface{}
+	bindings map[string]interface{}
 	settings Settings
 }
 
 type Settings struct {
 	ExpressionSettings expressions.Settings
-	tags map[string]TagDefinition
-	controlTags map[string]*controlTagDefinition
+	tags               map[string]TagDefinition
+	controlTags        map[string]*controlTagDefinition
 }
 
 func (s Settings) AddFilter(name string, fn interface{}) {
@@ -21,12 +21,12 @@ func (s Settings) AddFilter(name string, fn interface{}) {
 }
 
 func NewSettings() Settings {
-	s:= Settings{
+	s := Settings{
 		expressions.NewSettings(),
 		map[string]TagDefinition{},
 		map[string]*controlTagDefinition{},
 	}
-	s.AddTag( "assign", assignTagDef)
+	s.AddTag("assign", assignTagDef)
 	return s
 }
 
@@ -39,6 +39,14 @@ func NewContext(scope map[string]interface{}, s Settings) Context {
 		vars[k] = v
 	}
 	return Context{vars, s}
+}
+
+func (c Context) Clone() Context {
+	bindings := map[string]interface{}{}
+	for k, v := range c.bindings {
+		bindings[k] = v
+	}
+	return Context{bindings, c.settings}
 }
 
 // Evaluate evaluates an expression within the template context.
@@ -54,5 +62,5 @@ func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err err
 			}
 		}
 	}()
-	return expr.Evaluate(expressions.NewContext(c.vars, c.settings.ExpressionSettings))
+	return expr.Evaluate(expressions.NewContext(c.bindings, c.settings.ExpressionSettings))
 }

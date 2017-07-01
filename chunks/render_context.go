@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 
 	"github.com/osteele/liquid/expressions"
@@ -11,9 +12,9 @@ import (
 
 // RenderContext provides the rendering context for a tag renderer.
 type RenderContext interface {
+	Clone() RenderContext
 	Get(name string) interface{}
 	Set(name string, value interface{})
-	GetVariableMap() map[string]interface{}
 	Evaluate(expr expressions.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
@@ -21,12 +22,18 @@ type RenderContext interface {
 	ParseTagArgs() (string, error)
 	RenderChild(io.Writer, *ASTControlTag) error
 	RenderChildren(io.Writer) error
+	RenderFile(w io.Writer, filename string) error
+	UpdateBindings(map[string]interface{})
 }
 
 type renderContext struct {
 	ctx  Context
 	node *ASTFunctional
 	cn   *ASTControlTag
+}
+
+func (c renderContext) Clone() RenderContext {
+	return renderContext{c.ctx.Clone(), c.node, c.cn}
 }
 
 // Evaluate evaluates an expression within the template context.
@@ -47,27 +54,21 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.vars, c.ctx.settings.ExpressionSettings))
+	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionSettings))
 }
 
 func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {
 	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
 }
 
-// GetVariableMap returns the variable map. This is required by some tangled code
-// in Jekyll includes, that should hopefully get better.
-func (c renderContext) GetVariableMap() map[string]interface{} {
-	return c.ctx.vars
-}
-
 // Get gets a variable value within an evaluation context.
 func (c renderContext) Get(name string) interface{} {
-	return c.ctx.vars[name]
+	return c.ctx.bindings[name]
 }
 
 // Set sets a variable value from an evaluation context.
 func (c renderContext) Set(name string, value interface{}) {
-	c.ctx.vars[name] = value
+	c.ctx.bindings[name] = value
 }
 
 // RenderChild renders a node.
@@ -81,6 +82,18 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 		return nil
 	}
 	return c.ctx.RenderASTSequence(w, c.cn.Body)
+}
+
+func (c renderContext) RenderFile(w io.Writer, filename string) error {
+	source, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	ast, err := c.ctx.settings.Parse(string(source))
+	if err != nil {
+		return err
+	}
+	return ast.Render(w, c.ctx)
 }
 
 // InnerString renders the children to a string.
@@ -113,4 +126,10 @@ func (c renderContext) ParseTagArgs() (string, error) {
 		return buf.String(), nil
 	}
 	return args, nil
+}
+
+func (c renderContext) UpdateBindings(bindings map[string]interface{}) {
+	for k, v := range bindings {
+		c.ctx.bindings[k] = v
+	}
 }

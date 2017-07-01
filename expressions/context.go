@@ -8,8 +8,7 @@ type Context interface {
 }
 
 type context struct {
-	vars   map[string]interface{}
-	copied bool
+	bindings map[string]interface{}
 	Settings
 }
 
@@ -27,7 +26,7 @@ func (s Settings) AddFilter(name string, fn interface{}) {
 
 // NewContext makes a new expression evaluation context.
 func NewContext(vars map[string]interface{}, s Settings) Context {
-	return &context{vars, false, s}
+	return &context{vars, s}
 }
 
 func (c *context) Filters() *FilterDictionary {
@@ -36,10 +35,10 @@ func (c *context) Filters() *FilterDictionary {
 
 // Get looks up a variable value in the expression context.
 func (c *context) Get(name string) interface{} {
-	return c.vars[name]
+	return c.bindings[name]
 }
 
 // Set sets a variable value in the expression context.
 func (c *context) Set(name string, value interface{}) {
-	c.vars[name] = value
+	c.bindings[name] = value
 }
