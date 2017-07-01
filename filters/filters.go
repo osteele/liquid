@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/jeffjen/datefmt"
 	"github.com/osteele/liquid/expressions"
@@ -146,20 +147,16 @@ func AddStandardFilters(settings expressions.Settings) {
 		return strings.Replace(s, old, new, 1)
 	})
 	settings.AddFilter("slice", func(s string, start int, length interface{}) string {
+		// runes aren't bytes; don't use slice
 		n, ok := length.(int)
 		if !ok {
 			n = 1
 		}
 		if start < 0 {
-			start = len(s) + start
+			start = utf8.RuneCountInString(s) + start
 		}
-		if start >= len(s) {
-			return ""
-		}
-		if start+n > len(s) {
-			return s[start:]
-		}
-		return s[start : start+n]
+		p := regexp.MustCompile(fmt.Sprintf(`^.{%d}(.{0,%d}).*$`, start, n))
+		return p.ReplaceAllString(s, "$1")
 	})
 	settings.AddFilter("split", splitFilter)
 	settings.AddFilter("strip_html", func(s string) string {
@@ -178,14 +175,13 @@ func AddStandardFilters(settings expressions.Settings) {
 		return strings.TrimRightFunc(s, unicode.IsSpace)
 	})
 	settings.AddFilter("truncate", func(s string, n int, ellipsis interface{}) string {
+		// runes aren't bytes; don't use slice
 		el, ok := ellipsis.(string)
 		if !ok {
 			el = "..."
 		}
-		if len(s) > n {
-			s = s[:n-len(el)] + el
-		}
-		return s
+		p := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
+		return p.ReplaceAllString(s, `$1`+el)
 	})
 	settings.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)

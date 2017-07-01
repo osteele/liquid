@@ -70,6 +70,7 @@ var filterTests = []struct {
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
+	{`"Ground" | truncate: 20`, "Ground"},
 	{`"Parker Moore" | upcase`, "PARKER MOORE"},
 	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
 	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
