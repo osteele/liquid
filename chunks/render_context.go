@@ -23,6 +23,8 @@ type RenderContext interface {
 	RenderChild(io.Writer, *ASTControlTag) error
 	RenderChildren(io.Writer) error
 	RenderFile(w io.Writer, filename string) error
+	TagArgs() string
+	TagName() string
 	UpdateBindings(map[string]interface{})
 }
 
@@ -106,13 +108,7 @@ func (c renderContext) InnerString() (string, error) {
 }
 
 func (c renderContext) ParseTagArgs() (string, error) {
-	var args string
-	switch {
-	case c.node != nil:
-		args = c.node.Chunk.Args
-	case c.cn != nil:
-		args = c.cn.Chunk.Args
-	}
+	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
 		p, err := c.ctx.settings.Parse(args)
 		if err != nil {
@@ -131,5 +127,27 @@ func (c renderContext) ParseTagArgs() (string, error) {
 func (c renderContext) UpdateBindings(bindings map[string]interface{}) {
 	for k, v := range bindings {
 		c.ctx.bindings[k] = v
+	}
+}
+
+func (c renderContext) TagArgs() string {
+	switch {
+	case c.node != nil:
+		return c.node.Chunk.Args
+	case c.cn != nil:
+		return c.cn.Chunk.Args
+	default:
+		return ""
+	}
+}
+
+func (c renderContext) TagName() string {
+	switch {
+	case c.node != nil:
+		return c.node.Chunk.Name
+	case c.cn != nil:
+		return c.cn.Chunk.Name
+	default:
+		return ""
 	}
 }

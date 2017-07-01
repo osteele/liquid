@@ -47,7 +47,7 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
 	cd, ok := ctx.settings.findControlTagDefinition(n.Name)
 	if !ok || cd.parser == nil {
-		return fmt.Errorf("unimplemented tag: %s", n.Name)
+		return fmt.Errorf("unknown tag: %s", n.Name)
 	}
 	renderer := n.renderer
 	if renderer == nil {

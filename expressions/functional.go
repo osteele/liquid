@@ -1,25 +1,25 @@
 package expressions
 
-type wrapper struct {
+type expressionWrapper struct {
 	fn func(ctx Context) (interface{}, error)
 }
 
-func (w wrapper) Evaluate(ctx Context) (interface{}, error) {
+func (w expressionWrapper) Evaluate(ctx Context) (interface{}, error) {
 	return w.fn(ctx)
 }
 
-// True returns the same value each time.
+// Constant creates an expression that returns a constant value.
 func Constant(k interface{}) Expression {
-	return wrapper{
+	return expressionWrapper{
 		func(_ Context) (interface{}, error) {
 			return k, nil
 		},
 	}
 }
 
-// Negate negates its argument.
-func Negate(e Expression) Expression {
-	return wrapper{
+// Not creates an expression that returns ! of the wrapped expression.
+func Not(e Expression) Expression {
+	return expressionWrapper{
 		func(ctx Context) (interface{}, error) {
 			value, err := e.Evaluate(ctx)
 			if err != nil {

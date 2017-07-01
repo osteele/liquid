@@ -6,9 +6,9 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// MustYAML returns the YAML of an interface.
-func MustYAML(val interface{}) string {
-	b, err := yaml.Marshal(val)
+// MustYAML is like yaml.Marshal, but panics if the value cannot be marshalled.
+func MustYAML(value interface{}) string {
+	b, err := yaml.Marshal(value)
 	if err != nil {
 		panic(err)
 	}

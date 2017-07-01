@@ -94,14 +94,14 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) {
 					return nil, err
 				}
 				out = reflect.Append(out, reflect.ValueOf(item))
-				return out.Interface(), nil
 			}
+			return out.Interface(), nil
 		}
 	}
 	return nil, conversionError("", value, target)
 }
 
-// MustConvert wraps Convert, but panics on error.
+// MustConvert is like Convert, but panics if conversion fails.
 func MustConvert(value interface{}, t reflect.Type) interface{} {
 	out, err := Convert(value, t)
 	if err != nil {

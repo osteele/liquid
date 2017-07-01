@@ -16,7 +16,7 @@ func assignTagDef(source string) (func(io.Writer, RenderContext) error, error) {
 	}, nil
 }
 
-// DefineTag creates a tag definition.
+// AddTag creates a tag definition.
 func (s *Settings) AddTag(name string, td TagDefinition) {
 	s.tags[name] = td
 }

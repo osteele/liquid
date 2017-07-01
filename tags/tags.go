@@ -87,7 +87,7 @@ func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chun
 			return nil, err
 		}
 		if !polarity {
-			expr = expressions.Negate(expr)
+			expr = expressions.Not(expr)
 		}
 		branches := []branchRec{
 			{expr, &node},

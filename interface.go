@@ -40,4 +40,4 @@ type Renderer func(io.Writer, chunks.Context) error
 
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.
-type TagDefinition func(args string) (func(io.Writer, chunks.RenderContext) error, error)
+type TagDefinition func(io.Writer, chunks.RenderContext) error

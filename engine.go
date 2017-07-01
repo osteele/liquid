@@ -25,14 +25,16 @@ func (e engine) DefineStartTag(name string, td func(io.Writer, chunks.RenderCont
 
 // DefineFilter is in the Engine interface.
 func (e engine) DefineFilter(name string, fn interface{}) {
-	// TODO define this on the engine, not globally
 	e.settings.AddFilter(name, fn)
 }
 
-// ParseAndRenderString is in the Engine interface.
+// DefineTag is in the Engine interface.
 func (e engine) DefineTag(name string, td TagDefinition) {
-	// TODO define this on the engine, not globally
-	e.settings.AddTag(name, chunks.TagDefinition(td))
+	// For simplicity, don't expose the two stage parsing/rendering process to clients.
+	// Client tags do everything at runtime.
+	e.settings.AddTag(name, func(_ string) (func(io.Writer, chunks.RenderContext) error, error) {
+		return td, nil
+	})
 }
 
 // ParseTemplate is in the Engine interface.

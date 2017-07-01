@@ -49,7 +49,7 @@ type tagBuilder struct {
 	tag *controlTagDefinition
 }
 
-// DefineStartTag defines a control tag and its matching end tag.
+// AddStartTag defines a control tag and its matching end tag.
 func (s Settings) AddStartTag(name string) tagBuilder {
 	ct := &controlTagDefinition{name: name}
 	s.addControlTagDefinition(ct)

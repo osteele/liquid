@@ -18,7 +18,7 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
-// StandardFilters defines the standard Liquid filters.
+// AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(settings expressions.Settings) {
 	// values
 	settings.AddFilter("default", func(value, defaultValue interface{}) interface{} {
