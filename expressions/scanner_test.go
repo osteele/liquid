@@ -32,4 +32,10 @@ func TestExpressionScanner(t *testing.T) {
 	tokens, err := scanExpression("abc > 123")
 	require.NoError(t, err)
 	require.Len(t, tokens, 3)
+
+	tokens, _ = scanExpression("forage")
+	require.Len(t, tokens, 1)
+
+	tokens, _ = scanExpression("orange")
+	require.Len(t, tokens, 1)
 }

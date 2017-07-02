@@ -39,7 +39,7 @@ func Parse(source string) (expr Expression, err error) {
 	lexer := newLexer([]byte(source + ";"))
 	n := yyParse(lexer)
 	if n != 0 {
-		return nil, fmt.Errorf("parse error in %s", source)
+		return nil, fmt.Errorf("parse error in %q", source)
 	}
 	return &expression{lexer.val}, nil
 }

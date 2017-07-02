@@ -16,6 +16,10 @@ var convertTests = []struct {
 	{"1.2", 1.0, float64(1.2)},
 	{true, 1, 1},
 	{false, 1, 0},
+	{1, "", "1"},
+	{false, "", "false"},
+	{true, "", "true"},
+	{"string", "", "string"},
 }
 
 var eqTests = []struct {
@@ -63,13 +67,23 @@ var lessTests = []struct {
 	{[]string{"a"}, []string{"a"}, false},
 }
 
+func TestCall(t *testing.T) {
+	fn := func(a, b string) string {
+		return a + "," + b + "."
+	}
+	args := []interface{}{5, 10}
+	value, err := Call(reflect.ValueOf(fn), args)
+	require.NoError(t, err)
+	require.Equal(t, "5,10.", value)
+}
 func TestConvert(t *testing.T) {
 	for i, test := range convertTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			typ := reflect.TypeOf(test.proto)
 			value, err := Convert(test.value, typ)
-			require.NoError(t, err)
-			require.Equalf(t, test.expected, value, "Convert %#v -> %#v", test.value, test, typ)
+			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
+			require.NoErrorf(t, err, name)
+			require.Equalf(t, test.expected, value, name)
 		})
 	}
 }

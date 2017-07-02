@@ -8,10 +8,10 @@ import (
 )
 
 var parseErrorTests = []struct{ in, expected string }{
-// {"a | unknown_filter", "undefined filter: unknown_filter"},
+	{"a syntax error", "parse error"},
 }
 
-func TestParseErrors(t *testing.T) {
+func TestExpressionParseErrors(t *testing.T) {
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			expr, err := Parse(test.in)

@@ -109,5 +109,5 @@ func (lex *lexer) Lex(out *yySymType) int {
 }
 
 func (lex *lexer) Error(e string) {
-    fmt.Println("error:", e)
+    // fmt.Println("scan error:", e)
 }

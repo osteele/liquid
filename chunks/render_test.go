@@ -3,17 +3,39 @@ package chunks
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-var renderTests = []struct{ in, expected string }{
-	// {"{%if syntax error%}{%endif%}", "parse error"},
+func addRenderTestTags(s Settings) {
+	s.AddStartTag("parse").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
+		a := c.Args
+		return func(w io.Writer, c RenderContext) error {
+			_, err := w.Write([]byte(a))
+			return err
+		}, nil
+	})
+	s.AddStartTag("err2").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
+		return func(w io.Writer, c RenderContext) error {
+			return fmt.Errorf("stage 2 error")
+		}, nil
+	})
+}
+
+var renderTests = []struct{ in, out string }{
 	{`{{ 12 }}`, "12"},
 	{`{{ x }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ ar[1] }}`, "second"},
+	{`{% parse args %}{% endparse %}`, "args"},
+}
+
+var renderErrorTests = []struct{ in, out string }{
+	// {"{%if syntax error%}{%endif%}", "parse error"},
+	{`{% err2 %}{% enderr2 %}`, "stage 2 error"},
 }
 
 var renderTestBindings = map[string]interface{}{
@@ -45,6 +67,7 @@ var renderTestBindings = map[string]interface{}{
 
 func TestRender(t *testing.T) {
 	settings := NewSettings()
+	addRenderTestTags(settings)
 	context := NewContext(renderTestBindings, settings)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
@@ -53,7 +76,22 @@ func TestRender(t *testing.T) {
 			buf := new(bytes.Buffer)
 			err = ast.Render(buf, context)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.expected, buf.String(), test.in)
+			require.Equalf(t, test.out, buf.String(), test.in)
+		})
+	}
+}
+
+func TestRenderErrors(t *testing.T) {
+	settings := NewSettings()
+	addRenderTestTags(settings)
+	context := NewContext(renderTestBindings, settings)
+	for i, test := range renderErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			ast, err := settings.Parse(test.in)
+			require.NoErrorf(t, err, test.in)
+			err = ast.Render(ioutil.Discard, context)
+			require.Errorf(t, err, test.in)
+			require.Containsf(t, err.Error(), test.out, test.in)
 		})
 	}
 }

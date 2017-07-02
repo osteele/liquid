@@ -23,7 +23,7 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 	case TagChunkType:
 		return map[string]interface{}{"tag": c.Name, "args": c.Args}, nil
 	case ObjChunkType:
-		return map[string]interface{}{"obj": c.Name}, nil
+		return map[string]interface{}{"obj": c.Args}, nil
 	default:
 		return nil, fmt.Errorf("unknown chunk tag type: %v", c.Type)
 	}

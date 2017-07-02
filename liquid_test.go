@@ -2,9 +2,12 @@ package liquid
 
 import (
 	"fmt"
+	"io"
 	"log"
+	"strings"
 	"testing"
 
+	"github.com/osteele/liquid/chunks"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,9 +40,9 @@ func TestLiquid(t *testing.T) {
 
 func Example() {
 	engine := NewEngine()
-	template := `<h1>{{page.title}}</h1>`
+	template := `<h1>{{ page.title }}</h1>`
 	bindings := map[string]interface{}{
-		"page": map[string]interface{}{
+		"page": map[string]string{
 			"title": "Introduction",
 		},
 	}
@@ -50,4 +53,60 @@ func Example() {
 	}
 	fmt.Println(out)
 	// Output: <h1>Introduction</h1>
+}
+
+func Example_filter() {
+	engine := NewEngine()
+	engine.DefineFilter("has_prefix", strings.HasPrefix)
+	template := `{{ title | has_prefix: "Intro" }}`
+
+	bindings := map[string]interface{}{
+		"title": "Introduction",
+	}
+	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: true
+}
+
+func Example_tag() {
+	engine := NewEngine()
+	engine.DefineTag("echo", func(w io.Writer, c chunks.RenderContext) error {
+		args := c.TagArgs()
+		_, err := w.Write([]byte(args))
+		return err
+	})
+
+	template := `{% echo hello world %}`
+	bindings := map[string]interface{}{}
+	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: hello world
+}
+
+func Example_tag_pair() {
+	engine := NewEngine()
+	engine.DefineStartTag("length", func(w io.Writer, c chunks.RenderContext) error {
+		s, err := c.InnerString()
+		if err != nil {
+			return err
+		}
+		n := len(s)
+		_, err = w.Write([]byte(fmt.Sprint(n)))
+		return err
+	})
+
+	template := `{% length %}abc{% endlength %}`
+	bindings := map[string]interface{}{}
+	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: 3
 }

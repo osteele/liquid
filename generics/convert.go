@@ -25,7 +25,8 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 // handle circular references.
 func Convert(value interface{}, target reflect.Type) (interface{}, error) { // nolint: gocyclo
 	r := reflect.ValueOf(value)
-	if r.Type().ConvertibleTo(target) {
+	// convert int.Convert(string) yields "\x01" not "1"
+	if target.Kind() != reflect.String && r.Type().ConvertibleTo(target) {
 		return r.Convert(target).Interface(), nil
 	}
 	if reflect.PtrTo(r.Type()) == target {
@@ -97,6 +98,8 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) { // n
 			}
 			return out.Interface(), nil
 		}
+	case reflect.String:
+		return fmt.Sprint(value), nil
 	}
 	return nil, conversionError("", value, target)
 }

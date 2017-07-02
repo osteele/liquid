@@ -2,6 +2,7 @@ package expressions
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -91,9 +92,12 @@ var evaluatorTests = []struct {
 
 	{`"seafood" contains "foo"`, true},
 	{`"seafood" contains "bar"`, false},
+
+	// filters
+	{`"seafood" | length`, 8},
 }
 
-var evaluatorTestContext = NewContext(map[string]interface{}{
+var evaluatorTestBindings = (map[string]interface{}{
 	"n":          123,
 	"array":      []string{"first", "second", "third"},
 	"empty_list": []interface{}{},
@@ -103,12 +107,15 @@ var evaluatorTestContext = NewContext(map[string]interface{}{
 		"b": map[string]interface{}{"c": "d"},
 		"c": []string{"r", "g", "b"},
 	},
-}, NewSettings())
+})
 
 func TestEvaluator(t *testing.T) {
+	settings := NewSettings()
+	settings.AddFilter("length", strings.Count)
+	context := NewContext(evaluatorTestBindings, settings)
 	for i, test := range evaluatorTests {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			val, err := EvaluateString(test.in, evaluatorTestContext)
+			val, err := EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, val, test.in)
 		})

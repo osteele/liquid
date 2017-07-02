@@ -71,11 +71,11 @@ func (b tagBuilder) Governs(_ []string) tagBuilder {
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (b tagBuilder) SameSyntaxAs(name string) tagBuilder {
-	ot := b.s.controlTags[name]
-	if ot == nil {
+	rt := b.s.controlTags[name]
+	if rt == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}
-	b.tag.syntaxModel = ot
+	b.tag.syntaxModel = rt
 	return b
 }
 

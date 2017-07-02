@@ -22,7 +22,7 @@ var scannerCountTests = []struct {
 	{`{{ expr arg }}{{ expr arg }}`, 2},
 }
 
-func TestScanner(t *testing.T) {
+func TestChunkScanner(t *testing.T) {
 	tokens := Scan("12", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
@@ -54,6 +54,10 @@ func TestScanner(t *testing.T) {
 	require.Equal(t, TagChunkType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Name)
 	require.Equal(t, "args", tokens[0].Args)
+
+	tokens = Scan("pre{% tag args %}mid{{ object }}post", "")
+	require.Equal(t, `[TextChunkType{"pre"} TagChunkType{Tag:"tag", Args:"args"} TextChunkType{"mid"} ObjChunkType{"object"} TextChunkType{"post"}]`, fmt.Sprint(tokens))
+	require.Equal(t, "- text: pre\n- args: args\n  tag: tag\n- text: mid\n- obj: object\n- text: post\n", MustYAML(tokens))
 
 	for i, test := range scannerCountTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
