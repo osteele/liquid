@@ -32,7 +32,7 @@ func parseLoopExpression(source string) (expressions.Expression, error) {
 	return expr, nil
 }
 
-func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
 	expr, err := parseLoopExpression(node.Args)
 	if err != nil {
 		return nil, err

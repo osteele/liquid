@@ -9,4 +9,4 @@ before_install:
 
 script:
   - $HOME/gopath/bin/goveralls -service=travis-ci
-  - gometalinter --deadline=5m ./...
+  - make lint

@@ -76,7 +76,7 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
 	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
 		type branchRec struct {
 			test expressions.Expression
