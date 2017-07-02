@@ -44,7 +44,16 @@ func loopTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 		}
 		loop := val.(*expressions.Loop)
 		rt := reflect.ValueOf(loop.Expr)
-		if rt.Kind() != reflect.Array && rt.Kind() != reflect.Slice {
+		switch rt.Kind() {
+		case reflect.Map:
+			array := make([]interface{}, 0, rt.Len())
+			for _, k := range rt.MapKeys() {
+				array = append(array, k.Interface())
+			}
+			rt = reflect.ValueOf(array)
+		case reflect.Array, reflect.Slice:
+		// proceed
+		default:
 			return nil
 		}
 		if loop.Offset > 0 {
