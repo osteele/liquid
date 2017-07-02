@@ -71,7 +71,7 @@ This library is in its early days. IMO it's not sufficiently mature to be worth 
 ### Setup
 
 ```bash
-make setup
+make install-dev-tools
 ```
 
 ### Workflow
