@@ -16,19 +16,19 @@ var liquidTests = []struct{ in, expected string }{
 	{`{{ "upper" | upcase }}`, "UPPER"},
 }
 
-var liquidTestScope = map[string]interface{}{
+var testContext = NewContext(map[string]interface{}{
 	"x":  123,
 	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-}
+})
 
 func TestLiquid(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
 		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
-			out, err := engine.ParseAndRenderString(test.in, liquidTestScope)
+			out, err := engine.ParseAndRenderString(test.in, testContext)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, out, test.in)
 		})
@@ -43,7 +43,8 @@ func Example() {
 			"title": "Introduction",
 		},
 	}
-	out, err := engine.ParseAndRenderString(template, bindings)
+	context := NewContext(bindings)
+	out, err := engine.ParseAndRenderString(template, context)
 	if err != nil {
 		log.Fatalln(err)
 	}

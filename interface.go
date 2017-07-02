@@ -28,15 +28,34 @@ type Engine interface {
 	DefineTag(string, TagDefinition)
 	DefineStartTag(string, func(io.Writer, chunks.RenderContext) error)
 
-	ParseTemplate(b []byte) (Template, error)
+	ParseTemplate([]byte) (Template, error)
 	// ParseAndRender parses and then renders the template.
-	ParseAndRender(b []byte, bindings map[string]interface{}) ([]byte, error)
+	ParseAndRender([]byte, Context) ([]byte, error)
 	// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
-	ParseAndRenderString(s string, bindings map[string]interface{}) (string, error)
+	ParseAndRenderString(string, Context) (string, error)
+}
+
+// Template renders a template according to scope.
+//
+// Bindings is a map of liquid variable names to objects.
+type Template interface {
+	// Render executes the template with the specified bindings.
+	Render(Context) ([]byte, error)
+	// RenderString is a convenience wrapper for Render, that has string input and output.
+	RenderString(Context) (string, error)
+}
+
+// Context supplies variable bindings and other information to a
+// Render.
+//
+// In the future, it will hold methods to get and set the current
+// filename.
+type Context interface {
+	Bindings() map[string]interface{}
 }
 
 // Renderer is the type of a function that is evaluated within a context and writes to output.
-type Renderer func(io.Writer, chunks.Context) error
+// type Renderer func(io.Writer, chunks.Context) error
 
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.

@@ -6,25 +6,15 @@ import (
 	"github.com/osteele/liquid/chunks"
 )
 
-// Template renders a template according to scope.
-//
-// Bindings is a map of liquid variable names to objects.
-type Template interface {
-	// Render executes the template with the specified bindings.
-	Render(bindings map[string]interface{}) ([]byte, error)
-	// RenderString is a convenience wrapper for Render, that has string input and output.
-	RenderString(bindings map[string]interface{}) (string, error)
-}
-
 type template struct {
 	ast      chunks.ASTNode
 	settings chunks.Settings
 }
 
 // Render executes the template within the bindings environment.
-func (t *template) Render(bindings map[string]interface{}) ([]byte, error) {
+func (t *template) Render(c Context) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := t.ast.Render(buf, chunks.NewContext(bindings, t.settings))
+	err := t.ast.Render(buf, chunks.NewContext(c.Bindings(), t.settings))
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +22,8 @@ func (t *template) Render(bindings map[string]interface{}) ([]byte, error) {
 }
 
 // RenderString is a convenience wrapper for Render, that has string input and output.
-func (t *template) RenderString(bindings map[string]interface{}) (string, error) {
-	b, err := t.Render(bindings)
+func (t *template) RenderString(c Context) (string, error) {
+	b, err := t.Render(c)
 	if err != nil {
 		return "", err
 	}
