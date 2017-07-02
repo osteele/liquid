@@ -17,15 +17,10 @@ type loopModifiers struct {
 	Reversed bool
 }
 
+// ParseError represents a parse error.
 type ParseError string
 
 func (e ParseError) Error() string { return string(e) }
-
-type UnimplementedError string
-
-func (e UnimplementedError) Error() string {
-	return fmt.Sprintf("unimplemented %s", string(e))
-}
 
 // Parse parses an expression string into an Expression.
 func Parse(source string) (expr Expression, err error) {
@@ -33,8 +28,6 @@ func Parse(source string) (expr Expression, err error) {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
 			case ParseError:
-				err = e
-			case UnimplementedError:
 				err = e
 			case UndefinedFilter:
 				err = e

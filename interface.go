@@ -54,9 +54,6 @@ type Context interface {
 	Bindings() map[string]interface{}
 }
 
-// Renderer is the type of a function that is evaluated within a context and writes to output.
-// type Renderer func(io.Writer, chunks.Context) error
-
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.
 type TagDefinition func(io.Writer, chunks.RenderContext) error

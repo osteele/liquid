@@ -6,6 +6,7 @@ import (
 	"github.com/osteele/liquid/expressions"
 )
 
+// Parse parses a source template. It returns an AST root, that can be evaluated.
 func (s Settings) Parse(source string) (ASTNode, error) {
 	tokens := Scan(source, "")
 	return s.parseChunks(tokens)

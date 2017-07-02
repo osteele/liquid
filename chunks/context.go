@@ -10,16 +10,19 @@ type Context struct {
 	settings Settings
 }
 
+// Settings holds configuration information for parsing and rendering.
 type Settings struct {
 	ExpressionSettings expressions.Settings
 	tags               map[string]TagDefinition
 	controlTags        map[string]*controlTagDefinition
 }
 
+// AddFilter adds a filter to settings.
 func (s Settings) AddFilter(name string, fn interface{}) {
 	s.ExpressionSettings.AddFilter(name, fn)
 }
 
+// NewSettings creates a new Settings.
 func NewSettings() Settings {
 	s := Settings{
 		expressions.NewSettings(),
@@ -41,6 +44,7 @@ func NewContext(scope map[string]interface{}, s Settings) Context {
 	return Context{vars, s}
 }
 
+// Clone makes a copy of a context, with copied bindings.
 func (c Context) Clone() Context {
 	bindings := map[string]interface{}{}
 	for k, v := range c.bindings {

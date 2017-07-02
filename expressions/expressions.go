@@ -44,8 +44,6 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 				err = e
 			case InterpreterError:
 				err = e
-			case UnimplementedError:
-				err = e
 			case UndefinedFilter:
 				err = e
 			default:

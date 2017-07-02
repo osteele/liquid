@@ -3,9 +3,11 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/osteele/liquid)](https://goreportcard.com/report/github.com/osteele/liquid)
 [![GoDoc](https://godoc.org/github.com/osteele/liquid?status.svg)](http://godoc.org/github.com/osteele/liquid)
 
-`liquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid), for use in [gojekyll](https://github.com/osteele/gojekyll).
+> "Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp." – Philip Greenspun
 
-It supports a functional API for defining tags and filters. On the one hand, this isn't idiomatic Go. On the other hand, this made it possibly to quickly implement a boatload of Liquid and Jekyll filters that would otherwise have been onerous. The jury is still out…
+`liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in [gojekyll](https://github.com/osteele/gojekyll).
+
+`liquid` provides a functional API for defining tags and filters. See examples [here](https://github.com/osteele/liquid/blob/master/filters/filters.go), [here](https://github.com/osteele/gojekyll/blob/master/filters/filters.go), and [here](https://github.com/osteele/gojekyll/blob/master/tags/tags.go). On the one hand, this isn't idiomatic Go. On the other hand, this made it possible to implement a boatload of Liquid and Jekyll filters without an onerous amount of boilerplate – in some cases, simply by passing a reference to a function from the standard library.
 
 <!-- TOC -->
 

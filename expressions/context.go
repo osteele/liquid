@@ -12,14 +12,17 @@ type context struct {
 	Settings
 }
 
+// Settings holds configuration information for expression interpretation.
 type Settings struct {
 	filters *filterDictionary
 }
 
+// NewSettings creates a new Settings.
 func NewSettings() Settings {
 	return Settings{newFilterDictionary()}
 }
 
+// AddFilter adds a filter function to settings.
 func (s Settings) AddFilter(name string, fn interface{}) {
 	s.filters.addFilter(name, fn)
 }
