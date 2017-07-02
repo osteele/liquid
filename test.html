@@ -10,58 +10,59 @@
 	correspond to Go identifiers).
 -->
 
-	<script type='text/javascript'>
+<script type='text/javascript'>
 	document.ANALYSIS_DATA = ;
 	document.CALLGRAPH = ;
-	</script>
+</script>
 
-	
-		
-		<div id="short-nav">
-			<dl>
-			<dd><code>import "."</code></dd>
-			</dl>
-			<dl>
-			<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
-			<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
-			
-				<dd><a href="#pkg-examples" class="examplesLink">Examples</a></dd>
-			
-			
-				<dd><a href="#pkg-subdirectories">Subdirectories</a></dd>
-			
-			</dl>
-		</div>
-		<!-- The package's Name is printed as title by the top-level template -->
-		<div id="pkg-overview" class="toggleVisible">
-			<div class="collapsed">
-				<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
-			</div>
-			<div class="expanded">
-				<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
-				<p>
-Package liquid is a pure Go implementation of Shopify Liquid templates.
-</p>
-<p>
-It&#39;s intended for use in for use in <a href="https://github.com/osteele/gojekyll">https://github.com/osteele/gojekyll</a>.
-</p>
-<p>
-See the project README <a href="https://github.com/osteele/liquid">https://github.com/osteele/liquid</a> for additional information and implementation status.
-</p>
 
-			</div>
-		</div>
-		<div id="example_" class="toggle">
+
+<div id="short-nav">
+	<dl>
+		<dd><code>import "."</code></dd>
+	</dl>
+	<dl>
+		<dd><a href="#pkg-overview" class="overviewLink">Overview</a></dd>
+		<dd><a href="#pkg-index" class="indexLink">Index</a></dd>
+
+		<dd><a href="#pkg-examples" class="examplesLink">Examples</a></dd>
+
+
+		<dd><a href="#pkg-subdirectories">Subdirectories</a></dd>
+
+	</dl>
+</div>
+<!-- The package's Name is printed as title by the top-level template -->
+<div id="pkg-overview" class="toggleVisible">
+	<div class="collapsed">
+		<h2 class="toggleButton" title="Click to show Overview section">Overview ▹</h2>
+	</div>
+	<div class="expanded">
+		<h2 class="toggleButton" title="Click to hide Overview section">Overview ▾</h2>
+		<p>
+			Package liquid is a pure Go implementation of Shopify Liquid templates.
+		</p>
+		<p>
+			It&#39;s intended for use in for use in <a href="https://github.com/osteele/gojekyll">https://github.com/osteele/gojekyll</a>.
+		</p>
+		<p>
+			See the project README <a href="https://github.com/osteele/liquid">https://github.com/osteele/liquid</a> for additional
+			information and implementation status.
+		</p>
+
+	</div>
+</div>
+<div id="example_" class="toggle">
 	<div class="collapsed">
 		<p class="exampleHeading toggleButton">▹ <span class="text">Example</span></p>
 	</div>
 	<div class="expanded">
 		<p class="exampleHeading toggleButton">▾ <span class="text">Example</span></p>
-		
-		
-		
-			<p>Code:</p>
-			<pre class="code">engine := NewEngine()
+
+
+
+		<p>Code:</p>
+		<pre class="code">engine := NewEngine()
 template := `&lt;h1&gt;{{page.title}}&lt;/h1&gt;`
 scope := map[string]interface{}{
     &#34;page&#34;: map[string]interface{}{
@@ -74,310 +75,299 @@ if err != nil {
 }
 fmt.Println(out)
 <span class="comment"></pre>
-			
-			<p>Output:</p>
-			<pre class="output">&lt;h1&gt;Introduction&lt;/h1&gt;
+
+		<p>Output:</p>
+		<pre class="output">&lt;h1&gt;Introduction&lt;/h1&gt;
 </pre>
-			
-		
+
+
 	</div>
 </div>
 
 
-		<div id="pkg-index" class="toggleVisible">
-		<div class="collapsed">
-			<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
-		</div>
-		<div class="expanded">
-			<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
+<div id="pkg-index" class="toggleVisible">
+	<div class="collapsed">
+		<h2 class="toggleButton" title="Click to show Index section">Index ▹</h2>
+	</div>
+	<div class="expanded">
+		<h2 class="toggleButton" title="Click to hide Index section">Index ▾</h2>
 
 		<!-- Table of contents for API; must be named manual-nav to turn off auto nav. -->
-			<div id="manual-nav">
+		<div id="manual-nav">
 			<dl>
-			
-			
-			
-			
-				
-				<dd><a href="#Engine">type Engine</a></dd>
-				
-					
-					<dd>&nbsp; &nbsp; <a href="#NewEngine">func NewEngine() Engine</a></dd>
-				
-				
-			
-				
-				<dd><a href="#TagDefinition">type TagDefinition</a></dd>
-				
-				
-			
-				
-				<dd><a href="#Template">type Template</a></dd>
-				
-				
-			
-			
-			</dl>
-			</div><!-- #manual-nav -->
 
-		
+
+
+
+
+				<dd><a href="#Engine">type Engine</a></dd>
+
+
+				<dd>&nbsp; &nbsp; <a href="#NewEngine">func NewEngine() Engine</a></dd>
+
+
+
+
+				<dd><a href="#TagDefinition">type TagDefinition</a></dd>
+
+
+
+
+				<dd><a href="#Template">type Template</a></dd>
+
+
+
+
+			</dl>
+		</div>
+		<!-- #manual-nav -->
+
+
 		<div id="pkg-examples">
 			<h4>Examples</h4>
 			<dl>
-			
-			<dd><a class="exampleLink" href="#example_">Package</a></dd>
-			
+
+				<dd><a class="exampleLink" href="#example_">Package</a></dd>
+
 			</dl>
 		</div>
-		
 
-		
-			<h4>Package files</h4>
-			<p>
+
+
+		<h4>Package files</h4>
+		<p>
 			<span style="font-size:90%">
-			
+
 				<a href="/src/target/engine.go">engine.go</a>
-			
+
 				<a href="/src/target/template.go">template.go</a>
-			
+
 			</span>
-			</p>
-		
-		</div><!-- .expanded -->
-		</div><!-- #pkg-index -->
+		</p>
 
-		<div id="pkg-callgraph" class="toggle" style="display: none">
-		<div class="collapsed">
-			<h2 class="toggleButton" title="Click to show Internal Call Graph section">Internal call graph ▹</h2>
-		</div> <!-- .expanded -->
-		<div class="expanded">
-			<h2 class="toggleButton" title="Click to hide Internal Call Graph section">Internal call graph ▾</h2>
-			<p>
-			  In the call graph viewer below, each node
-			  is a function belonging to this package
-			  and its children are the functions it
-			  calls&mdash;perhaps dynamically.
-			</p>
-			<p>
-			  The root nodes are the entry points of the
-			  package: functions that may be called from
-			  outside the package.
-			  There may be non-exported or anonymous
-			  functions among them if they are called
-			  dynamically from another package.
-			</p>
-			<p>
-			  Click a node to visit that function's source code.
-			  From there you can visit its callers by
-			  clicking its declaring <code>func</code>
-			  token.
-			</p>
-			<p>
-			  Functions may be omitted if they were
-			  determined to be unreachable in the
-			  particular programs or tests that were
-			  analyzed.
-			</p>
-			<!-- Zero means show all package entry points. -->
-			<ul style="margin-left: 0.5in" id="callgraph-0" class="treeview"></ul>
-		</div>
-		</div> <!-- #pkg-callgraph -->
+	</div>
+	<!-- .expanded -->
+</div>
+<!-- #pkg-index -->
 
-		
-		
-		
-		
-			
-			
-			<h2 id="Engine">type <a href="/src/target/engine.go?s=640:1002#L16">Engine</a>
-				<a class="permalink" href="#Engine">&#xb6;</a>
-			</h2>
-			<p>
-Engine parses template source into renderable text.
+<div id="pkg-callgraph" class="toggle" style="display: none">
+	<div class="collapsed">
+		<h2 class="toggleButton" title="Click to show Internal Call Graph section">Internal call graph ▹</h2>
+	</div>
+	<!-- .expanded -->
+	<div class="expanded">
+		<h2 class="toggleButton" title="Click to hide Internal Call Graph section">Internal call graph ▾</h2>
+		<p>
+			In the call graph viewer below, each node is a function belonging to this package and its children are the functions it calls&mdash;perhaps
+			dynamically.
+		</p>
+		<p>
+			The root nodes are the entry points of the package: functions that may be called from outside the package. There may be non-exported
+			or anonymous functions among them if they are called dynamically from another package.
+		</p>
+		<p>
+			Click a node to visit that function's source code. From there you can visit its callers by clicking its declaring <code>func</code>			token.
+		</p>
+		<p>
+			Functions may be omitted if they were determined to be unreachable in the particular programs or tests that were analyzed.
+		</p>
+		<!-- Zero means show all package entry points. -->
+		<ul style="margin-left: 0.5in" id="callgraph-0" class="treeview"></ul>
+	</div>
+</div>
+<!-- #pkg-callgraph -->
+
+
+
+
+
+
+
+<h2 id="Engine">type <a href="/src/target/engine.go?s=640:1002#L16">Engine</a>
+	<a class="permalink" href="#Engine">&#xb6;</a>
+</h2>
+<p>
+	Engine parses template source into renderable text.
 </p>
 
-			<pre>type Engine interface {
-    DefineFilter(name <a href="/pkg/builtin/#string">string</a>, fn interface{})
-    DefineTag(<a href="/pkg/builtin/#string">string</a>, func(form <a href="/pkg/builtin/#string">string</a>) (func(<a href="/pkg/io/">io</a>.<a href="/pkg/io/#Writer">Writer</a>, <a href="/pkg/github.com/osteele/liquid/chunks/">chunks</a>.<a href="/pkg/github.com/osteele/liquid/chunks/#Context">Context</a>) <a href="/pkg/builtin/#error">error</a>, <a href="/pkg/builtin/#error">error</a>))
+<pre>type Engine interface {
+    RegisterFilter(name <a href="/pkg/builtin/#string">string</a>, fn interface{})
+    RegisterTag(<a href="/pkg/builtin/#string">string</a>, func(form <a href="/pkg/builtin/#string">string</a>) (func(<a href="/pkg/io/">io</a>.<a href="/pkg/io/#Writer">Writer</a>, <a href="/pkg/github.com/osteele/liquid/chunks/">chunks</a>.<a href="/pkg/github.com/osteele/liquid/chunks/#Context">Context</a>) <a href="/pkg/builtin/#error">error</a>, <a href="/pkg/builtin/#error">error</a>))
 
     ParseTemplate(text []<a href="/pkg/builtin/#byte">byte</a>) (<a href="#Template">Template</a>, <a href="/pkg/builtin/#error">error</a>)
     ParseAndRender(text []<a href="/pkg/builtin/#byte">byte</a>, bindings map[<a href="/pkg/builtin/#string">string</a>]interface{}) ([]<a href="/pkg/builtin/#byte">byte</a>, <a href="/pkg/builtin/#error">error</a>)
     ParseAndRenderString(text <a href="/pkg/builtin/#string">string</a>, bindings map[<a href="/pkg/builtin/#string">string</a>]interface{}) (<a href="/pkg/builtin/#string">string</a>, <a href="/pkg/builtin/#error">error</a>)
 }</pre>
 
-			
 
-			
 
-			
-			
-			
 
-			
-				
-				<h3 id="NewEngine">func <a href="/src/target/engine.go?s=1192:1215#L34">NewEngine</a>
-					<a class="permalink" href="#NewEngine">&#xb6;</a>
-				</h3>
-				<pre>func NewEngine() <a href="#Engine">Engine</a></pre>
-				<p>
-NewEngine returns a new engine.
+
+
+
+
+
+
+
+<h3 id="NewEngine">func <a href="/src/target/engine.go?s=1192:1215#L34">NewEngine</a>
+	<a class="permalink" href="#NewEngine">&#xb6;</a>
+</h3>
+<pre>func NewEngine() <a href="#Engine">Engine</a></pre>
+<p>
+	NewEngine returns a new engine.
 </p>
 
-				
-				
-			
 
-			
-		
-			
-			
-			<h2 id="TagDefinition">type <a href="/src/target/engine.go?s=1004:1087#L25">TagDefinition</a>
-				<a class="permalink" href="#TagDefinition">&#xb6;</a>
-			</h2>
-			
-			<pre>type TagDefinition func(expr <a href="/pkg/builtin/#string">string</a>) (func(<a href="/pkg/io/">io</a>.<a href="/pkg/io/#Writer">Writer</a>, <a href="/pkg/github.com/osteele/liquid/chunks/">chunks</a>.<a href="/pkg/github.com/osteele/liquid/chunks/#Context">Context</a>) <a href="/pkg/builtin/#error">error</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
 
-			
 
-			
 
-			
-			
-			
 
-			
 
-			
-		
-			
-			
-			<h2 id="Template">type <a href="/src/target/template.go?s=186:483#L2">Template</a>
-				<a class="permalink" href="#Template">&#xb6;</a>
-			</h2>
-			<p>
-Template renders a template according to scope.
+
+
+<h2 id="TagDefinition">type <a href="/src/target/engine.go?s=1004:1087#L25">TagDefinition</a>
+	<a class="permalink" href="#TagDefinition">&#xb6;</a>
+</h2>
+
+<pre>type TagDefinition func(expr <a href="/pkg/builtin/#string">string</a>) (func(<a href="/pkg/io/">io</a>.<a href="/pkg/io/#Writer">Writer</a>, <a href="/pkg/github.com/osteele/liquid/chunks/">chunks</a>.<a href="/pkg/github.com/osteele/liquid/chunks/#Context">Context</a>) <a href="/pkg/builtin/#error">error</a>, <a href="/pkg/builtin/#error">error</a>)</pre>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h2 id="Template">type <a href="/src/target/template.go?s=186:483#L2">Template</a>
+	<a class="permalink" href="#Template">&#xb6;</a>
+</h2>
+<p>
+	Template renders a template according to scope.
 </p>
 <p>
-Bindings is a map of liquid variable names to objects.
+	Bindings is a map of liquid variable names to objects.
 </p>
 
-			<pre>type Template interface {
+<pre>type Template interface {
     <span class="comment">// Render executes the template with the specified bindings.</span>
     Render(bindings map[<a href="/pkg/builtin/#string">string</a>]interface{}) ([]<a href="/pkg/builtin/#byte">byte</a>, <a href="/pkg/builtin/#error">error</a>)
     <span class="comment">// RenderString is a convenience wrapper for Render, that has string input and output.</span>
     RenderString(bindings map[<a href="/pkg/builtin/#string">string</a>]interface{}) (<a href="/pkg/builtin/#string">string</a>, <a href="/pkg/builtin/#error">error</a>)
 }</pre>
 
-			
-
-			
-
-			
-			
-			
-
-			
-
-			
-		
-	
-
-	
 
 
 
 
 
-	
-	
-		<h2 id="pkg-subdirectories">Subdirectories</h2>
-	
-	
 
 
-	<div class="pkg-dir">
-		<table>
-			<tr>
-				<th class="pkg-name">Name</th>
-				<th class="pkg-synopsis">Synopsis</th>
-			</tr>
-
-			
-			<tr>
-				<td colspan="2"><a href="..">..</a></td>
-			</tr>
-			
-
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="chunks/">chunks</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="errors/">errors</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="expressions/">expressions</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="filters/">filters</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="generics/">generics</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-				
-					<tr>
-						<td class="pkg-name" style="padding-left: 0px;">
-							<a href="tags/">tags</a>
-						</td>
-						<td class="pkg-synopsis">
-							
-						</td>
-					</tr>
-				
-			
-		</table>
-	</div>
 
 
-	
 
+
+
+
+
+
+
+
+
+
+
+
+
+<h2 id="pkg-subdirectories">Subdirectories</h2>
+
+
+
+
+<div class="pkg-dir">
+	<table>
+		<tr>
+			<th class="pkg-name">Name</th>
+			<th class="pkg-synopsis">Synopsis</th>
+		</tr>
+
+
+		<tr>
+			<td colspan="2"><a href="..">..</a></td>
+		</tr>
+
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="chunks/">chunks</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="errors/">errors</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="expressions/">expressions</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="filters/">filters</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="generics/">generics</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+
+		<tr>
+			<td class="pkg-name" style="padding-left: 0px;">
+				<a href="tags/">tags</a>
+			</td>
+			<td class="pkg-synopsis">
+
+			</td>
+		</tr>
+
+
+	</table>
+</div>

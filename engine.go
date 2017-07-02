@@ -18,18 +18,18 @@ func NewEngine() Engine {
 	return e
 }
 
-// DefineStartTag is in the Engine interface.
-func (e engine) DefineStartTag(name string, td func(io.Writer, chunks.RenderContext) error) {
-	e.settings.AddStartTag(name).Renderer(td)
+// RegisterBlock is in the Engine interface.
+func (e engine) RegisterBlock(name string, td func(io.Writer, chunks.RenderContext) error) {
+	e.settings.AddBlock(name).Renderer(td)
 }
 
-// DefineFilter is in the Engine interface.
-func (e engine) DefineFilter(name string, fn interface{}) {
+// RegisterFilter is in the Engine interface.
+func (e engine) RegisterFilter(name string, fn interface{}) {
 	e.settings.AddFilter(name, fn)
 }
 
-// DefineTag is in the Engine interface.
-func (e engine) DefineTag(name string, td TagDefinition) {
+// RegisterTag is in the Engine interface.
+func (e engine) RegisterTag(name string, td TagDefinition) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
 	e.settings.AddTag(name, func(_ string) (func(io.Writer, chunks.RenderContext) error, error) {

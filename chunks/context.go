@@ -14,7 +14,7 @@ type Context struct {
 type Settings struct {
 	ExpressionSettings expressions.Settings
 	tags               map[string]TagDefinition
-	controlTags        map[string]*controlTagDefinition
+	controlTags        map[string]*blockDef
 }
 
 // AddFilter adds a filter to settings.
@@ -27,7 +27,7 @@ func NewSettings() Settings {
 	s := Settings{
 		expressions.NewSettings(),
 		map[string]TagDefinition{},
-		map[string]*controlTagDefinition{},
+		map[string]*blockDef{},
 	}
 	s.AddTag("assign", assignTagDef)
 	return s

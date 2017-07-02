@@ -44,8 +44,8 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 }
 
 // Render is in the ASTNode interface.
-func (n *ASTControlTag) Render(w io.Writer, ctx Context) error {
-	cd, ok := ctx.settings.findControlTagDefinition(n.Name)
+func (n *ASTBlockNode) Render(w io.Writer, ctx Context) error {
+	cd, ok := ctx.settings.findBlockDef(n.Name)
 	if !ok || cd.parser == nil {
 		return fmt.Errorf("unknown tag: %s", n.Name)
 	}

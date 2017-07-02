@@ -16,17 +16,17 @@ func AddStandardTags(settings chunks.Settings) {
 	loopTags := []string{"break", "continue", "cycle"}
 	settings.AddTag("break", breakTag)
 	settings.AddTag("continue", continueTag)
-	settings.AddStartTag("capture").Parser(captureTagParser)
-	settings.AddStartTag("case").Branch("when").Parser(caseTagParser)
-	settings.AddStartTag("comment")
-	settings.AddStartTag("for").Governs(loopTags).Parser(loopTagParser)
-	settings.AddStartTag("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
-	settings.AddStartTag("raw")
-	settings.AddStartTag("tablerow").Governs(loopTags)
-	settings.AddStartTag("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+	settings.AddBlock("capture").Parser(captureTagParser)
+	settings.AddBlock("case").Branch("when").Parser(caseTagParser)
+	settings.AddBlock("comment")
+	settings.AddBlock("for").Governs(loopTags).Parser(loopTagParser)
+	settings.AddBlock("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
+	settings.AddBlock("raw")
+	settings.AddBlock("tablerow").Governs(loopTags)
+	settings.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
-func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+func captureTagParser(node chunks.ASTBlockNode) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO verify syntax
 	varname := node.Args
 	return func(w io.Writer, ctx chunks.RenderContext) error {
@@ -39,7 +39,7 @@ func captureTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderC
 	}, nil
 }
 
-func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+func caseTagParser(node chunks.ASTBlockNode) (func(io.Writer, chunks.RenderContext) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
 	expr, err := expressions.Parse(node.Args)
@@ -48,7 +48,7 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 	}
 	type caseRec struct {
 		expr expressions.Expression
-		node *chunks.ASTControlTag
+		node *chunks.ASTBlockNode
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
@@ -76,11 +76,11 @@ func caseTagParser(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderCont
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
-	return func(node chunks.ASTControlTag) (func(io.Writer, chunks.RenderContext) error, error) {
+func ifTagParser(polarity bool) func(chunks.ASTBlockNode) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
+	return func(node chunks.ASTBlockNode) (func(io.Writer, chunks.RenderContext) error, error) {
 		type branchRec struct {
 			test expressions.Expression
-			body *chunks.ASTControlTag
+			body *chunks.ASTBlockNode
 		}
 		expr, err := expressions.Parse(node.Args)
 		if err != nil {

@@ -17,16 +17,16 @@ import (
 //
 // Filters
 //
-// DefineFilter defines a Liquid filter.
+// RegisterFilter defines a Liquid filter.
 //
 // A filter is any function that takes at least one input, and returns one or two outputs.
 // If it returns two outputs, the second must be an error.
 type Engine interface {
-	// DefineFilter defines a filter function e.g. {{ value | filter: arg }}.
-	DefineFilter(name string, fn interface{})
-	// DefineTag defines a tag function e.g. {% tag %}.
-	DefineTag(string, TagDefinition)
-	DefineStartTag(string, func(io.Writer, chunks.RenderContext) error)
+	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
+	RegisterFilter(name string, fn interface{})
+	// RegisterTag defines a tag function e.g. {% tag %}.
+	RegisterTag(string, TagDefinition)
+	RegisterBlock(string, func(io.Writer, chunks.RenderContext) error)
 
 	ParseTemplate([]byte) (Template, error)
 	// ParseAndRender parses and then renders the template.

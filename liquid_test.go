@@ -66,7 +66,7 @@ func Example() {
 
 func Example_filter() {
 	engine := NewEngine()
-	engine.DefineFilter("has_prefix", strings.HasPrefix)
+	engine.RegisterFilter("has_prefix", strings.HasPrefix)
 	template := `{{ title | has_prefix: "Intro" }}`
 
 	bindings := map[string]interface{}{
@@ -82,7 +82,7 @@ func Example_filter() {
 
 func Example_tag() {
 	engine := NewEngine()
-	engine.DefineTag("echo", func(w io.Writer, c chunks.RenderContext) error {
+	engine.RegisterTag("echo", func(w io.Writer, c chunks.RenderContext) error {
 		args := c.TagArgs()
 		_, err := w.Write([]byte(args))
 		return err
@@ -100,7 +100,7 @@ func Example_tag() {
 
 func Example_tag_pair() {
 	engine := NewEngine()
-	engine.DefineStartTag("length", func(w io.Writer, c chunks.RenderContext) error {
+	engine.RegisterBlock("length", func(w io.Writer, c chunks.RenderContext) error {
 		s, err := c.InnerString()
 		if err != nil {
 			return err

@@ -30,7 +30,7 @@ func (c Chunk) MarshalYAML() (interface{}, error) {
 }
 
 // MarshalYAML marshalls a chunk for debugging.
-func (n ASTControlTag) MarshalYAML() (interface{}, error) {
+func (n ASTBlockNode) MarshalYAML() (interface{}, error) {
 	return map[string]map[string]interface{}{
 		n.cd.name: {
 			"args":     n.Args,

@@ -9,13 +9,13 @@ import (
 )
 
 func addParserTestTags(s Settings) {
-	s.AddStartTag("case").Branch("when")
-	s.AddStartTag("comment")
-	s.AddStartTag("for").Governs([]string{"break"})
-	s.AddStartTag("if").Branch("else").Branch("elsif")
-	s.AddStartTag("unless").SameSyntaxAs("if")
-	s.AddStartTag("raw")
-	s.AddStartTag("err1").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
+	s.AddBlock("case").Branch("when")
+	s.AddBlock("comment")
+	s.AddBlock("for").Governs([]string{"break"})
+	s.AddBlock("if").Branch("else").Branch("elsif")
+	s.AddBlock("unless").SameSyntaxAs("if")
+	s.AddBlock("raw")
+	s.AddBlock("err1").Parser(func(c ASTBlockNode) (func(io.Writer, RenderContext) error, error) {
 		return nil, fmt.Errorf("stage 1 error")
 	})
 }

@@ -11,14 +11,14 @@ import (
 )
 
 func addRenderTestTags(s Settings) {
-	s.AddStartTag("parse").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
+	s.AddBlock("parse").Parser(func(c ASTBlockNode) (func(io.Writer, RenderContext) error, error) {
 		a := c.Args
 		return func(w io.Writer, c RenderContext) error {
 			_, err := w.Write([]byte(a))
 			return err
 		}, nil
 	})
-	s.AddStartTag("eval").Renderer(func(w io.Writer, c RenderContext) error {
+	s.AddBlock("eval").Renderer(func(w io.Writer, c RenderContext) error {
 		v, err := c.EvaluateString(c.TagArgs())
 		if err != nil {
 			return err
@@ -27,7 +27,7 @@ func addRenderTestTags(s Settings) {
 		_, err = w.Write([]byte(s))
 		return err
 	})
-	s.AddStartTag("err2").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
+	s.AddBlock("err2").Parser(func(c ASTBlockNode) (func(io.Writer, RenderContext) error, error) {
 		return func(w io.Writer, c RenderContext) error {
 			return fmt.Errorf("stage 2 error")
 		}, nil
