@@ -15,6 +15,7 @@ It supports a functional API for defining tags and filters. On the one hand, thi
     - [Contribute](#contribute)
         - [Setup](#setup)
         - [Workflow](#workflow)
+        - [Style Guide](#style-guide)
         - [Working on the Parser and Lexer](#working-on-the-parser-and-lexer)
     - [References](#references)
     - [Attribution](#attribution)
@@ -90,6 +91,12 @@ Preview the documentation:
 godoc -http=:6060&
 open http://localhost:6060/pkg/github.com/osteele/liquid/
 ```
+
+### Style Guide
+
+`make test` and `make lint` should pass.
+
+The cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions, have been disabled (via `nolint: gocyclo`). IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity or lint in general willy nilly.
 
 ### Working on the Parser and Lexer
 

@@ -23,7 +23,7 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, target reflect.Type) (interface{}, error) {
+func Convert(value interface{}, target reflect.Type) (interface{}, error) { // nolint: gocyclo
 	r := reflect.ValueOf(value)
 	if r.Type().ConvertibleTo(target) {
 		return r.Convert(target).Interface(), nil

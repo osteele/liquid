@@ -36,13 +36,13 @@ type SourceInfo struct {
 func (c Chunk) String() string {
 	switch c.Type {
 	case TextChunkType:
-		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
+		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
 	case TagChunkType:
-		return fmt.Sprintf("%s{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
+		return fmt.Sprintf("%v{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
 	case ObjChunkType:
-		return fmt.Sprintf("%s{%#v}", c.Type, c.Args)
+		return fmt.Sprintf("%v{%#v}", c.Type, c.Args)
 	default:
-		return fmt.Sprintf("%s{%#v}", c.Type, c.Source)
+		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
 	}
 }
 

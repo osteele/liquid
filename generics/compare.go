@@ -10,7 +10,7 @@ var (
 )
 
 // Equal returns a bool indicating whether a == b after conversion.
-func Equal(a, b interface{}) bool {
+func Equal(a, b interface{}) bool { // nolint: gocyclo
 	if a == nil || b == nil {
 		return a == b
 	}
@@ -59,7 +59,7 @@ func Less(a, b interface{}) bool {
 	}
 }
 
-func joinKind(a, b reflect.Kind) reflect.Kind {
+func joinKind(a, b reflect.Kind) reflect.Kind { // nolint: gocyclo
 	if a == b {
 		return a
 	}

@@ -4,7 +4,7 @@ package expressions
 type Context interface {
 	Get(string) interface{}
 	Set(string, interface{})
-	Filters() *FilterDictionary
+	Filters() *filterDictionary
 }
 
 type context struct {
@@ -13,15 +13,15 @@ type context struct {
 }
 
 type Settings struct {
-	filters *FilterDictionary
+	filters *filterDictionary
 }
 
 func NewSettings() Settings {
-	return Settings{NewFilterDictionary()}
+	return Settings{newFilterDictionary()}
 }
 
 func (s Settings) AddFilter(name string, fn interface{}) {
-	s.filters.AddFilter(name, fn)
+	s.filters.addFilter(name, fn)
 }
 
 // NewContext makes a new expression evaluation context.
@@ -29,7 +29,7 @@ func NewContext(vars map[string]interface{}, s Settings) Context {
 	return &context{vars, s}
 }
 
-func (c *context) Filters() *FilterDictionary {
+func (c *context) Filters() *filterDictionary {
 	return c.filters
 }
 

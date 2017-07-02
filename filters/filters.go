@@ -19,7 +19,7 @@ import (
 )
 
 // AddStandardFilters defines the standard Liquid filters.
-func AddStandardFilters(settings expressions.Settings) {
+func AddStandardFilters(settings expressions.Settings) { // nolint: gocyclo
 	// values
 	settings.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || generics.IsEmpty(value) {

@@ -23,16 +23,16 @@ func (e UndefinedFilter) Error() string {
 
 type valueFn func(Context) interface{}
 
-type FilterDictionary struct {
+type filterDictionary struct {
 	filters map[string]interface{}
 }
 
-func NewFilterDictionary() *FilterDictionary {
-	return &FilterDictionary{map[string]interface{}{}}
+func newFilterDictionary() *filterDictionary {
+	return &filterDictionary{map[string]interface{}{}}
 }
 
-// AddFilter defines a filter.
-func (d *FilterDictionary) AddFilter(name string, fn interface{}) {
+// addFilter defines a filter.
+func (d *filterDictionary) addFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
@@ -53,7 +53,7 @@ func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (d *FilterDictionary) runFilter(ctx Context, f valueFn, name string, params []valueFn) interface{} {
+func (d *filterDictionary) runFilter(ctx Context, f valueFn, name string, params []valueFn) interface{} {
 	filter, ok := d.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))

@@ -12,7 +12,7 @@ func (s Settings) Parse(source string) (ASTNode, error) {
 }
 
 // Parse creates an AST from a sequence of Chunks.
-func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) {
+func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		cd *controlTagDefinition // saved local ccd
@@ -104,6 +104,7 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) {
 	return root, nil
 }
 
+// nolint: gocyclo
 func (s Settings) evaluateBuilders(n ASTNode) error {
 	switch n := n.(type) {
 	case *ASTControlTag:
