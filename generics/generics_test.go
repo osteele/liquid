@@ -4,9 +4,18 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
+
+func timeMustParse(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 var convertTests = []struct {
 	value, proto, expected interface{}
@@ -20,6 +29,11 @@ var convertTests = []struct {
 	{false, "", "false"},
 	{true, "", "true"},
 	{"string", "", "string"},
+	{[]int{1, 2}, []string{}, []string{"1", "2"}},
+	{"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
+
+	// this test needs to sort the output keys before comparing
+	// {map[int]string{1: "a", 2: "b"}, []string{}, []string{"b", "a"}},
 }
 
 var eqTests = []struct {
@@ -76,6 +90,12 @@ func TestCall(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "5,10.", value)
 }
+
+func TestContains(t *testing.T) {
+	require.True(t, Contains([]int{1, 2}, 2))
+	require.False(t, Contains([]int{1, 2}, 3))
+}
+
 func TestConvert(t *testing.T) {
 	for i, test := range convertTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
@@ -138,4 +158,24 @@ func TestLength(t *testing.T) {
 	require.Equal(t, 3, Length([]int{1, 2, 3}))
 	require.Equal(t, 3, Length("abc"))
 	require.Equal(t, 0, Length(map[string]int{"a": 1}))
+}
+
+func TestSort(t *testing.T) {
+	array := []interface{}{2, 1}
+	Sort(array)
+	require.Equal(t, []interface{}{1, 2}, array)
+
+	array = []interface{}{"b", "a"}
+	Sort(array)
+	require.Equal(t, []interface{}{"a", "b"}, array)
+
+	array = []interface{}{
+		map[string]interface{}{"key": 20},
+		map[string]interface{}{"key": 10},
+		map[string]interface{}{},
+	}
+	SortByProperty(array, "key", true)
+	require.Equal(t, nil, array[0].(map[string]interface{})["key"])
+	require.Equal(t, 10, array[1].(map[string]interface{})["key"])
+	require.Equal(t, 20, array[2].(map[string]interface{})["key"])
 }

@@ -50,7 +50,7 @@ type tagBuilder struct {
 }
 
 // AddStartTag defines a control tag and its matching end tag.
-func (s Settings) AddStartTag(name string) tagBuilder {
+func (s Settings) AddStartTag(name string) tagBuilder { // nolint: golint
 	ct := &controlTagDefinition{name: name}
 	s.addControlTagDefinition(ct)
 	s.addControlTagDefinition(&controlTagDefinition{name: "end" + name, isEndTag: true, parent: ct})

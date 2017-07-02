@@ -1,6 +1,5 @@
 package expressions
 
-import "fmt"
 import "strconv"
 
 %%{

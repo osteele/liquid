@@ -18,6 +18,15 @@ func addRenderTestTags(s Settings) {
 			return err
 		}, nil
 	})
+	s.AddStartTag("eval").Renderer(func(w io.Writer, c RenderContext) error {
+		v, err := c.EvaluateString(c.TagArgs())
+		if err != nil {
+			return err
+		}
+		s := fmt.Sprint(v)
+		_, err = w.Write([]byte(s))
+		return err
+	})
 	s.AddStartTag("err2").Parser(func(c ASTControlTag) (func(io.Writer, RenderContext) error, error) {
 		return func(w io.Writer, c RenderContext) error {
 			return fmt.Errorf("stage 2 error")
@@ -31,6 +40,7 @@ var renderTests = []struct{ in, out string }{
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ ar[1] }}`, "second"},
 	{`{% parse args %}{% endparse %}`, "args"},
+	{`{% eval x %}{% endeval %}`, "123"},
 }
 
 var renderErrorTests = []struct{ in, out string }{

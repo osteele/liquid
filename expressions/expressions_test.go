@@ -121,3 +121,16 @@ func TestEvaluator(t *testing.T) {
 		})
 	}
 }
+
+func TestHelpers(t *testing.T) {
+	context := NewContext(map[string]interface{}{}, NewSettings())
+
+	k := Constant(10)
+	v, err := k.Evaluate(context)
+	require.NoError(t, err)
+	require.Equal(t, 10, v)
+
+	v, err = Not(k).Evaluate(context)
+	require.NoError(t, err)
+	require.Equal(t, false, v)
+}

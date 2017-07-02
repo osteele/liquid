@@ -38,6 +38,15 @@ func TestLiquid(t *testing.T) {
 	}
 }
 
+func TestTemplateRenderString(t *testing.T) {
+	engine := NewEngine()
+	template, err := engine.ParseTemplate([]byte(`{{ "hello world" | capitalize }}`))
+	require.NoError(t, err)
+	out, err := template.RenderString(testContext)
+	require.NoError(t, err)
+	require.Equal(t, "Hello world", out)
+}
+
 func Example() {
 	engine := NewEngine()
 	template := `<h1>{{ page.title }}</h1>`

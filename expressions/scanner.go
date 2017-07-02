@@ -2,11 +2,10 @@
 //line scanner.rl:1
 package expressions
 
-import "fmt"
 import "strconv"
 
 
-//line scanner.go:10
+//line scanner.go:9
 var _expression_actions []byte = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 12, 
 	1, 13, 1, 14, 1, 15, 1, 16, 
@@ -175,7 +174,7 @@ const expression_error int = -1
 const expression_en_main int = 11
 
 
-//line scanner.rl:12
+//line scanner.rl:11
 
 
 type lexer struct {
@@ -195,7 +194,7 @@ func newLexer(data []byte) *lexer {
 			pe: len(data),
 	}
 	
-//line scanner.go:199
+//line scanner.go:198
 	{
 	 lex.cs = expression_start
 	 lex.ts = 0
@@ -203,7 +202,7 @@ func newLexer(data []byte) *lexer {
 	 lex.act = 0
 	}
 
-//line scanner.rl:31
+//line scanner.rl:30
 	return lex
 }
 
@@ -212,7 +211,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 	tok := 0
 
 	
-//line scanner.go:216
+//line scanner.go:215
 	{
 	var _klen int
 	var _trans int
@@ -232,7 +231,7 @@ _resume:
 //line NONE:1
  lex.ts = ( lex.p)
 
-//line scanner.go:236
+//line scanner.go:235
 		}
 	}
 
@@ -307,44 +306,44 @@ _eof_trans:
  lex.te = ( lex.p)+1
 
 		case 3:
-//line scanner.rl:58
+//line scanner.rl:57
  lex.act = 4;
 		case 4:
-//line scanner.rl:39
+//line scanner.rl:38
  lex.act = 6;
 		case 5:
-//line scanner.rl:94
+//line scanner.rl:93
  lex.act = 11;
 		case 6:
-//line scanner.rl:95
+//line scanner.rl:94
  lex.act = 12;
 		case 7:
-//line scanner.rl:96
+//line scanner.rl:95
  lex.act = 13;
 		case 8:
-//line scanner.rl:97
+//line scanner.rl:96
  lex.act = 14;
 		case 9:
-//line scanner.rl:98
+//line scanner.rl:97
  lex.act = 15;
 		case 10:
-//line scanner.rl:44
+//line scanner.rl:43
  lex.act = 17;
 		case 11:
-//line scanner.rl:102
+//line scanner.rl:101
  lex.act = 19;
 		case 12:
-//line scanner.rl:84
+//line scanner.rl:83
  lex.te = ( lex.p)+1
 { tok = ASSIGN; ( lex.p)++; goto _out
  }
 		case 13:
-//line scanner.rl:85
+//line scanner.rl:84
  lex.te = ( lex.p)+1
 { tok = LOOP; ( lex.p)++; goto _out
  }
 		case 14:
-//line scanner.rl:67
+//line scanner.rl:66
  lex.te = ( lex.p)+1
 {
 			tok = LITERAL
@@ -354,37 +353,37 @@ _eof_trans:
 
 		}
 		case 15:
-//line scanner.rl:90
+//line scanner.rl:89
  lex.te = ( lex.p)+1
 { tok = EQ; ( lex.p)++; goto _out
  }
 		case 16:
-//line scanner.rl:91
+//line scanner.rl:90
  lex.te = ( lex.p)+1
 { tok = NEQ; ( lex.p)++; goto _out
  }
 		case 17:
-//line scanner.rl:92
+//line scanner.rl:91
  lex.te = ( lex.p)+1
 { tok = GE; ( lex.p)++; goto _out
  }
 		case 18:
-//line scanner.rl:93
+//line scanner.rl:92
  lex.te = ( lex.p)+1
 { tok = LE; ( lex.p)++; goto _out
  }
 		case 19:
-//line scanner.rl:99
+//line scanner.rl:98
  lex.te = ( lex.p)+1
 { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); ( lex.p)++; goto _out
  }
 		case 20:
-//line scanner.rl:102
+//line scanner.rl:101
  lex.te = ( lex.p)+1
 { tok = int(lex.data[lex.ts]); ( lex.p)++; goto _out
  }
 		case 21:
-//line scanner.rl:49
+//line scanner.rl:48
  lex.te = ( lex.p)
 ( lex.p)--
 {
@@ -398,7 +397,7 @@ _eof_trans:
 
 		}
 		case 22:
-//line scanner.rl:44
+//line scanner.rl:43
  lex.te = ( lex.p)
 ( lex.p)--
 {
@@ -408,18 +407,18 @@ _eof_trans:
 
 		}
 		case 23:
-//line scanner.rl:101
+//line scanner.rl:100
  lex.te = ( lex.p)
 ( lex.p)--
 
 		case 24:
-//line scanner.rl:102
+//line scanner.rl:101
  lex.te = ( lex.p)
 ( lex.p)--
 { tok = int(lex.data[lex.ts]); ( lex.p)++; goto _out
  }
 		case 25:
-//line scanner.rl:102
+//line scanner.rl:101
 ( lex.p) = ( lex.te) - 1
 { tok = int(lex.data[lex.ts]); ( lex.p)++; goto _out
  }
@@ -480,7 +479,7 @@ _eof_trans:
  }
 	}
 	
-//line scanner.go:484
+//line scanner.go:483
 		}
 	}
 
@@ -494,7 +493,7 @@ _again:
 //line NONE:1
  lex.ts = 0
 
-//line scanner.go:498
+//line scanner.go:497
 		}
 	}
 
@@ -513,7 +512,7 @@ _again:
 	_out: {}
 	}
 
-//line scanner.rl:106
+//line scanner.rl:105
 
 
 	return tok
