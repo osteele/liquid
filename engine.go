@@ -47,19 +47,19 @@ func (e engine) ParseTemplate(text []byte) (Template, error) {
 }
 
 // ParseAndRender is in the Engine interface.
-func (e engine) ParseAndRender(text []byte, c Context) ([]byte, error) {
+func (e engine) ParseAndRender(text []byte, b Bindings) ([]byte, error) {
 	t, err := e.ParseTemplate(text)
 	if err != nil {
 		return nil, err
 	}
-	return t.Render(c)
+	return t.Render(b)
 }
 
 // ParseAndRenderString is in the Engine interface.
-func (e engine) ParseAndRenderString(text string, c Context) (string, error) {
-	b, err := e.ParseAndRender([]byte(text), c)
+func (e engine) ParseAndRenderString(text string, b Bindings) (string, error) {
+	bs, err := e.ParseAndRender([]byte(text), b)
 	if err != nil {
 		return "", err
 	}
-	return string(b), nil
+	return string(bs), nil
 }

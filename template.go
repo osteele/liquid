@@ -12,9 +12,9 @@ type template struct {
 }
 
 // Render executes the template within the bindings environment.
-func (t *template) Render(c Context) ([]byte, error) {
+func (t *template) Render(b Bindings) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := t.ast.Render(buf, chunks.NewContext(c.Bindings(), t.settings))
+	err := t.ast.Render(buf, chunks.NewContext(b, t.settings))
 	if err != nil {
 		return nil, err
 	}
@@ -22,10 +22,10 @@ func (t *template) Render(c Context) ([]byte, error) {
 }
 
 // RenderString is a convenience wrapper for Render, that has string input and output.
-func (t *template) RenderString(c Context) (string, error) {
-	b, err := t.Render(c)
+func (t *template) RenderString(b Bindings) (string, error) {
+	bs, err := t.Render(b)
 	if err != nil {
 		return "", err
 	}
-	return string(b), nil
+	return string(bs), nil
 }

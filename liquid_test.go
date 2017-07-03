@@ -19,19 +19,19 @@ var liquidTests = []struct{ in, expected string }{
 	{`{{ "upper" | upcase }}`, "UPPER"},
 }
 
-var testContext = NewContext(map[string]interface{}{
+var testBindings = map[string]interface{}{
 	"x":  123,
 	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
-})
+}
 
 func TestLiquid(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
 		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
-			out, err := engine.ParseAndRenderString(test.in, testContext)
+			out, err := engine.ParseAndRenderString(test.in, testBindings)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, out, test.in)
 		})
@@ -42,7 +42,7 @@ func TestTemplateRenderString(t *testing.T) {
 	engine := NewEngine()
 	template, err := engine.ParseTemplate([]byte(`{{ "hello world" | capitalize }}`))
 	require.NoError(t, err)
-	out, err := template.RenderString(testContext)
+	out, err := template.RenderString(testBindings)
 	require.NoError(t, err)
 	require.Equal(t, "Hello world", out)
 }
@@ -55,8 +55,7 @@ func Example() {
 			"title": "Introduction",
 		},
 	}
-	context := NewContext(bindings)
-	out, err := engine.ParseAndRenderString(template, context)
+	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -72,7 +71,7 @@ func Example_filter() {
 	bindings := map[string]interface{}{
 		"title": "Introduction",
 	}
-	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -90,7 +89,7 @@ func Example_tag() {
 
 	template := `{% echo hello world %}`
 	bindings := map[string]interface{}{}
-	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -112,7 +111,7 @@ func Example_tag_pair() {
 
 	template := `{% length %}abc{% endlength %}`
 	bindings := map[string]interface{}{}
-	out, err := engine.ParseAndRenderString(template, NewContext(bindings))
+	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}

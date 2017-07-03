@@ -30,9 +30,9 @@ type Engine interface {
 
 	ParseTemplate([]byte) (Template, error)
 	// ParseAndRender parses and then renders the template.
-	ParseAndRender([]byte, Context) ([]byte, error)
+	ParseAndRender([]byte, Bindings) ([]byte, error)
 	// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
-	ParseAndRenderString(string, Context) (string, error)
+	ParseAndRenderString(string, Bindings) (string, error)
 }
 
 // Template renders a template according to scope.
@@ -40,19 +40,12 @@ type Engine interface {
 // Bindings is a map of liquid variable names to objects.
 type Template interface {
 	// Render executes the template with the specified bindings.
-	Render(Context) ([]byte, error)
+	Render(Bindings) ([]byte, error)
 	// RenderString is a convenience wrapper for Render, that has string input and output.
-	RenderString(Context) (string, error)
+	RenderString(Bindings) (string, error)
 }
 
-// Context supplies variable bindings and other information to a
-// Render.
-//
-// In the future, it will hold methods to get and set the current
-// filename.
-type Context interface {
-	Bindings() map[string]interface{}
-}
+type Bindings map[string]interface{}
 
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.
