@@ -92,6 +92,8 @@ var evaluatorTests = []struct {
 
 	{`"seafood" contains "foo"`, true},
 	{`"seafood" contains "bar"`, false},
+	{`array contains "first"`, true},
+	{`"foo" contains "missing"`, false},
 
 	// filters
 	{`"seafood" | length`, 8},

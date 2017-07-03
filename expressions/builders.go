@@ -7,9 +7,29 @@ import (
 
 func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} {
 	return func(ctx Context) interface{} {
-		a, aok := e1(ctx).(string)
-		b, bok := e2(ctx).(string)
-		return aok && bok && strings.Contains(a, b)
+		search, ok := e2((ctx)).(string)
+		if !ok {
+			return false
+		}
+		switch container := e1((ctx)).(type) {
+		case string:
+			return strings.Contains(container, search)
+		case []string:
+			for _, s := range container {
+				if s == search {
+					return true
+				}
+			}
+		case []interface{}:
+			for _, k := range container {
+				if s, ok := k.(string); ok && s == search {
+					return true
+				}
+			}
+		default:
+			return false
+		}
+		return false
 	}
 }
 
@@ -32,14 +52,14 @@ func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface
 					n = ref.Len() + n
 				}
 				if 0 <= n && n < ref.Len() {
-					return ref.Index(n).Interface()
+					return ToLiquid(ref.Index(n).Interface())
 				}
 			}
 		case reflect.Map:
 			if i.Type().ConvertibleTo(ref.Type().Key()) {
 				item := ref.MapIndex(i.Convert(ref.Type().Key()))
 				if item.IsValid() {
-					return item.Interface()
+					return ToLiquid(item.Interface())
 				}
 			}
 		}
@@ -57,20 +77,20 @@ func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Con
 			}
 			switch attr {
 			case "first":
-				return ref.Index(0).Interface()
+				return ToLiquid(ref.Index(0).Interface())
 			case "last":
-				return ref.Index(ref.Len() - 1).Interface()
+				return ToLiquid(ref.Index(ref.Len() - 1).Interface())
 			case "size":
-				return ref.Len()
+				return ToLiquid(ref.Len())
 			}
 		case reflect.String:
 			if attr == "size" {
-				return ref.Len()
+				return ToLiquid(ref.Len())
 			}
 		case reflect.Map:
 			value := ref.MapIndex(reflect.ValueOf(attr))
 			if value.Kind() != reflect.Invalid {
-				return value.Interface()
+				return ToLiquid(value.Interface())
 			}
 		}
 		return nil
