@@ -17,6 +17,12 @@ func timeMustParse(s string) time.Time {
 	return t
 }
 
+type redConvertible struct{}
+
+func (c redConvertible) ToLiquid() interface{} {
+	return "red"
+}
+
 var convertTests = []struct {
 	value, proto, expected interface{}
 }{
@@ -31,6 +37,7 @@ var convertTests = []struct {
 	{"string", "", "string"},
 	{[]int{1, 2}, []string{}, []string{"1", "2"}},
 	{"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
+	{redConvertible{}, "", "red"},
 
 	// this test needs to sort the output keys before comparing
 	// {map[int]string{1: "a", 2: "b"}, []string{}, []string{"b", "a"}},

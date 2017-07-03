@@ -11,6 +11,7 @@ var (
 
 // Equal returns a bool indicating whether a == b after conversion.
 func Equal(a, b interface{}) bool { // nolint: gocyclo
+	a, b = ToLiquid(a), ToLiquid(b)
 	if a == nil || b == nil {
 		return a == b
 	}
@@ -41,6 +42,7 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 
 // Less returns a bool indicating whether a < b.
 func Less(a, b interface{}) bool {
+	a, b = ToLiquid(a), ToLiquid(b)
 	if a == nil || b == nil {
 		return false
 	}

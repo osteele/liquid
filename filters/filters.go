@@ -39,7 +39,7 @@ func AddStandardFilters(settings expressions.Settings) { // nolint: gocyclo
 		return datefmt.Strftime(form, t)
 	})
 
-	// lists
+	// arrays
 	settings.AddFilter("compact", func(array []interface{}) interface{} {
 		out := []interface{}{}
 		for _, item := range array {

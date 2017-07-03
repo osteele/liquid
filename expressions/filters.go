@@ -75,6 +75,7 @@ func (d *filterDictionary) runFilter(ctx Context, f valueFn, name string, params
 	if err != nil {
 		panic(err)
 	}
+	out = ToLiquid(out)
 	switch out := out.(type) {
 	case []byte:
 		return string(out)

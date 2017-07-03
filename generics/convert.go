@@ -7,6 +7,20 @@ import (
 	"time"
 )
 
+type drop interface {
+	ToLiquid() interface{}
+}
+
+// ToLiquid converts an object to Liquid, if it implements the Drop interface.
+func ToLiquid(value interface{}) interface{} {
+	switch value := value.(type) {
+	case drop:
+		return value.ToLiquid()
+	default:
+		return value
+	}
+}
+
 var timeType = reflect.TypeOf(time.Now())
 
 func conversionError(modifier string, value interface{}, typ reflect.Type) error {
@@ -24,6 +38,7 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
 func Convert(value interface{}, target reflect.Type) (interface{}, error) { // nolint: gocyclo
+	value = ToLiquid(value)
 	r := reflect.ValueOf(value)
 	// convert int.Convert(string) yields "\x01" not "1"
 	if target.Kind() != reflect.String && r.Type().ConvertibleTo(target) {
@@ -113,7 +128,7 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 	return out
 }
 
-// MustConvertItem converts item to conform to array, else panics.
+// MustConvertItem converts item to conform to the type array's element, else panics.
 func MustConvertItem(item interface{}, array []interface{}) interface{} {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {

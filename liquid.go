@@ -45,6 +45,7 @@ type Template interface {
 	RenderString(Bindings) (string, error)
 }
 
+// Bindings is a map of variable names to values.
 type Bindings map[string]interface{}
 
 // TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",

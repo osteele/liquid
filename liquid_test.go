@@ -63,7 +63,7 @@ func Example() {
 	// Output: <h1>Introduction</h1>
 }
 
-func Example_filter() {
+func Example_register_filter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
 	template := `{{ title | has_prefix: "Intro" }}`
@@ -79,7 +79,7 @@ func Example_filter() {
 	// Output: true
 }
 
-func Example_tag() {
+func Example_register_tag() {
 	engine := NewEngine()
 	engine.RegisterTag("echo", func(w io.Writer, c chunks.RenderContext) error {
 		args := c.TagArgs()
@@ -97,7 +97,7 @@ func Example_tag() {
 	// Output: hello world
 }
 
-func Example_tag_pair() {
+func Example_register_block() {
 	engine := NewEngine()
 	engine.RegisterBlock("length", func(w io.Writer, c chunks.RenderContext) error {
 		s, err := c.InnerString()
@@ -117,4 +117,29 @@ func Example_tag_pair() {
 	}
 	fmt.Println(out)
 	// Output: 3
+}
+
+type redConvertible struct{}
+
+func (c redConvertible) ToLiquid() interface{} {
+	return "red"
+}
+
+func ExampleDrop() {
+	// type redConvertible struct{}
+	//
+	// func (c redConvertible) ToLiquid() interface{} {
+	// 	return "red"
+	// }
+	engine := NewEngine()
+	bindings := map[string]interface{}{
+		"drop": redConvertible{},
+	}
+	template := `{{ drop }}`
+	out, err := engine.ParseAndRenderString(template, bindings)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: red
 }

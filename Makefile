@@ -35,6 +35,7 @@ install-dev-tools: ## install dependencies and development tools
 
 lint: ## lint the package
 	gometalinter ./... --deadline=5m --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go'
+	@echo lint passed
 
 test: ## test the package
 	go test ./...

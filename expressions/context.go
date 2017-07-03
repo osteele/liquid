@@ -38,7 +38,7 @@ func (c *context) Filters() *filterDictionary {
 
 // Get looks up a variable value in the expression context.
 func (c *context) Get(name string) interface{} {
-	return c.bindings[name]
+	return ToLiquid(c.bindings[name])
 }
 
 // Set sets a variable value in the expression context.

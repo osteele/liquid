@@ -23,6 +23,7 @@ func genericErrorf(format string, a ...interface{}) error {
 
 // Contains returns a boolean indicating whether array is a sequence that contains item.
 func Contains(array interface{}, item interface{}) bool {
+	item = ToLiquid(item)
 	ref := reflect.ValueOf(array)
 	switch ref.Kind() {
 	case reflect.Array, reflect.Slice:
@@ -37,6 +38,7 @@ func Contains(array interface{}, item interface{}) bool {
 
 // IsEmpty returns a bool indicating whether the value is empty according to Liquid semantics.
 func IsEmpty(value interface{}) bool {
+	value = ToLiquid(value)
 	if value == nil {
 		return false
 	}
@@ -53,12 +55,14 @@ func IsEmpty(value interface{}) bool {
 
 // IsTrue returns a bool indicating whether the value is true according to Liquid semantics.
 func IsTrue(value interface{}) bool {
+	value = ToLiquid(value)
 	return value != nil && value != false
 }
 
 // Length returns the length of a string or array. In keeping with Liquid semantics,
 // and contra Go, it does not return the size of a map.
 func Length(value interface{}) int {
+	value = ToLiquid(value)
 	ref := reflect.ValueOf(value)
 	switch ref.Kind() {
 	case reflect.Array, reflect.Slice, reflect.String:

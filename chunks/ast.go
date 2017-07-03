@@ -39,11 +39,11 @@ type ASTObject struct {
 	expr expressions.Expression
 }
 
-// ASTBlockNode is a control tag.
-type ASTBlockNode struct {
+// ASTBlock represents a {% tag %}…{% endtag %}.
+type ASTBlock struct {
 	Chunk
 	renderer func(io.Writer, RenderContext) error
 	cd       *blockDef
 	Body     []ASTNode
-	Branches []*ASTBlockNode
+	Branches []*ASTBlock
 }

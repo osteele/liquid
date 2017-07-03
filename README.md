@@ -63,6 +63,7 @@ This library is in its early days. IMO it's not sufficiently mature to be worth 
 - [ ] Filters
   - [ ] `sort_natural`, `uniq`, `escape`, `truncatewords`, `url_decode`, `url_encode`
   - [x] everything else
+- [x] Drops
 
 ## Install
 

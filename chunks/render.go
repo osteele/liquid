@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+
+	"github.com/osteele/liquid/generics"
 )
 
 // Render is in the ASTNode interface.
@@ -44,7 +46,7 @@ func (n *ASTRaw) Render(w io.Writer, _ Context) error {
 }
 
 // Render is in the ASTNode interface.
-func (n *ASTBlockNode) Render(w io.Writer, ctx Context) error {
+func (n *ASTBlock) Render(w io.Writer, ctx Context) error {
 	cd, ok := ctx.settings.findBlockDef(n.Name)
 	if !ok || cd.parser == nil {
 		return fmt.Errorf("unknown tag: %s", n.Name)
@@ -67,6 +69,7 @@ func (n *ASTObject) Render(w io.Writer, ctx Context) error {
 
 // writeObject writes a value used in an object node
 func writeObject(value interface{}, w io.Writer) error {
+	value = generics.ToLiquid(value)
 	if value == nil {
 		return nil
 	}

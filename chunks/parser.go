@@ -16,15 +16,15 @@ func (s Settings) Parse(source string) (ASTNode, error) {
 func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
-		cd *blockDef     // saved local ccd
-		cn *ASTBlockNode // saved local cn
-		ap *[]ASTNode    // saved local ap
+		cd *blockDef  // saved local ccd
+		cn *ASTBlock  // saved local cn
+		ap *[]ASTNode // saved local ap
 	}
 	var (
 		root      = &ASTSeq{}      // root of AST; will be returned
 		ap        = &root.Children // newly-constructed nodes are appended here
 		ccd       *blockDef        // current block definition
-		ccn       *ASTBlockNode    // current block node
+		ccn       *ASTBlock        // current block node
 		stack     []frame          // stack of blocks
 		rawTag    *ASTRaw          // current raw tag
 		inComment = false
@@ -70,11 +70,11 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocy
 					return nil, fmt.Errorf("%s not inside %s%s", cd.name, cd.parent.name, suffix)
 				case cd.isStartTag():
 					stack = append(stack, frame{cd: ccd, cn: ccn, ap: ap})
-					ccd, ccn = cd, &ASTBlockNode{Chunk: c, cd: cd}
+					ccd, ccn = cd, &ASTBlock{Chunk: c, cd: cd}
 					*ap = append(*ap, ccn)
 					ap = &ccn.Body
 				case cd.isBranchTag:
-					n := &ASTBlockNode{Chunk: c, cd: cd}
+					n := &ASTBlock{Chunk: c, cd: cd}
 					ccn.Branches = append(ccn.Branches, n)
 					ap = &n.Body
 				case cd.isEndTag:
@@ -108,7 +108,7 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocy
 // nolint: gocyclo
 func (s Settings) evaluateBuilders(n ASTNode) error {
 	switch n := n.(type) {
-	case *ASTBlockNode:
+	case *ASTBlock:
 		for _, child := range n.Body {
 			if err := s.evaluateBuilders(child); err != nil {
 				return err

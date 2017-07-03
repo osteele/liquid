@@ -53,7 +53,7 @@ func (s sortableByProperty) Swap(i, j int) {
 func (s sortableByProperty) Less(i, j int) bool {
 	// index returns the value at the s.key, if in is a map that contains this key
 	index := func(i int) interface{} {
-		value := s.data[i]
+		value := ToLiquid(s.data[i])
 		rt := reflect.ValueOf(value)
 		if rt.Kind() == reflect.Map && rt.Type().Key().Kind() == reflect.String {
 			elem := rt.MapIndex(reflect.ValueOf(s.key))

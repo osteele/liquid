@@ -20,7 +20,7 @@ type RenderContext interface {
 	EvaluateStatement(tag, source string) (interface{}, error)
 	InnerString() (string, error)
 	ParseTagArgs() (string, error)
-	RenderChild(io.Writer, *ASTBlockNode) error
+	RenderChild(io.Writer, *ASTBlock) error
 	RenderChildren(io.Writer) error
 	RenderFile(w io.Writer, filename string) error
 	TagArgs() string
@@ -31,7 +31,7 @@ type RenderContext interface {
 type renderContext struct {
 	ctx  Context
 	node *ASTFunctional
-	cn   *ASTBlockNode
+	cn   *ASTBlock
 }
 
 func (c renderContext) Clone() RenderContext {
@@ -74,7 +74,7 @@ func (c renderContext) Set(name string, value interface{}) {
 }
 
 // RenderChild renders a node.
-func (c renderContext) RenderChild(w io.Writer, b *ASTBlockNode) error {
+func (c renderContext) RenderChild(w io.Writer, b *ASTBlock) error {
 	return c.ctx.RenderASTSequence(w, b.Body)
 }
 
