@@ -80,7 +80,7 @@ func Example_register_filter() {
 
 func Example_register_tag() {
 	engine := NewEngine()
-	engine.RegisterTag("echo", func(c render.RenderContext) (string, error) {
+	engine.RegisterTag("echo", func(c render.Context) (string, error) {
 		return c.TagArgs(), nil
 	})
 
@@ -96,7 +96,7 @@ func Example_register_tag() {
 
 func Example_register_block() {
 	engine := NewEngine()
-	engine.RegisterBlock("length", func(c render.RenderContext) (string, error) {
+	engine.RegisterBlock("length", func(c render.Context) (string, error) {
 		s, err := c.InnerString()
 		if err != nil {
 			return "", err

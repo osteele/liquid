@@ -6,11 +6,11 @@ import (
 
 // TagDefinition is a function that parses the tag arguments, and returns a renderer.
 // TODO instead of using the bare function definition, use a structure that defines how to parse
-type TagDefinition func(expr string) (func(io.Writer, RenderContext) error, error)
+type TagDefinition func(expr string) (func(io.Writer, Context) error, error)
 
 // TODO parse during definition stage, not rendering stage
-func assignTagDef(source string) (func(io.Writer, RenderContext) error, error) {
-	return func(w io.Writer, ctx RenderContext) error {
+func assignTagDef(source string) (func(io.Writer, Context) error, error) {
+	return func(w io.Writer, ctx Context) error {
 		_, err := ctx.EvaluateStatement("assign", source)
 		return err
 	}, nil

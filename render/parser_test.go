@@ -15,7 +15,7 @@ func addParserTestTags(s Config) {
 	s.AddBlock("if").Branch("else").Branch("elsif")
 	s.AddBlock("unless").SameSyntaxAs("if")
 	s.AddBlock("raw")
-	s.AddBlock("err1").Parser(func(c ASTBlock) (func(io.Writer, RenderContext) error, error) {
+	s.AddBlock("err1").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
 		return nil, fmt.Errorf("stage 1 error")
 	})
 }

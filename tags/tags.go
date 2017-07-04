@@ -26,10 +26,10 @@ func AddStandardTags(settings render.Config) {
 	settings.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
-func captureTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
+func captureTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
 	// TODO verify syntax
 	varname := node.Args
-	return func(w io.Writer, ctx render.RenderContext) error {
+	return func(w io.Writer, ctx render.Context) error {
 		s, err := ctx.InnerString()
 		if err != nil {
 			return err
@@ -39,7 +39,7 @@ func captureTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContex
 	}, nil
 }
 
-func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
+func caseTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
 	expr, err := expression.Parse(node.Args)
@@ -58,7 +58,7 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) 
 		}
 		cases = append(cases, caseRec{bfn, branch})
 	}
-	return func(w io.Writer, ctx render.RenderContext) error {
+	return func(w io.Writer, ctx render.Context) error {
 		value, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
@@ -76,8 +76,8 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) 
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) { // nolint: gocyclo
-	return func(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
+func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+	return func(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
 			test expression.Expression
 			body *render.ASTBlock
@@ -107,7 +107,7 @@ func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.Re
 			}
 			branches = append(branches, branchRec{test, c})
 		}
-		return func(w io.Writer, ctx render.RenderContext) error {
+		return func(w io.Writer, ctx render.Context) error {
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
 				if err != nil {

@@ -6,7 +6,7 @@ import (
 )
 
 // BlockParser builds a renderer for the tag instance.
-type BlockParser func(ASTBlock) (func(io.Writer, RenderContext) error, error)
+type BlockParser func(ASTBlock) (func(io.Writer, Context) error, error)
 
 // blockDef tells the parser how to parse control tags.
 type blockDef struct {
@@ -85,8 +85,8 @@ func (b blockDefBuilder) Parser(fn BlockParser) {
 }
 
 // Renderer sets the render action for a control tag definition.
-func (b blockDefBuilder) Renderer(fn func(io.Writer, RenderContext) error) {
-	b.tag.parser = func(node ASTBlock) (func(io.Writer, RenderContext) error, error) {
+func (b blockDefBuilder) Renderer(fn func(io.Writer, Context) error) {
+	b.tag.parser = func(node ASTBlock) (func(io.Writer, Context) error, error) {
 		// TODO parse error if there are arguments?
 		return fn, nil
 	}

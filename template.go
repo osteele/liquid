@@ -14,7 +14,7 @@ type template struct {
 // Render executes the template within the bindings environment.
 func (t *template) Render(b Bindings) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := render.Render(t.ast, buf, render.NewContext(b, t.settings))
+	err := render.Render(t.ast, buf, b, t.settings)
 	if err != nil {
 		return nil, err
 	}

@@ -11,14 +11,14 @@ import (
 )
 
 func addRenderTestTags(s Config) {
-	s.AddBlock("parse").Parser(func(c ASTBlock) (func(io.Writer, RenderContext) error, error) {
+	s.AddBlock("parse").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
 		a := c.Args
-		return func(w io.Writer, c RenderContext) error {
+		return func(w io.Writer, c Context) error {
 			_, err := w.Write([]byte(a))
 			return err
 		}, nil
 	})
-	s.AddBlock("eval").Renderer(func(w io.Writer, c RenderContext) error {
+	s.AddBlock("eval").Renderer(func(w io.Writer, c Context) error {
 		v, err := c.EvaluateString(c.TagArgs())
 		if err != nil {
 			return err
@@ -27,8 +27,8 @@ func addRenderTestTags(s Config) {
 		_, err = w.Write([]byte(s))
 		return err
 	})
-	s.AddBlock("err2").Parser(func(c ASTBlock) (func(io.Writer, RenderContext) error, error) {
-		return func(w io.Writer, c RenderContext) error {
+	s.AddBlock("err2").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
 			return fmt.Errorf("stage 2 error")
 		}, nil
 	})
@@ -78,7 +78,7 @@ var renderTestBindings = map[string]interface{}{
 func TestRender(t *testing.T) {
 	settings := NewConfig()
 	addRenderTestTags(settings)
-	context := NewContext(renderTestBindings, settings)
+	context := newNodeContext(renderTestBindings, settings)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			ast, err := settings.Parse(test.in)
@@ -94,7 +94,7 @@ func TestRender(t *testing.T) {
 func TestRenderErrors(t *testing.T) {
 	settings := NewConfig()
 	addRenderTestTags(settings)
-	context := NewContext(renderTestBindings, settings)
+	context := newNodeContext(renderTestBindings, settings)
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			ast, err := settings.Parse(test.in)

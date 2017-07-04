@@ -51,4 +51,4 @@ type Bindings map[string]interface{}
 // type TagParser func(chunks.RenderContext) (string, error)
 
 // Renderer returns the rendered string for a block.
-type Renderer func(render.RenderContext) (string, error)
+type Renderer func(render.Context) (string, error)

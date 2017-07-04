@@ -10,11 +10,11 @@ import (
 )
 
 // Render renders the AST rooted at node to the writer.
-func Render(node ASTNode, w io.Writer, ctx Context) error {
-	return renderNode(node, w, ctx)
+func Render(node ASTNode, w io.Writer, b map[string]interface{}, c Config) error {
+	return renderNode(node, w, newNodeContext(b, c))
 }
 
-func renderNode(node ASTNode, w io.Writer, ctx Context) error { // nolint: gocyclo
+func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
 	switch n := node.(type) {
 	case *ASTSeq:
 		for _, c := range n.Children {
@@ -81,7 +81,7 @@ func writeObject(value interface{}, w io.Writer) error {
 }
 
 // RenderASTSequence renders a sequence of nodes.
-func (c Context) RenderASTSequence(w io.Writer, seq []ASTNode) error {
+func (c nodeContext) RenderASTSequence(w io.Writer, seq []ASTNode) error {
 	for _, n := range seq {
 		if err := renderNode(n, w, c); err != nil {
 			return err
