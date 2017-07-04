@@ -13,7 +13,7 @@ type engine struct{ settings render.Config }
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
 	e := engine{render.NewConfig()}
-	filters.AddStandardFilters(e.settings.ExpressionConfig)
+	filters.AddStandardFilters(e.settings.Config)
 	tags.AddStandardTags(e.settings)
 	return e
 }

@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var emptyBindings = map[string]interface{}{}
+
 // There's a lot more tests in the filters and tags sub-packages.
 // This collects a minimal set for testing end-to-end.
 var liquidTests = []struct{ in, expected string }{
@@ -26,7 +28,7 @@ var testBindings = map[string]interface{}{
 	},
 }
 
-func TestLiquid(t *testing.T) {
+func TestEngine_ParseAndRenderString(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
 		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
@@ -35,15 +37,6 @@ func TestLiquid(t *testing.T) {
 			require.Equalf(t, test.expected, out, test.in)
 		})
 	}
-}
-
-func TestTemplateRenderString(t *testing.T) {
-	engine := NewEngine()
-	template, err := engine.ParseTemplate([]byte(`{{ "hello world" | capitalize }}`))
-	require.NoError(t, err)
-	out, err := template.RenderString(testBindings)
-	require.NoError(t, err)
-	require.Equal(t, "Hello world", out)
 }
 
 func Example() {
@@ -62,11 +55,10 @@ func Example() {
 	// Output: <h1>Introduction</h1>
 }
 
-func Example_register_filter() {
+func ExampleEngine_RegisterFilter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
 	template := `{{ title | has_prefix: "Intro" }}`
-
 	bindings := map[string]interface{}{
 		"title": "Introduction",
 	}
@@ -78,15 +70,13 @@ func Example_register_filter() {
 	// Output: true
 }
 
-func Example_register_tag() {
+func ExampleEngine_RegisterTag() {
 	engine := NewEngine()
 	engine.RegisterTag("echo", func(c render.Context) (string, error) {
 		return c.TagArgs(), nil
 	})
-
 	template := `{% echo hello world %}`
-	bindings := map[string]interface{}{}
-	out, err := engine.ParseAndRenderString(template, bindings)
+	out, err := engine.ParseAndRenderString(template, emptyBindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -94,7 +84,7 @@ func Example_register_tag() {
 	// Output: hello world
 }
 
-func Example_register_block() {
+func ExampleEngine_RegisterBlock() {
 	engine := NewEngine()
 	engine.RegisterBlock("length", func(c render.Context) (string, error) {
 		s, err := c.InnerString()
@@ -106,8 +96,7 @@ func Example_register_block() {
 	})
 
 	template := `{% length %}abc{% endlength %}`
-	bindings := map[string]interface{}{}
-	out, err := engine.ParseAndRenderString(template, bindings)
+	out, err := engine.ParseAndRenderString(template, emptyBindings)
 	if err != nil {
 		log.Fatalln(err)
 	}

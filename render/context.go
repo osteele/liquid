@@ -12,9 +12,7 @@ import (
 
 // Context provides the rendering context for a tag renderer.
 type Context interface {
-	Clone() Context
 	Get(name string) interface{}
-	Set(name string, value interface{})
 	Evaluate(expr expression.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
@@ -22,10 +20,11 @@ type Context interface {
 	ParseTagArgs() (string, error)
 	RenderChild(io.Writer, *ASTBlock) error
 	RenderChildren(io.Writer) error
-	RenderFile(filename string) (string, error)
+	RenderFile(string, map[string]interface{}) (string, error)
+	Set(name string, value interface{})
+	SourceFile() string
 	TagArgs() string
 	TagName() string
-	UpdateBindings(map[string]interface{})
 }
 
 type renderContext struct {
@@ -34,13 +33,13 @@ type renderContext struct {
 	cn   *ASTBlock
 }
 
-func (c renderContext) Clone() Context {
-	return renderContext{c.ctx.Clone(), c.node, c.cn}
-}
-
 // Evaluate evaluates an expression within the template context.
 func (c renderContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
+}
+
+func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {
+	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
 }
 
 // EvaluateString evaluates an expression within the template context.
@@ -56,11 +55,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionConfig))
-}
-
-func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {
-	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
+	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.config.Config))
 }
 
 // Get gets a variable value within an evaluation context.
@@ -68,9 +63,21 @@ func (c renderContext) Get(name string) interface{} {
 	return c.ctx.bindings[name]
 }
 
-// Set sets a variable value from an evaluation context.
-func (c renderContext) Set(name string, value interface{}) {
-	c.ctx.bindings[name] = value
+func (c renderContext) ParseTagArgs() (string, error) {
+	args := c.TagArgs()
+	if strings.Contains(args, "{{") {
+		p, err := c.ctx.config.Parse(args)
+		if err != nil {
+			return "", err
+		}
+		buf := new(bytes.Buffer)
+		err = renderNode(p, buf, c.ctx)
+		if err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
+	return args, nil
 }
 
 // RenderChild renders a node.
@@ -86,17 +93,21 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 	return c.ctx.RenderASTSequence(w, c.cn.Body)
 }
 
-func (c renderContext) RenderFile(filename string) (string, error) {
+func (c renderContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
 	}
-	ast, err := c.ctx.settings.Parse(string(source))
+	ast, err := c.ctx.config.Parse(string(source))
 	if err != nil {
 		return "", err
 	}
+	nc := c.ctx.Clone()
+	for k, v := range b {
+		c.ctx.bindings[k] = v
+	}
 	buf := new(bytes.Buffer)
-	if err := renderNode(ast, buf, c.ctx); err != nil {
+	if err := renderNode(ast, buf, nc); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -111,27 +122,13 @@ func (c renderContext) InnerString() (string, error) {
 	return buf.String(), nil
 }
 
-func (c renderContext) ParseTagArgs() (string, error) {
-	args := c.TagArgs()
-	if strings.Contains(args, "{{") {
-		p, err := c.ctx.settings.Parse(args)
-		if err != nil {
-			return "", err
-		}
-		buf := new(bytes.Buffer)
-		err = renderNode(p, buf, c.ctx)
-		if err != nil {
-			return "", err
-		}
-		return buf.String(), nil
-	}
-	return args, nil
+// Set sets a variable value from an evaluation context.
+func (c renderContext) Set(name string, value interface{}) {
+	c.ctx.bindings[name] = value
 }
 
-func (c renderContext) UpdateBindings(bindings map[string]interface{}) {
-	for k, v := range bindings {
-		c.ctx.bindings[k] = v
-	}
+func (c renderContext) SourceFile() string {
+	return c.ctx.config.Filename
 }
 
 func (c renderContext) TagArgs() string {

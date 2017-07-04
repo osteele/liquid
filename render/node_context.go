@@ -7,7 +7,7 @@ import (
 // nodeContext is the evaluation context for chunk AST rendering.
 type nodeContext struct {
 	bindings map[string]interface{}
-	settings Config
+	config   Config
 }
 
 // newNodeContext creates a new evaluation context.
@@ -27,7 +27,7 @@ func (c nodeContext) Clone() nodeContext {
 	for k, v := range c.bindings {
 		bindings[k] = v
 	}
-	return nodeContext{bindings, c.settings}
+	return nodeContext{bindings, c.config}
 }
 
 // Evaluate evaluates an expression within the template context.
@@ -43,5 +43,5 @@ func (c nodeContext) Evaluate(expr expression.Expression) (out interface{}, err 
 			}
 		}
 	}()
-	return expr.Evaluate(expression.NewContext(c.bindings, c.settings.ExpressionConfig))
+	return expr.Evaluate(expression.NewContext(c.bindings, c.config.Config))
 }

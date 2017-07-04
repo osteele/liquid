@@ -35,7 +35,7 @@ func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: g
 			}
 		}
 	case *ASTBlock:
-		cd, ok := ctx.settings.findBlockDef(n.Name)
+		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
 			return fmt.Errorf("unknown tag: %s", n.Name)
 		}

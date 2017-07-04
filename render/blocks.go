@@ -36,11 +36,11 @@ func (c *blockDef) isStartTag() bool {
 }
 
 func (s Config) addBlockDef(ct *blockDef) {
-	s.controlTags[ct.name] = ct
+	s.blockDefs[ct.name] = ct
 }
 
 func (s Config) findBlockDef(name string) (*blockDef, bool) {
-	ct, found := s.controlTags[name]
+	ct, found := s.blockDefs[name]
 	return ct, found
 }
 
@@ -71,7 +71,7 @@ func (b blockDefBuilder) Governs(_ []string) blockDefBuilder {
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (b blockDefBuilder) SameSyntaxAs(name string) blockDefBuilder {
-	rt := b.s.controlTags[name]
+	rt := b.s.blockDefs[name]
 	if rt == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}

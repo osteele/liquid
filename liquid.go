@@ -9,7 +9,7 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
-// Engine parses template source into renderable text.
+// An Engine parses template source into renderable text.
 //
 // An engine can be configured with additional filters and tags.
 //
@@ -33,14 +33,13 @@ type Engine interface {
 	ParseAndRenderString(string, Bindings) (string, error)
 }
 
-// Template renders a template according to scope.
-//
-// Bindings is a map of liquid variable names to objects.
+// A Template renders a template according to scope.
 type Template interface {
 	// Render executes the template with the specified bindings.
 	Render(Bindings) ([]byte, error)
 	// RenderString is a convenience wrapper for Render, that has string input and output.
 	RenderString(Bindings) (string, error)
+	SetSourcePath(string)
 }
 
 // Bindings is a map of variable names to values.
@@ -50,5 +49,5 @@ type Bindings map[string]interface{}
 // and returns a renderer.
 // type TagParser func(chunks.RenderContext) (string, error)
 
-// Renderer returns the rendered string for a block.
+// A Renderer returns the rendered string for a block.
 type Renderer func(render.Context) (string, error)
