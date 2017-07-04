@@ -10,7 +10,7 @@ import (
 )
 
 // AddStandardTags defines the standard Liquid tags.
-func AddStandardTags(settings render.Settings) {
+func AddStandardTags(settings render.Config) {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}

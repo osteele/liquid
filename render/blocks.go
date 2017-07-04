@@ -35,22 +35,22 @@ func (c *blockDef) isStartTag() bool {
 	return !c.isBranchTag && !c.isEndTag
 }
 
-func (s Settings) addBlockDef(ct *blockDef) {
+func (s Config) addBlockDef(ct *blockDef) {
 	s.controlTags[ct.name] = ct
 }
 
-func (s Settings) findBlockDef(name string) (*blockDef, bool) {
+func (s Config) findBlockDef(name string) (*blockDef, bool) {
 	ct, found := s.controlTags[name]
 	return ct, found
 }
 
 type blockDefBuilder struct {
-	s   Settings
+	s   Config
 	tag *blockDef
 }
 
 // AddBlock defines a control tag and its matching end tag.
-func (s Settings) AddBlock(name string) blockDefBuilder { // nolint: golint
+func (s Config) AddBlock(name string) blockDefBuilder { // nolint: golint
 	ct := &blockDef{name: name}
 	s.addBlockDef(ct)
 	s.addBlockDef(&blockDef{name: "end" + name, isEndTag: true, parent: ct})

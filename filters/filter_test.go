@@ -160,7 +160,7 @@ var filterTestBindings = map[string]interface{}{
 }
 
 func TestFilters(t *testing.T) {
-	settings := expressions.NewSettings()
+	settings := expressions.NewConfig()
 	AddStandardFilters(settings)
 	context := expressions.NewContext(filterTestBindings, settings)
 

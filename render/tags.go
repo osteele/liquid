@@ -17,12 +17,12 @@ func assignTagDef(source string) (func(io.Writer, RenderContext) error, error) {
 }
 
 // AddTag creates a tag definition.
-func (s *Settings) AddTag(name string, td TagDefinition) {
+func (s *Config) AddTag(name string, td TagDefinition) {
 	s.tags[name] = td
 }
 
 // FindTagDefinition looks up a tag definition.
-func (s *Settings) FindTagDefinition(name string) (TagDefinition, bool) {
+func (s *Config) FindTagDefinition(name string) (TagDefinition, bool) {
 	td, ok := s.tags[name]
 	return td, ok
 }

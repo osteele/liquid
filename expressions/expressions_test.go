@@ -112,7 +112,7 @@ var evaluatorTestBindings = (map[string]interface{}{
 })
 
 func TestEvaluator(t *testing.T) {
-	settings := NewSettings()
+	settings := NewConfig()
 	settings.AddFilter("length", strings.Count)
 	context := NewContext(evaluatorTestBindings, settings)
 	for i, test := range evaluatorTests {
@@ -125,7 +125,7 @@ func TestEvaluator(t *testing.T) {
 }
 
 func TestHelpers(t *testing.T) {
-	context := NewContext(map[string]interface{}{}, NewSettings())
+	context := NewContext(map[string]interface{}{}, NewConfig())
 
 	k := Constant(10)
 	v, err := k.Evaluate(context)

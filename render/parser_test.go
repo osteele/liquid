@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addParserTestTags(s Settings) {
+func addParserTestTags(s Config) {
 	s.AddBlock("case").Branch("when")
 	s.AddBlock("comment")
 	s.AddBlock("for").Governs([]string{"break"})
@@ -38,7 +38,7 @@ var parserTests = []struct{ in string }{
 }
 
 func TestParseErrors(t *testing.T) {
-	settings := NewSettings()
+	settings := NewConfig()
 	addParserTestTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
@@ -51,7 +51,7 @@ func TestParseErrors(t *testing.T) {
 }
 
 func TestParser(t *testing.T) {
-	settings := NewSettings()
+	settings := NewConfig()
 	addParserTestTags(settings)
 	for i, test := range parserTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {

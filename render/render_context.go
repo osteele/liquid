@@ -56,7 +56,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionSettings))
+	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionConfig))
 }
 
 func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {

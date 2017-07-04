@@ -8,12 +8,12 @@ import (
 	"github.com/osteele/liquid/tags"
 )
 
-type engine struct{ settings render.Settings }
+type engine struct{ settings render.Config }
 
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
-	e := engine{render.NewSettings()}
-	filters.AddStandardFilters(e.settings.ExpressionSettings)
+	e := engine{render.NewConfig()}
+	filters.AddStandardFilters(e.settings.ExpressionConfig)
 	tags.AddStandardTags(e.settings)
 	return e
 }

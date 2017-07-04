@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addRenderTestTags(s Settings) {
+func addRenderTestTags(s Config) {
 	s.AddBlock("parse").Parser(func(c ASTBlock) (func(io.Writer, RenderContext) error, error) {
 		a := c.Args
 		return func(w io.Writer, c RenderContext) error {
@@ -76,7 +76,7 @@ var renderTestBindings = map[string]interface{}{
 }
 
 func TestRender(t *testing.T) {
-	settings := NewSettings()
+	settings := NewConfig()
 	addRenderTestTags(settings)
 	context := NewContext(renderTestBindings, settings)
 	for i, test := range renderTests {
@@ -92,7 +92,7 @@ func TestRender(t *testing.T) {
 }
 
 func TestRenderErrors(t *testing.T) {
-	settings := NewSettings()
+	settings := NewConfig()
 	addRenderTestTags(settings)
 	context := NewContext(renderTestBindings, settings)
 	for i, test := range renderErrorTests {

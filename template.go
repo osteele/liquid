@@ -8,7 +8,7 @@ import (
 
 type template struct {
 	ast      render.ASTNode
-	settings render.Settings
+	settings render.Config
 }
 
 // Render executes the template within the bindings environment.

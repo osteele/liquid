@@ -7,13 +7,13 @@ import (
 )
 
 // Parse parses a source template. It returns an AST root, that can be evaluated.
-func (s Settings) Parse(source string) (ASTNode, error) {
+func (s Config) Parse(source string) (ASTNode, error) {
 	tokens := Scan(source, "")
 	return s.parseChunks(tokens)
 }
 
 // Parse creates an AST from a sequence of Chunks.
-func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
+func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		cd *blockDef  // saved local ccd
@@ -106,7 +106,7 @@ func (s Settings) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocy
 }
 
 // nolint: gocyclo
-func (s Settings) evaluateBuilders(n ASTNode) error {
+func (s Config) evaluateBuilders(n ASTNode) error {
 	switch n := n.(type) {
 	case *ASTBlock:
 		for _, child := range n.Body {

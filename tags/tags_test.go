@@ -133,7 +133,7 @@ var bindings = map[string]interface{}{
 }
 
 func TestParseErrors(t *testing.T) {
-	settings := render.NewSettings()
+	settings := render.NewConfig()
 	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
@@ -145,7 +145,7 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 func TestRender(t *testing.T) {
-	settings := render.NewSettings()
+	settings := render.NewConfig()
 	AddStandardTags(settings)
 	context := render.NewContext(bindings, settings)
 	for i, test := range tagTests {
