@@ -19,8 +19,15 @@ func NewEngine() Engine {
 }
 
 // RegisterBlock is in the Engine interface.
-func (e engine) RegisterBlock(name string, td func(io.Writer, chunks.RenderContext) error) {
-	e.settings.AddBlock(name).Renderer(td)
+func (e engine) RegisterBlock(name string, td Renderer) {
+	e.settings.AddBlock(name).Renderer(func(w io.Writer, ctx chunks.RenderContext) error {
+		s, err := td(ctx)
+		if err != nil {
+			return err
+		}
+		_, err = w.Write([]byte(s))
+		return err
+	})
 }
 
 // RegisterFilter is in the Engine interface.
@@ -29,11 +36,18 @@ func (e engine) RegisterFilter(name string, fn interface{}) {
 }
 
 // RegisterTag is in the Engine interface.
-func (e engine) RegisterTag(name string, td TagDefinition) {
+func (e engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
 	e.settings.AddTag(name, func(_ string) (func(io.Writer, chunks.RenderContext) error, error) {
-		return td, nil
+		return func(w io.Writer, ctx chunks.RenderContext) error {
+			s, err := td(ctx)
+			if err != nil {
+				return err
+			}
+			_, err = w.Write([]byte(s))
+			return err
+		}, nil
 	})
 }
 

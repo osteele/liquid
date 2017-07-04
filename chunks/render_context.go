@@ -22,7 +22,7 @@ type RenderContext interface {
 	ParseTagArgs() (string, error)
 	RenderChild(io.Writer, *ASTBlock) error
 	RenderChildren(io.Writer) error
-	RenderFile(w io.Writer, filename string) error
+	RenderFile(filename string) (string, error)
 	TagArgs() string
 	TagName() string
 	UpdateBindings(map[string]interface{})
@@ -86,16 +86,20 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 	return c.ctx.RenderASTSequence(w, c.cn.Body)
 }
 
-func (c renderContext) RenderFile(w io.Writer, filename string) error {
+func (c renderContext) RenderFile(filename string) (string, error) {
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return "", err
 	}
 	ast, err := c.ctx.settings.Parse(string(source))
 	if err != nil {
-		return err
+		return "", err
 	}
-	return ast.Render(w, c.ctx)
+	buf := new(bytes.Buffer)
+	if err := ast.Render(buf, c.ctx); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 // InnerString renders the children to a string.

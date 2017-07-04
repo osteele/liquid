@@ -2,7 +2,6 @@ package liquid
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"strings"
 	"testing"
@@ -81,10 +80,8 @@ func Example_register_filter() {
 
 func Example_register_tag() {
 	engine := NewEngine()
-	engine.RegisterTag("echo", func(w io.Writer, c chunks.RenderContext) error {
-		args := c.TagArgs()
-		_, err := w.Write([]byte(args))
-		return err
+	engine.RegisterTag("echo", func(c chunks.RenderContext) (string, error) {
+		return c.TagArgs(), nil
 	})
 
 	template := `{% echo hello world %}`
@@ -99,14 +96,13 @@ func Example_register_tag() {
 
 func Example_register_block() {
 	engine := NewEngine()
-	engine.RegisterBlock("length", func(w io.Writer, c chunks.RenderContext) error {
+	engine.RegisterBlock("length", func(c chunks.RenderContext) (string, error) {
 		s, err := c.InnerString()
 		if err != nil {
-			return err
+			return "", err
 		}
 		n := len(s)
-		_, err = w.Write([]byte(fmt.Sprint(n)))
-		return err
+		return fmt.Sprint(n), nil
 	})
 
 	template := `{% length %}abc{% endlength %}`

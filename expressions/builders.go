@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} {
+func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} { // nolint: gocyclo
 	return func(ctx Context) interface{} {
 		search, ok := e2((ctx)).(string)
 		if !ok {

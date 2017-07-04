@@ -6,8 +6,6 @@ See the project README https://github.com/osteele/liquid for additional informat
 package liquid
 
 import (
-	"io"
-
 	"github.com/osteele/liquid/chunks"
 )
 
@@ -25,8 +23,8 @@ type Engine interface {
 	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
 	RegisterFilter(name string, fn interface{})
 	// RegisterTag defines a tag function e.g. {% tag %}.
-	RegisterTag(string, TagDefinition)
-	RegisterBlock(string, func(io.Writer, chunks.RenderContext) error)
+	RegisterTag(string, Renderer)
+	RegisterBlock(string, Renderer)
 
 	ParseTemplate([]byte) (Template, error)
 	// ParseAndRender parses and then renders the template.
@@ -48,6 +46,9 @@ type Template interface {
 // Bindings is a map of variable names to values.
 type Bindings map[string]interface{}
 
-// TagDefinition is the type of a function that parses the argument string "args" from a tag "{% tagname args %}",
+// TagParser parses the argument string "args" from a tag "{% tagname args %}",
 // and returns a renderer.
-type TagDefinition func(io.Writer, chunks.RenderContext) error
+// type TagParser func(chunks.RenderContext) (string, error)
+
+// Renderer returns the rendered string for a block.
+type Renderer func(chunks.RenderContext) (string, error)
