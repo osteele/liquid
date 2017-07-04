@@ -18,6 +18,8 @@ type Chunk struct {
 // ChunkType is the type of a Chunk
 type ChunkType int
 
+//go:generate stringer -type=ChunkType
+
 const (
 	// TextChunkType is the type of a text Chunk
 	TextChunkType ChunkType = iota

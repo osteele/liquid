@@ -9,7 +9,7 @@ import (
 // ASTNode is a node of an AST.
 type ASTNode interface {
 	// Render evaluates an AST node and writes the result to an io.Writer.
-	Render(io.Writer, Context) error
+	// Render(io.Writer, Context) error
 }
 
 // ASTRaw holds the text between the start and end of a raw tag.

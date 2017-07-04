@@ -84,7 +84,7 @@ func TestRender(t *testing.T) {
 			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = ast.Render(buf, context)
+			err = renderNode(ast, buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
@@ -99,7 +99,7 @@ func TestRenderErrors(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
-			err = ast.Render(ioutil.Discard, context)
+			err = renderNode(ast, ioutil.Discard, context)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.out, test.in)
 		})

@@ -153,7 +153,7 @@ func TestRender(t *testing.T) {
 			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = ast.Render(buf, context)
+			err = chunks.Render(ast, buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})

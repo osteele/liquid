@@ -96,7 +96,7 @@ func (c renderContext) RenderFile(filename string) (string, error) {
 		return "", err
 	}
 	buf := new(bytes.Buffer)
-	if err := ast.Render(buf, c.ctx); err != nil {
+	if err := renderNode(ast, buf, c.ctx); err != nil {
 		return "", err
 	}
 	return buf.String(), nil
@@ -119,7 +119,7 @@ func (c renderContext) ParseTagArgs() (string, error) {
 			return "", err
 		}
 		buf := new(bytes.Buffer)
-		err = p.Render(buf, c.ctx)
+		err = renderNode(p, buf, c.ctx)
 		if err != nil {
 			return "", err
 		}

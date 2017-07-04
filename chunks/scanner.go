@@ -1,5 +1,3 @@
-//go:generate stringer -type=ChunkType
-
 package chunks
 
 import (
