@@ -10,20 +10,30 @@ import (
 )
 
 // AddStandardTags defines the standard Liquid tags.
-func AddStandardTags(settings render.Config) {
+func AddStandardTags(c render.Config) {
+	c.AddTag("assign", assignTag)
+
+	// blocks
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
-	settings.AddTag("break", breakTag)
-	settings.AddTag("continue", continueTag)
-	settings.AddBlock("capture").Parser(captureTagParser)
-	settings.AddBlock("case").Branch("when").Parser(caseTagParser)
-	settings.AddBlock("comment")
-	settings.AddBlock("for").Governs(loopTags).Parser(loopTagParser)
-	settings.AddBlock("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
-	settings.AddBlock("raw")
-	settings.AddBlock("tablerow").Governs(loopTags)
-	settings.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+	c.AddTag("break", breakTag)
+	c.AddTag("continue", continueTag)
+	c.AddBlock("capture").Parser(captureTagParser)
+	c.AddBlock("case").Branch("when").Parser(caseTagParser)
+	c.AddBlock("comment")
+	c.AddBlock("for").Governs(loopTags).Parser(loopTagParser)
+	c.AddBlock("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
+	c.AddBlock("raw")
+	c.AddBlock("tablerow").Governs(loopTags)
+	c.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+}
+
+func assignTag(source string) (func(io.Writer, render.Context) error, error) {
+	return func(w io.Writer, ctx render.Context) error {
+		_, err := ctx.EvaluateStatement("assign", source)
+		return err
+	}, nil
 }
 
 func captureTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {

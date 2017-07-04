@@ -16,7 +16,6 @@ func NewConfig() Config {
 		map[string]TagDefinition{},
 		map[string]*blockDef{},
 	}
-	s.AddTag("assign", assignTagDef)
 	return s
 }
 
