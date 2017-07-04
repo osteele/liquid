@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
 )
 
@@ -80,7 +80,7 @@ func Example_register_filter() {
 
 func Example_register_tag() {
 	engine := NewEngine()
-	engine.RegisterTag("echo", func(c chunks.RenderContext) (string, error) {
+	engine.RegisterTag("echo", func(c render.RenderContext) (string, error) {
 		return c.TagArgs(), nil
 	})
 
@@ -96,7 +96,7 @@ func Example_register_tag() {
 
 func Example_register_block() {
 	engine := NewEngine()
-	engine.RegisterBlock("length", func(c chunks.RenderContext) (string, error) {
+	engine.RegisterBlock("length", func(c render.RenderContext) (string, error) {
 		s, err := c.InnerString()
 		if err != nil {
 			return "", err

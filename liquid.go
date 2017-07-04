@@ -6,7 +6,7 @@ See the project README https://github.com/osteele/liquid for additional informat
 package liquid
 
 import (
-	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/render"
 )
 
 // Engine parses template source into renderable text.
@@ -51,4 +51,4 @@ type Bindings map[string]interface{}
 // type TagParser func(chunks.RenderContext) (string, error)
 
 // Renderer returns the rendered string for a block.
-type Renderer func(chunks.RenderContext) (string, error)
+type Renderer func(render.RenderContext) (string, error)

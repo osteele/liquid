@@ -3,18 +3,18 @@ package liquid
 import (
 	"bytes"
 
-	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/render"
 )
 
 type template struct {
-	ast      chunks.ASTNode
-	settings chunks.Settings
+	ast      render.ASTNode
+	settings render.Settings
 }
 
 // Render executes the template within the bindings environment.
 func (t *template) Render(b Bindings) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := chunks.Render(t.ast, buf, chunks.NewContext(b, t.settings))
+	err := render.Render(t.ast, buf, render.NewContext(b, t.settings))
 	if err != nil {
 		return nil, err
 	}

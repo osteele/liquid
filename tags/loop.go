@@ -5,21 +5,21 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/osteele/liquid/chunks"
 	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/render"
 )
 
 var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
 var errLoopBreak = fmt.Errorf("break outside a loop")
 
-func breakTag(parameters string) (func(io.Writer, chunks.RenderContext) error, error) {
-	return func(io.Writer, chunks.RenderContext) error {
+func breakTag(parameters string) (func(io.Writer, render.RenderContext) error, error) {
+	return func(io.Writer, render.RenderContext) error {
 		return errLoopBreak
 	}, nil
 }
 
-func continueTag(parameters string) (func(io.Writer, chunks.RenderContext) error, error) {
-	return func(io.Writer, chunks.RenderContext) error {
+func continueTag(parameters string) (func(io.Writer, render.RenderContext) error, error) {
+	return func(io.Writer, render.RenderContext) error {
 		return errLoopContinueLoop
 	}, nil
 }
@@ -32,12 +32,12 @@ func parseLoopExpression(source string) (expressions.Expression, error) {
 	return expr, nil
 }
 
-func loopTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
+func loopTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) { // nolint: gocyclo
 	expr, err := parseLoopExpression(node.Args)
 	if err != nil {
 		return nil, err
 	}
-	return func(w io.Writer, ctx chunks.RenderContext) error {
+	return func(w io.Writer, ctx render.RenderContext) error {
 		val, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err

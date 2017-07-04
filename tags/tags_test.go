@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/osteele/liquid/chunks"
+	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
 )
 
@@ -133,7 +133,7 @@ var bindings = map[string]interface{}{
 }
 
 func TestParseErrors(t *testing.T) {
-	settings := chunks.NewSettings()
+	settings := render.NewSettings()
 	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
@@ -145,15 +145,15 @@ func TestParseErrors(t *testing.T) {
 	}
 }
 func TestRender(t *testing.T) {
-	settings := chunks.NewSettings()
+	settings := render.NewSettings()
 	AddStandardTags(settings)
-	context := chunks.NewContext(bindings, settings)
+	context := render.NewContext(bindings, settings)
 	for i, test := range tagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			ast, err := settings.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = chunks.Render(ast, buf, context)
+			err = render.Render(ast, buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})

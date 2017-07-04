@@ -3,16 +3,16 @@ package liquid
 import (
 	"io"
 
-	"github.com/osteele/liquid/chunks"
 	"github.com/osteele/liquid/filters"
+	"github.com/osteele/liquid/render"
 	"github.com/osteele/liquid/tags"
 )
 
-type engine struct{ settings chunks.Settings }
+type engine struct{ settings render.Settings }
 
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
-	e := engine{chunks.NewSettings()}
+	e := engine{render.NewSettings()}
 	filters.AddStandardFilters(e.settings.ExpressionSettings)
 	tags.AddStandardTags(e.settings)
 	return e
@@ -20,7 +20,7 @@ func NewEngine() Engine {
 
 // RegisterBlock is in the Engine interface.
 func (e engine) RegisterBlock(name string, td Renderer) {
-	e.settings.AddBlock(name).Renderer(func(w io.Writer, ctx chunks.RenderContext) error {
+	e.settings.AddBlock(name).Renderer(func(w io.Writer, ctx render.RenderContext) error {
 		s, err := td(ctx)
 		if err != nil {
 			return err
@@ -39,8 +39,8 @@ func (e engine) RegisterFilter(name string, fn interface{}) {
 func (e engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
-	e.settings.AddTag(name, func(_ string) (func(io.Writer, chunks.RenderContext) error, error) {
-		return func(w io.Writer, ctx chunks.RenderContext) error {
+	e.settings.AddTag(name, func(_ string) (func(io.Writer, render.RenderContext) error, error) {
+		return func(w io.Writer, ctx render.RenderContext) error {
 			s, err := td(ctx)
 			if err != nil {
 				return err

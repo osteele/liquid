@@ -4,13 +4,13 @@ package tags
 import (
 	"io"
 
-	"github.com/osteele/liquid/chunks"
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/render"
 )
 
 // AddStandardTags defines the standard Liquid tags.
-func AddStandardTags(settings chunks.Settings) {
+func AddStandardTags(settings render.Settings) {
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
 	loopTags := []string{"break", "continue", "cycle"}
@@ -26,10 +26,10 @@ func AddStandardTags(settings chunks.Settings) {
 	settings.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
 }
 
-func captureTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) error, error) {
+func captureTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
 	// TODO verify syntax
 	varname := node.Args
-	return func(w io.Writer, ctx chunks.RenderContext) error {
+	return func(w io.Writer, ctx render.RenderContext) error {
 		s, err := ctx.InnerString()
 		if err != nil {
 			return err
@@ -39,7 +39,7 @@ func captureTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContex
 	}, nil
 }
 
-func caseTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) error, error) {
+func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
 	expr, err := expressions.Parse(node.Args)
@@ -48,7 +48,7 @@ func caseTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) 
 	}
 	type caseRec struct {
 		expr expressions.Expression
-		node *chunks.ASTBlock
+		node *render.ASTBlock
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
@@ -58,7 +58,7 @@ func caseTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) 
 		}
 		cases = append(cases, caseRec{bfn, branch})
 	}
-	return func(w io.Writer, ctx chunks.RenderContext) error {
+	return func(w io.Writer, ctx render.RenderContext) error {
 		value, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
@@ -76,11 +76,11 @@ func caseTagParser(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) 
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) error, error) { // nolint: gocyclo
-	return func(node chunks.ASTBlock) (func(io.Writer, chunks.RenderContext) error, error) {
+func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) { // nolint: gocyclo
+	return func(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
 		type branchRec struct {
 			test expressions.Expression
-			body *chunks.ASTBlock
+			body *render.ASTBlock
 		}
 		expr, err := expressions.Parse(node.Args)
 		if err != nil {
@@ -107,7 +107,7 @@ func ifTagParser(polarity bool) func(chunks.ASTBlock) (func(io.Writer, chunks.Re
 			}
 			branches = append(branches, branchRec{test, c})
 		}
-		return func(w io.Writer, ctx chunks.RenderContext) error {
+		return func(w io.Writer, ctx render.RenderContext) error {
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
 				if err != nil {

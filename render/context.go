@@ -1,4 +1,4 @@
-package chunks
+package render
 
 import (
 	"github.com/osteele/liquid/expressions"
