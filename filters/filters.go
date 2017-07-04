@@ -14,12 +14,12 @@ import (
 	"unicode/utf8"
 
 	"github.com/jeffjen/datefmt"
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 	"github.com/osteele/liquid/generics"
 )
 
 // AddStandardFilters defines the standard Liquid filters.
-func AddStandardFilters(settings expressions.Config) { // nolint: gocyclo
+func AddStandardFilters(settings expression.Config) { // nolint: gocyclo
 	// values
 	settings.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || generics.IsEmpty(value) {

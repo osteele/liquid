@@ -1,4 +1,4 @@
-package expressions
+package expression
 
 type drop interface {
 	ToLiquid() interface{}

@@ -3,7 +3,7 @@ package render
 import (
 	"fmt"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 )
 
 // Parse parses a source template. It returns an AST root, that can be evaluated.
@@ -46,7 +46,7 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 				rawTag.slices = append(rawTag.slices, c.Source)
 			}
 		case c.Type == ObjChunkType:
-			expr, err := expressions.Parse(c.Args)
+			expr, err := expression.Parse(c.Args)
 			if err != nil {
 				return nil, err
 			}

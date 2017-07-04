@@ -1,10 +1,10 @@
 package render
 
-import "github.com/osteele/liquid/expressions"
+import "github.com/osteele/liquid/expression"
 
 // Config holds configuration information for parsing and rendering.
 type Config struct {
-	ExpressionConfig expressions.Config
+	ExpressionConfig expression.Config
 	tags             map[string]TagDefinition
 	controlTags      map[string]*blockDef
 }
@@ -12,7 +12,7 @@ type Config struct {
 // NewConfig creates a new Settings.
 func NewConfig() Config {
 	s := Config{
-		expressions.NewConfig(),
+		expression.NewConfig(),
 		map[string]TagDefinition{},
 		map[string]*blockDef{},
 	}

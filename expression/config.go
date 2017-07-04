@@ -1,4 +1,4 @@
-package expressions
+package expression
 
 // Config holds configuration information for expression interpretation.
 type Config struct {

@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 )
 
 // RenderContext provides the rendering context for a tag renderer.
@@ -15,7 +15,7 @@ type RenderContext interface {
 	Clone() RenderContext
 	Get(name string) interface{}
 	Set(name string, value interface{})
-	Evaluate(expr expressions.Expression) (interface{}, error)
+	Evaluate(expr expression.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
 	InnerString() (string, error)
@@ -39,7 +39,7 @@ func (c renderContext) Clone() RenderContext {
 }
 
 // Evaluate evaluates an expression within the template context.
-func (c renderContext) Evaluate(expr expressions.Expression) (out interface{}, err error) {
+func (c renderContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
 }
 
@@ -48,7 +48,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case expressions.InterpreterError:
+			case expression.InterpreterError:
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
@@ -56,7 +56,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionConfig))
+	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.settings.ExpressionConfig))
 }
 
 func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {

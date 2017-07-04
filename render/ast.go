@@ -3,7 +3,7 @@ package render
 import (
 	"io"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 )
 
 // ASTNode is a node of an AST.
@@ -36,7 +36,7 @@ type ASTText struct {
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
 	Chunk
-	expr expressions.Expression
+	expr expression.Expression
 }
 
 // ASTBlock represents a {% tag %}…{% endtag %}.

@@ -1,4 +1,4 @@
-package expressions
+package expression
 
 type expressionWrapper struct {
 	fn func(ctx Context) (interface{}, error)

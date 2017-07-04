@@ -1,12 +1,8 @@
-// Package chunks parses and evaluates template strings.
-//
-// A template string is composed of a sequence of chunk.
-// Each chunk is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
 package render
 
 import "fmt"
 
-// Chunk is a chunk of a template source. It is one of an object "{{…}}", a tag "{%…%}", or the text between objects and tags.
+// A Chunk is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
 type Chunk struct {
 	Type       ChunkType
 	SourceInfo SourceInfo

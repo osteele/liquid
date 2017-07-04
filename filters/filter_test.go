@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 	"github.com/stretchr/testify/require"
 )
 
@@ -160,13 +160,13 @@ var filterTestBindings = map[string]interface{}{
 }
 
 func TestFilters(t *testing.T) {
-	settings := expressions.NewConfig()
+	settings := expression.NewConfig()
 	AddStandardFilters(settings)
-	context := expressions.NewContext(filterTestBindings, settings)
+	context := expression.NewContext(filterTestBindings, settings)
 
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			value, err := expressions.EvaluateString(test.in, context)
+			value, err := expression.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
 			switch v := value.(type) {

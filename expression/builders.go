@@ -1,4 +1,4 @@
-package expressions
+package expression
 
 import (
 	"reflect"

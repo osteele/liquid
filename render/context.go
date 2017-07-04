@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 )
 
 // Context is the evaluation context for chunk AST rendering.
@@ -31,11 +31,11 @@ func (c Context) Clone() Context {
 }
 
 // Evaluate evaluates an expression within the template context.
-func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err error) {
+func (c Context) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case expressions.InterpreterError:
+			case expression.InterpreterError:
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
@@ -43,5 +43,5 @@ func (c Context) Evaluate(expr expressions.Expression) (out interface{}, err err
 			}
 		}
 	}()
-	return expr.Evaluate(expressions.NewContext(c.bindings, c.settings.ExpressionConfig))
+	return expr.Evaluate(expression.NewContext(c.bindings, c.settings.ExpressionConfig))
 }

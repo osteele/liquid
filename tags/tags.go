@@ -4,7 +4,7 @@ package tags
 import (
 	"io"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 	"github.com/osteele/liquid/generics"
 	"github.com/osteele/liquid/render"
 )
@@ -42,17 +42,17 @@ func captureTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContex
 func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
-	expr, err := expressions.Parse(node.Args)
+	expr, err := expression.Parse(node.Args)
 	if err != nil {
 		return nil, err
 	}
 	type caseRec struct {
-		expr expressions.Expression
+		expr expression.Expression
 		node *render.ASTBlock
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
-		bfn, err := expressions.Parse(branch.Args)
+		bfn, err := expression.Parse(branch.Args)
 		if err != nil {
 			return nil, err
 		}
@@ -79,26 +79,26 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) 
 func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) { // nolint: gocyclo
 	return func(node render.ASTBlock) (func(io.Writer, render.RenderContext) error, error) {
 		type branchRec struct {
-			test expressions.Expression
+			test expression.Expression
 			body *render.ASTBlock
 		}
-		expr, err := expressions.Parse(node.Args)
+		expr, err := expression.Parse(node.Args)
 		if err != nil {
 			return nil, err
 		}
 		if !polarity {
-			expr = expressions.Not(expr)
+			expr = expression.Not(expr)
 		}
 		branches := []branchRec{
 			{expr, &node},
 		}
 		for _, c := range node.Branches {
-			test := expressions.Constant(true)
+			test := expression.Constant(true)
 			switch c.Name {
 			case "else":
 			// TODO parse error if this isn't the last branch
 			case "elsif":
-				t, err := expressions.Parse(c.Args)
+				t, err := expression.Parse(c.Args)
 				if err != nil {
 					return nil, err
 				}

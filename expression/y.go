@@ -1,5 +1,5 @@
 //line expressions.y:2
-package expressions
+package expression
 
 import __yyfmt__ "fmt"
 

@@ -1,3 +1,4 @@
+// Package render parses and evaluates template strings.
 package render
 
 import (

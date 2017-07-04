@@ -5,7 +5,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/expression"
 	"github.com/osteele/liquid/render"
 )
 
@@ -24,8 +24,8 @@ func continueTag(parameters string) (func(io.Writer, render.RenderContext) error
 	}, nil
 }
 
-func parseLoopExpression(source string) (expressions.Expression, error) {
-	expr, err := expressions.Parse("%loop " + source)
+func parseLoopExpression(source string) (expression.Expression, error) {
+	expr, err := expression.Parse("%loop " + source)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func loopTagParser(node render.ASTBlock) (func(io.Writer, render.RenderContext) 
 		if err != nil {
 			return err
 		}
-		loop := val.(*expressions.Loop)
+		loop := val.(*expression.Loop)
 		rt := reflect.ValueOf(loop.Expr)
 		switch rt.Kind() {
 		case reflect.Map:
