@@ -27,12 +27,12 @@ type filterDictionary struct {
 	filters map[string]interface{}
 }
 
-func newFilterDictionary() *filterDictionary {
-	return &filterDictionary{map[string]interface{}{}}
+func newFilterDictionary() filterDictionary {
+	return filterDictionary{map[string]interface{}{}}
 }
 
-// addFilter defines a filter.
-func (d *filterDictionary) addFilter(name string, fn interface{}) {
+// AddFilter adds a filter to the filter dictionary.
+func (d *filterDictionary) AddFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
@@ -47,19 +47,20 @@ func (d *filterDictionary) addFilter(name string, fn interface{}) {
 	d.filters[name] = fn
 }
 
+var closureType = reflect.TypeOf(closure{})
+var interfaceType = reflect.TypeOf([]interface{}{}).Elem()
+
 func isClosureInterfaceType(t reflect.Type) bool {
-	closureType := reflect.TypeOf(closure{})
-	interfaceType := reflect.TypeOf([]interface{}{}).Elem()
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (d *filterDictionary) runFilter(ctx Context, f valueFn, name string, params []valueFn) interface{} {
-	filter, ok := d.filters[name]
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) interface{} {
+	filter, ok := ctx.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(filter)
-	args := []interface{}{f(ctx)}
+	args := []interface{}{receiver(ctx)}
 	for i, param := range params {
 		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
 			expr, err := Parse(param(ctx).(string))

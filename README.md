@@ -28,7 +28,7 @@
 
 ## Status
 
-This library is in its early days. The API may still change.
+This library is in early development. The API may still change.
 
 - [ ] Basics
   - [x] Literals
