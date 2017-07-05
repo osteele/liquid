@@ -40,7 +40,7 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case evaluator.GenericError:
+			case evaluator.TypeError:
 				err = e
 			case InterpreterError:
 				err = e

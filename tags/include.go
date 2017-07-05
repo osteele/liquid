@@ -18,7 +18,7 @@ func includeTag(source string) (func(io.Writer, render.Context) error, error) {
 		}
 		rel, ok := value.(string)
 		if !ok {
-			return render.Error("include requires a string argument; got %v", value)
+			return render.Errorf("include requires a string argument; got %v", value)
 		}
 		filename := filepath.Join(filepath.Dir(ctx.SourceFile()), rel)
 		s, err := ctx.RenderFile(filename, map[string]interface{}{})

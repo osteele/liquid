@@ -8,8 +8,8 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
-var errLoopContinueLoop = render.Error("continue outside a loop")
-var errLoopBreak = render.Error("break outside a loop")
+var errLoopContinueLoop = render.Errorf("continue outside a loop")
+var errLoopBreak = render.Errorf("break outside a loop")
 
 func breakTag(parameters string) (func(io.Writer, render.Context) error, error) {
 	return func(io.Writer, render.Context) error {

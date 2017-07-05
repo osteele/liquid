@@ -15,7 +15,8 @@ type drop interface {
 type TypeError string
 
 func (e TypeError) Error() string { return string(e) }
-func typeError(format string, a ...interface{}) TypeError {
+
+func typeErrorf(format string, a ...interface{}) TypeError {
 	return TypeError(fmt.Sprintf(format, a...))
 }
 
@@ -39,7 +40,7 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 	case reflect.Value:
 		value = ref.Interface()
 	}
-	return genericErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
+	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
 }
 
 // Convert value to the type. This is a more aggressive conversion, that will
@@ -140,7 +141,7 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 func MustConvertItem(item interface{}, array []interface{}) interface{} {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
-		panic(typeError("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
+		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
 	}
 	return item
 }

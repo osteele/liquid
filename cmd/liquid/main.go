@@ -46,7 +46,7 @@ func render(b []byte, filename string) {
 	tpl.SetSourcePath(filename)
 	out, err := tpl.Render(map[string]interface{}{})
 	exitIfErr(err)
-	os.Stdout.Write(out) // nolint: gas
+	os.Stdout.Write(out) // nolint: gas, errcheck
 }
 
 func usage(error bool) {

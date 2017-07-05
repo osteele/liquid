@@ -14,8 +14,8 @@ type renderError string
 
 func (e renderError) Error() string { return string(e) }
 
-// Error creates a render error.
-func Error(format string, a ...interface{}) renderError {
+// Errorf creates a render error.
+func Errorf(format string, a ...interface{}) renderError {
 	return renderError(fmt.Sprintf(format, a...))
 }
 
@@ -57,21 +57,21 @@ func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: g
 	case *ASTBlock:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
-			return parseError("unknown tag: %s", n.Name)
+			return parseErrorf("unknown tag: %s", n.Name)
 		}
 		renderer := n.renderer
 		if renderer == nil {
-			panic(parseError("unset renderer for %v", n))
+			panic(parseErrorf("unset renderer for %v", n))
 		}
 		return renderer(w, renderContext{ctx, nil, n})
 	case *ASTObject:
 		value, err := ctx.Evaluate(n.expr)
 		if err != nil {
-			return parseError("%s in %s", err, n.Source)
+			return parseErrorf("%s in %s", err, n.Source)
 		}
 		return writeObject(value, w)
 	default:
-		panic(parseError("unknown node type %T", node))
+		panic(parseErrorf("unknown node type %T", node))
 	}
 	return nil
 }
