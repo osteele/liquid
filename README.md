@@ -9,18 +9,14 @@
 
 `liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in [gojekyll](https://github.com/osteele/gojekyll).
 
-`liquid` provides a functional API for defining tags and filters. See examples [here](https://github.com/osteele/liquid/blob/master/filters/filters.go), [here](https://github.com/osteele/gojekyll/blob/master/filters/filters.go), and [here](https://github.com/osteele/gojekyll/blob/master/tags/tags.go). On the one hand, this isn't idiomatic Go. On the other hand, this made it possible to implement a boatload of Liquid and Jekyll filters without an onerous amount of boilerplate – in some cases, simply by passing a reference to a function from the standard library.
+`liquid` provides a functional API for defining tags and filters. See examples [here](https://github.com/osteele/liquid/blob/master/filters/filters.go), [here](https://github.com/osteele/gojekyll/blob/master/filters/filters.go), and [here](https://github.com/osteele/gojekyll/blob/master/tags/tags.go).
 
 <!-- TOC -->
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
     - [Status](#status)
     - [Install](#install)
-    - [Contribute](#contribute)
-        - [Setup](#setup)
-        - [Workflow](#workflow)
-        - [Style Guide](#style-guide)
-        - [Working on the Parser and Lexer](#working-on-the-parser-and-lexer)
+    - [Contributing](#contributing)
     - [References](#references)
     - [Attribution](#attribution)
     - [Other Implementations](#other-implementations)
@@ -32,13 +28,13 @@
 
 ## Status
 
-This library is in its early days. IMO it's not sufficiently mature to be worth snapping off a [versioned URL](http://labix.org/gopkg.in). In particular, the tag and filter extension API is likely to change.
+This library is in its early days. The API may still change.
 
 - [ ] Basics
   - [x] Literals
     - [ ] String Escapes
   - [x] Variables
-  - [ ] Operators (partial)
+  - [x] Operators
   - [x] Arrays
   - [ ] Whitespace Control
 - [ ] Tags
@@ -51,7 +47,7 @@ This library is in its early days. IMO it's not sufficiently mature to be worth 
       - [ ] `else`
   - [ ] Iteration
       - [x] modifiers (`limit`, `reversed`, `offset`)
-      - [ ] `range`
+      - [ ] range
       - [x] `break`, `continue`
       - [x] loop variables
       - [ ] `tablerow`
@@ -69,49 +65,10 @@ This library is in its early days. IMO it's not sufficiently mature to be worth 
 
 `go get -u github.com/osteele/goliquid`
 
-## Contribute
+## Contributing
 
-### Setup
-
-```bash
-make install-dev-tools
-```
-
-### Workflow
-
-```bash
-go test ./...
-```
-
-Test just the scanner:
-
-```bash
-cd expressions
-ragel -Z scanner.rl && go test
-```
-
-Preview the documentation:
-
-```bash
-godoc -http=:6060&
-open http://localhost:6060/pkg/github.com/osteele/liquid/
-```
-
-### Style Guide
-
-`make test` and `make lint` should pass.
-
-The cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions, have been disabled (via `nolint: gocyclo`). IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity or lint in general willy nilly.
-
-### Working on the Parser and Lexer
-
-To work on the lexer, install Ragel. On macOS: `brew install ragel`.
-
-Do this after editing `scanner.rl` or `expressions.y`:
-
-```bash
-go generate ./...
-```
+Bug reports, test cases, and code contributions are more than welcome.
+Please refer to the [contribution guidelines](./CONTRIBUTING.md).
 
 ## References
 
@@ -137,10 +94,8 @@ The [original Liquid engine](https://shopify.github.io/liquid), of course, for t
 ### Go
 
 * [karlseguin/liquid](https://github.com/karlseguin/liquid) is a dormant implementation that inspired a lot of forks.
-* [acstech/liquid](https://github.com/acstech/liquid) is a more active fork of Karl Seguin's implementation. I submitted a couple of pull requests there.
-* [hownowstephen/go-liquid](https://github.com/hownowstephen/go-liquid) is a more recent entry.
-
-After trying each of these, and looking at how to extend them, I concluded that I wasn't going to get very far without a parser generator. I also wanted an easy API for writing filters.
+* [acstech/liquid](https://github.com/acstech/liquid) is a more active fork of Karl Seguin's implementation.
+* [hownowstephen/go-liquid](https://github.com/hownowstephen/go-liquid)
 
 ### Other Languages
 
