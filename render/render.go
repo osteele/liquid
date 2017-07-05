@@ -9,24 +9,14 @@ import (
 	"github.com/osteele/liquid/evaluator"
 )
 
-// A RenderError is an evaluation error during template rendering.
-type renderError string
+// An Error is an evaluation error during template rendering.
+type Error string
 
-func (e renderError) Error() string { return string(e) }
+func (e Error) Error() string { return string(e) }
 
 // Errorf creates a render error.
-func Errorf(format string, a ...interface{}) renderError {
-	return renderError(fmt.Sprintf(format, a...))
-}
-
-// IsRenderError returns a bool whether the error is a render error.
-func IsRenderError(err error) bool {
-	switch err.(type) {
-	case renderError:
-		return true
-	default:
-		return false
-	}
+func Errorf(format string, a ...interface{}) Error {
+	return Error(fmt.Sprintf(format, a...))
 }
 
 // Render renders the AST rooted at node to the writer.

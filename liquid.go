@@ -73,7 +73,9 @@ func IsTemplateError(err error) bool {
 		return true
 	case render.ParseError:
 		return true
+	case render.Error:
+		return true
 	default:
-		return render.IsRenderError(err)
+		return false
 	}
 }
