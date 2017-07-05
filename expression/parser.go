@@ -1,8 +1,6 @@
 package expression
 
-import (
-	"fmt"
-)
+import "fmt"
 
 // Loop describes the result of parsing and then evaluating a loop statement.
 type Loop struct {
@@ -39,7 +37,7 @@ func Parse(source string) (expr Expression, err error) {
 	lexer := newLexer([]byte(source + ";"))
 	n := yyParse(lexer)
 	if n != 0 {
-		return nil, fmt.Errorf("parse error in %q", source)
+		return nil, ParseError(fmt.Errorf("parse error in %q", source).Error())
 	}
 	return &expression{lexer.val}, nil
 }

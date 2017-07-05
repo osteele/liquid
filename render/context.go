@@ -51,7 +51,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
-				panic(fmt.Errorf("%s during evaluation of %s", e, source))
+				panic(Error("%s during evaluation of %s", e, source))
 			}
 		}
 	}()

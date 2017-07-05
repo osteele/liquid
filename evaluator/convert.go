@@ -11,6 +11,14 @@ type drop interface {
 	ToLiquid() interface{}
 }
 
+// A TypeError is an error during type conversion.
+type TypeError string
+
+func (e TypeError) Error() string { return string(e) }
+func typeError(format string, a ...interface{}) TypeError {
+	return TypeError(fmt.Sprintf(format, a...))
+}
+
 // ToLiquid converts an object to Liquid, if it implements the Drop interface.
 func ToLiquid(value interface{}) interface{} {
 	switch value := value.(type) {
@@ -132,7 +140,7 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 func MustConvertItem(item interface{}, array []interface{}) interface{} {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
-		panic(fmt.Errorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
+		panic(typeError("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
 	}
 	return item
 }

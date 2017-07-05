@@ -19,6 +19,16 @@ func Error(format string, a ...interface{}) renderError {
 	return renderError(fmt.Sprintf(format, a...))
 }
 
+// IsRenderError returns a bool whether the error is a render error.
+func IsRenderError(err error) bool {
+	switch err.(type) {
+	case renderError:
+		return true
+	default:
+		return false
+	}
+}
+
 // Render renders the AST rooted at node to the writer.
 func Render(node ASTNode, w io.Writer, b map[string]interface{}, c Config) error {
 	return renderNode(node, w, newNodeContext(b, c))

@@ -42,7 +42,7 @@ func (d *filterDictionary) AddFilter(name string, fn interface{}) {
 	case rf.Type().NumOut() > 2:
 		panic(fmt.Errorf("a filter must be have one or two outputs"))
 		// case rf.Type().Out(1).Implements(…):
-		// 	panic(fmt.Errorf("a filter's second output must be type error"))
+		// 	panic(typeError("a filter's second output must be type error"))
 	}
 	d.filters[name] = fn
 }
