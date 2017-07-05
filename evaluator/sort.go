@@ -1,4 +1,4 @@
-package generics
+package evaluator
 
 import (
 	"reflect"

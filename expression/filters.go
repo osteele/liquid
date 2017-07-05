@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/evaluator"
 )
 
 // An InterpreterError is an error during expression interpretation.
@@ -72,7 +72,7 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 			args = append(args, param(ctx))
 		}
 	}
-	out, err := generics.Call(fr, args)
+	out, err := evaluator.Call(fr, args)
 	if err != nil {
 		panic(err)
 	}

@@ -2,7 +2,7 @@
 package expression
 
 import (
-	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/evaluator"
 )
 
 // Expression is a parsed expression.
@@ -40,7 +40,7 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case generics.GenericError:
+			case evaluator.GenericError:
 				err = e
 			case InterpreterError:
 				err = e

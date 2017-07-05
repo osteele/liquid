@@ -14,15 +14,15 @@ import (
 	"unicode/utf8"
 
 	"github.com/jeffjen/datefmt"
+	"github.com/osteele/liquid/evaluator"
 	"github.com/osteele/liquid/expression"
-	"github.com/osteele/liquid/generics"
 )
 
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(settings expression.Config) { // nolint: gocyclo
 	// values
 	settings.AddFilter("default", func(value, defaultValue interface{}) interface{} {
-		if value == nil || value == false || generics.IsEmpty(value) {
+		if value == nil || value == false || evaluator.IsEmpty(value) {
 			value = defaultValue
 		}
 		return value
@@ -108,7 +108,7 @@ func AddStandardFilters(settings expression.Config) { // nolint: gocyclo
 	})
 
 	// sequences
-	settings.AddFilter("size", generics.Length)
+	settings.AddFilter("size", evaluator.Length)
 
 	// strings
 	settings.AddFilter("append", func(s, suffix string) string {
@@ -225,9 +225,9 @@ func sortFilter(array []interface{}, key interface{}) []interface{} {
 	out := make([]interface{}, len(array))
 	copy(out, array)
 	if key == nil {
-		generics.Sort(out)
+		evaluator.Sort(out)
 	} else {
-		generics.SortByProperty(out, key.(string), true)
+		evaluator.SortByProperty(out, key.(string), true)
 	}
 	return out
 }

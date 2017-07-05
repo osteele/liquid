@@ -4,8 +4,8 @@ package tags
 import (
 	"io"
 
+	"github.com/osteele/liquid/evaluator"
 	"github.com/osteele/liquid/expression"
-	"github.com/osteele/liquid/generics"
 	"github.com/osteele/liquid/render"
 )
 
@@ -79,7 +79,7 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error,
 			if err != nil {
 				return err
 			}
-			if generics.Equal(value, b) {
+			if evaluator.Equal(value, b) {
 				return ctx.RenderChild(w, branch.node)
 			}
 		}

@@ -5,7 +5,7 @@
 // Since the intent is to provide runtime services for the Liquid expression interpreter,
 // this package does not implement "generic" generics.
 // It attempts to implement Liquid semantics (which are largely Ruby semantics).
-package generics
+package evaluator
 
 import (
 	"fmt"

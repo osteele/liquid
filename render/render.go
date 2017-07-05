@@ -6,7 +6,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/evaluator"
 )
 
 // A RenderError is an evaluation error during template rendering.
@@ -68,7 +68,7 @@ func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: g
 
 // writeObject writes a value used in an object node
 func writeObject(value interface{}, w io.Writer) error {
-	value = generics.ToLiquid(value)
+	value = evaluator.ToLiquid(value)
 	if value == nil {
 		return nil
 	}

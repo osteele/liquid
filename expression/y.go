@@ -6,7 +6,7 @@ import __yyfmt__ "fmt"
 //line expressions.y:2
 import (
 	"fmt"
-	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/evaluator"
 )
 
 func init() {
@@ -636,7 +636,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return generics.Equal(a, b)
+				return evaluator.Equal(a, b)
 			}
 		}
 	case 20:
@@ -646,7 +646,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return !generics.Equal(a, b)
+				return !evaluator.Equal(a, b)
 			}
 		}
 	case 21:
@@ -656,7 +656,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return generics.Less(b, a)
+				return evaluator.Less(b, a)
 			}
 		}
 	case 22:
@@ -666,7 +666,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return generics.Less(a, b)
+				return evaluator.Less(a, b)
 			}
 		}
 	case 23:
@@ -676,7 +676,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return generics.Less(b, a) || generics.Equal(a, b)
+				return evaluator.Less(b, a) || evaluator.Equal(a, b)
 			}
 		}
 	case 24:
@@ -686,7 +686,7 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
 				a, b := fa(ctx), fb(ctx)
-				return generics.Less(a, b) || generics.Equal(a, b)
+				return evaluator.Less(a, b) || evaluator.Equal(a, b)
 			}
 		}
 	case 25:
@@ -701,7 +701,7 @@ yydefault:
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
-				return generics.IsTrue(fa(ctx)) && generics.IsTrue(fb(ctx))
+				return evaluator.IsTrue(fa(ctx)) && evaluator.IsTrue(fb(ctx))
 			}
 		}
 	case 28:
@@ -710,7 +710,7 @@ yydefault:
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) interface{} {
-				return generics.IsTrue(fa(ctx)) || generics.IsTrue(fb(ctx))
+				return evaluator.IsTrue(fa(ctx)) || evaluator.IsTrue(fb(ctx))
 			}
 		}
 	}
