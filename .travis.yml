@@ -3,9 +3,10 @@ language: go
 go:
   - 1.8.3
 
-before_install:
+install:
   - go get github.com/mattn/goveralls
   - make install-dev-tools
+  - go get -t ./...
 
 script:
   - $HOME/gopath/bin/goveralls -service=travis-ci
