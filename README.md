@@ -15,6 +15,7 @@
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
     - [Status](#status)
+    - [Other Differences](#other-differences)
     - [Install](#install)
     - [Contributing](#contributing)
     - [References](#references)
@@ -28,7 +29,7 @@
 
 ## Status
 
-This library is in early development. The API may still change.
+This library is in early development. There's probably lots of corner cases, and the API (especially around defining tags) may still change.
 
 - [ ] Basics
   - [x] Literals
@@ -44,6 +45,7 @@ This library is in early development. The API may still change.
     - [x] `unless`
     - [x] `case`
       - [x] `when`
+      - [ ] `when a or b`
       - [ ] `else`
   - [ ] Iteration
       - [x] modifiers (`limit`, `reversed`, `offset`)
@@ -61,6 +63,22 @@ This library is in early development. The API may still change.
   - [ ] `sort_natural`, `uniq`, `escape`, `truncatewords`, `url_decode`, `url_encode`
   - [x] everything else
 - [x] Drops
+
+## Other Differences
+
+These will change:
+
+* I haven't investigated the interaction of loop reversed, limit, and offset, and whether it matters which order they're specified, in Shopify Liquid.
+* This implementation doesn't parse very many date formats. I have any idea for this; talk to me if you're interested in implementing it.
+* Identifiers can include hyphens.
+* `contains` isn't implemented on hashes.
+* `contains` doesn't stringify its argument.
+* The `nil` constant isn't implemented.
+
+These might not:
+
+* This parser accepts parentheses in places where Shopify Liquid does not.
+* `else` and `elsif` work inside of `unless`
 
 ## Install
 

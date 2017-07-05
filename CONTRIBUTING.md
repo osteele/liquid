@@ -1,13 +1,14 @@
 # Contributing
 
-Refer to the [(original) Liquid contribution guidelines](https://github.com/Shopify/liquid/blob/master/CONTRIBUTING.md).
+Here's some ways to help:
 
-In addition to those checklists, I also won't merge:
+* Pick an un-checked item from [Status](https://github.com/osteele/liquid#status). Let me know you want to work on it – I have ideas for some of these.
+* Search the source for FIXME and TODO. Tackle one of them.
+* Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master).
 
-- [ ] Performance improvements that don't include a benchmark.
-- [ ] Meager (<3%) performance improvements that increase code verbosity or complexity.
+Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
 
-A caveat: The cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions, have been disabled (via `nolint: gocyclo`). IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity or lint in general.
+A note on lint: `nolint: gocyclo` has been used to disable cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions. IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity checks or lint in general.
 
 ## Cookbook
 
