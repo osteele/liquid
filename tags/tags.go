@@ -12,6 +12,7 @@ import (
 // AddStandardTags defines the standard Liquid tags.
 func AddStandardTags(c render.Config) {
 	c.AddTag("assign", assignTag)
+	c.AddTag("include", includeTag)
 
 	// blocks
 	// The parser only recognize the comment and raw tags if they've been defined,

@@ -52,6 +52,7 @@ This library is in its early days. The API may still change.
       - [x] loop variables
       - [ ] `tablerow`
       - [ ] `cycle`
+  - [x] Include
   - [x] Raw
   - [x] Variables
     - [x] Assign
@@ -72,10 +73,10 @@ Please refer to the [contribution guidelines](./CONTRIBUTING.md).
 
 ## References
 
-* [Shopify.github.io/liquid](https://shopify.github.io/liquid) is the definitive reference.
+* [Shopify.github.io/liquid](https://shopify.github.io/liquid)
+* [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers)
+* [Liquid for Programmers](https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers)
 * [Help.shopify.com](https://help.shopify.com/themes/liquid) goes into more detail, but includes features that aren't present in core Liquid as used by Jekyll.
-* Shopify's [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers) is another take.
-
 
 ## Attribution
 

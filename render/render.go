@@ -9,6 +9,16 @@ import (
 	"github.com/osteele/liquid/generics"
 )
 
+// A RenderError is an evaluation error during template rendering.
+type renderError string
+
+func (e renderError) Error() string { return string(e) }
+
+// Error creates a render error.
+func Error(format string, a ...interface{}) renderError {
+	return renderError(fmt.Sprintf(format, a...))
+}
+
 // Render renders the AST rooted at node to the writer.
 func Render(node ASTNode, w io.Writer, b map[string]interface{}, c Config) error {
 	return renderNode(node, w, newNodeContext(b, c))
@@ -37,21 +47,21 @@ func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: g
 	case *ASTBlock:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
-			return fmt.Errorf("unknown tag: %s", n.Name)
+			return parseError("unknown tag: %s", n.Name)
 		}
 		renderer := n.renderer
 		if renderer == nil {
-			panic(fmt.Errorf("unset renderer for %v", n))
+			panic(parseError("unset renderer for %v", n))
 		}
 		return renderer(w, renderContext{ctx, nil, n})
 	case *ASTObject:
 		value, err := ctx.Evaluate(n.expr)
 		if err != nil {
-			return fmt.Errorf("%s in %s", err, n.Source)
+			return parseError("%s in %s", err, n.Source)
 		}
 		return writeObject(value, w)
 	default:
-		panic(fmt.Errorf("unknown node type %T", node))
+		panic(parseError("unknown node type %T", node))
 	}
 	return nil
 }

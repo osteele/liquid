@@ -7,6 +7,7 @@ import (
 	"github.com/osteele/liquid/expression"
 )
 
+// A ParseError is a parse error during the template parsing.
 type ParseError string
 
 func (e ParseError) Error() string { return string(e) }
@@ -76,7 +77,7 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					if sd != nil {
 						suffix = "; immediate parent is " + sd.TagName()
 					}
-					return nil, fmt.Errorf("%s not inside %s%s", c.Name, strings.Join(cs.ParentTags(), " or "), suffix)
+					return nil, parseError("%s not inside %s%s", c.Name, strings.Join(cs.ParentTags(), " or "), suffix)
 				case cs.IsBlockStart():
 					push := func() {
 						stack = append(stack, frame{syntax: sd, node: bn, ap: ap})
@@ -106,12 +107,12 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 				}
 				*ap = append(*ap, &ASTFunctional{c, f})
 			} else {
-				return nil, fmt.Errorf("unknown tag: %s", c.Name)
+				return nil, parseError("unknown tag: %s", c.Name)
 			}
 		}
 	}
 	if bn != nil {
-		return nil, fmt.Errorf("unterminated %s tag at %s", bn.Name, bn.SourceInfo)
+		return nil, parseError("unterminated %s tag at %s", bn.Name, bn.SourceInfo)
 	}
 	if err := s.evaluateBuilders(root); err != nil {
 		return nil, err

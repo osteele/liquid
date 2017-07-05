@@ -54,58 +54,12 @@ var tagTests = []struct{ in, expected string }{
 	{`{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}`, "1"},
 	{`{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}`, "2"},
 
-	// loops
-	{`{%for a in ar%}{{a}} {%endfor%}`, "first second third "},
-
-	// loop modifiers
-	{`{%for a in ar reversed%}{{a}}.{%endfor%}`, "third.second.first."},
-	{`{%for a in ar limit:2%}{{a}}.{%endfor%}`, "first.second."},
-	{`{%for a in ar offset:1%}{{a}}.{%endfor%}`, "second.third."},
-	{`{%for a in ar reversed limit:1%}{{a}}.{%endfor%}`, "third."},
-	// TODO investigate how these combine; does it depend on the order
-	// {`{%for a in ar reversed offset:1%}{{a}}.{%endfor%}`, "second.first."},
-	// {`{%for a in ar limit:1 offset:1%}{{a}}.{%endfor%}`, "second."},
-	// {`{%for a in ar reversed limit:1 offset:1%}{{a}}.{%endfor%}`, "second."},
-
-	// loop variables
-	{`{%for a in ar%}{{forloop.first}}.{%endfor%}`, "true.false.false."},
-	{`{%for a in ar%}{{forloop.last}}.{%endfor%}`, "false.false.true."},
-	{`{%for a in ar%}{{forloop.index}}.{%endfor%}`, "1.2.3."},
-	{`{%for a in ar%}{{forloop.index0}}.{%endfor%}`, "0.1.2."},
-	{`{%for a in ar%}{{forloop.rindex}}.{%endfor%}`, "3.2.1."},
-	{`{%for a in ar%}{{forloop.rindex0}}.{%endfor%}`, "2.1.0."},
-	{`{%for a in ar%}{{forloop.length}}.{%endfor%}`, "3.3.3."},
-
-	{`{%for i in ar%}{{forloop.index}}[{%for j in ar%}{{forloop.index}}{%endfor%}]{{forloop.index}}{%endfor%}`,
-		"1[123]12[123]23[123]3"},
-
-	{`{%for a in ar reversed%}{{forloop.first}}.{%endfor%}`, "true.false.false."},
-	{`{%for a in ar reversed%}{{forloop.last}}.{%endfor%}`, "false.false.true."},
-	{`{%for a in ar reversed%}{{forloop.index}}.{%endfor%}`, "1.2.3."},
-	{`{%for a in ar reversed%}{{forloop.rindex}}.{%endfor%}`, "3.2.1."},
-	{`{%for a in ar reversed%}{{forloop.length}}.{%endfor%}`, "3.3.3."},
-
-	{`{%for a in ar limit:2%}{{forloop.index}}.{%endfor%}`, "1.2."},
-	{`{%for a in ar limit:2%}{{forloop.rindex}}.{%endfor%}`, "2.1."},
-	{`{%for a in ar limit:2%}{{forloop.first}}.{%endfor%}`, "true.false."},
-	{`{%for a in ar limit:2%}{{forloop.last}}.{%endfor%}`, "false.true."},
-	{`{%for a in ar limit:2%}{{forloop.length}}.{%endfor%}`, "2.2."},
-
-	{`{%for a in ar offset:1%}{{forloop.index}}.{%endfor%}`, "1.2."},
-	{`{%for a in ar offset:1%}{{forloop.rindex}}.{%endfor%}`, "2.1."},
-	{`{%for a in ar offset:1%}{{forloop.first}}.{%endfor%}`, "true.false."},
-	{`{%for a in ar offset:1%}{{forloop.last}}.{%endfor%}`, "false.true."},
-	{`{%for a in ar offset:1%}{{forloop.length}}.{%endfor%}`, "2.2."},
-
-	{`{%for a in ar%}{%if a == 'second'%}{%break%}{%endif%}{{a}}{%endfor%}`, "first"},
-	{`{%for a in ar%}{%if a == 'second'%}{%continue%}{%endif%}{{a}}.{%endfor%}`, "first.third."},
-
 	// TODO test whether this requires matching interior tags
 	{`pre{%raw%}{{a}}{%unknown%}{%endraw%}post`, "pre{{a}}{%unknown%}post"},
 	{`pre{%raw%}{%if false%}anyway-{%endraw%}post`, "pre{%if false%}anyway-post"},
 }
 
-var bindings = map[string]interface{}{
+var tagTestBindings = map[string]interface{}{
 	"x": 123,
 	"obj": map[string]interface{}{
 		"a": 1,
@@ -126,7 +80,6 @@ var bindings = map[string]interface{}{
 		{"weight": 3},
 		{"weight": nil},
 	},
-	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
@@ -144,7 +97,7 @@ func TestParseErrors(t *testing.T) {
 		})
 	}
 }
-func TestRender(t *testing.T) {
+func TestTags(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 	for i, test := range tagTests {
@@ -152,7 +105,7 @@ func TestRender(t *testing.T) {
 			ast, err := config.Parse(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = render.Render(ast, buf, bindings, config)
+			err = render.Render(ast, buf, tagTestBindings, config)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})

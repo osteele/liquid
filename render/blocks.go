@@ -28,10 +28,6 @@ func (c *blockDef) CanHaveParent(parent BlockSyntax) bool {
 	return c.parent == p
 }
 
-func (c *blockDef) requiresParent() bool {
-	return c.isBranchTag || c.isEndTag
-}
-
 func (c *blockDef) IsBlock() bool        { return true }
 func (c *blockDef) IsBlockEnd() bool     { return c.isEndTag }
 func (c *blockDef) IsBlockStart() bool   { return !c.isBranchTag && !c.isEndTag }
@@ -55,6 +51,7 @@ func (s Config) findBlockDef(name string) (*blockDef, bool) {
 	return ct, found
 }
 
+// BlockSyntax is part of the Grammar interface.
 func (s Config) BlockSyntax(name string) (BlockSyntax, bool) {
 	ct, found := s.blockDefs[name]
 	return ct, found
