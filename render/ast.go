@@ -43,7 +43,7 @@ type ASTObject struct {
 type ASTBlock struct {
 	Chunk
 	renderer func(io.Writer, Context) error
-	cd       *blockDef
+	syntax      BlockSyntax
 	Body     []ASTNode
 	Branches []*ASTBlock
 }

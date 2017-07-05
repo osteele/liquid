@@ -15,7 +15,7 @@ func addParserTestTags(s Config) {
 	s.AddBlock("if").Branch("else").Branch("elsif")
 	s.AddBlock("unless").SameSyntaxAs("if")
 	s.AddBlock("raw")
-	s.AddBlock("err1").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
+	s.AddBlock("error").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
 		return nil, fmt.Errorf("stage 1 error")
 	})
 }
@@ -24,7 +24,7 @@ var parseErrorTests = []struct{ in, expected string }{
 	{"{%unknown_tag%}", "unknown tag"},
 	{"{%if test%}", "unterminated if tag"},
 	{"{%if test%}{% endunless %}", "not inside unless"},
-	{`{% err1 %}{% enderr1 %}`, "stage 1 error"},
+	{`{% error %}{% enderror %}`, "stage 1 error"},
 	// {"{%for syntax error%}{%endfor%}", "parse error"},
 }
 
@@ -42,8 +42,7 @@ func TestParseErrors(t *testing.T) {
 	addParserTestTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := settings.Parse(test.in)
-			require.Nilf(t, ast, test.in)
+			_, err := settings.Parse(test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})

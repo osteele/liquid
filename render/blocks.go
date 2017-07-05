@@ -17,10 +17,11 @@ type blockDef struct {
 	parser                BlockParser
 }
 
-func (c *blockDef) compatibleParent(p *blockDef) bool {
-	if p == nil {
+func (c *blockDef) CanHaveParent(parent BlockSyntax) bool {
+	if parent == nil {
 		return false
 	}
+	p := parent.(*blockDef)
 	if !c.isEndTag && p.syntaxModel != nil {
 		p = p.syntaxModel
 	}
@@ -31,15 +32,30 @@ func (c *blockDef) requiresParent() bool {
 	return c.isBranchTag || c.isEndTag
 }
 
-func (c *blockDef) isStartTag() bool {
-	return !c.isBranchTag && !c.isEndTag
+func (c *blockDef) IsBlock() bool        { return true }
+func (c *blockDef) IsBlockEnd() bool     { return c.isEndTag }
+func (c *blockDef) IsBlockStart() bool   { return !c.isBranchTag && !c.isEndTag }
+func (c *blockDef) IsBranch() bool       { return c.isBranchTag }
+func (c *blockDef) RequiresParent() bool { return c.isBranchTag || c.isEndTag }
+
+func (c *blockDef) ParentTags() []string {
+	if c.parent == nil {
+		return []string{}
+	}
+	return []string{c.parent.name}
 }
+func (c *blockDef) TagName() string { return c.name }
 
 func (s Config) addBlockDef(ct *blockDef) {
 	s.blockDefs[ct.name] = ct
 }
 
 func (s Config) findBlockDef(name string) (*blockDef, bool) {
+	ct, found := s.blockDefs[name]
+	return ct, found
+}
+
+func (s Config) BlockSyntax(name string) (BlockSyntax, bool) {
 	ct, found := s.blockDefs[name]
 	return ct, found
 }

@@ -2,9 +2,17 @@ package render
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/osteele/liquid/expression"
 )
+
+type ParseError string
+
+func (e ParseError) Error() string { return string(e) }
+func parseError(format string, a ...interface{}) ParseError {
+	return ParseError(fmt.Sprintf(format, a...))
+}
 
 // Parse parses a source template. It returns an AST root, that can be evaluated.
 func (s Config) Parse(source string) (ASTNode, error) {
@@ -16,15 +24,16 @@ func (s Config) Parse(source string) (ASTNode, error) {
 func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
-		cd *blockDef  // saved local ccd
-		cn *ASTBlock  // saved local cn
-		ap *[]ASTNode // saved local ap
+		syntax BlockSyntax
+		node   *ASTBlock
+		ap     *[]ASTNode
 	}
 	var (
+		g         = s.Grammar()
 		root      = &ASTSeq{}      // root of AST; will be returned
 		ap        = &root.Children // newly-constructed nodes are appended here
-		ccd       *blockDef        // current block definition
-		ccn       *ASTBlock        // current block node
+		sd        BlockSyntax      // current block syntax definition
+		bn        *ASTBlock        // current block node
 		stack     []frame          // stack of blocks
 		rawTag    *ASTRaw          // current raw tag
 		inComment = false
@@ -54,7 +63,7 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 		case c.Type == TextChunkType:
 			*ap = append(*ap, &ASTText{Chunk: c})
 		case c.Type == TagChunkType:
-			if cd, ok := s.findBlockDef(c.Name); ok {
+			if cs, ok := g.BlockSyntax(c.Name); ok {
 				switch {
 				case c.Name == "comment":
 					inComment = true
@@ -62,25 +71,33 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					inRaw = true
 					rawTag = &ASTRaw{}
 					*ap = append(*ap, rawTag)
-				case cd.requiresParent() && !cd.compatibleParent(ccd):
+				case cs.RequiresParent() && (sd == nil || !cs.CanHaveParent(sd)):
 					suffix := ""
-					if ccd != nil {
-						suffix = "; immediate parent is " + ccd.name
+					if sd != nil {
+						suffix = "; immediate parent is " + sd.TagName()
 					}
-					return nil, fmt.Errorf("%s not inside %s%s", cd.name, cd.parent.name, suffix)
-				case cd.isStartTag():
-					stack = append(stack, frame{cd: ccd, cn: ccn, ap: ap})
-					ccd, ccn = cd, &ASTBlock{Chunk: c, cd: cd}
-					*ap = append(*ap, ccn)
-					ap = &ccn.Body
-				case cd.isBranchTag:
-					n := &ASTBlock{Chunk: c, cd: cd}
-					ccn.Branches = append(ccn.Branches, n)
+					return nil, fmt.Errorf("%s not inside %s%s", c.Name, strings.Join(cs.ParentTags(), " or "), suffix)
+				case cs.IsBlockStart():
+					push := func() {
+						stack = append(stack, frame{syntax: sd, node: bn, ap: ap})
+						sd, bn = cs, &ASTBlock{Chunk: c, syntax: cs}
+						*ap = append(*ap, bn)
+					}
+					push()
+					ap = &bn.Body
+				case cs.IsBranch():
+					n := &ASTBlock{Chunk: c, syntax: cs}
+					bn.Branches = append(bn.Branches, n)
 					ap = &n.Body
-				case cd.isEndTag:
-					f := stack[len(stack)-1]
-					stack = stack[:len(stack)-1]
-					ccd, ccn, ap = f.cd, f.cn, f.ap
+				case cs.IsBlockEnd():
+					pop := func() {
+						f := stack[len(stack)-1]
+						stack = stack[:len(stack)-1]
+						sd, bn, ap = f.syntax, f.node, f.ap
+					}
+					pop()
+				default:
+					panic("unexpected block type")
 				}
 			} else if td, ok := s.FindTagDefinition(c.Name); ok {
 				f, err := td(c.Args)
@@ -93,8 +110,8 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 			}
 		}
 	}
-	if ccd != nil {
-		return nil, fmt.Errorf("unterminated %s tag at %s", ccd.name, ccn.SourceInfo)
+	if bn != nil {
+		return nil, fmt.Errorf("unterminated %s tag at %s", bn.Name, bn.SourceInfo)
 	}
 	if err := s.evaluateBuilders(root); err != nil {
 		return nil, err
