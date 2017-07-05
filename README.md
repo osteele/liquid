@@ -66,6 +66,10 @@ This library is in early development. The API may still change.
 
 `go get -u github.com/osteele/goliquid`
 
+`make install` install a command-line `liquid` program in your GO bin.
+This is intended to make it easier to create test cases for bug reports.
+Run `liquid --help` for help.
+
 ## Contributing
 
 Bug reports, test cases, and code contributions are more than welcome.

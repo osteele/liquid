@@ -1,5 +1,3 @@
-
 *.output
-liquid
 *.out
-test.html
+/liquid
