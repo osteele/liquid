@@ -1,21 +1,18 @@
 package render
 
 import (
-	"io"
-
 	"github.com/osteele/liquid/expression"
 )
 
 // ASTNode is a node of an AST.
-type ASTNode interface {
-}
+type ASTNode interface{}
 
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
 	Chunk
-	syntax      BlockSyntax
-	Body     []ASTNode
-	Branches []*ASTBlock
+	syntax   BlockSyntax
+	Body     []ASTNode   // Body is the nodes before the first branch
+	Branches []*ASTBlock // E.g. else and elseif w/in an if
 }
 
 // ASTRaw holds the text between the start and end of a raw tag.
@@ -23,10 +20,9 @@ type ASTRaw struct {
 	slices []string
 }
 
-// ASTFunctional renders itself via a render function that is created during parsing.
-type ASTFunctional struct {
+// ASTTag is a tag.
+type ASTTag struct {
 	Chunk
-	render func(io.Writer, Context) error
 }
 
 // ASTText is a text chunk, that is rendered verbatim.

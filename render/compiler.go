@@ -41,7 +41,6 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 		}
 		node := BlockNode{
 			Chunk:    n.Chunk,
-			syntax:   n.syntax,
 			Body:     body,
 			Branches: branches,
 		}
@@ -53,8 +52,6 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 			node.renderer = r
 		}
 		return &node, nil
-	case *ASTFunctional:
-		return &FunctionalNode{n.Chunk, n.render}, nil
 	case *ASTRaw:
 		return &RawNode{n.slices}, nil
 	case *ASTSeq:
@@ -63,6 +60,15 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 			return nil, err
 		}
 		return &SeqNode{children}, nil
+	case *ASTTag:
+		if td, ok := c.FindTagDefinition(n.Name); ok {
+			f, err := td(n.Args)
+			if err != nil {
+				return nil, err
+			}
+			return &FunctionalNode{n.Chunk, f}, nil
+		}
+		return nil, parseErrorf("unknown tag: %s", n.Name)
 	case *ASTText:
 		return &TextNode{n.Chunk}, nil
 	case *ASTObject:

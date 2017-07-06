@@ -15,8 +15,9 @@ func addCompilerTestTags(s Config) {
 }
 
 var compilerErrorTests = []struct{ in, expected string }{
-	// {`{% tag %}`, "tag compiler error"},
+	{"{% unknown_tag %}", "unknown tag"},
 	{`{% block %}{% endblock %}`, "block compiler error"},
+	// {`{% tag %}`, "tag compiler error"},
 	// {"{%for syntax error%}{%endfor%}", "parse error"},
 }
 

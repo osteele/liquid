@@ -14,7 +14,6 @@ type Node interface {
 type BlockNode struct {
 	Chunk
 	renderer func(io.Writer, Context) error
-	syntax   BlockSyntax
 	Body     []Node
 	Branches []*BlockNode
 }

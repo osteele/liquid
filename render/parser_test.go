@@ -17,8 +17,7 @@ func addParserTestTags(s Config) {
 }
 
 var parseErrorTests = []struct{ in, expected string }{
-	{"{% unknown_tag %}", "unknown tag"},
-	{"{% if test %}", "unterminated if tag"},
+	{"{% if test %}", "unterminated if block"},
 	{"{% if test %}{% endunless %}", "not inside unless"},
 	// TODO tag syntax could specify statement type to catch these in parser
 	// {"{{ syntax error }}", "parse error"},

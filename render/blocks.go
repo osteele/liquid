@@ -71,7 +71,7 @@ func (c Config) AddBlock(name string) blockDefBuilder { // nolint: golint
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
-// so long as it is not nested within any other control tagc.
+// so long as it is not nested within any other control tag.
 func (b blockDefBuilder) Branch(name string) blockDefBuilder {
 	b.cfg.addBlockDef(&blockDef{name: name, isBranchTag: true, parent: b.tag})
 	return b

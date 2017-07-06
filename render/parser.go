@@ -101,19 +101,13 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 				default:
 					panic("unexpected block type")
 				}
-			} else if td, ok := c.FindTagDefinition(ch.Name); ok {
-				f, err := td(ch.Args)
-				if err != nil {
-					return nil, err
-				}
-				*ap = append(*ap, &ASTFunctional{ch, f})
 			} else {
-				return nil, parseErrorf("unknown tag: %s", ch.Name)
+				*ap = append(*ap, &ASTTag{ch})
 			}
 		}
 	}
 	if bn != nil {
-		return nil, parseErrorf("unterminated %s tag at %s", bn.Name, bn.SourceInfo)
+		return nil, parseErrorf("unterminated %s block at %s", bn.Name, bn.SourceInfo)
 	}
 	return root, nil
 }
