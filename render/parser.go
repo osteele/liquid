@@ -16,7 +16,7 @@ func parseErrorf(format string, a ...interface{}) ParseError {
 	return ParseError(fmt.Sprintf(format, a...))
 }
 
-// Parse parses a source template. It returns an AST root, that can be evaluated.
+// Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
 func (s Config) Parse(source string) (ASTNode, error) {
 	tokens := Scan(source, "")
 	return s.parseChunks(tokens)
@@ -115,43 +115,5 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 	if bn != nil {
 		return nil, parseErrorf("unterminated %s tag at %s", bn.Name, bn.SourceInfo)
 	}
-	if err := s.evaluateBuilders(root); err != nil {
-		return nil, err
-	}
-	if len(root.Children) == 1 {
-		return root.Children[0], nil
-	}
 	return root, nil
-}
-
-// nolint: gocyclo
-func (s Config) evaluateBuilders(n ASTNode) error {
-	switch n := n.(type) {
-	case *ASTBlock:
-		for _, child := range n.Body {
-			if err := s.evaluateBuilders(child); err != nil {
-				return err
-			}
-		}
-		for _, branch := range n.Branches {
-			if err := s.evaluateBuilders(branch); err != nil {
-				return err
-			}
-		}
-		cd, ok := s.findBlockDef(n.Name)
-		if ok && cd.parser != nil {
-			renderer, err := cd.parser(*n)
-			if err != nil {
-				return err
-			}
-			n.renderer = renderer
-		}
-	case *ASTSeq:
-		for _, child := range n.Children {
-			if error := s.evaluateBuilders(child); error != nil {
-				return error
-			}
-		}
-	}
-	return nil
 }

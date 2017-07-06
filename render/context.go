@@ -66,7 +66,7 @@ func (c renderContext) Get(name string) interface{} {
 func (c renderContext) ExpandTagArg() (string, error) {
 	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
-		p, err := c.ctx.config.Parse(args)
+		p, err := c.ctx.config.Compile(args)
 		if err != nil {
 			return "", err
 		}
@@ -98,7 +98,7 @@ func (c renderContext) RenderFile(filename string, b map[string]interface{}) (st
 	if err != nil {
 		return "", err
 	}
-	ast, err := c.ctx.config.Parse(string(source))
+	ast, err := c.ctx.config.Compile(string(source))
 	if err != nil {
 		return "", err
 	}

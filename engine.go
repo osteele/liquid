@@ -53,7 +53,7 @@ func (e engine) RegisterTag(name string, td Renderer) {
 
 // ParseTemplate is in the Engine interface.
 func (e engine) ParseTemplate(text []byte) (Template, error) {
-	ast, err := e.settings.Parse(string(text))
+	ast, err := e.settings.Compile(string(text))
 	if err != nil {
 		return nil, err
 	}
