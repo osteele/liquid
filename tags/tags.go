@@ -20,14 +20,14 @@ func AddStandardTags(c render.Config) {
 	loopTags := []string{"break", "continue", "cycle"}
 	c.AddTag("break", breakTag)
 	c.AddTag("continue", continueTag)
-	c.AddBlock("capture").Parser(captureTagParser)
-	c.AddBlock("case").Branch("when").Parser(caseTagParser)
+	c.AddBlock("capture").Compiler(captureTagParser)
+	c.AddBlock("case").Branch("when").Compiler(caseTagParser)
 	c.AddBlock("comment")
-	c.AddBlock("for").Governs(loopTags).Parser(loopTagParser)
-	c.AddBlock("if").Branch("else").Branch("elsif").Parser(ifTagParser(true))
+	c.AddBlock("for").Governs(loopTags).Compiler(loopTagParser)
+	c.AddBlock("if").Branch("else").Branch("elsif").Compiler(ifTagParser(true))
 	c.AddBlock("raw")
 	c.AddBlock("tablerow").Governs(loopTags)
-	c.AddBlock("unless").SameSyntaxAs("if").Parser(ifTagParser(false))
+	c.AddBlock("unless").SameSyntaxAs("if").Compiler(ifTagParser(false))
 }
 
 func assignTag(source string) (func(io.Writer, render.Context) error, error) {

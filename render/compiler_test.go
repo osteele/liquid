@@ -9,7 +9,7 @@ import (
 )
 
 func addCompilerTestTags(s Config) {
-	s.AddBlock("block").Parser(func(c BlockNode) (func(io.Writer, Context) error, error) {
+	s.AddBlock("block").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return nil, fmt.Errorf("block compiler error")
 	})
 }

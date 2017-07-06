@@ -5,48 +5,48 @@ import (
 	"io"
 )
 
-// BlockParser builds a renderer for the tag instance.
-type BlockParser func(BlockNode) (func(io.Writer, Context) error, error)
+// BlockCompiler builds a renderer for the tag instance.
+type BlockCompiler func(BlockNode) (func(io.Writer, Context) error, error)
 
-// blockDef tells the parser how to parse control tagc.
-type blockDef struct {
+// blockSyntax tells the parser how to parse a control tag.
+type blockSyntax struct {
 	name                  string
 	isBranchTag, isEndTag bool
-	syntaxModel           *blockDef
-	parent                *blockDef
-	parser                BlockParser
+	syntaxModel           *blockSyntax
+	parent                *blockSyntax
+	parser                BlockCompiler
 }
 
-func (c *blockDef) CanHaveParent(parent BlockSyntax) bool {
+func (c *blockSyntax) CanHaveParent(parent BlockSyntax) bool {
 	if parent == nil {
 		return false
 	}
-	p := parent.(*blockDef)
+	p := parent.(*blockSyntax)
 	if !c.isEndTag && p.syntaxModel != nil {
 		p = p.syntaxModel
 	}
 	return c.parent == p
 }
 
-func (c *blockDef) IsBlock() bool        { return true }
-func (c *blockDef) IsBlockEnd() bool     { return c.isEndTag }
-func (c *blockDef) IsBlockStart() bool   { return !c.isBranchTag && !c.isEndTag }
-func (c *blockDef) IsBranch() bool       { return c.isBranchTag }
-func (c *blockDef) RequiresParent() bool { return c.isBranchTag || c.isEndTag }
+func (c *blockSyntax) IsBlock() bool        { return true }
+func (c *blockSyntax) IsBlockEnd() bool     { return c.isEndTag }
+func (c *blockSyntax) IsBlockStart() bool   { return !c.isBranchTag && !c.isEndTag }
+func (c *blockSyntax) IsBranch() bool       { return c.isBranchTag }
+func (c *blockSyntax) RequiresParent() bool { return c.isBranchTag || c.isEndTag }
 
-func (c *blockDef) ParentTags() []string {
+func (c *blockSyntax) ParentTags() []string {
 	if c.parent == nil {
 		return []string{}
 	}
 	return []string{c.parent.name}
 }
-func (c *blockDef) TagName() string { return c.name }
+func (c *blockSyntax) TagName() string { return c.name }
 
-func (c Config) addBlockDef(ct *blockDef) {
+func (c Config) addBlockDef(ct *blockSyntax) {
 	c.blockDefs[ct.name] = ct
 }
 
-func (c Config) findBlockDef(name string) (*blockDef, bool) {
+func (c Config) findBlockDef(name string) (*blockSyntax, bool) {
 	ct, found := c.blockDefs[name]
 	return ct, found
 }
@@ -59,21 +59,21 @@ func (c Config) BlockSyntax(name string) (BlockSyntax, bool) {
 
 type blockDefBuilder struct {
 	cfg Config
-	tag *blockDef
+	tag *blockSyntax
 }
 
 // AddBlock defines a control tag and its matching end tag.
 func (c Config) AddBlock(name string) blockDefBuilder { // nolint: golint
-	ct := &blockDef{name: name}
+	ct := &blockSyntax{name: name}
 	c.addBlockDef(ct)
-	c.addBlockDef(&blockDef{name: "end" + name, isEndTag: true, parent: ct})
+	c.addBlockDef(&blockSyntax{name: "end" + name, isEndTag: true, parent: ct})
 	return blockDefBuilder{c, ct}
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
 // so long as it is not nested within any other control tag.
 func (b blockDefBuilder) Branch(name string) blockDefBuilder {
-	b.cfg.addBlockDef(&blockDef{name: name, isBranchTag: true, parent: b.tag})
+	b.cfg.addBlockDef(&blockSyntax{name: name, isBranchTag: true, parent: b.tag})
 	return b
 }
 
@@ -92,8 +92,8 @@ func (b blockDefBuilder) SameSyntaxAs(name string) blockDefBuilder {
 	return b
 }
 
-// Parser sets the parser for a control tag definition.
-func (b blockDefBuilder) Parser(fn BlockParser) {
+// Compiler sets the parser for a control tag definition.
+func (b blockDefBuilder) Compiler(fn BlockCompiler) {
 	b.tag.parser = fn
 }
 

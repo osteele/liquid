@@ -7,16 +7,16 @@ type Config struct {
 	// ExpressionConfig expression.Config
 	expression.Config
 	Filename  string
-	tags      map[string]TagDefinition
-	blockDefs map[string]*blockDef
+	tags      map[string]TagCompiler
+	blockDefs map[string]*blockSyntax
 }
 
 // NewConfig creates a new Settings.
 func NewConfig() Config {
 	s := Config{
 		Config:    expression.NewConfig(),
-		tags:      map[string]TagDefinition{},
-		blockDefs: map[string]*blockDef{},
+		tags:      map[string]TagCompiler{},
+		blockDefs: map[string]*blockSyntax{},
 	}
 	return s
 }
