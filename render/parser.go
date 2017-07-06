@@ -17,13 +17,13 @@ func parseErrorf(format string, a ...interface{}) ParseError {
 }
 
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
-func (s Config) Parse(source string) (ASTNode, error) {
+func (c Config) Parse(source string) (ASTNode, error) {
 	tokens := Scan(source, "")
-	return s.parseChunks(tokens)
+	return c.parseChunks(tokens)
 }
 
 // Parse creates an AST from a sequence of Chunks.
-func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
+func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		syntax BlockSyntax
@@ -31,7 +31,7 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 		ap     *[]ASTNode
 	}
 	var (
-		g         = s.Grammar()
+		g         = c.Grammar()
 		root      = &ASTSeq{}      // root of AST; will be returned
 		ap        = &root.Children // newly-constructed nodes are appended here
 		sd        BlockSyntax      // current block syntax definition
@@ -41,35 +41,35 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 		inComment = false
 		inRaw     = false
 	)
-	for _, c := range chunks {
+	for _, ch := range chunks {
 		switch {
 		// The parser needs to know about comment and raw, because tags inside
 		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
 		// TODO is this true?
 		case inComment:
-			if c.Type == TagChunkType && c.Name == "endcomment" {
+			if ch.Type == TagChunkType && ch.Name == "endcomment" {
 				inComment = false
 			}
 		case inRaw:
-			if c.Type == TagChunkType && c.Name == "endraw" {
+			if ch.Type == TagChunkType && ch.Name == "endraw" {
 				inRaw = false
 			} else {
-				rawTag.slices = append(rawTag.slices, c.Source)
+				rawTag.slices = append(rawTag.slices, ch.Source)
 			}
-		case c.Type == ObjChunkType:
-			expr, err := expression.Parse(c.Args)
+		case ch.Type == ObjChunkType:
+			expr, err := expression.Parse(ch.Args)
 			if err != nil {
 				return nil, err
 			}
-			*ap = append(*ap, &ASTObject{c, expr})
-		case c.Type == TextChunkType:
-			*ap = append(*ap, &ASTText{Chunk: c})
-		case c.Type == TagChunkType:
-			if cs, ok := g.BlockSyntax(c.Name); ok {
+			*ap = append(*ap, &ASTObject{ch, expr})
+		case ch.Type == TextChunkType:
+			*ap = append(*ap, &ASTText{Chunk: ch})
+		case ch.Type == TagChunkType:
+			if cs, ok := g.BlockSyntax(ch.Name); ok {
 				switch {
-				case c.Name == "comment":
+				case ch.Name == "comment":
 					inComment = true
-				case c.Name == "raw":
+				case ch.Name == "raw":
 					inRaw = true
 					rawTag = &ASTRaw{}
 					*ap = append(*ap, rawTag)
@@ -78,17 +78,17 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					if sd != nil {
 						suffix = "; immediate parent is " + sd.TagName()
 					}
-					return nil, parseErrorf("%s not inside %s%s", c.Name, strings.Join(cs.ParentTags(), " or "), suffix)
+					return nil, parseErrorf("%s not inside %s%s", ch.Name, strings.Join(cs.ParentTags(), " or "), suffix)
 				case cs.IsBlockStart():
 					push := func() {
 						stack = append(stack, frame{syntax: sd, node: bn, ap: ap})
-						sd, bn = cs, &ASTBlock{Chunk: c, syntax: cs}
+						sd, bn = cs, &ASTBlock{Chunk: ch, syntax: cs}
 						*ap = append(*ap, bn)
 					}
 					push()
 					ap = &bn.Body
 				case cs.IsBranch():
-					n := &ASTBlock{Chunk: c, syntax: cs}
+					n := &ASTBlock{Chunk: ch, syntax: cs}
 					bn.Branches = append(bn.Branches, n)
 					ap = &n.Body
 				case cs.IsBlockEnd():
@@ -101,14 +101,14 @@ func (s Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 				default:
 					panic("unexpected block type")
 				}
-			} else if td, ok := s.FindTagDefinition(c.Name); ok {
-				f, err := td(c.Args)
+			} else if td, ok := c.FindTagDefinition(ch.Name); ok {
+				f, err := td(ch.Args)
 				if err != nil {
 					return nil, err
 				}
-				*ap = append(*ap, &ASTFunctional{c, f})
+				*ap = append(*ap, &ASTFunctional{ch, f})
 			} else {
-				return nil, parseErrorf("unknown tag: %s", c.Name)
+				return nil, parseErrorf("unknown tag: %s", ch.Name)
 			}
 		}
 	}
