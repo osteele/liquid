@@ -16,8 +16,8 @@ type Context interface {
 	Evaluate(expr expression.Expression) (interface{}, error)
 	EvaluateString(source string) (interface{}, error)
 	EvaluateStatement(tag, source string) (interface{}, error)
+	ExpandTagArg() (string, error)
 	InnerString() (string, error)
-	ParseTagArgs() (string, error)
 	RenderChild(io.Writer, *ASTBlock) error
 	RenderChildren(io.Writer) error
 	RenderFile(string, map[string]interface{}) (string, error)
@@ -63,7 +63,7 @@ func (c renderContext) Get(name string) interface{} {
 	return c.ctx.bindings[name]
 }
 
-func (c renderContext) ParseTagArgs() (string, error) {
+func (c renderContext) ExpandTagArg() (string, error) {
 	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
 		p, err := c.ctx.config.Parse(args)

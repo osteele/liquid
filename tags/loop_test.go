@@ -54,10 +54,13 @@ var loopTests = []struct{ in, expected string }{
 
 	{`{% for a in array %}{% if a == 'second' %}{% break %}{% endif %}{{ a }}{% endfor %}`, "first"},
 	{`{% for a in array %}{% if a == 'second' %}{% continue %}{% endif %}{{ a }}.{% endfor %}`, "first.third."},
+
+	{`{% for a in hash %}{{ a }}{% endfor %}`, "a"},
 }
 
 var loopTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
+	"hash":  map[string]interface{}{"a": 1},
 }
 
 func TestLoopTag(t *testing.T) {

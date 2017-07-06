@@ -23,9 +23,18 @@ func addRenderTestTags(s Config) {
 		if err != nil {
 			return err
 		}
-		s := fmt.Sprint(v)
-		_, err = w.Write([]byte(s))
+		_, err = w.Write([]byte(fmt.Sprint(v)))
 		return err
+	})
+	s.AddTag("expand_arg", func(string) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			s, err := c.ExpandTagArg()
+			if err != nil {
+				return err
+			}
+			_, err = w.Write([]byte(s))
+			return err
+		}, nil
 	})
 	s.AddBlock("err2").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
@@ -41,6 +50,8 @@ var renderTests = []struct{ in, out string }{
 	{`{{ ar[1] }}`, "second"},
 	{`{% parse args %}{% endparse %}`, "args"},
 	{`{% eval x %}{% endeval %}`, "123"},
+	{`{% expand_arg x %}`, "x"},
+	{`{% expand_arg {{x}} %}`, "123"},
 }
 
 var renderErrorTests = []struct{ in, out string }{

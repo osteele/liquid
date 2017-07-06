@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-type drop interface {
-	ToLiquid() interface{}
-}
-
 // A TypeError is an error during type conversion.
 type TypeError string
 
@@ -20,15 +16,6 @@ func typeErrorf(format string, a ...interface{}) TypeError {
 	return TypeError(fmt.Sprintf(format, a...))
 }
 
-// ToLiquid converts an object to Liquid, if it implements the Drop interface.
-func ToLiquid(value interface{}) interface{} {
-	switch value := value.(type) {
-	case drop:
-		return value.ToLiquid()
-	default:
-		return value
-	}
-}
 
 var timeType = reflect.TypeOf(time.Now())
 

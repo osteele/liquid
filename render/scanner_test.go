@@ -57,7 +57,6 @@ func TestChunkScanner(t *testing.T) {
 
 	tokens = Scan("pre{% tag args %}mid{{ object }}post", "")
 	require.Equal(t, `[TextChunkType{"pre"} TagChunkType{Tag:"tag", Args:"args"} TextChunkType{"mid"} ObjChunkType{"object"} TextChunkType{"post"}]`, fmt.Sprint(tokens))
-	require.Equal(t, "- text: pre\n- args: args\n  tag: tag\n- text: mid\n- obj: object\n- text: post\n", MustYAML(tokens))
 
 	for i, test := range scannerCountTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
