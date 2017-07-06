@@ -66,9 +66,9 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			return &FunctionalNode{n.Chunk, f}, nil
+			return &TagNode{n.Chunk, f}, nil
 		}
-		return nil, parseErrorf("unknown tag: %s", n.Name)
+		return nil, compilationErrorf("unknown tag: %s", n.Name)
 	case *ASTText:
 		return &TextNode{n.Chunk}, nil
 	case *ASTObject:

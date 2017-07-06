@@ -23,10 +23,10 @@ type RawNode struct {
 	slices []string
 }
 
-// FunctionalNode renders itself via a render function that is created during parsing.
-type FunctionalNode struct {
+// TagNode renders itself via a render function that is created during parsing.
+type TagNode struct {
 	Chunk
-	render func(io.Writer, Context) error
+	renderer func(io.Writer, Context) error
 }
 
 // TextNode is a text chunk, that is rendered verbatim.

@@ -29,7 +29,7 @@ type Context interface {
 
 type renderContext struct {
 	ctx  nodeContext
-	node *FunctionalNode
+	node *TagNode
 	cn   *BlockNode
 }
 

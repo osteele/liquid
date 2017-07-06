@@ -26,8 +26,8 @@ func Render(node Node, w io.Writer, b map[string]interface{}, c Config) error {
 
 func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
 	switch n := node.(type) {
-	case *FunctionalNode:
-		return n.render(w, renderContext{ctx, n, nil})
+	case *TagNode:
+		return n.renderer(w, renderContext{ctx, n, nil})
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
