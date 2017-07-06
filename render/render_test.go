@@ -11,7 +11,7 @@ import (
 )
 
 func addRenderTestTags(s Config) {
-	s.AddBlock("parse").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
+	s.AddBlock("parse").Parser(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		a := c.Args
 		return func(w io.Writer, c Context) error {
 			_, err := w.Write([]byte(a))
@@ -36,7 +36,7 @@ func addRenderTestTags(s Config) {
 			return err
 		}, nil
 	})
-	s.AddBlock("err2").Parser(func(c ASTBlock) (func(io.Writer, Context) error, error) {
+	s.AddBlock("err2").Parser(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			return fmt.Errorf("stage 2 error")
 		}, nil

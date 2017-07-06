@@ -18,7 +18,7 @@ type Context interface {
 	EvaluateStatement(tag, source string) (interface{}, error)
 	ExpandTagArg() (string, error)
 	InnerString() (string, error)
-	RenderChild(io.Writer, *ASTBlock) error
+	RenderChild(io.Writer, *BlockNode) error
 	RenderChildren(io.Writer) error
 	RenderFile(string, map[string]interface{}) (string, error)
 	Set(name string, value interface{})
@@ -29,8 +29,8 @@ type Context interface {
 
 type renderContext struct {
 	ctx  nodeContext
-	node *ASTFunctional
-	cn   *ASTBlock
+	node *FunctionalNode
+	cn   *BlockNode
 }
 
 // Evaluate evaluates an expression within the template context.
@@ -81,8 +81,8 @@ func (c renderContext) ExpandTagArg() (string, error) {
 }
 
 // RenderChild renders a node.
-func (c renderContext) RenderChild(w io.Writer, b *ASTBlock) error {
-	return c.ctx.RenderASTSequence(w, b.Body)
+func (c renderContext) RenderChild(w io.Writer, b *BlockNode) error {
+	return c.ctx.RenderSequence(w, b.Body)
 }
 
 // RenderChildren renders the current node's children.
@@ -90,7 +90,7 @@ func (c renderContext) RenderChildren(w io.Writer) error {
 	if c.cn == nil {
 		return nil
 	}
-	return c.ctx.RenderASTSequence(w, c.cn.Body)
+	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 
 func (c renderContext) RenderFile(filename string, b map[string]interface{}) (string, error) {

@@ -19,32 +19,16 @@ func Errorf(format string, a ...interface{}) Error {
 	return Error(fmt.Sprintf(format, a...))
 }
 
-// Render renders the AST rooted at node to the writer.
-func Render(node ASTNode, w io.Writer, b map[string]interface{}, c Config) error {
+// Render renders the render tree.
+func Render(node Node, w io.Writer, b map[string]interface{}, c Config) error {
 	return renderNode(node, w, newNodeContext(b, c))
 }
 
-func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
+func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
 	switch n := node.(type) {
-	case *ASTSeq:
-		for _, c := range n.Children {
-			if err := renderNode(c, w, ctx); err != nil {
-				return err
-			}
-		}
-	case *ASTFunctional:
+	case *FunctionalNode:
 		return n.render(w, renderContext{ctx, n, nil})
-	case *ASTText:
-		_, err := w.Write([]byte(n.Source))
-		return err
-	case *ASTRaw:
-		for _, s := range n.slices {
-			_, err := w.Write([]byte(s))
-			if err != nil {
-				return err
-			}
-		}
-	case *ASTBlock:
+	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
 			return parseErrorf("unknown tag: %s", n.Name)
@@ -54,12 +38,28 @@ func renderNode(node ASTNode, w io.Writer, ctx nodeContext) error { // nolint: g
 			panic(parseErrorf("unset renderer for %v", n))
 		}
 		return renderer(w, renderContext{ctx, nil, n})
-	case *ASTObject:
+	case *RawNode:
+		for _, s := range n.slices {
+			_, err := w.Write([]byte(s))
+			if err != nil {
+				return err
+			}
+		}
+	case *ObjectNode:
 		value, err := ctx.Evaluate(n.expr)
 		if err != nil {
 			return parseErrorf("%s in %s", err, n.Source)
 		}
 		return writeObject(value, w)
+	case *SeqNode:
+		for _, c := range n.Children {
+			if err := renderNode(c, w, ctx); err != nil {
+				return err
+			}
+		}
+	case *TextNode:
+		_, err := w.Write([]byte(n.Source))
+		return err
 	default:
 		panic(parseErrorf("unknown node type %T", node))
 	}
@@ -91,7 +91,7 @@ func writeObject(value interface{}, w io.Writer) error {
 }
 
 // RenderASTSequence renders a sequence of nodes.
-func (c nodeContext) RenderASTSequence(w io.Writer, seq []ASTNode) error {
+func (c nodeContext) RenderSequence(w io.Writer, seq []Node) error {
 	for _, n := range seq {
 		if err := renderNode(n, w, c); err != nil {
 			return err

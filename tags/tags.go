@@ -37,7 +37,7 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 	}, nil
 }
 
-func captureTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
+func captureTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO verify syntax
 	varname := node.Args
 	return func(w io.Writer, ctx render.Context) error {
@@ -50,7 +50,7 @@ func captureTagParser(node render.ASTBlock) (func(io.Writer, render.Context) err
 	}, nil
 }
 
-func caseTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
+func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO parse error on non-empty node.Body
 	// TODO case can include an else
 	expr, err := expression.Parse(node.Args)
@@ -59,7 +59,7 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error,
 	}
 	type caseRec struct {
 		expr expression.Expression
-		node *render.ASTBlock
+		node *render.BlockNode
 	}
 	cases := []caseRec{}
 	for _, branch := range node.Branches {
@@ -87,11 +87,11 @@ func caseTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error,
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(render.ASTBlock) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
-	return func(node render.ASTBlock) (func(io.Writer, render.Context) error, error) {
+func ifTagParser(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+	return func(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
 			test expression.Expression
-			body *render.ASTBlock
+			body *render.BlockNode
 		}
 		expr, err := expression.Parse(node.Args)
 		if err != nil {

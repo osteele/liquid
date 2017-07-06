@@ -6,9 +6,9 @@ import (
 )
 
 // BlockParser builds a renderer for the tag instance.
-type BlockParser func(ASTBlock) (func(io.Writer, Context) error, error)
+type BlockParser func(BlockNode) (func(io.Writer, Context) error, error)
 
-// blockDef tells the parser how to parse control tags.
+// blockDef tells the parser how to parse control tagc.
 type blockDef struct {
 	name                  string
 	isBranchTag, isEndTag bool
@@ -42,38 +42,38 @@ func (c *blockDef) ParentTags() []string {
 }
 func (c *blockDef) TagName() string { return c.name }
 
-func (s Config) addBlockDef(ct *blockDef) {
-	s.blockDefs[ct.name] = ct
+func (c Config) addBlockDef(ct *blockDef) {
+	c.blockDefs[ct.name] = ct
 }
 
-func (s Config) findBlockDef(name string) (*blockDef, bool) {
-	ct, found := s.blockDefs[name]
+func (c Config) findBlockDef(name string) (*blockDef, bool) {
+	ct, found := c.blockDefs[name]
 	return ct, found
 }
 
 // BlockSyntax is part of the Grammar interface.
-func (s Config) BlockSyntax(name string) (BlockSyntax, bool) {
-	ct, found := s.blockDefs[name]
+func (c Config) BlockSyntax(name string) (BlockSyntax, bool) {
+	ct, found := c.blockDefs[name]
 	return ct, found
 }
 
 type blockDefBuilder struct {
-	s   Config
+	cfg Config
 	tag *blockDef
 }
 
 // AddBlock defines a control tag and its matching end tag.
-func (s Config) AddBlock(name string) blockDefBuilder { // nolint: golint
+func (c Config) AddBlock(name string) blockDefBuilder { // nolint: golint
 	ct := &blockDef{name: name}
-	s.addBlockDef(ct)
-	s.addBlockDef(&blockDef{name: "end" + name, isEndTag: true, parent: ct})
-	return blockDefBuilder{s, ct}
+	c.addBlockDef(ct)
+	c.addBlockDef(&blockDef{name: "end" + name, isEndTag: true, parent: ct})
+	return blockDefBuilder{c, ct}
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
-// so long as it is not nested within any other control tags.
+// so long as it is not nested within any other control tagc.
 func (b blockDefBuilder) Branch(name string) blockDefBuilder {
-	b.s.addBlockDef(&blockDef{name: name, isBranchTag: true, parent: b.tag})
+	b.cfg.addBlockDef(&blockDef{name: name, isBranchTag: true, parent: b.tag})
 	return b
 }
 
@@ -84,7 +84,7 @@ func (b blockDefBuilder) Governs(_ []string) blockDefBuilder {
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (b blockDefBuilder) SameSyntaxAs(name string) blockDefBuilder {
-	rt := b.s.blockDefs[name]
+	rt := b.cfg.blockDefs[name]
 	if rt == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}
@@ -99,7 +99,7 @@ func (b blockDefBuilder) Parser(fn BlockParser) {
 
 // Renderer sets the render action for a control tag definition.
 func (b blockDefBuilder) Renderer(fn func(io.Writer, Context) error) {
-	b.tag.parser = func(node ASTBlock) (func(io.Writer, Context) error, error) {
+	b.tag.parser = func(node BlockNode) (func(io.Writer, Context) error, error) {
 		// TODO parse error if there are arguments?
 		return fn, nil
 	}

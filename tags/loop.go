@@ -31,7 +31,7 @@ func parseLoopExpression(source string) (expression.Expression, error) {
 	return expr, nil
 }
 
-func loopTagParser(node render.ASTBlock) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
 	expr, err := parseLoopExpression(node.Args)
 	if err != nil {
 		return nil, err

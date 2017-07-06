@@ -8,13 +8,11 @@ import (
 
 // ASTNode is a node of an AST.
 type ASTNode interface {
-	// Render evaluates an AST node and writes the result to an io.Writer.
 }
 
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
 	Chunk
-	renderer func(io.Writer, Context) error
 	syntax      BlockSyntax
 	Body     []ASTNode
 	Branches []*ASTBlock
