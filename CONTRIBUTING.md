@@ -2,9 +2,8 @@
 
 Here's some ways to help:
 
-* Pick an un-checked item from [Status](https://github.com/osteele/liquid#status). Let me know you want to work on it – I have ideas for some of these.
-* Pick an item from one of the [project boards](https://github.com/osteele/liquid/projects).
-* Search the source for FIXME and TODO.
+* Select an item from one of the [project boards](https://github.com/osteele/liquid/projects). Convert it to an Issue and assign it to yourself, so we know you're working on it.
+* Search the sources for FIXME and TODO comments.
 * Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master). Once it reaches 90%, we can submit a PR to [Awesome Go](https://github.com/avelino/awesome-go/)!
 
 Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.

@@ -12,7 +12,7 @@
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
     - [Status](#status)
-    - [Other Differences](#other-differences)
+    - [Differences from Liquid](#differences-from-liquid)
     - [Install](#install)
     - [Contributing](#contributing)
     - [References](#references)
@@ -26,56 +26,16 @@
 
 ## Status
 
-This library is in early development. There's probably lots of corner cases, and the API (especially around defining tags) may still change.
+This library is at an early stage of development. There's probably lots of corner cases, and the API for defining tags may still change.
 
-- [ ] Basics
-  - [x] Literals
-    - [ ] String Escapes
-  - [x] Variables
-  - [x] Operators
-  - [x] Arrays
-  - [ ] Whitespace Control
-- [ ] Tags
-  - [x] Comment
-  - [ ] Control Flow
-    - [x] `if`/`else`/`elsif`
-    - [x] `unless`
-    - [x] `case`
-      - [x] `when`
-      - [ ] `when a or b`
-      - [ ] `else`
-  - [ ] Iteration
-      - [x] modifiers (`limit`, `reversed`, `offset`)
-      - [ ] range
-      - [x] `break`, `continue`
-      - [x] loop variables
-      - [ ] `tablerow`
-      - [ ] `cycle`
-  - [x] Include
-  - [x] Raw
-  - [x] Variables
-    - [x] Assign
-    - [x] Capture
-- [ ] Filters
-  - [ ] `sort_natural`, `uniq`, `escape`, `truncatewords`, `url_decode`, `url_encode`
-  - [x] everything else
-- [x] Drops
+## Differences from Liquid
 
-## Other Differences
+Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1) for a list of known differences from Liquid.
 
-These will change:
+Other differences, that might not change:
 
-* I haven't investigated the interaction of loop reversed, limit, and offset, and whether it matters which order they're specified, in Shopify Liquid.
-* This implementation doesn't parse very many date formats. I have any idea for this; talk to me if you're interested in implementing it.
-* Identifiers can include hyphens.
-* `contains` isn't implemented on hashes.
-* `contains` doesn't stringify its argument.
-* The `nil` constant isn't implemented.
-
-These might not:
-
-* This parser accepts parentheses in places where Shopify Liquid does not.
-* `else` and `elsif` work inside of `unless`
+* This implementation is probably more liberal in where it accepts parentheses.
+* Two hashes with the same keys and values, or two drops that return deeply equal hashes, are equal for purposes of `uniq`. I don't know if it's practical to fix this.
 
 ## Install
 
