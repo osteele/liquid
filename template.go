@@ -6,6 +6,15 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
+// A Template renders a template according to scope.
+type Template interface {
+	// Render executes the template with the specified bindings.
+	Render(Bindings) ([]byte, error)
+	// RenderString is a convenience wrapper for Render, that has string input and output.
+	RenderString(Bindings) (string, error)
+	SetSourcePath(string)
+}
+
 type template struct {
 	root   render.Node
 	config *render.Config

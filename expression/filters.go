@@ -23,16 +23,8 @@ func (e UndefinedFilter) Error() string {
 
 type valueFn func(Context) interface{}
 
-type filterDictionary struct {
-	filters map[string]interface{}
-}
-
-func newFilterDictionary() filterDictionary {
-	return filterDictionary{map[string]interface{}{}}
-}
-
 // AddFilter adds a filter to the filter dictionary.
-func (d *filterDictionary) AddFilter(name string, fn interface{}) {
+func (c *Config) AddFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
@@ -44,10 +36,10 @@ func (d *filterDictionary) AddFilter(name string, fn interface{}) {
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
-	if len(d.filters) == 0 {
-		d.filters = make(map[string]interface{})
+	if len(c.filters) == 0 {
+		c.filters = make(map[string]interface{})
 	}
-	d.filters[name] = fn
+	c.filters[name] = fn
 }
 
 var closureType = reflect.TypeOf(closure{})

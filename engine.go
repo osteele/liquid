@@ -8,19 +8,43 @@ import (
 	"github.com/osteele/liquid/tags"
 )
 
-type engine struct{ settings render.Config }
+// An Engine parses template source into renderable text.
+//
+// An engine can be configured with additional filters and tags.
+//
+// Filters
+//
+// RegisterFilter defines a Liquid filter.
+//
+// A filter is any function that takes at least one input, and returns one or two outputs.
+// If it returns two outputs, the second must be an error.
+type Engine interface {
+	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
+	RegisterFilter(name string, fn interface{})
+	// RegisterTag defines a tag function e.g. {% tag %}.
+	RegisterTag(string, Renderer)
+	RegisterBlock(string, Renderer)
+
+	ParseTemplate([]byte) (Template, error)
+	// ParseAndRender parses and then renders the template.
+	ParseAndRender([]byte, Bindings) ([]byte, error)
+	// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
+	ParseAndRenderString(string, Bindings) (string, error)
+}
+
+type engine struct{ cfg render.Config }
 
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
 	e := engine{render.NewConfig()}
-	filters.AddStandardFilters(&e.settings.Config.Config)
-	tags.AddStandardTags(e.settings)
+	filters.AddStandardFilters(&e.cfg.Config.Config)
+	tags.AddStandardTags(e.cfg)
 	return e
 }
 
 // RegisterBlock is in the Engine interface.
 func (e engine) RegisterBlock(name string, td Renderer) {
-	e.settings.AddBlock(name).Renderer(func(w io.Writer, ctx render.Context) error {
+	e.cfg.AddBlock(name).Renderer(func(w io.Writer, ctx render.Context) error {
 		s, err := td(ctx)
 		if err != nil {
 			return err
@@ -32,14 +56,14 @@ func (e engine) RegisterBlock(name string, td Renderer) {
 
 // RegisterFilter is in the Engine interface.
 func (e engine) RegisterFilter(name string, fn interface{}) {
-	e.settings.AddFilter(name, fn)
+	e.cfg.AddFilter(name, fn)
 }
 
 // RegisterTag is in the Engine interface.
 func (e engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
-	e.settings.AddTag(name, func(_ string) (func(io.Writer, render.Context) error, error) {
+	e.cfg.AddTag(name, func(_ string) (func(io.Writer, render.Context) error, error) {
 		return func(w io.Writer, ctx render.Context) error {
 			s, err := td(ctx)
 			if err != nil {
@@ -53,11 +77,11 @@ func (e engine) RegisterTag(name string, td Renderer) {
 
 // ParseTemplate is in the Engine interface.
 func (e engine) ParseTemplate(text []byte) (Template, error) {
-	ast, err := e.settings.Compile(string(text))
+	ast, err := e.cfg.Compile(string(text))
 	if err != nil {
 		return nil, err
 	}
-	return &template{ast, &e.settings}, nil
+	return &template{ast, &e.cfg}, nil
 }
 
 // ParseAndRender is in the Engine interface.
