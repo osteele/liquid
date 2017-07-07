@@ -15,13 +15,17 @@ import (
 
 	"github.com/jeffjen/datefmt"
 	"github.com/osteele/liquid/evaluator"
-	"github.com/osteele/liquid/expression"
 )
 
+// A FilterDictionary holds filters.
+type FilterDictionary interface {
+	AddFilter(string, interface{})
+}
+
 // AddStandardFilters defines the standard Liquid filters.
-func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
+func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	// values
-	cfg.AddFilter("default", func(value, defaultValue interface{}) interface{} {
+	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || evaluator.IsEmpty(value) {
 			value = defaultValue
 		}
@@ -29,7 +33,7 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 	})
 
 	// dates
-	cfg.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
+	fd.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
 		form, ok := format.(string)
 		if !ok {
 			form = "%a, %b %d, %y"
@@ -40,7 +44,7 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 	})
 
 	// arrays
-	cfg.AddFilter("compact", func(array []interface{}) interface{} {
+	fd.AddFilter("compact", func(array []interface{}) interface{} {
 		out := []interface{}{}
 		for _, item := range array {
 			if item != nil {
@@ -49,25 +53,25 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 		}
 		return out
 	})
-	cfg.AddFilter("join", joinFilter)
-	cfg.AddFilter("map", func(array []map[string]interface{}, key string) interface{} {
+	fd.AddFilter("join", joinFilter)
+	fd.AddFilter("map", func(array []map[string]interface{}, key string) interface{} {
 		out := []interface{}{}
 		for _, obj := range array {
 			out = append(out, obj[key])
 		}
 		return out
 	})
-	cfg.AddFilter("reverse", reverseFilter)
-	cfg.AddFilter("sort", sortFilter)
+	fd.AddFilter("reverse", reverseFilter)
+	fd.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	cfg.AddFilter("first", func(array []interface{}) interface{} {
+	fd.AddFilter("first", func(array []interface{}) interface{} {
 		if len(array) == 0 {
 			return nil
 		}
 		return array[0]
 	})
-	cfg.AddFilter("last", func(array []interface{}) interface{} {
+	fd.AddFilter("last", func(array []interface{}) interface{} {
 		if len(array) == 0 {
 			return nil
 		}
@@ -75,20 +79,20 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 	})
 
 	// numbers
-	cfg.AddFilter("abs", math.Abs)
-	cfg.AddFilter("ceil", math.Ceil)
-	cfg.AddFilter("floor", math.Floor)
-	cfg.AddFilter("modulo", math.Mod)
-	cfg.AddFilter("minus", func(a, b float64) float64 {
+	fd.AddFilter("abs", math.Abs)
+	fd.AddFilter("ceil", math.Ceil)
+	fd.AddFilter("floor", math.Floor)
+	fd.AddFilter("modulo", math.Mod)
+	fd.AddFilter("minus", func(a, b float64) float64 {
 		return a - b
 	})
-	cfg.AddFilter("plus", func(a, b float64) float64 {
+	fd.AddFilter("plus", func(a, b float64) float64 {
 		return a + b
 	})
-	cfg.AddFilter("times", func(a, b float64) float64 {
+	fd.AddFilter("times", func(a, b float64) float64 {
 		return a * b
 	})
-	cfg.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
+	fd.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
 		switch bt := b.(type) {
 		case int, int16, int32, int64:
 			return int(a) / bt.(int)
@@ -98,7 +102,7 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 			return nil
 		}
 	})
-	cfg.AddFilter("round", func(n float64, places interface{}) float64 {
+	fd.AddFilter("round", func(n float64, places interface{}) float64 {
 		pl, ok := places.(int)
 		if !ok {
 			pl = 0
@@ -108,45 +112,45 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 	})
 
 	// sequences
-	cfg.AddFilter("size", evaluator.Length)
+	fd.AddFilter("size", evaluator.Length)
 
 	// strings
-	cfg.AddFilter("append", func(s, suffix string) string {
+	fd.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
-	cfg.AddFilter("capitalize", func(s, suffix string) string {
+	fd.AddFilter("capitalize", func(s, suffix string) string {
 		if len(s) < 1 {
 			return s
 		}
 		return strings.ToUpper(s[:1]) + s[1:]
 	})
-	cfg.AddFilter("downcase", func(s, suffix string) string {
+	fd.AddFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
 	})
-	cfg.AddFilter("escape", html.EscapeString)
-	cfg.AddFilter("escape_once", func(s, suffix string) string {
+	fd.AddFilter("escape", html.EscapeString)
+	fd.AddFilter("escape_once", func(s, suffix string) string {
 		return html.EscapeString(html.UnescapeString(s))
 	})
 	// TODO test case for this
-	cfg.AddFilter("newline_to_br", func(s string) string {
+	fd.AddFilter("newline_to_br", func(s string) string {
 		return strings.Replace(s, "\n", "<br />", -1)
 	})
-	cfg.AddFilter("prepend", func(s, prefix string) string {
+	fd.AddFilter("prepend", func(s, prefix string) string {
 		return prefix + s
 	})
-	cfg.AddFilter("remove", func(s, old string) string {
+	fd.AddFilter("remove", func(s, old string) string {
 		return strings.Replace(s, old, "", -1)
 	})
-	cfg.AddFilter("remove_first", func(s, old string) string {
+	fd.AddFilter("remove_first", func(s, old string) string {
 		return strings.Replace(s, old, "", 1)
 	})
-	cfg.AddFilter("replace", func(s, old, new string) string {
+	fd.AddFilter("replace", func(s, old, new string) string {
 		return strings.Replace(s, old, new, -1)
 	})
-	cfg.AddFilter("replace_first", func(s, old, new string) string {
+	fd.AddFilter("replace_first", func(s, old, new string) string {
 		return strings.Replace(s, old, new, 1)
 	})
-	cfg.AddFilter("slice", func(s string, start int, length interface{}) string {
+	fd.AddFilter("slice", func(s string, start int, length interface{}) string {
 		// runes aren't bytes; don't use slice
 		n, ok := length.(int)
 		if !ok {
@@ -158,23 +162,23 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 		p := regexp.MustCompile(fmt.Sprintf(`^.{%d}(.{0,%d}).*$`, start, n))
 		return p.ReplaceAllString(s, "$1")
 	})
-	cfg.AddFilter("split", splitFilter)
-	cfg.AddFilter("strip_html", func(s string) string {
+	fd.AddFilter("split", splitFilter)
+	fd.AddFilter("strip_html", func(s string) string {
 		// TODO this probably isn't sufficient
 		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
 	})
 	// TODO test case for this
-	cfg.AddFilter("strip_newlines", func(s string) string {
+	fd.AddFilter("strip_newlines", func(s string) string {
 		return strings.Replace(s, "\n", "", -1)
 	})
-	cfg.AddFilter("strip", strings.TrimSpace)
-	cfg.AddFilter("lstrip", func(s string) string {
+	fd.AddFilter("strip", strings.TrimSpace)
+	fd.AddFilter("lstrip", func(s string) string {
 		return strings.TrimLeftFunc(s, unicode.IsSpace)
 	})
-	cfg.AddFilter("rstrip", func(s string) string {
+	fd.AddFilter("rstrip", func(s string) string {
 		return strings.TrimRightFunc(s, unicode.IsSpace)
 	})
-	cfg.AddFilter("truncate", func(s string, n int, ellipsis interface{}) string {
+	fd.AddFilter("truncate", func(s string, n int, ellipsis interface{}) string {
 		// runes aren't bytes; don't use slice
 		el, ok := ellipsis.(string)
 		if !ok {
@@ -183,20 +187,20 @@ func AddStandardFilters(cfg *expression.Config) { // nolint: gocyclo
 		p := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
 		return p.ReplaceAllString(s, `$1`+el)
 	})
-	cfg.AddFilter("upcase", func(s, suffix string) string {
+	fd.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)
 	})
 
 	// debugging extensions
 	// inspect is from Jekyll
-	cfg.AddFilter("inspect", func(value interface{}) string {
+	fd.AddFilter("inspect", func(value interface{}) string {
 		s, err := json.Marshal(value)
 		if err != nil {
 			return fmt.Sprintf("%#v", value)
 		}
 		return string(s)
 	})
-	cfg.AddFilter("type", func(value interface{}) string {
+	fd.AddFilter("type", func(value interface{}) string {
 		return reflect.TypeOf(value).String()
 	})
 }

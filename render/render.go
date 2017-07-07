@@ -28,7 +28,7 @@ func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) error
 func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
 	switch n := node.(type) {
 	case *TagNode:
-		return n.renderer(w, renderContext{ctx, n, nil})
+		return n.renderer(w, rendererContext{ctx, n, nil})
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
@@ -38,7 +38,7 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 		if renderer == nil {
 			panic(Errorf("unset renderer for %v", n))
 		}
-		return renderer(w, renderContext{ctx, nil, n})
+		return renderer(w, rendererContext{ctx, nil, n})
 	case *RawNode:
 		for _, s := range n.slices {
 			_, err := w.Write([]byte(s))

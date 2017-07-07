@@ -2,13 +2,13 @@ package parser
 
 import "github.com/osteele/liquid/expression"
 
-// // Config holds configuration information for parsing and rendering.
+// A Config holds configuration information for parsing and rendering.
 type Config struct {
 	expression.Config
 	Grammar Grammar
 }
 
-// NewConfig creates a new Settings.
+// NewConfig creates a parser Config.
 func NewConfig() Config {
 	return Config{}
 }

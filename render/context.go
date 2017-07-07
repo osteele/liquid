@@ -27,23 +27,23 @@ type Context interface {
 	TagName() string
 }
 
-type renderContext struct {
+type rendererContext struct {
 	ctx  nodeContext
 	node *TagNode
 	cn   *BlockNode
 }
 
 // Evaluate evaluates an expression within the template context.
-func (c renderContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
+func (c rendererContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
 }
 
-func (c renderContext) EvaluateStatement(tag, source string) (interface{}, error) {
+func (c rendererContext) EvaluateStatement(tag, source string) (interface{}, error) {
 	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
 }
 
 // EvaluateString evaluates an expression within the template context.
-func (c renderContext) EvaluateString(source string) (out interface{}, err error) {
+func (c rendererContext) EvaluateString(source string) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
@@ -59,11 +59,11 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 }
 
 // Get gets a variable value within an evaluation context.
-func (c renderContext) Get(name string) interface{} {
+func (c rendererContext) Get(name string) interface{} {
 	return c.ctx.bindings[name]
 }
 
-func (c renderContext) ExpandTagArg() (string, error) {
+func (c rendererContext) ExpandTagArg() (string, error) {
 	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
 		p, err := c.ctx.config.Compile(args)
@@ -81,19 +81,19 @@ func (c renderContext) ExpandTagArg() (string, error) {
 }
 
 // RenderChild renders a node.
-func (c renderContext) RenderChild(w io.Writer, b *BlockNode) error {
+func (c rendererContext) RenderChild(w io.Writer, b *BlockNode) error {
 	return c.ctx.RenderSequence(w, b.Body)
 }
 
 // RenderChildren renders the current node's children.
-func (c renderContext) RenderChildren(w io.Writer) error {
+func (c rendererContext) RenderChildren(w io.Writer) error {
 	if c.cn == nil {
 		return nil
 	}
 	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 
-func (c renderContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
+func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
 	source, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return "", err
@@ -114,7 +114,7 @@ func (c renderContext) RenderFile(filename string, b map[string]interface{}) (st
 }
 
 // InnerString renders the children to a string.
-func (c renderContext) InnerString() (string, error) {
+func (c rendererContext) InnerString() (string, error) {
 	buf := new(bytes.Buffer)
 	if err := c.RenderChildren(buf); err != nil {
 		return "", err
@@ -123,15 +123,15 @@ func (c renderContext) InnerString() (string, error) {
 }
 
 // Set sets a variable value from an evaluation context.
-func (c renderContext) Set(name string, value interface{}) {
+func (c rendererContext) Set(name string, value interface{}) {
 	c.ctx.bindings[name] = value
 }
 
-func (c renderContext) SourceFile() string {
+func (c rendererContext) SourceFile() string {
 	return c.ctx.config.Filename
 }
 
-func (c renderContext) TagArgs() string {
+func (c rendererContext) TagArgs() string {
 	switch {
 	case c.node != nil:
 		return c.node.Chunk.Args
@@ -142,7 +142,7 @@ func (c renderContext) TagArgs() string {
 	}
 }
 
-func (c renderContext) TagName() string {
+func (c rendererContext) TagName() string {
 	switch {
 	case c.node != nil:
 		return c.node.Chunk.Name
