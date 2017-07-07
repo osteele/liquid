@@ -23,7 +23,7 @@ func init() {
 %type<filter_params> filter_params
 %type<loopmods> loop_modifiers
 %token <val> LITERAL
-%token <name> IDENTIFIER KEYWORD
+%token <name> IDENTIFIER KEYWORD PROPERTY
 %token ASSIGN LOOP
 %token EQ NEQ GE LE FOR IN AND OR CONTAINS
 %left '.' '|'
@@ -83,7 +83,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 expr:
   LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
-| expr '.' IDENTIFIER { $$ = makeObjectPropertyExpr($1, $3) }
+| expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
 | '(' cond ')' { $$ = $2 }
 ;

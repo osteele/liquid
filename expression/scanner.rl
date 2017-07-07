@@ -40,7 +40,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			out.val = lex.token() == "true"
 			fbreak;
 		}
-		action Ident {
+		action Identifier {
 			tok = IDENTIFIER
 			out.name = lex.token()
 			fbreak;
@@ -71,10 +71,9 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
-		# TODO this allows medial '-' because some themes allow it in properties.
-		# Is this a general feature of Liquid identifiers, or is it limited to
-		# property names?
-		ident = (alpha | '_') . (alnum | '_' | '-')* ;
+		identifier = (alpha | '_') + ;
+		# TODO what can a property name contain?
+		property = '.' (alnum | '_' | '-')+ ;
 		int = '-'? digit+ ;
 		float = '-'? (digit+ '.' digit* | '.' digit+) ;
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
@@ -86,6 +85,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			float => Float;
 			string => String;
 			("true" | "false") => Bool;
+			"nil" => { tok = LITERAL; out.val = nil; fbreak; };
 			"==" => { tok = EQ; fbreak; };
 			"!=" => { tok = NEQ; fbreak; };
 			">=" => { tok = GE; fbreak; };
@@ -95,8 +95,9 @@ func (lex *lexer) Lex(out *yySymType) int {
 			"contains" => { tok = CONTAINS; fbreak; };
 			"for" => { tok = FOR; fbreak; };
 			"in" => { tok = IN; fbreak; };
-			ident ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
-			ident => Ident;
+			identifier ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
+			identifier => Identifier;
+			property => { tok = PROPERTY; out.name = string(lex.data[lex.ts+1:lex.te]); fbreak; };
 			space+;
 			any => { tok = int(lex.data[lex.ts]); fbreak; };
 		*|;
