@@ -1,4 +1,4 @@
-package render
+package parser
 
 // Grammar supplies the parser with syntax information about blocks.
 type Grammar interface {
@@ -18,4 +18,4 @@ type BlockSyntax interface {
 }
 
 // Grammar returns a configuration's grammar.
-func (c *Config) Grammar() Grammar { return c }
+// func (c *Config) Grammar() Grammar { return c }

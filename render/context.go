@@ -55,7 +55,7 @@ func (c renderContext) EvaluateString(source string) (out interface{}, err error
 			}
 		}
 	}()
-	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.config.Config))
+	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.config.Config.Config))
 }
 
 // Get gets a variable value within an evaluation context.

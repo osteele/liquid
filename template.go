@@ -7,14 +7,14 @@ import (
 )
 
 type template struct {
-	ast    render.ASTNode
-	config render.Config
+	root   render.Node
+	config *render.Config
 }
 
 // Render executes the template within the bindings environment.
-func (t *template) Render(b Bindings) ([]byte, error) {
+func (t *template) Render(vars Bindings) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := render.Render(t.ast, buf, b, t.config)
+	err := render.Render(t.root, buf, vars, *t.config)
 	if err != nil {
 		return nil, err
 	}

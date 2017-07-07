@@ -3,6 +3,8 @@ package render
 import (
 	"fmt"
 	"io"
+
+	"github.com/osteele/liquid/parser"
 )
 
 // BlockCompiler builds a renderer for the tag instance.
@@ -17,7 +19,7 @@ type blockSyntax struct {
 	parser                BlockCompiler
 }
 
-func (c *blockSyntax) CanHaveParent(parent BlockSyntax) bool {
+func (c *blockSyntax) CanHaveParent(parent parser.BlockSyntax) bool {
 	if parent == nil {
 		return false
 	}
@@ -52,7 +54,7 @@ func (c Config) findBlockDef(name string) (*blockSyntax, bool) {
 }
 
 // BlockSyntax is part of the Grammar interface.
-func (c Config) BlockSyntax(name string) (BlockSyntax, bool) {
+func (c Config) BlockSyntax(name string) (parser.BlockSyntax, bool) {
 	ct, found := c.blockDefs[name]
 	return ct, found
 }

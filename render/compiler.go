@@ -2,6 +2,8 @@ package render
 
 import (
 	"fmt"
+
+	"github.com/osteele/liquid/parser"
 )
 
 // A CompilationError is a parse error during template compilation.
@@ -14,7 +16,7 @@ func compilationErrorf(format string, a ...interface{}) CompilationError {
 }
 
 // Compile parses a source template. It returns an AST root, that can be evaluated.
-func (c Config) Compile(source string) (ASTNode, error) {
+func (c Config) Compile(source string) (parser.ASTNode, error) {
 	root, err := c.Parse(source)
 	if err != nil {
 		return nil, err
@@ -23,9 +25,9 @@ func (c Config) Compile(source string) (ASTNode, error) {
 }
 
 // nolint: gocyclo
-func (c Config) compileNode(n ASTNode) (Node, error) {
+func (c Config) compileNode(n parser.ASTNode) (Node, error) {
 	switch n := n.(type) {
-	case *ASTBlock:
+	case *parser.ASTBlock:
 		body, err := c.compileNodes(n.Body)
 		if err != nil {
 			return nil, err
@@ -52,15 +54,15 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 			node.renderer = r
 		}
 		return &node, nil
-	case *ASTRaw:
-		return &RawNode{n.slices}, nil
-	case *ASTSeq:
+	case *parser.ASTRaw:
+		return &RawNode{n.Slices}, nil
+	case *parser.ASTSeq:
 		children, err := c.compileNodes(n.Children)
 		if err != nil {
 			return nil, err
 		}
 		return &SeqNode{children}, nil
-	case *ASTTag:
+	case *parser.ASTTag:
 		if td, ok := c.FindTagDefinition(n.Name); ok {
 			f, err := td(n.Args)
 			if err != nil {
@@ -69,16 +71,16 @@ func (c Config) compileNode(n ASTNode) (Node, error) {
 			return &TagNode{n.Chunk, f}, nil
 		}
 		return nil, compilationErrorf("unknown tag: %s", n.Name)
-	case *ASTText:
+	case *parser.ASTText:
 		return &TextNode{n.Chunk}, nil
-	case *ASTObject:
-		return &ObjectNode{n.Chunk, n.expr}, nil
+	case *parser.ASTObject:
+		return &ObjectNode{n.Chunk, n.Expr}, nil
 	default:
 		panic(fmt.Errorf("un-compilable node type %T", n))
 	}
 }
 
-func (c Config) compileBlocks(blocks []*ASTBlock) ([]*BlockNode, error) {
+func (c Config) compileBlocks(blocks []*parser.ASTBlock) ([]*BlockNode, error) {
 	out := make([]*BlockNode, 0, len(blocks))
 	for _, child := range blocks {
 		compiled, err := c.compileNode(child)
@@ -90,7 +92,7 @@ func (c Config) compileBlocks(blocks []*ASTBlock) ([]*BlockNode, error) {
 	return out, nil
 }
 
-func (c Config) compileNodes(nodes []ASTNode) ([]Node, error) {
+func (c Config) compileNodes(nodes []parser.ASTNode) ([]Node, error) {
 	out := make([]Node, 0, len(nodes))
 	for _, child := range nodes {
 		compiled, err := c.compileNode(child)

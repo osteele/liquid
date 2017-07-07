@@ -13,7 +13,7 @@ type engine struct{ settings render.Config }
 // NewEngine returns a new template engine.
 func NewEngine() Engine {
 	e := engine{render.NewConfig()}
-	filters.AddStandardFilters(e.settings.Config)
+	filters.AddStandardFilters(&e.settings.Config.Config)
 	tags.AddStandardTags(e.settings)
 	return e
 }
@@ -57,7 +57,7 @@ func (e engine) ParseTemplate(text []byte) (Template, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &template{ast, e.settings}, nil
+	return &template{ast, &e.settings}, nil
 }
 
 // ParseAndRender is in the Engine interface.

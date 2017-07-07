@@ -1,4 +1,4 @@
-package render
+package parser
 
 import (
 	"github.com/osteele/liquid/expression"
@@ -17,7 +17,7 @@ type ASTBlock struct {
 
 // ASTRaw holds the text between the start and end of a raw tag.
 type ASTRaw struct {
-	slices []string
+	Slices []string
 }
 
 // ASTTag is a tag.
@@ -33,7 +33,7 @@ type ASTText struct {
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
 	Chunk
-	expr expression.Expression
+	Expr expression.Expression
 }
 
 // ASTSeq is a sequence of nodes.

@@ -3,7 +3,7 @@ Package liquid is a pure Go implementation of Shopify Liquid templates, for use 
 
 See the project README https://github.com/osteele/liquid for additional information and implementation status.
 
-Note that the API for this package is not frozen. It is *especiallY* likely that subpackage APIs will
+Note that the API for this package is not frozen. It is *especially* likely that subpackage APIs will
 change drastically. Don't use anything except from a subpackage except render.Context.
 */
 package liquid
@@ -11,6 +11,7 @@ package liquid
 import (
 	"github.com/osteele/liquid/evaluator"
 	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 )
 
@@ -71,9 +72,9 @@ func IsTemplateError(err error) bool {
 		return true
 	case expression.ParseError:
 		return true
-	case render.CompilationError:
+	case parser.ParseError:
 		return true
-	case render.ParseError:
+	case render.CompilationError:
 		return true
 	case render.Error:
 		return true

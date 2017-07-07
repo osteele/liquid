@@ -1,9 +1,6 @@
 # Go Liquid Template Parser
 
-[![Build Status](https://travis-ci.org/osteele/liquid.svg?branch=master)](https://travis-ci.org/osteele/liquid)
-[![Go Report Card](https://goreportcard.com/badge/github.com/osteele/liquid)](https://goreportcard.com/report/github.com/osteele/liquid)
-[![GoDoc](https://godoc.org/github.com/osteele/liquid?status.svg)](http://godoc.org/github.com/osteele/liquid)
-[![Coverage Status](https://coveralls.io/repos/github/osteele/liquid/badge.svg?branch=master)](https://coveralls.io/github/osteele/liquid?branch=master)
+ [![][travis-svg]][travis-url] [![][coveralls-svg]][coveralls-url] [![][go-report-card-svg]][go-report-card-url] [![][godoc-svg]][godoc-url] [![][license-svg]][license-url]
 
 > “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
 
@@ -127,3 +124,18 @@ The [original Liquid engine](https://shopify.github.io/liquid), of course, for t
 ## License
 
 MIT License
+
+[coveralls-url]: https://coveralls.io/r/osteele/liquid?branch=master
+[coveralls-svg]: https://img.shields.io/coveralls/osteele/liquid.svg?branch=master
+
+[godoc-url]: https://godoc.org/github.com/osteele/liquid
+[godoc-svg]: https://godoc.org/github.com/osteele/liquid?status.svg
+
+[license-url]: https://github.com/osteele/liquid/blob/master/LICENSE
+[license-svg]: https://img.shields.io/badge/license-MIT-blue.svg
+
+[go-report-card-url]: https://goreportcard.com/report/github.com/osteele/liquid
+[go-report-card-svg]: https://goreportcard.com/badge/github.com/osteele/liquid
+
+[travis-url]: https://travis-ci.org/osteele/liquid
+[travis-svg]: https://img.shields.io/travis/osteele/liquid.svg?branch=master

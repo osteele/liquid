@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -15,7 +14,6 @@ func Call(fn reflect.Value, args []interface{}) (interface{}, error) {
 	if len(outs) > 1 && outs[1].Interface() != nil {
 		switch e := outs[1].Interface().(type) {
 		case error:
-			fmt.Println("error")
 			return nil, e
 		default:
 			panic(e)

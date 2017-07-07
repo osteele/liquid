@@ -1,4 +1,4 @@
-package render
+package parser
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 		ap     *[]ASTNode
 	}
 	var (
-		g         = c.Grammar()
+		g         = c.Grammar
 		root      = &ASTSeq{}      // root of AST; will be returned
 		ap        = &root.Children // newly-constructed nodes are appended here
 		sd        BlockSyntax      // current block syntax definition
@@ -54,7 +54,7 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 			if ch.Type == TagChunkType && ch.Name == "endraw" {
 				inRaw = false
 			} else {
-				rawTag.slices = append(rawTag.slices, ch.Source)
+				rawTag.Slices = append(rawTag.Slices, ch.Source)
 			}
 		case ch.Type == ObjChunkType:
 			expr, err := expression.Parse(ch.Args)
@@ -99,7 +99,7 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					}
 					pop()
 				default:
-					panic("unexpected block type")
+					panic(fmt.Errorf("block type %q", ch.Name))
 				}
 			} else {
 				*ap = append(*ap, &ASTTag{ch})

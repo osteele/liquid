@@ -11,14 +11,15 @@ type nodeContext struct {
 }
 
 // newNodeContext creates a new evaluation context.
-func newNodeContext(scope map[string]interface{}, s Config) nodeContext {
+func newNodeContext(scope map[string]interface{}, c Config) nodeContext {
 	// The assign tag modifies the scope, so make a copy first.
 	// TODO this isn't really the right place for this.
 	vars := map[string]interface{}{}
 	for k, v := range scope {
 		vars[k] = v
 	}
-	return nodeContext{vars, s}
+	// fmt.Println("new", c.Config)
+	return nodeContext{vars, c}
 }
 
 // Clone makes a copy of a context, with copied bindings.
@@ -43,5 +44,5 @@ func (c nodeContext) Evaluate(expr expression.Expression) (out interface{}, err 
 			}
 		}
 	}()
-	return expr.Evaluate(expression.NewContext(c.bindings, c.config.Config))
+	return expr.Evaluate(expression.NewContext(c.bindings, c.config.Config.Config))
 }

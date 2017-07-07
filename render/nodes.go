@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/parser"
 )
 
 // Node is a node of the render tree.
@@ -12,7 +13,7 @@ type Node interface {
 
 // BlockNode represents a {% tag %}…{% endtag %}.
 type BlockNode struct {
-	Chunk
+	parser.Chunk
 	renderer func(io.Writer, Context) error
 	Body     []Node
 	Branches []*BlockNode
@@ -25,18 +26,18 @@ type RawNode struct {
 
 // TagNode renders itself via a render function that is created during parsing.
 type TagNode struct {
-	Chunk
+	parser.Chunk
 	renderer func(io.Writer, Context) error
 }
 
 // TextNode is a text chunk, that is rendered verbatim.
 type TextNode struct {
-	Chunk
+	parser.Chunk
 }
 
 // ObjectNode is an {{ object }} object.
 type ObjectNode struct {
-	Chunk
+	parser.Chunk
 	expr expression.Expression
 }
 

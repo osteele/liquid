@@ -44,6 +44,9 @@ func (d *filterDictionary) AddFilter(name string, fn interface{}) {
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
+	if len(d.filters) == 0 {
+		d.filters = make(map[string]interface{})
+	}
 	d.filters[name] = fn
 }
 

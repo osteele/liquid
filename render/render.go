@@ -20,8 +20,9 @@ func Errorf(format string, a ...interface{}) Error {
 }
 
 // Render renders the render tree.
-func Render(node Node, w io.Writer, b map[string]interface{}, c Config) error {
-	return renderNode(node, w, newNodeContext(b, c))
+func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) error {
+	// fmt.Println("render", c)
+	return renderNode(node, w, newNodeContext(vars, c))
 }
 
 func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
@@ -31,11 +32,11 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
-			return parseErrorf("unknown tag: %s", n.Name)
+			return Errorf("unknown tag: %s", n.Name)
 		}
 		renderer := n.renderer
 		if renderer == nil {
-			panic(parseErrorf("unset renderer for %v", n))
+			panic(Errorf("unset renderer for %v", n))
 		}
 		return renderer(w, renderContext{ctx, nil, n})
 	case *RawNode:
@@ -48,7 +49,7 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 	case *ObjectNode:
 		value, err := ctx.Evaluate(n.expr)
 		if err != nil {
-			return parseErrorf("%s in %s", err, n.Source)
+			return Errorf("%s in %s", err, n.Source)
 		}
 		return writeObject(value, w)
 	case *SeqNode:
@@ -61,7 +62,7 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 		_, err := w.Write([]byte(n.Source))
 		return err
 	default:
-		panic(parseErrorf("unknown node type %T", node))
+		panic(Errorf("unknown node type %T", node))
 	}
 	return nil
 }

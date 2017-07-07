@@ -9,7 +9,6 @@ import (
 
 func TestContext_runFilter(t *testing.T) {
 	cfg := NewConfig()
-	ctx := NewContext(map[string]interface{}{"x": 10}, cfg)
 	constant := func(value interface{}) valueFn {
 		return func(Context) interface{} { return value }
 	}
@@ -19,6 +18,7 @@ func TestContext_runFilter(t *testing.T) {
 	cfg.AddFilter("f1", func(s string) string {
 		return "<" + s + ">"
 	})
+	ctx := NewContext(map[string]interface{}{"x": 10}, cfg)
 	out := ctx.ApplyFilter("f1", receiver, []valueFn{})
 	require.Equal(t, "<self>", out)
 
@@ -26,6 +26,7 @@ func TestContext_runFilter(t *testing.T) {
 	cfg.AddFilter("with_arg", func(a, b string) string {
 		return fmt.Sprintf("(%s, %s)", a, b)
 	})
+	ctx = NewContext(map[string]interface{}{"x": 10}, cfg)
 	out = ctx.ApplyFilter("with_arg", receiver, []valueFn{constant("arg")})
 	require.Equal(t, "(self, arg)", out)
 
@@ -43,6 +44,7 @@ func TestContext_runFilter(t *testing.T) {
 		}
 		return fmt.Sprintf("(%v, %v)", a, value), nil
 	})
+	ctx = NewContext(map[string]interface{}{"x": 10}, cfg)
 	out = ctx.ApplyFilter("closure", receiver, []valueFn{constant("x |add: y")})
 	require.Equal(t, "(self, 11)", out)
 }
