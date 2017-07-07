@@ -1,3 +1,6 @@
+//go:generate ragel -Z scanner.rl
+//go:generate goyacc expressions.y
+
 package expression
 
 import "fmt"

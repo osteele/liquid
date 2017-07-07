@@ -71,7 +71,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
-		identifier = (alpha | '_') + ;
+		identifier = (alpha | '_') . (alnum | '_' | '-')*  '?'? ;
 		# TODO what can a property name contain?
 		property = '.' (alnum | '_' | '-')+ ;
 		int = '-'? digit+ ;

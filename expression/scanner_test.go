@@ -1,22 +1,19 @@
-//go:generate ragel -Z scanner.rl
-//go:generate goyacc expressions.y
-
 package expression
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-// var lexerTests = []struct{}{
-// 	{"{{var}}", "value"},
-// 	{"{{x}}", "1"},
-// }
-
 type testSymbol struct {
 	tok int
 	typ yySymType
+}
+
+func (s testSymbol) String() string {
+	return fmt.Sprintf("%d:%v", s.tok, s.typ)
 }
 
 func scanExpression(data string) ([]testSymbol, error) {
@@ -74,4 +71,16 @@ func TestLex(t *testing.T) {
 	require.Equal(t, 2.3, ts[4].typ.val)
 	require.Equal(t, "abc", ts[5].typ.val)
 	require.Equal(t, "abc", ts[6].typ.val)
+
+	// identifiers
+	ts, _ = scanExpression(`abc ab_c ab-c abc?`)
+	require.Len(t, ts, 4)
+	require.Equal(t, IDENTIFIER, ts[0].tok)
+	require.Equal(t, IDENTIFIER, ts[1].tok)
+	require.Equal(t, IDENTIFIER, ts[2].tok)
+	require.Equal(t, IDENTIFIER, ts[3].tok)
+	require.Equal(t, "abc", ts[0].typ.name)
+	require.Equal(t, "ab_c", ts[1].typ.name)
+	require.Equal(t, "ab-c", ts[2].typ.name)
+	require.Equal(t, "abc?", ts[3].typ.name)
 }
