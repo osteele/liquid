@@ -35,7 +35,7 @@ func scanExpression(data string) ([]testSymbol, error) {
 	return symbols, nil
 }
 
-func TestExpressionScanner(t *testing.T) {
+func TestLex(t *testing.T) {
 	ts, err := scanExpression("abc > 123")
 	require.NoError(t, err)
 	require.Len(t, ts, 3)
@@ -73,5 +73,5 @@ func TestExpressionScanner(t *testing.T) {
 	require.Equal(t, 2, ts[3].typ.val)
 	require.Equal(t, 2.3, ts[4].typ.val)
 	require.Equal(t, "abc", ts[5].typ.val)
-	require.Equal(t, "abc", ts[7].typ.val)
+	require.Equal(t, "abc", ts[6].typ.val)
 }

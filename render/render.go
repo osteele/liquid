@@ -27,8 +27,6 @@ func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) error
 
 func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
 	switch n := node.(type) {
-	case *TagNode:
-		return n.renderer(w, rendererContext{ctx, n, nil})
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
@@ -58,6 +56,8 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 				return err
 			}
 		}
+	case *TagNode:
+		return n.renderer(w, rendererContext{ctx, n, nil})
 	case *TextNode:
 		_, err := w.Write([]byte(n.Source))
 		return err

@@ -32,17 +32,6 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return value
 	})
 
-	// dates
-	fd.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
-		form, ok := format.(string)
-		if !ok {
-			form = "%a, %b %d, %y"
-		}
-		// TODO %\d*N -> truncated fractional seconds, default 9
-		form = strings.Replace(form, "%N", "", -1)
-		return datefmt.Strftime(form, t)
-	})
-
 	// arrays
 	fd.AddFilter("compact", func(array []interface{}) interface{} {
 		out := []interface{}{}
@@ -77,6 +66,60 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return array[len(array)-1]
 	})
+	fd.AddFilter("uniq", func(array []interface{}) []interface{} {
+		out := []interface{}{}
+		seenInts := map[int]bool{}
+		seenStrings := map[string]bool{}
+		seen := func(item interface{}) bool {
+			item = evaluator.ToLiquid(item)
+			switch v := item.(type) {
+			case int:
+				if seenInts[v] {
+					return true
+				}
+				seenInts[v] = true
+			case string:
+				if seenStrings[v] {
+					return true
+				}
+				seenStrings[v] = true
+			default:
+				// switch reflect.TypeOf(item).Kind() {
+				// case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
+				// 	// addr is never dereferenced, and false negatives are okay
+				// 	addr := reflect.ValueOf(item).UnsafeAddr()
+				// 	if seenAddrs[addr] {
+				// 		return true
+				// 	}
+				// 	seenAddrs[addr] = true
+				// }
+				// the O(n^2) case:
+				for _, v := range out {
+					if reflect.DeepEqual(item, v) {
+						return true
+					}
+				}
+			}
+			return false
+		}
+		for _, e := range array {
+			if !seen(e) {
+				out = append(out, e)
+			}
+		}
+		return out
+	})
+
+	// dates
+	fd.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
+		form, ok := format.(string)
+		if !ok {
+			form = "%a, %b %d, %y"
+		}
+		// TODO %\d*N -> truncated fractional seconds, default 9
+		form = strings.Replace(form, "%N", "", -1)
+		return datefmt.Strftime(form, t)
+	})
 
 	// numbers
 	fd.AddFilter("abs", math.Abs)
@@ -93,9 +136,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return a * b
 	})
 	fd.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
-		switch bt := b.(type) {
+		switch q := b.(type) {
 		case int, int16, int32, int64:
-			return int(a) / bt.(int)
+			return int(a) / q.(int)
 		case float32, float64:
 			return a / b.(float64)
 		default:

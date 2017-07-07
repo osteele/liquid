@@ -31,6 +31,10 @@ var filterTests = []struct {
 	{`fruits | last`, "plums"},
 	{`empty_list | first`, nil},
 	{`empty_list | last`, nil},
+	{`empty_list | last`, nil},
+	{`dup_ints | uniq | join`, "1, 2, 3"},
+	{`dup_strings | uniq | join`, "one, two, three"},
+	{`dup_maps | uniq | map: "name" | join`, "m1, m2, m3"},
 
 	// date filters
 	// {`article.published_at | date`, "Fri, Jul 17, 15"},
@@ -153,31 +157,39 @@ var filterTestBindings = map[string]interface{}{
 		{"weight": 3},
 		{"weight": nil},
 	},
-	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
+	"dup_ints":    []int{1, 2, 1, 3},
+	"dup_strings": []string{"one", "two", "one", "three"},
 }
 
 func TestFilters(t *testing.T) {
+	var (
+		m1 = map[string]interface{}{"name": "m1"}
+		m2 = map[string]interface{}{"name": "m2"}
+		m3 = map[string]interface{}{"name": "m3"}
+	)
+	filterTestBindings["dup_maps"] = []interface{}{m1, m2, m1, m3}
+
 	settings := expression.NewConfig()
 	AddStandardFilters(&settings)
 	context := expression.NewContext(filterTestBindings, settings)
 
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			value, err := expression.EvaluateString(test.in, context)
+			actual, err := expression.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
-			switch v := value.(type) {
+			switch v := actual.(type) {
 			case int:
-				value = float64(v)
+				actual = float64(v)
 			}
 			switch ex := expected.(type) {
 			case int:
 				expected = float64(ex)
 			}
-			require.Equalf(t, expected, value, test.in)
+			require.Equalf(t, expected, actual, test.in)
 		})
 	}
 }
