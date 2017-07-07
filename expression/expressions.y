@@ -1,8 +1,8 @@
 %{
-package expressions
+package expression
 import (
     "fmt"
-	"github.com/osteele/liquid/generics"
+	"github.com/osteele/liquid/evaluator"
 )
 
 func init() {
@@ -105,42 +105,42 @@ rel:
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return generics.Equal(a, b)
+		return evaluator.Equal(a, b)
 	}
 }
 | expr NEQ expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return !generics.Equal(a, b)
+		return !evaluator.Equal(a, b)
 	}
 }
 | expr '>' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return generics.Less(b, a)
+		return evaluator.Less(b, a)
 	}
 }
 | expr '<' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return generics.Less(a, b)
+		return evaluator.Less(a, b)
 	}
 }
 | expr GE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return generics.Less(b, a) || generics.Equal(a, b)
+		return evaluator.Less(b, a) || evaluator.Equal(a, b)
 	}
 }
 | expr LE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
 		a, b := fa(ctx), fb(ctx)
-		return generics.Less(a, b) || generics.Equal(a, b)
+		return evaluator.Less(a, b) || evaluator.Equal(a, b)
 	}
 }
 | expr CONTAINS expr { $$ = makeContainsExpr($1, $3) }
@@ -151,13 +151,13 @@ cond:
 | cond AND rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
-		return generics.IsTrue(fa(ctx)) && generics.IsTrue(fb(ctx))
+		return evaluator.IsTrue(fa(ctx)) && evaluator.IsTrue(fb(ctx))
 	}
 }
 | cond OR rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) interface{} {
-		return generics.IsTrue(fa(ctx)) || generics.IsTrue(fb(ctx))
+		return evaluator.IsTrue(fa(ctx)) || evaluator.IsTrue(fb(ctx))
 	}
 }
 ;
