@@ -16,7 +16,6 @@ func typeErrorf(format string, a ...interface{}) TypeError {
 	return TypeError(fmt.Sprintf(format, a...))
 }
 
-
 var timeType = reflect.TypeOf(time.Now())
 
 func conversionError(modifier string, value interface{}, typ reflect.Type) error {
@@ -33,20 +32,19 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, target reflect.Type) (interface{}, error) { // nolint: gocyclo
+func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
 	value = ToLiquid(value)
 	r := reflect.ValueOf(value)
-	// convert int.Convert(string) yields "\x01" not "1"
-	if target.Kind() != reflect.String && r.Type().ConvertibleTo(target) {
-		return r.Convert(target).Interface(), nil
-	}
-	if reflect.PtrTo(r.Type()) == target {
+	switch {
+	case typ.Kind() != reflect.String && r.Type().ConvertibleTo(typ):
+		// convert int.Convert(string) yields "\x01" not "1"
+		return r.Convert(typ).Interface(), nil
+	case typ == timeType && r.Kind() == reflect.String:
+		return ParseTime(value.(string))
+	case reflect.PtrTo(r.Type()) == typ:
 		return &value, nil
 	}
-	if r.Kind() == reflect.String && target == timeType {
-		return ParseTime(value.(string))
-	}
-	switch target.Kind() {
+	switch typ.Kind() {
 	case reflect.Bool:
 		return !(value == nil || value == false), nil
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -67,31 +65,31 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) { // n
 			return strconv.ParseFloat(value, 64)
 		}
 	case reflect.Map:
-		out := reflect.MakeMap(target)
+		out := reflect.MakeMap(typ)
 		for _, key := range r.MapKeys() {
-			if target.Key().Kind() == reflect.String {
+			if typ.Key().Kind() == reflect.String {
 				key = reflect.ValueOf(fmt.Sprint(key))
 			}
-			if !key.Type().ConvertibleTo(target.Key()) {
-				return nil, conversionError("map key", key, target.Key())
+			if !key.Type().ConvertibleTo(typ.Key()) {
+				return nil, conversionError("map key", key, typ.Key())
 			}
-			key = key.Convert(target.Key())
+			key = key.Convert(typ.Key())
 			value := r.MapIndex(key)
-			if target.Elem().Kind() == reflect.String {
+			if typ.Elem().Kind() == reflect.String {
 				value = reflect.ValueOf(fmt.Sprint(value))
 			}
-			if !value.Type().ConvertibleTo(target.Elem()) {
-				return nil, conversionError("map value", value, target.Elem())
+			if !value.Type().ConvertibleTo(typ.Elem()) {
+				return nil, conversionError("map value", value, typ.Elem())
 			}
-			out.SetMapIndex(key, value.Convert(target.Elem()))
+			out.SetMapIndex(key, value.Convert(typ.Elem()))
 		}
 		return out.Interface(), nil
 	case reflect.Slice:
 		switch r.Kind() {
 		case reflect.Array, reflect.Slice:
-			out := reflect.MakeSlice(target, 0, r.Len())
+			out := reflect.MakeSlice(typ, 0, r.Len())
 			for i := 0; i < r.Len(); i++ {
-				item, err := Convert(r.Index(i).Interface(), target.Elem())
+				item, err := Convert(r.Index(i).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err
 				}
@@ -99,9 +97,9 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) { // n
 			}
 			return out.Interface(), nil
 		case reflect.Map:
-			out := reflect.MakeSlice(target, 0, r.Len())
+			out := reflect.MakeSlice(typ, 0, r.Len())
 			for _, key := range r.MapKeys() {
-				item, err := Convert(r.MapIndex(key).Interface(), target.Elem())
+				item, err := Convert(r.MapIndex(key).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err
 				}
@@ -112,7 +110,7 @@ func Convert(value interface{}, target reflect.Type) (interface{}, error) { // n
 	case reflect.String:
 		return fmt.Sprint(value), nil
 	}
-	return nil, conversionError("", value, target)
+	return nil, conversionError("", value, typ)
 }
 
 // MustConvert is like Convert, but panics if conversion fails.

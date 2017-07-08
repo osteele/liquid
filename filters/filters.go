@@ -111,14 +111,11 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 
 	// dates
-	fd.AddFilter("date", func(t time.Time, format interface{}) (string, error) {
-		form, ok := format.(string)
-		if !ok {
-			form = "%a, %b %d, %y"
-		}
+	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
+		f := format("%a, %b %d, %y")
 		// TODO %\d*N -> truncated fractional seconds, default 9
-		form = strings.Replace(form, "%N", "", -1)
-		return datefmt.Strftime(form, t)
+		f = strings.Replace(f, "%N", "", -1)
+		return datefmt.Strftime(f, t)
 	})
 
 	// numbers
@@ -145,11 +142,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 			return nil
 		}
 	})
-	fd.AddFilter("round", func(n float64, places interface{}) float64 {
-		pl, ok := places.(int)
-		if !ok {
-			pl = 0
-		}
+	fd.AddFilter("round", func(n float64, places func(int) int) float64 {
+		pl := places(0)
 		exp := math.Pow10(pl)
 		return math.Floor(n*exp+0.5) / exp
 	})
@@ -193,12 +187,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("replace_first", func(s, old, new string) string {
 		return strings.Replace(s, old, new, 1)
 	})
-	fd.AddFilter("slice", func(s string, start int, length interface{}) string {
+	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
 		// runes aren't bytes; don't use slice
-		n, ok := length.(int)
-		if !ok {
-			n = 1
-		}
+		n := length(1)
 		if start < 0 {
 			start = utf8.RuneCountInString(s) + start
 		}
@@ -221,12 +212,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("rstrip", func(s string) string {
 		return strings.TrimRightFunc(s, unicode.IsSpace)
 	})
-	fd.AddFilter("truncate", func(s string, n int, ellipsis interface{}) string {
+	fd.AddFilter("truncate", func(s string, n int, ellipsis func(string) string) string {
+		el := ellipsis("...")
 		// runes aren't bytes; don't use slice
-		el, ok := ellipsis.(string)
-		if !ok {
-			el = "..."
-		}
 		p := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
 		return p.ReplaceAllString(s, `$1`+el)
 	})
@@ -248,12 +236,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 }
 
-func joinFilter(array []interface{}, sep interface{}) interface{} {
+func joinFilter(array []interface{}, sep func(string) string) interface{} {
 	a := make([]string, len(array))
-	s := ", "
-	if sep != nil {
-		s = fmt.Sprint(sep)
-	}
+	s := sep(", ")
 	for i, x := range array {
 		a[i] = fmt.Sprint(x)
 	}

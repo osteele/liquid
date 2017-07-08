@@ -2,46 +2,10 @@ package evaluator
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 )
-
-func timeMustParse(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
-type redConvertible struct{}
-
-func (c redConvertible) ToLiquid() interface{} {
-	return "red"
-}
-
-var convertTests = []struct {
-	value, proto, expected interface{}
-}{
-	{1, 1.0, float64(1)},
-	{"2", 1, int(2)},
-	{"1.2", 1.0, float64(1.2)},
-	{true, 1, 1},
-	{false, 1, 0},
-	{1, "", "1"},
-	{false, "", "false"},
-	{true, "", "true"},
-	{"string", "", "string"},
-	{[]int{1, 2}, []string{}, []string{"1", "2"}},
-	{"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
-	{redConvertible{}, "", "red"},
-
-	// this test needs to sort the output keys before comparing
-	// {map[int]string{1: "a", 2: "b"}, []string{}, []string{"b", "a"}},
-}
 
 var eqTests = []struct {
 	a, b     interface{}
@@ -88,59 +52,9 @@ var lessTests = []struct {
 	{[]string{"a"}, []string{"a"}, false},
 }
 
-func TestCall(t *testing.T) {
-	fn := func(a, b string) string {
-		return a + "," + b + "."
-	}
-	args := []interface{}{5, 10}
-	value, err := Call(reflect.ValueOf(fn), args)
-	require.NoError(t, err)
-	require.Equal(t, "5,10.", value)
-}
-
 func TestContains(t *testing.T) {
 	require.True(t, Contains([]int{1, 2}, 2))
 	require.False(t, Contains([]int{1, 2}, 3))
-}
-
-func TestConvert(t *testing.T) {
-	for i, test := range convertTests {
-		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			typ := reflect.TypeOf(test.proto)
-			value, err := Convert(test.value, typ)
-			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
-			require.NoErrorf(t, err, name)
-			require.Equalf(t, test.expected, value, name)
-		})
-	}
-}
-func TestConvertMap(t *testing.T) {
-	m := map[interface{}]interface{}{"key": "value"}
-	typ := reflect.TypeOf(map[string]string{})
-	a, err := Convert(m, typ)
-	require.NoError(t, err)
-	switch a := a.(type) {
-	case map[string]string:
-		require.Len(t, a, 1)
-		require.Equal(t, "value", a["key"])
-	default:
-		require.Equal(t, typ.String(), reflect.TypeOf(a).String())
-	}
-}
-
-func TestConvertMapSynonym(t *testing.T) {
-	type VariableMap map[interface{}]interface{}
-	m := VariableMap{"key": "value"}
-	typ := reflect.TypeOf(map[string]string{})
-	a, err := Convert(m, typ)
-	require.NoError(t, err)
-	switch a := a.(type) {
-	case map[string]string:
-		require.Len(t, a, 1)
-		require.Equal(t, "value", a["key"])
-	default:
-		require.Equal(t, typ.String(), reflect.TypeOf(a).String())
-	}
 }
 
 func TestEqual(t *testing.T) {

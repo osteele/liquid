@@ -5,38 +5,74 @@ import (
 )
 
 // Call applies a function to arguments, converting them as necessary.
-// The conversion follows Liquid semantics, which are more aggressive than
-// Go conversion. The function should return one or two values; the second value,
+//
+// The conversion follows Liquid (Ruby?) semantics, which are more aggressive than
+// Go conversion.
+//
+// The function should return one or two values; the second value,
 // if present, should be an error.
 func Call(fn reflect.Value, args []interface{}) (interface{}, error) {
 	in := convertArguments(fn, args)
-	outs := fn.Call(in)
-	if len(outs) > 1 && outs[1].Interface() != nil {
-		switch e := outs[1].Interface().(type) {
+	results := fn.Call(in)
+	return convertResults(results)
+}
+
+func convertResults(results []reflect.Value) (interface{}, error) {
+	if len(results) > 1 && results[1].Interface() != nil {
+		switch e := results[1].Interface().(type) {
 		case error:
 			return nil, e
 		default:
 			panic(e)
 		}
 	}
-	return outs[0].Interface(), nil
+	return results[0].Interface(), nil
 }
 
 // Convert args to match the input types of function fn.
-func convertArguments(fn reflect.Value, in []interface{}) []reflect.Value {
+func convertArguments(fn reflect.Value, args []interface{}) (results []reflect.Value) {
 	rt := fn.Type()
-	out := make([]reflect.Value, rt.NumIn())
-	for i, arg := range in {
-		if i < rt.NumIn() {
-			if arg == nil {
-				out[i] = reflect.Zero(rt.In(i))
-			} else {
-				out[i] = reflect.ValueOf(MustConvert(arg, rt.In(i)))
-			}
+	results = make([]reflect.Value, rt.NumIn())
+	for i, arg := range args {
+		if i >= rt.NumIn() {
+			// ignore extra arguments
+			break
+		}
+		typ := rt.In(i)
+		switch {
+		case isDefaultFunctionType(typ):
+			results[i] = makeConstantFunction(typ, arg)
+		case arg == nil:
+			results[i] = reflect.Zero(typ)
+		default:
+			results[i] = reflect.ValueOf(MustConvert(arg, typ))
 		}
 	}
-	for i := len(in); i < rt.NumIn(); i++ {
-		out[i] = reflect.Zero(rt.In(i))
+	// create zeros and default functions for parameters without arguments
+	for i := len(args); i < rt.NumIn(); i++ {
+		typ := rt.In(i)
+		switch {
+		case isDefaultFunctionType(typ):
+			results[i] = makeIdentityFunction(typ)
+		default:
+			results[i] = reflect.Zero(typ)
+		}
 	}
-	return out
+	return
+}
+
+func isDefaultFunctionType(typ reflect.Type) bool {
+	return typ.Kind() == reflect.Func && typ.NumIn() == 1 && typ.NumOut() == 1
+}
+
+func makeConstantFunction(typ reflect.Type, arg interface{}) reflect.Value {
+	return reflect.MakeFunc(typ, func(args []reflect.Value) []reflect.Value {
+		return []reflect.Value{reflect.ValueOf(MustConvert(arg, typ.Out(0)))}
+	})
+}
+
+func makeIdentityFunction(typ reflect.Type) reflect.Value {
+	return reflect.MakeFunc(typ, func(args []reflect.Value) []reflect.Value {
+		return args
+	})
 }
