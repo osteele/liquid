@@ -45,8 +45,8 @@ func TestConvert(t *testing.T) {
 	for i, test := range convertTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			typ := reflect.TypeOf(test.proto)
-			value, err := Convert(test.value, typ)
 			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
+			value, err := Convert(test.value, typ)
 			require.NoErrorf(t, err, name)
 			require.Equalf(t, test.expected, value, name)
 		})
@@ -72,8 +72,6 @@ func TestConvert_map_synonym(t *testing.T) {
 }
 
 func TestConvert_map_to_array(t *testing.T) {
-	// this test needs to sort the output keys before comparing
-	// {map[int]string{1: "a", 2: "b"}, []string{}, []string{"b", "a"}},
 	typ := reflect.TypeOf([]string{})
 	v, err := Convert(map[int]string{1: "b", 2: "a"}, typ)
 	require.NoError(t, err)
