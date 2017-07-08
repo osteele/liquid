@@ -48,11 +48,6 @@ var tagTests = []struct{ in, expected string }{
 
 	{`{%unless true%}false{%endunless%}`, ""},
 	{`{%unless false%}true{%endunless%}`, "true"},
-	{`{%unless true%}false{%else%}true{%endunless%}`, "true"},
-	{`{%unless false%}true{%else%}false{%endunless%}`, "true"},
-	{`{%unless false%}0{%elsif true%}1{%else%}2{%endunless%}`, "0"},
-	{`{%unless true%}0{%elsif true%}1{%else%}2{%endunless%}`, "1"},
-	{`{%unless true%}0{%elsif false%}1{%else%}2{%endunless%}`, "2"},
 
 	// TODO test whether this requires matching interior tags
 	{`pre{%raw%}{{a}}{%unknown%}{%endraw%}post`, "pre{{a}}{%unknown%}post"},

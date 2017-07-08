@@ -27,7 +27,7 @@ func AddStandardTags(c render.Config) {
 	c.AddBlock("if").Branch("else").Branch("elsif").Compiler(ifTagParser(true))
 	c.AddBlock("raw")
 	c.AddBlock("tablerow").Governs(loopTags)
-	c.AddBlock("unless").SameSyntaxAs("if").Compiler(ifTagParser(false))
+	c.AddBlock("unless").Compiler(ifTagParser(false))
 }
 
 func assignTag(source string) (func(io.Writer, render.Context) error, error) {
