@@ -1,7 +1,6 @@
 package evaluator
 
 import (
-	"fmt"
 	"reflect"
 	"time"
 
@@ -59,14 +58,12 @@ func ParseTime(s string) (time.Time, error) {
 	for _, layout := range dateLayouts {
 		t, err := time.Parse(layout, s)
 		if err == nil {
-			fmt.Println("found", layout)
 			return t, nil
 		}
 	}
 	for _, format := range dateFormats {
 		t, err := datefmt.Strptime(format, s)
 		if err == nil {
-			fmt.Println("found", format)
 			return t, nil
 		}
 	}

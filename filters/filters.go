@@ -66,49 +66,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return array[len(array)-1]
 	})
-	fd.AddFilter("uniq", func(array []interface{}) []interface{} {
-		out := []interface{}{}
-		seenInts := map[int]bool{}
-		seenStrings := map[string]bool{}
-		seen := func(item interface{}) bool {
-			item = evaluator.ToLiquid(item)
-			switch v := item.(type) {
-			case int:
-				if seenInts[v] {
-					return true
-				}
-				seenInts[v] = true
-			case string:
-				if seenStrings[v] {
-					return true
-				}
-				seenStrings[v] = true
-			default:
-				// switch reflect.TypeOf(item).Kind() {
-				// case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
-				// 	// addr is never dereferenced, and false negatives are okay
-				// 	addr := reflect.ValueOf(item).UnsafeAddr()
-				// 	if seenAddrs[addr] {
-				// 		return true
-				// 	}
-				// 	seenAddrs[addr] = true
-				// }
-				// the O(n^2) case:
-				for _, v := range out {
-					if reflect.DeepEqual(item, v) {
-						return true
-					}
-				}
-			}
-			return false
-		}
-		for _, e := range array {
-			if !seen(e) {
-				out = append(out, e)
-			}
-		}
-		return out
-	})
+	fd.AddFilter("uniq", uniqFilter)
 
 	// dates
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
@@ -270,6 +228,51 @@ func splitFilter(s, sep string) interface{} {
 	// TODO test case
 	if len(out) > 0 && out[len(out)-1] == "" {
 		out = out[:len(out)-1]
+	}
+	return out
+}
+
+func uniqFilter(array []interface{}) []interface{} {
+	out := []interface{}{}
+	seenInts := map[int]bool{}
+	seenStrings := map[string]bool{}
+	seen := func(item interface{}) bool {
+		item = evaluator.ToLiquid(item)
+		switch v := item.(type) {
+		case int:
+			if seenInts[v] {
+				return true
+			}
+			seenInts[v] = true
+		case string:
+			if seenStrings[v] {
+				return true
+			}
+			seenStrings[v] = true
+		default:
+			// switch reflect.TypeOf(item).Kind() {
+			// case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
+			// 	// addr is never dereferenced, and false negatives are okay
+			// 	addr := reflect.ValueOf(item).UnsafeAddr()
+			// 	if seenAddrs[addr] {
+			// 		return true
+			// 	}
+			// 	seenAddrs[addr] = true
+			// }
+			// the O(n^2) case:
+			// TODO use == if the values are comparable
+			for _, v := range out {
+				if reflect.DeepEqual(item, v) {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	for _, e := range array {
+		if !seen(e) {
+			out = append(out, e)
+		}
 	}
 	return out
 }
