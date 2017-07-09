@@ -3,15 +3,9 @@ package evaluator
 import (
 	"reflect"
 	"time"
-
-	"github.com/jeffjen/datefmt"
 )
 
 var zeroTime time.Time
-
-var dateFormats = []string{
-	"%Y-%m-%d %H:%M:%S %Z",
-}
 
 var dateLayouts = []string{
 	// from the Go library
@@ -42,6 +36,7 @@ var dateLayouts = []string{
 	"2006-01-02 15:04:05 -07:00",
 	"2006-01-02 15:04:05 -0700",
 	"2006-01-02 15:04:05 -7",
+	"2006-01-02 15:04:05 MST",
 	"2006-01-02 15:04:05",
 	"2006-01-02 15:04",
 	"January 2, 2006",
@@ -57,12 +52,6 @@ func ParseTime(s string) (time.Time, error) {
 	}
 	for _, layout := range dateLayouts {
 		t, err := time.Parse(layout, s)
-		if err == nil {
-			return t, nil
-		}
-	}
-	for _, format := range dateFormats {
-		t, err := datefmt.Strptime(format, s)
 		if err == nil {
 			return t, nil
 		}

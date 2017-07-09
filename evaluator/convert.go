@@ -36,13 +36,13 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 	value = ToLiquid(value)
 	r := reflect.ValueOf(value)
 	switch {
-	case typ.Kind() != reflect.String && r.Type().ConvertibleTo(typ):
+	case typ.Kind() != reflect.String && value != nil && r.Type().ConvertibleTo(typ):
 		// convert int.Convert(string) yields "\x01" not "1"
 		return r.Convert(typ).Interface(), nil
 	case typ == timeType && r.Kind() == reflect.String:
 		return ParseTime(value.(string))
-	case reflect.PtrTo(r.Type()) == typ:
-		return &value, nil
+		// case reflect.PtrTo(r.Type()) == typ:
+		// 	return &value, nil
 	}
 	switch typ.Kind() {
 	case reflect.Bool:

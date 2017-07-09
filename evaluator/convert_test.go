@@ -32,6 +32,9 @@ var convertTests = []struct {
 	{"1.2", 1.0, float64(1.2)},
 	{true, 1, 1},
 	{false, 1, 0},
+	{nil, true, false},
+	{0, true, true},
+	{"", true, true},
 	{1, "", "1"},
 	{false, "", "false"},
 	{true, "", "true"},
@@ -80,3 +83,14 @@ func TestConvert_map_to_array(t *testing.T) {
 	sort.Strings(array)
 	require.Equal(t, []string{"a", "b"}, array)
 }
+
+// func TestConvert_ptr(t *testing.T) {
+// 	typ := reflect.PtrTo(reflect.TypeOf(""))
+// 	v, err := Convert("a", typ)
+// 	require.NoError(t, err)
+// 	ptr, ok := v.(*string)
+// 	fmt.Printf("%#v %T\n", v, v)
+// 	require.True(t, ok)
+// 	require.NotNil(t, ptr)
+// 	require.Equal(t, "ab", *ptr)
+// }

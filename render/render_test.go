@@ -26,6 +26,12 @@ func addRenderTestTags(s Config) {
 		_, err = w.Write([]byte(fmt.Sprint(v)))
 		return err
 	})
+	s.AddTag("tag_name", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			_, err := w.Write([]byte(c.TagName()))
+			return err
+		}, nil
+	})
 	s.AddTag("expand_arg", func(string) (func(w io.Writer, c Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			s, err := c.ExpandTagArg()
@@ -52,6 +58,7 @@ var renderTests = []struct{ in, out string }{
 	{`{% eval x %}{% endeval %}`, "123"},
 	{`{% expand_arg x %}`, "x"},
 	{`{% expand_arg {{x}} %}`, "123"},
+	{`{% tag_name %}`, "tag_name"},
 }
 
 var renderErrorTests = []struct{ in, out string }{

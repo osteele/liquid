@@ -93,7 +93,9 @@ var evaluatorTests = []struct {
 	{`"seafood" contains "foo"`, true},
 	{`"seafood" contains "bar"`, false},
 	{`array contains "first"`, true},
+	{`obj_array contains "first"`, true},
 	{`"foo" contains "missing"`, false},
+	{`nil contains "missing"`, false},
 
 	// filters
 	{`"seafood" | length`, 8},
@@ -102,6 +104,7 @@ var evaluatorTests = []struct {
 var evaluatorTestBindings = (map[string]interface{}{
 	"n":          123,
 	"array":      []string{"first", "second", "third"},
+	"obj_array":  []interface{}{"first", "second", "third"},
 	"empty_list": []interface{}{},
 	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
 	"obj": map[string]interface{}{
