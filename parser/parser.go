@@ -19,11 +19,11 @@ func parseErrorf(format string, a ...interface{}) ParseError {
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
 func (c Config) Parse(source string) (ASTNode, error) {
 	tokens := Scan(source, "")
-	return c.parseChunks(tokens)
+	return c.parseTokens(tokens)
 }
 
-// Parse creates an AST from a sequence of Chunks.
-func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocyclo
+// Parse creates an AST from a sequence of tokens.
+func (c Config) parseTokens(tokens []Token) (ASTNode, error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		syntax BlockSyntax
@@ -41,35 +41,35 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 		inComment = false
 		inRaw     = false
 	)
-	for _, ch := range chunks {
+	for _, tok := range tokens {
 		switch {
 		// The parser needs to know about comment and raw, because tags inside
 		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
 		// TODO is this true?
 		case inComment:
-			if ch.Type == TagChunkType && ch.Name == "endcomment" {
+			if tok.Type == TagTokenType && tok.Name == "endcomment" {
 				inComment = false
 			}
 		case inRaw:
-			if ch.Type == TagChunkType && ch.Name == "endraw" {
+			if tok.Type == TagTokenType && tok.Name == "endraw" {
 				inRaw = false
 			} else {
-				rawTag.Slices = append(rawTag.Slices, ch.Source)
+				rawTag.Slices = append(rawTag.Slices, tok.Source)
 			}
-		case ch.Type == ObjChunkType:
-			expr, err := expression.Parse(ch.Args)
+		case tok.Type == ObjTokenType:
+			expr, err := expression.Parse(tok.Args)
 			if err != nil {
 				return nil, err
 			}
-			*ap = append(*ap, &ASTObject{ch, expr})
-		case ch.Type == TextChunkType:
-			*ap = append(*ap, &ASTText{Chunk: ch})
-		case ch.Type == TagChunkType:
-			if cs, ok := g.BlockSyntax(ch.Name); ok {
+			*ap = append(*ap, &ASTObject{tok, expr})
+		case tok.Type == TextTokenType:
+			*ap = append(*ap, &ASTText{Token: tok})
+		case tok.Type == TagTokenType:
+			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
-				case ch.Name == "comment":
+				case tok.Name == "comment":
 					inComment = true
-				case ch.Name == "raw":
+				case tok.Name == "raw":
 					inRaw = true
 					rawTag = &ASTRaw{}
 					*ap = append(*ap, rawTag)
@@ -78,17 +78,17 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					if sd != nil {
 						suffix = "; immediate parent is " + sd.TagName()
 					}
-					return nil, parseErrorf("%s not inside %s%s", ch.Name, strings.Join(cs.ParentTags(), " or "), suffix)
+					return nil, parseErrorf("%s not inside %s%s", tok.Name, strings.Join(cs.ParentTags(), " or "), suffix)
 				case cs.IsBlockStart():
 					push := func() {
 						stack = append(stack, frame{syntax: sd, node: bn, ap: ap})
-						sd, bn = cs, &ASTBlock{Chunk: ch, syntax: cs}
+						sd, bn = cs, &ASTBlock{Token: tok, syntax: cs}
 						*ap = append(*ap, bn)
 					}
 					push()
 					ap = &bn.Body
 				case cs.IsBranch():
-					n := &ASTBlock{Chunk: ch, syntax: cs}
+					n := &ASTBlock{Token: tok, syntax: cs}
 					bn.Branches = append(bn.Branches, n)
 					ap = &n.Body
 				case cs.IsBlockEnd():
@@ -99,10 +99,10 @@ func (c Config) parseChunks(chunks []Chunk) (ASTNode, error) { // nolint: gocycl
 					}
 					pop()
 				default:
-					panic(fmt.Errorf("block type %q", ch.Name))
+					panic(fmt.Errorf("block type %q", tok.Name))
 				}
 			} else {
-				*ap = append(*ap, &ASTTag{ch})
+				*ap = append(*ap, &ASTTag{tok})
 			}
 		}
 	}

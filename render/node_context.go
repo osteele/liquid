@@ -4,7 +4,7 @@ import (
 	"github.com/osteele/liquid/expression"
 )
 
-// nodeContext is the evaluation context for chunk AST rendering.
+// nodeContext provides the evaluation context for rendering the AST.
 type nodeContext struct {
 	bindings map[string]interface{}
 	config   Config

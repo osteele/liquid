@@ -26,37 +26,37 @@ func TestChunkScanner(t *testing.T) {
 	tokens := Scan("12", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
-	require.Equal(t, TextChunkType, tokens[0].Type)
+	require.Equal(t, TextTokenType, tokens[0].Type)
 	require.Equal(t, "12", tokens[0].Source)
 
 	tokens = Scan("{{obj}}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
-	require.Equal(t, ObjChunkType, tokens[0].Type)
+	require.Equal(t, ObjTokenType, tokens[0].Type)
 	require.Equal(t, "obj", tokens[0].Args)
 
 	tokens = Scan("{{ obj }}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
-	require.Equal(t, ObjChunkType, tokens[0].Type)
+	require.Equal(t, ObjTokenType, tokens[0].Type)
 	require.Equal(t, "obj", tokens[0].Args)
 
 	tokens = Scan("{%tag args%}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
-	require.Equal(t, TagChunkType, tokens[0].Type)
+	require.Equal(t, TagTokenType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Name)
 	require.Equal(t, "args", tokens[0].Args)
 
 	tokens = Scan("{% tag args %}", "")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
-	require.Equal(t, TagChunkType, tokens[0].Type)
+	require.Equal(t, TagTokenType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Name)
 	require.Equal(t, "args", tokens[0].Args)
 
 	tokens = Scan("pre{% tag args %}mid{{ object }}post", "")
-	require.Equal(t, `[TextChunkType{"pre"} TagChunkType{Tag:"tag", Args:"args"} TextChunkType{"mid"} ObjChunkType{"object"} TextChunkType{"post"}]`, fmt.Sprint(tokens))
+	require.Equal(t, `[TextTokenType{"pre"} TagTokenType{Tag:"tag", Args:"args"} TextTokenType{"mid"} ObjTokenType{"object"} TextTokenType{"post"}]`, fmt.Sprint(tokens))
 
 	for i, test := range scannerCountTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {

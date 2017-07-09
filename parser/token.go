@@ -2,27 +2,27 @@ package parser
 
 import "fmt"
 
-// A Chunk is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
-type Chunk struct {
-	Type       ChunkType
+// A Token is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
+type Token struct {
+	Type       TokenType
 	SourceInfo SourceInfo
 	Name       string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
 	Args       string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
-	Source     string // Source is the entirety of the chunk, including the "{{", "{%", etc. markers.
+	Source     string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
 }
 
-// ChunkType is the type of a Chunk
-type ChunkType int
+// TokenType is the type of a Chunk
+type TokenType int
 
-//go:generate stringer -type=ChunkType
+//go:generate stringer -type=TokenType
 
 const (
-	// TextChunkType is the type of a text Chunk
-	TextChunkType ChunkType = iota
-	// TagChunkType is the type of a tag Chunk "{%…%}"
-	TagChunkType
-	// ObjChunkType is the type of an object Chunk "{{…}}"
-	ObjChunkType
+	// TextTokenType is the type of a text Chunk
+	TextTokenType TokenType = iota
+	// TagTokenType is the type of a tag Chunk "{%…%}"
+	TagTokenType
+	// ObjTokenType is the type of an object Chunk "{{…}}"
+	ObjTokenType
 )
 
 // SourceInfo contains a Chunk's source information
@@ -31,13 +31,13 @@ type SourceInfo struct {
 	lineNo   int
 }
 
-func (c Chunk) String() string {
+func (c Token) String() string {
 	switch c.Type {
-	case TextChunkType:
+	case TextTokenType:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
-	case TagChunkType:
+	case TagTokenType:
 		return fmt.Sprintf("%v{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
-	case ObjChunkType:
+	case ObjTokenType:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Args)
 	default:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)

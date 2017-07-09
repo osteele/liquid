@@ -9,7 +9,7 @@ type ASTNode interface{}
 
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
-	Chunk
+	Token
 	syntax   BlockSyntax
 	Body     []ASTNode   // Body is the nodes before the first branch
 	Branches []*ASTBlock // E.g. else and elseif w/in an if
@@ -20,19 +20,19 @@ type ASTRaw struct {
 	Slices []string
 }
 
-// ASTTag is a tag.
+// ASTTag is a tag {% tag %} that is not a block start or end.
 type ASTTag struct {
-	Chunk
+	Token
 }
 
-// ASTText is a text chunk, that is rendered verbatim.
+// ASTText is a text span, that is rendered verbatim.
 type ASTText struct {
-	Chunk
+	Token
 }
 
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
-	Chunk
+	Token
 	Expr expression.Expression
 }
 

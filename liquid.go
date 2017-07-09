@@ -18,10 +18,6 @@ import (
 // Bindings is a map of variable names to values.
 type Bindings map[string]interface{}
 
-// TagParser parses the argument string "args" from a tag "{% tagname args %}",
-// and returns a renderer.
-// type TagParser func(chunks.RenderContext) (string, error)
-
 // A Renderer returns the rendered string for a block.
 type Renderer func(render.Context) (string, error)
 

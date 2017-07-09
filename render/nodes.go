@@ -13,7 +13,7 @@ type Node interface {
 
 // BlockNode represents a {% tag %}…{% endtag %}.
 type BlockNode struct {
-	parser.Chunk
+	parser.Token
 	renderer func(io.Writer, Context) error
 	Body     []Node
 	Branches []*BlockNode
@@ -26,18 +26,18 @@ type RawNode struct {
 
 // TagNode renders itself via a render function that is created during parsing.
 type TagNode struct {
-	parser.Chunk
+	parser.Token
 	renderer func(io.Writer, Context) error
 }
 
 // TextNode is a text chunk, that is rendered verbatim.
 type TextNode struct {
-	parser.Chunk
+	parser.Token
 }
 
 // ObjectNode is an {{ object }} object.
 type ObjectNode struct {
-	parser.Chunk
+	parser.Token
 	expr expression.Expression
 }
 

@@ -42,7 +42,7 @@ func (c Config) compileNode(n parser.ASTNode) (Node, error) {
 			return nil, compilationErrorf("undefined tag %q", n.Name)
 		}
 		node := BlockNode{
-			Chunk:    n.Chunk,
+			Token:    n.Token,
 			Body:     body,
 			Branches: branches,
 		}
@@ -68,13 +68,13 @@ func (c Config) compileNode(n parser.ASTNode) (Node, error) {
 			if err != nil {
 				return nil, err
 			}
-			return &TagNode{n.Chunk, f}, nil
+			return &TagNode{n.Token, f}, nil
 		}
 		return nil, compilationErrorf("unknown tag: %s", n.Name)
 	case *parser.ASTText:
-		return &TextNode{n.Chunk}, nil
+		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:
-		return &ObjectNode{n.Chunk, n.Expr}, nil
+		return &ObjectNode{n.Token, n.Expr}, nil
 	default:
 		panic(fmt.Errorf("un-compilable node type %T", n))
 	}
