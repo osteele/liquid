@@ -5,14 +5,19 @@ import (
 	"github.com/osteele/liquid/evaluator"
 )
 
-// Expression is a parsed expression.
+// TODO Expression and Closure are confusing names.
+
+// An Expression is a compiled expression.
 type Expression interface {
 	// Evaluate evaluates an expression in a context.
 	Evaluate(ctx Context) (interface{}, error)
 }
 
-// Closure binds an environment.
+// A Closure is an expression within a lexical environment.
+// A closure may refer to variables that are not defined in the
+// environment. (Therefore it's not a technically a closure.)
 type Closure interface {
+	// Bind creates a new closure with a new binding.
 	Bind(name string, value interface{}) Closure
 	Evaluate() (interface{}, error)
 }
@@ -23,9 +28,9 @@ type closure struct {
 }
 
 func (c closure) Bind(name string, value interface{}) Closure {
-	// TODO create a new context
-	c.context.Set(name, value)
-	return c
+	ctx := c.context.Clone()
+	ctx.Set(name, value)
+	return closure{c.expr, ctx}
 }
 
 func (c closure) Evaluate() (interface{}, error) {

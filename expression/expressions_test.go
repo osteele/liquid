@@ -112,27 +112,29 @@ var evaluatorTestBindings = (map[string]interface{}{
 })
 
 func TestEvaluator(t *testing.T) {
-	settings := NewConfig()
-	settings.AddFilter("length", strings.Count)
-	context := NewContext(evaluatorTestBindings, settings)
+	cfg := NewConfig()
+	cfg.AddFilter("length", strings.Count)
+	ctx := NewContext(evaluatorTestBindings, cfg)
 	for i, test := range evaluatorTests {
 		t.Run(fmt.Sprint(i), func(t *testing.T) {
-			val, err := EvaluateString(test.in, context)
+			val, err := EvaluateString(test.in, ctx)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, val, test.in)
 		})
 	}
 }
 
-func TestHelpers(t *testing.T) {
-	context := NewContext(map[string]interface{}{}, NewConfig())
-
-	k := Constant(10)
-	v, err := k.Evaluate(context)
+func TestClosure(t *testing.T) {
+	cfg := NewConfig()
+	ctx := NewContext(map[string]interface{}{"x": 1}, cfg)
+	expr, err := Parse("x")
 	require.NoError(t, err)
-	require.Equal(t, 10, v)
-
-	v, err = Not(k).Evaluate(context)
+	c1 := closure{expr, ctx}
+	c2 := c1.Bind("x", 2)
+	x1, err := c1.Evaluate()
 	require.NoError(t, err)
-	require.Equal(t, false, v)
+	x2, err := c2.Evaluate()
+	require.NoError(t, err)
+	require.Equal(t, 1, x1)
+	require.Equal(t, 2, x2)
 }

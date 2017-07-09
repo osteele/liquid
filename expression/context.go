@@ -3,6 +3,9 @@ package expression
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {
 	ApplyFilter(string, valueFn, []valueFn) interface{}
+	// Clone returns a copy with a new variable binding map
+	// (so that copy.Set does effect the source context.)
+	Clone() Context
 	Get(string) interface{}
 	Set(string, interface{})
 }
@@ -13,8 +16,16 @@ type context struct {
 }
 
 // NewContext makes a new expression evaluation context.
-func NewContext(vars map[string]interface{}, s Config) Context {
-	return &context{s, vars}
+func NewContext(vars map[string]interface{}, cfg Config) Context {
+	return &context{cfg, vars}
+}
+
+func (c *context) Clone() Context {
+	bindings := map[string]interface{}{}
+	for k, v := range c.bindings {
+		bindings[k] = v
+	}
+	return &context{c.Config, bindings}
 }
 
 // Get looks up a variable value in the expression context.
