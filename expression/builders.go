@@ -39,7 +39,7 @@ func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
 	}
 }
 
-func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface{} {
+func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface{} { // nolint: gocyclo
 	return func(ctx Context) interface{} {
 		ref := reflect.ValueOf(obj(ctx))
 		i := reflect.ValueOf(index(ctx))
