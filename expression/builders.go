@@ -43,6 +43,9 @@ func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface
 	return func(ctx Context) interface{} {
 		ref := reflect.ValueOf(obj(ctx))
 		i := reflect.ValueOf(index(ctx))
+		if !ref.IsValid() || !i.IsValid() {
+			return nil
+		}
 		switch ref.Kind() {
 		case reflect.Array, reflect.Slice:
 			switch i.Kind() {
