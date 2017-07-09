@@ -2,7 +2,7 @@
 
 Here's some ways to help:
 
-* Select an item from one of the [project boards](https://github.com/osteele/liquid/projects). Convert it to an Issue and assign it to yourself, so we know you're working on it.
+* Select an item from the [issues list](https://github.com/osteele/liquid/issues)
 * Search the sources for FIXME and TODO comments.
 * Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master). Once it reaches 90%, we can submit a PR to [Awesome Go](https://github.com/avelino/awesome-go/)!
 
