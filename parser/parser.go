@@ -18,7 +18,7 @@ func parseErrorf(format string, a ...interface{}) ParseError {
 
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
 func (c Config) Parse(source string) (ASTNode, error) {
-	tokens := Scan(source, "")
+	tokens := Scan(source, c.Filename, c.LineNo)
 	return c.parseTokens(tokens)
 }
 

@@ -13,6 +13,7 @@ type Template interface {
 	// RenderString is a convenience wrapper for Render, that has string input and output.
 	RenderString(Bindings) (string, error)
 	SetSourcePath(string)
+	SetSourceLocation(string, int)
 }
 
 type template struct {
@@ -41,4 +42,9 @@ func (t *template) RenderString(b Bindings) (string, error) {
 
 func (t *template) SetSourcePath(filename string) {
 	t.config.Filename = filename
+}
+
+func (t *template) SetSourceLocation(filename string, lineNo int) {
+	t.config.Filename = filename
+	t.config.LineNo = lineNo
 }

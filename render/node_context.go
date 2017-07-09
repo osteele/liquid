@@ -5,6 +5,9 @@ import (
 )
 
 // nodeContext provides the evaluation context for rendering the AST.
+//
+// This type has a clumsy name so that render.Context, in the public API, can
+// have a clean name that doesn't stutter.
 type nodeContext struct {
 	bindings map[string]interface{}
 	config   Config
@@ -18,7 +21,6 @@ func newNodeContext(scope map[string]interface{}, c Config) nodeContext {
 	for k, v := range scope {
 		vars[k] = v
 	}
-	// fmt.Println("new", c.Config)
 	return nodeContext{vars, c}
 }
 

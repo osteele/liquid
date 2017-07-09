@@ -8,12 +8,12 @@ import (
 var tokenMatcher = regexp.MustCompile(`{{\s*(.+?)\s*}}|{%\s*(\w+)(?:\s+((?:[^%]|%[^}])+?))?\s*%}`)
 
 // Scan breaks a string into a sequence of Tokens.
-func Scan(data string, pathname string) []Token {
+func Scan(data string, pathname string, firstLine int) []Token {
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	var (
 		p, pe = 0, len(data)
-		si    = SourceInfo{pathname, 1}
+		si    = SourceInfo{pathname, firstLine}
 		out   = make([]Token, 0)
 	)
 	for _, m := range tokenMatcher.FindAllStringSubmatchIndex(data, -1) {

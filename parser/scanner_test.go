@@ -22,45 +22,46 @@ var scannerCountTests = []struct {
 	{`{{ expr arg }}{{ expr arg }}`, 2},
 }
 
-func TestChunkScanner(t *testing.T) {
-	tokens := Scan("12", "")
+func TestScan(t *testing.T) {
+	scan := func(src string) []Token { return Scan(src, "", 1) }
+	tokens := scan("12")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, TextTokenType, tokens[0].Type)
 	require.Equal(t, "12", tokens[0].Source)
 
-	tokens = Scan("{{obj}}", "")
+	tokens = scan("{{obj}}")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, ObjTokenType, tokens[0].Type)
 	require.Equal(t, "obj", tokens[0].Args)
 
-	tokens = Scan("{{ obj }}", "")
+	tokens = scan("{{ obj }}")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, ObjTokenType, tokens[0].Type)
 	require.Equal(t, "obj", tokens[0].Args)
 
-	tokens = Scan("{%tag args%}", "")
+	tokens = scan("{%tag args%}")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, TagTokenType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Name)
 	require.Equal(t, "args", tokens[0].Args)
 
-	tokens = Scan("{% tag args %}", "")
+	tokens = scan("{% tag args %}")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
 	require.Equal(t, TagTokenType, tokens[0].Type)
 	require.Equal(t, "tag", tokens[0].Name)
 	require.Equal(t, "args", tokens[0].Args)
 
-	tokens = Scan("pre{% tag args %}mid{{ object }}post", "")
+	tokens = scan("pre{% tag args %}mid{{ object }}post")
 	require.Equal(t, `[TextTokenType{"pre"} TagTokenType{Tag:"tag", Args:"args"} TextTokenType{"mid"} ObjTokenType{"object"} TextTokenType{"post"}]`, fmt.Sprint(tokens))
 
 	for i, test := range scannerCountTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
-			tokens := Scan(test.in, "")
+			tokens := scan(test.in)
 			require.Len(t, tokens, test.len)
 		})
 	}

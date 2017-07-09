@@ -7,7 +7,6 @@ import (
 // Config holds configuration information for parsing and rendering.
 type Config struct {
 	parser.Config
-	Filename  string
 	tags      map[string]TagCompiler
 	blockDefs map[string]*blockSyntax
 }
