@@ -10,7 +10,7 @@
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
     - [Status](#status)
-    - [Differences from Liquid](#differences-from-liquid)
+        - [Differences from Liquid](#differences-from-liquid)
     - [Install](#install)
     - [Usage](#usage)
         - [Command-Line tool](#command-line-tool)
@@ -29,17 +29,22 @@
 This library is at an early stage of development.
 It has been mostly used by its author.
 
-## Differences from Liquid
+### Differences from Liquid
 
-Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1) for a list of known differences from Liquid.
+Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1) for a list of differences from Liquid.
 
-Other differences, that might not change:
+In brief, these aren't implemented:
 
-* This implementation is probably more liberal in where it accepts parentheses.
+- The `cycle` and `tablerow` tags
+- `{% case %}…{% else %}` and `{% when a or b %}`
+- The `escape`, `sort_natural`, `truncatewords`, `url_decode`, and `url_encode` filters
+- Loop ranges `{% for a in 1...10 %}`
+- Error modes
+- Whitespace control
 
 ## Install
 
-`go get gopkg.in/osteele/liquid.v0`-- latest snapshot
+`go get gopkg.in/osteele/liquid.v0.1`-- latest snapshot
 
 `go get -u github.com/osteele/goliquid` -- development version
 
