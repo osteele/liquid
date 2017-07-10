@@ -3,16 +3,9 @@ package evaluator
 import (
 	"reflect"
 	"time"
-
-	"github.com/jeffjen/datefmt"
 )
 
 var zeroTime time.Time
-
-// Strptime handles formats that time.Parse can't
-var dateFormats = []string{
-	"%Y-%m-%d %H:%M:%S %Z", // "2006-01-02 15:04:05 -7"
-}
 
 var dateLayouts = []string{
 	// from the Go library
@@ -59,12 +52,6 @@ func ParseDate(s string) (time.Time, error) {
 	}
 	for _, layout := range dateLayouts {
 		t, err := time.Parse(layout, s)
-		if err == nil {
-			return t, nil
-		}
-	}
-	for _, format := range dateFormats {
-		t, err := datefmt.Strptime(format, s)
 		if err == nil {
 			return t, nil
 		}
