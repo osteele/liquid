@@ -38,9 +38,9 @@ func (e *parseError) LineNumber() int {
 }
 
 func (e *parseError) Error() string {
-	locative := "in " + e.context
+	locative := " in " + e.context
 	if e.Pathname != "" {
-		locative = "in " + e.Pathname
+		locative = " in " + e.Pathname
 	}
 	return fmt.Sprintf("Liquid exception: Liquid syntax error (line %d): %s%s", e.LineNo, e.message, locative)
 }

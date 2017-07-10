@@ -11,6 +11,6 @@ type Config struct {
 }
 
 // NewConfig creates a parser Config.
-func NewConfig() Config {
-	return Config{LineNo: 1}
+func NewConfig(g Grammar) Config {
+	return Config{Grammar: g, LineNo: 1}
 }

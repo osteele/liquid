@@ -19,63 +19,63 @@ type blockSyntax struct {
 	parser                BlockCompiler
 }
 
-func (c *blockSyntax) CanHaveParent(parent parser.BlockSyntax) bool {
+func (s *blockSyntax) CanHaveParent(parent parser.BlockSyntax) bool {
 	if parent == nil {
 		return false
 	}
 	p := parent.(*blockSyntax)
-	if !c.isEndTag && p.syntaxModel != nil {
+	if !s.isEndTag && p.syntaxModel != nil {
 		p = p.syntaxModel
 	}
-	return c.parent == p
+	return s.parent == p
 }
 
-func (c *blockSyntax) IsBlock() bool        { return true }
-func (c *blockSyntax) IsBlockEnd() bool     { return c.isEndTag }
-func (c *blockSyntax) IsBlockStart() bool   { return !c.isBranchTag && !c.isEndTag }
-func (c *blockSyntax) IsBranch() bool       { return c.isBranchTag }
-func (c *blockSyntax) RequiresParent() bool { return c.isBranchTag || c.isEndTag }
+func (s *blockSyntax) IsBlock() bool        { return true }
+func (s *blockSyntax) IsBlockEnd() bool     { return s.isEndTag }
+func (s *blockSyntax) IsBlockStart() bool   { return !s.isBranchTag && !s.isEndTag }
+func (s *blockSyntax) IsBranch() bool       { return s.isBranchTag }
+func (s *blockSyntax) RequiresParent() bool { return s.isBranchTag || s.isEndTag }
 
-func (c *blockSyntax) ParentTags() []string {
-	if c.parent == nil {
+func (s *blockSyntax) ParentTags() []string {
+	if s.parent == nil {
 		return []string{}
 	}
-	return []string{c.parent.name}
+	return []string{s.parent.name}
 }
-func (c *blockSyntax) TagName() string { return c.name }
+func (s *blockSyntax) TagName() string { return s.name }
 
-func (c Config) addBlockDef(ct *blockSyntax) {
-	c.blockDefs[ct.name] = ct
+func (g grammar) addBlockDef(ct *blockSyntax) {
+	g.blockDefs[ct.name] = ct
 }
 
-func (c Config) findBlockDef(name string) (*blockSyntax, bool) {
-	ct, found := c.blockDefs[name]
+func (g grammar) findBlockDef(name string) (*blockSyntax, bool) {
+	ct, found := g.blockDefs[name]
 	return ct, found
 }
 
 // BlockSyntax is part of the Grammar interface.
-func (c Config) BlockSyntax(name string) (parser.BlockSyntax, bool) {
-	ct, found := c.blockDefs[name]
+func (g grammar) BlockSyntax(name string) (parser.BlockSyntax, bool) {
+	ct, found := g.blockDefs[name]
 	return ct, found
 }
 
 type blockDefBuilder struct {
-	cfg Config
+	grammar
 	tag *blockSyntax
 }
 
 // AddBlock defines a control tag and its matching end tag.
-func (c Config) AddBlock(name string) blockDefBuilder { // nolint: golint
+func (g grammar) AddBlock(name string) blockDefBuilder { // nolint: golint
 	ct := &blockSyntax{name: name}
-	c.addBlockDef(ct)
-	c.addBlockDef(&blockSyntax{name: "end" + name, isEndTag: true, parent: ct})
-	return blockDefBuilder{c, ct}
+	g.addBlockDef(ct)
+	g.addBlockDef(&blockSyntax{name: "end" + name, isEndTag: true, parent: ct})
+	return blockDefBuilder{g, ct}
 }
 
 // Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
 // so long as it is not nested within any other control tag.
 func (b blockDefBuilder) Branch(name string) blockDefBuilder {
-	b.cfg.addBlockDef(&blockSyntax{name: name, isBranchTag: true, parent: b.tag})
+	b.addBlockDef(&blockSyntax{name: name, isBranchTag: true, parent: b.tag})
 	return b
 }
 
@@ -86,7 +86,7 @@ func (b blockDefBuilder) Governs(_ []string) blockDefBuilder {
 
 // SameSyntaxAs tells the parser that this tag has the same syntax as the named tag.
 func (b blockDefBuilder) SameSyntaxAs(name string) blockDefBuilder {
-	rt := b.cfg.blockDefs[name]
+	rt := b.blockDefs[name]
 	if rt == nil {
 		panic(fmt.Errorf("undefined: %s", name))
 	}

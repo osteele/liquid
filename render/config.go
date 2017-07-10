@@ -7,16 +7,19 @@ import (
 // Config holds configuration information for parsing and rendering.
 type Config struct {
 	parser.Config
+	grammar
+}
+
+type grammar struct {
 	tags      map[string]TagCompiler
 	blockDefs map[string]*blockSyntax
 }
 
 // NewConfig creates a new Settings.
 func NewConfig() Config {
-	c := Config{
+	g := grammar{
 		tags:      map[string]TagCompiler{},
 		blockDefs: map[string]*blockSyntax{},
 	}
-	c.Grammar = c
-	return c
+	return Config{parser.NewConfig(g), g}
 }
