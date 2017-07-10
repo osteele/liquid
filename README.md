@@ -6,14 +6,14 @@
 
 `liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in [gojekyll](https://github.com/osteele/gojekyll).
 
-`liquid` provides a functional API for defining tags and filters. See examples [here](https://github.com/osteele/liquid/blob/master/filters/filters.go), [here](https://github.com/osteele/gojekyll/blob/master/filters/filters.go), and [here](https://github.com/osteele/gojekyll/blob/master/tags/tags.go).
-
 <!-- TOC -->
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
     - [Status](#status)
     - [Differences from Liquid](#differences-from-liquid)
     - [Install](#install)
+    - [Usage](#usage)
+        - [Command-Line tool](#command-line-tool)
     - [Contributing](#contributing)
     - [References](#references)
     - [Attribution](#attribution)
@@ -39,11 +39,37 @@ Other differences, that might not change:
 
 ## Install
 
-`go get -u github.com/osteele/goliquid`
+`go get gopkg.in/osteele/liquid.v0`-- latest snapshot
 
-`make install` install a command-line `liquid` program in your GO bin.
+`go get -u github.com/osteele/goliquid` -- development version
+
+## Usage
+
+```go
+engine := NewEngine()
+template := `<h1>{{ page.title }}</h1>`
+bindings := map[string]interface{}{
+    "page": map[string]string{
+        "title": "Introduction",
+    },
+}
+out, err := engine.ParseAndRenderString(template, bindings)
+if err != nil { log.Fatalln(err) }
+fmt.Println(out)
+// Output: <h1>Introduction</h1>
+```
+
+### Command-Line tool
+
+`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line `liquid` program in your GO bin.
 This is intended to make it easier to create test cases for bug reports.
-Run `liquid --help` for help.
+
+```bash
+$ liquid --help
+usage: liquid [FILE]
+$ echo '{{ "Hello World" | downcase | split: " " | first | append: "!"}}' | liquid
+hello!
+```
 
 ## Contributing
 

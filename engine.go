@@ -14,15 +14,30 @@ import (
 //
 // Filters
 //
-// RegisterFilter defines a Liquid filter.
+// RegisterFilter defines a Liquid filter, for use as `{{ value | my_filter }}` or `{{ value | my_filter: arg }}`.
 //
-// A filter is any function that takes at least one input, and returns one or two outputs.
-// If it returns two outputs, the second must be an error.
+// A filter is a function that takes at least one input, and returns one or two outputs.
+// If it returns two outputs, the second must have type error.
+//
+// Examples:
+// * https://github.com/osteele/liquid/blob/master/filters/filters.go
+// * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
+//
+// Tags
+//
+// RegisterTag defines a tag, for use as `{% tag args %}`.
+//
+// Examples:
+//
+// * https://github.com/osteele/gojekyll/blob/master/tags/tags.go
+//
+
 type Engine interface {
 	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
 	RegisterFilter(name string, fn interface{})
-	// RegisterTag defines a tag function e.g. {% tag %}.
+	// RegisterTag defines a tag e.g. {% tag %}.
 	RegisterTag(string, Renderer)
+	// RegisterBlock defines a block e.g. {% tag %}…{% endtag %}.
 	RegisterBlock(string, Renderer)
 
 	ParseTemplate([]byte) (Template, error)
