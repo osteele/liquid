@@ -6,13 +6,18 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
-// A Template renders a template according to scope.
+// A Template is a compiled Liquid template. It knows how to evaluate itself within a variable binding environment, to create a rendered byte slice.
 type Template interface {
-	// Render executes the template with the specified bindings.
+	// Render executes the template with the specified variable bindings.
 	Render(Bindings) ([]byte, error)
 	// RenderString is a convenience wrapper for Render, that has string input and output.
 	RenderString(Bindings) (string, error)
+	// SetSourcePath sets the filename. This is used for error reporting,
+	// and as the reference directory for relative pathnames in the {% include %} tag.
 	SetSourcePath(string)
+	// SetSourceLocation sets the source path as SetSourcePath, and also
+	// the line number of the first line of the template text, for use in
+	// error reporting.
 	SetSourceLocation(string, int)
 }
 

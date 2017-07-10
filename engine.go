@@ -30,8 +30,6 @@ import (
 // Examples:
 //
 // * https://github.com/osteele/gojekyll/blob/master/tags/tags.go
-//
-
 type Engine interface {
 	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
 	RegisterFilter(name string, fn interface{})
@@ -47,6 +45,7 @@ type Engine interface {
 	ParseAndRenderString(string, Bindings) (string, error)
 }
 
+// engine is the concrete implementation of Engine
 type engine struct{ cfg render.Config }
 
 // NewEngine returns a new template engine.

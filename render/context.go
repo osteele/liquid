@@ -11,19 +11,36 @@ import (
 )
 
 // Context provides the rendering context for a tag renderer.
+//
+// This interface shares the compatibility committments of the top-level liquid package.
 type Context interface {
+	// Get retrieves the value of a variable from the lexical environment.
 	Get(name string) interface{}
 	Evaluate(expr expression.Expression) (interface{}, error)
+	// Evaluate compiles and interprets an expression, such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
 	EvaluateString(source string) (interface{}, error)
+	// EvaluateStatement evaluates a statement of the expression syntax.
+	// Tag must be a special string known to the compiler.
+	// For example, {% for %} uses this to parse the loop syntax.
 	EvaluateStatement(tag, source string) (interface{}, error)
+	// ExpandTagArg renders the current tag argument string as a Liquid template.
+	// It enables the implementation of tags such as {% avatar {{page.author}} %}, from the jekyll-avatar plugin; or Jekyll's {% include %} parameters.
 	ExpandTagArg() (string, error)
+	// InnerString is the rendered children of the current block.
 	InnerString() (string, error)
 	RenderChild(io.Writer, *BlockNode) error
 	RenderChildren(io.Writer) error
 	RenderFile(string, map[string]interface{}) (string, error)
+	// Set updates the value of a variable in the lexical environment.
+	// For example, {% assign %} and {% capture %} use this.
 	Set(name string, value interface{})
+	// SourceFile retrieves the value set by template.SetSourcePath.
+	// {% include %} uses this.
 	SourceFile() string
+	// TagArgs returns the text of the current tag, not including its name.
+	// For example, the arguments to {% my_tag a b c %} would be “a b c”.
 	TagArgs() string
+	// TagName returns the name of the current tag.
 	TagName() string
 }
 
