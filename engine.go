@@ -72,11 +72,7 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 
 // ParseTemplate creates a new Template using the engine configuration.
 func (e *Engine) ParseTemplate(source []byte) (*Template, error) {
-	root, err := e.cfg.Compile(string(source))
-	if err != nil {
-		return nil, err
-	}
-	return &Template{root, &e.cfg}, nil
+	return newTemplate(&e.cfg, source)
 }
 
 // ParseAndRender parses and then renders the template.

@@ -5,7 +5,10 @@ import (
 )
 
 // ASTNode is a node of an AST.
-type ASTNode interface{}
+type ASTNode interface {
+	SourceLocation() SourceLoc
+	SourceText() string
+}
 
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
@@ -18,6 +21,7 @@ type ASTBlock struct {
 // ASTRaw holds the text between the start and end of a raw tag.
 type ASTRaw struct {
 	Slices []string
+	sourcelessNode
 }
 
 // ASTTag is a tag {% tag %} that is not a block start or end.
@@ -39,4 +43,16 @@ type ASTObject struct {
 // ASTSeq is a sequence of nodes.
 type ASTSeq struct {
 	Children []ASTNode
+	sourcelessNode
+}
+
+// FIXME requiring this is a bad design
+type sourcelessNode struct{}
+
+func (n *sourcelessNode) SourceLocation() SourceLoc {
+	panic("unexpected call on sourceless node")
+}
+
+func (n *sourcelessNode) SourceText() string {
+	panic("unexpected call on sourceless node")
 }

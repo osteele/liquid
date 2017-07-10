@@ -13,47 +13,38 @@ import (
 	"github.com/osteele/liquid/evaluator"
 )
 
-// An Error is an evaluation error during template rendering.
-type Error string
-
-func (e Error) Error() string { return string(e) }
-
-// Errorf creates a render error.
-func Errorf(format string, a ...interface{}) Error {
-	return Error(fmt.Sprintf(format, a...))
-}
-
 // Render renders the render tree.
-func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) error {
-	// fmt.Println("render", c)
+func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) Error {
 	return renderNode(node, w, newNodeContext(vars, c))
 }
 
-func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocyclo
+func renderNode(node Node, w io.Writer, ctx nodeContext) Error { // nolint: gocyclo
 	switch n := node.(type) {
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
-			return Errorf("unknown tag: %s", n.Name)
+			// this should have been detected during compilation
+			panic(fmt.Errorf("unknown tag: %s", n.Name))
 		}
 		renderer := n.renderer
 		if renderer == nil {
-			panic(Errorf("unset renderer for %v", n))
+			panic(fmt.Errorf("unset renderer for %v", n))
 		}
-		return renderer(w, rendererContext{ctx, nil, n})
+		err := renderer(w, rendererContext{ctx, nil, n})
+		return wrapRenderError(err, n)
 	case *RawNode:
 		for _, s := range n.slices {
 			_, err := w.Write([]byte(s))
 			if err != nil {
-				return err
+				return wrapRenderError(err, n)
 			}
 		}
 	case *ObjectNode:
 		value, err := ctx.Evaluate(n.expr)
 		if err != nil {
-			return Errorf("%s in %s", err, n.Source)
+			return wrapRenderError(err, n)
 		}
-		return writeObject(value, w)
+		return wrapRenderError(writeObject(value, w), n)
 	case *SeqNode:
 		for _, c := range n.Children {
 			if err := renderNode(c, w, ctx); err != nil {
@@ -61,12 +52,12 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) error { // nolint: gocy
 			}
 		}
 	case *TagNode:
-		return n.renderer(w, rendererContext{ctx, n, nil})
+		return wrapRenderError(n.renderer(w, rendererContext{ctx, n, nil}), n)
 	case *TextNode:
 		_, err := w.Write([]byte(n.Source))
-		return err
+		return wrapRenderError(err, n)
 	default:
-		panic(Errorf("unknown node type %T", node))
+		panic(fmt.Errorf("unknown node type %T", node))
 	}
 	return nil
 }
@@ -96,7 +87,7 @@ func writeObject(value interface{}, w io.Writer) error {
 }
 
 // RenderASTSequence renders a sequence of nodes.
-func (c nodeContext) RenderSequence(w io.Writer, seq []Node) error {
+func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	for _, n := range seq {
 		if err := renderNode(n, w, c); err != nil {
 			return err

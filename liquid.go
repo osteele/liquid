@@ -24,6 +24,14 @@ type Bindings map[string]interface{}
 // A Renderer returns the rendered string for a block.
 type Renderer func(render.Context) (string, error)
 
+// SourceError records an error with a source location and optional cause.
+type SourceError interface {
+	error
+	Cause() error
+	Filename() string
+	LineNumber() int
+}
+
 // IsTemplateError returns true iff the error represents an error in the template
 // syntax or execution. It is used to distinguish errors in input values from errors in the Liquid implemtation, or the implementation of tags and filters, themselves.
 //
@@ -42,6 +50,8 @@ func IsTemplateError(err error) bool {
 	case render.CompilationError:
 		return true
 	case render.Error:
+		return true
+	case SourceError:
 		return true
 	default:
 		return false

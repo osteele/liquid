@@ -14,6 +14,14 @@ type Template struct {
 	config *render.Config
 }
 
+func newTemplate(cfg *render.Config, source []byte) (*Template, SourceError) {
+	root, err := cfg.Compile(string(source))
+	if err != nil {
+		return nil, err
+	}
+	return &Template{root, cfg}, nil
+}
+
 // Render executes the template with the specified variable bindings.
 func (t *Template) Render(vars Bindings) ([]byte, error) {
 	buf := new(bytes.Buffer)

@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"fmt"
 	"io"
 	"reflect"
 
@@ -8,18 +9,18 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
-var errLoopContinueLoop = render.Errorf("continue outside a loop")
-var errLoopBreak = render.Errorf("break outside a loop")
+var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
+var errLoopBreak = fmt.Errorf("break outside a loop")
 
 func breakTag(parameters string) (func(io.Writer, render.Context) error, error) {
-	return func(io.Writer, render.Context) error {
-		return errLoopBreak
+	return func(_ io.Writer, ctx render.Context) error {
+		return ctx.WrapError(errLoopBreak)
 	}, nil
 }
 
 func continueTag(parameters string) (func(io.Writer, render.Context) error, error) {
-	return func(io.Writer, render.Context) error {
-		return errLoopContinueLoop
+	return func(_ io.Writer, ctx render.Context) error {
+		return ctx.WrapError(errLoopContinueLoop)
 	}, nil
 }
 
@@ -73,7 +74,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 			ctx.Set(forloopName, index)
 			ctx.Set(loop.Variable, forloop)
 		}(ctx.Get(forloopName), ctx.Get(loop.Variable))
-		// for forloop variable
+	loop:
 		for i := 0; i < length; i++ {
 			j := i
 			if loop.Reversed {
@@ -90,13 +91,14 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				"length":  length,
 			})
 			err := ctx.RenderChildren(w)
-			if err == errLoopBreak {
-				break
-			}
-			if err == errLoopContinueLoop {
-				continue
-			}
-			if err != nil {
+			switch {
+			case err == nil:
+			// fall through
+			case err.Cause() == errLoopBreak:
+				break loop
+			case err.Cause() == errLoopContinueLoop:
+				continue loop
+			default:
 				return err
 			}
 		}

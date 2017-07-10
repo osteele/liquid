@@ -13,28 +13,28 @@ func Scan(data string, pathname string, firstLine int) []Token {
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	var (
 		p, pe = 0, len(data)
-		si    = SourceInfo{pathname, firstLine}
+		si    = SourceLoc{pathname, firstLine}
 		out   = make([]Token, 0)
 	)
 	for _, m := range tokenMatcher.FindAllStringSubmatchIndex(data, -1) {
 		ts, te := m[0], m[1]
 		if p < ts {
-			out = append(out, Token{Type: TextTokenType, SourceInfo: si, Source: data[p:ts]})
-			si.lineNo += strings.Count(data[p:ts], "\n")
+			out = append(out, Token{Type: TextTokenType, SourceLoc: si, Source: data[p:ts]})
+			si.LineNo += strings.Count(data[p:ts], "\n")
 		}
 		source := data[ts:te]
 		switch data[ts+1] {
 		case '{':
 			out = append(out, Token{
 				Type:       ObjTokenType,
-				SourceInfo: si,
+				SourceLoc: si,
 				Source:     source,
 				Args:       data[m[2]:m[3]],
 			})
 		case '%':
 			c := Token{
 				Type:       TagTokenType,
-				SourceInfo: si,
+				SourceLoc: si,
 				Source:     source,
 				Name:       data[m[4]:m[5]],
 			}
@@ -43,11 +43,11 @@ func Scan(data string, pathname string, firstLine int) []Token {
 			}
 			out = append(out, c)
 		}
-		si.lineNo += strings.Count(source, "\n")
+		si.LineNo += strings.Count(source, "\n")
 		p = te
 	}
 	if p < pe {
-		out = append(out, Token{Type: TextTokenType, SourceInfo: si, Source: data[p:]})
+		out = append(out, Token{Type: TextTokenType, SourceLoc: si, Source: data[p:]})
 	}
 	return out
 }

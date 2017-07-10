@@ -16,6 +16,10 @@ import (
 type Context interface {
 	// Get retrieves the value of a variable from the lexical environment.
 	Get(name string) interface{}
+	// Errorf creates a render Error, that includes the source location.
+	// Use this to distinguish template errors from implementation errors.
+	Errorf(format string, a ...interface{}) Error
+	// Evaluate evaluates an expression within the template context.
 	Evaluate(expr expression.Expression) (interface{}, error)
 	// Evaluate compiles and interprets an expression, such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
 	EvaluateString(source string) (interface{}, error)
@@ -29,7 +33,7 @@ type Context interface {
 	// InnerString is the rendered children of the current block.
 	InnerString() (string, error)
 	RenderChild(io.Writer, *BlockNode) error
-	RenderChildren(io.Writer) error
+	RenderChildren(io.Writer) Error
 	RenderFile(string, map[string]interface{}) (string, error)
 	// Set updates the value of a variable in the lexical environment.
 	// For example, {% assign %} and {% capture %} use this.
@@ -42,6 +46,8 @@ type Context interface {
 	TagArgs() string
 	// TagName returns the name of the current tag.
 	TagName() string
+	// WrapError creates a new error that records the source location.
+	WrapError(err error) Error
 }
 
 type rendererContext struct {
@@ -50,7 +56,14 @@ type rendererContext struct {
 	cn   *BlockNode
 }
 
-// Evaluate evaluates an expression within the template context.
+func (c rendererContext) Errorf(format string, a ...interface{}) Error {
+	return renderErrorf(c.node.SourceLocation(), c.node.SourceText(), format, a...)
+}
+
+func (c rendererContext) WrapError(err error) Error {
+	return wrapRenderError(err, c.node)
+}
+
 func (c rendererContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
 }
@@ -68,7 +81,7 @@ func (c rendererContext) EvaluateString(source string) (out interface{}, err err
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
-				panic(Errorf("%s during evaluation of %s", e, source))
+				panic(fmt.Errorf("%s during evaluation of %s", e, source))
 			}
 		}
 	}()
@@ -103,7 +116,7 @@ func (c rendererContext) RenderChild(w io.Writer, b *BlockNode) error {
 }
 
 // RenderChildren renders the current node's children.
-func (c rendererContext) RenderChildren(w io.Writer) error {
+func (c rendererContext) RenderChildren(w io.Writer) Error {
 	if c.cn == nil {
 		return nil
 	}
