@@ -11,53 +11,18 @@ import (
 // An Engine parses template source into renderable text.
 //
 // An engine can be configured with additional filters and tags.
-//
-// Filters
-//
-// RegisterFilter defines a Liquid filter, for use as `{{ value | my_filter }}` or `{{ value | my_filter: arg }}`.
-//
-// A filter is a function that takes at least one input, and returns one or two outputs.
-// If it returns two outputs, the second must have type error.
-//
-// Examples:
-// * https://github.com/osteele/liquid/blob/master/filters/filters.go
-// * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
-//
-// Tags
-//
-// RegisterTag defines a tag, for use as `{% tag args %}`.
-//
-// Examples:
-//
-// * https://github.com/osteele/gojekyll/blob/master/tags/tags.go
-type Engine interface {
-	// RegisterFilter defines a filter function e.g. {{ value | filter: arg }}.
-	RegisterFilter(name string, fn interface{})
-	// RegisterTag defines a tag e.g. {% tag %}.
-	RegisterTag(string, Renderer)
-	// RegisterBlock defines a block e.g. {% tag %}…{% endtag %}.
-	RegisterBlock(string, Renderer)
+type Engine struct{ cfg render.Config }
 
-	ParseTemplate([]byte) (Template, error)
-	// ParseAndRender parses and then renders the template.
-	ParseAndRender([]byte, Bindings) ([]byte, error)
-	// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
-	ParseAndRenderString(string, Bindings) (string, error)
-}
-
-// engine is the concrete implementation of Engine
-type engine struct{ cfg render.Config }
-
-// NewEngine returns a new template engine.
-func NewEngine() Engine {
-	e := engine{render.NewConfig()}
+// NewEngine returns a new Engine.
+func NewEngine() *Engine {
+	e := Engine{render.NewConfig()}
 	filters.AddStandardFilters(&e.cfg)
 	tags.AddStandardTags(e.cfg)
-	return e
+	return &e
 }
 
-// RegisterBlock is in the Engine interface.
-func (e engine) RegisterBlock(name string, td Renderer) {
+// RegisterBlock defines a block e.g. {% tag %}…{% endtag %}.
+func (e *Engine) RegisterBlock(name string, td Renderer) {
 	e.cfg.AddBlock(name).Renderer(func(w io.Writer, ctx render.Context) error {
 		s, err := td(ctx)
 		if err != nil {
@@ -68,13 +33,29 @@ func (e engine) RegisterBlock(name string, td Renderer) {
 	})
 }
 
-// RegisterFilter is in the Engine interface.
-func (e engine) RegisterFilter(name string, fn interface{}) {
+// RegisterFilter defines a Liquid filter, for use as `{{ value | my_filter }}` or `{{ value | my_filter: arg }}`.
+//
+// A filter is a function that takes at least one input, and returns one or two outputs.
+// If it returns two outputs, the second must have type error.
+//
+// Examples:
+//
+// * https://github.com/osteele/liquid/blob/master/filters/filters.go
+//
+// * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
+//
+func (e *Engine) RegisterFilter(name string, fn interface{}) {
 	e.cfg.AddFilter(name, fn)
 }
 
-// RegisterTag is in the Engine interface.
-func (e engine) RegisterTag(name string, td Renderer) {
+// RegisterTag defines a tag e.g. {% tag %}.
+//
+// RegisterTag defines a tag, for use as `{% tag args %}`.
+//
+// Examples:
+//
+// * https://github.com/osteele/gojekyll/blob/master/tags/tags.go
+func (e *Engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
 	e.cfg.AddTag(name, func(_ string) (func(io.Writer, render.Context) error, error) {
@@ -89,26 +70,26 @@ func (e engine) RegisterTag(name string, td Renderer) {
 	})
 }
 
-// ParseTemplate is in the Engine interface.
-func (e engine) ParseTemplate(text []byte) (Template, error) {
-	ast, err := e.cfg.Compile(string(text))
+// ParseTemplate creates a new Template using the engine configuration.
+func (e *Engine) ParseTemplate(text []byte) (*Template, error) {
+	root, err := e.cfg.Compile(string(text))
 	if err != nil {
 		return nil, err
 	}
-	return &template{ast, &e.cfg}, nil
+	return &Template{root, &e.cfg}, nil
 }
 
-// ParseAndRender is in the Engine interface.
-func (e engine) ParseAndRender(text []byte, b Bindings) ([]byte, error) {
-	t, err := e.ParseTemplate(text)
+// ParseAndRender parses and then renders the template.
+func (e *Engine) ParseAndRender(text []byte, b Bindings) ([]byte, error) {
+	tpl, err := e.ParseTemplate(text)
 	if err != nil {
 		return nil, err
 	}
-	return t.Render(b)
+	return tpl.Render(b)
 }
 
-// ParseAndRenderString is in the Engine interface.
-func (e engine) ParseAndRenderString(text string, b Bindings) (string, error) {
+// ParseAndRenderString is a convenience wrapper for ParseAndRender, that has string input and output.
+func (e *Engine) ParseAndRenderString(text string, b Bindings) (string, error) {
 	bs, err := e.ParseAndRender([]byte(text), b)
 	if err != nil {
 		return "", err

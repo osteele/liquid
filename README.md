@@ -26,7 +26,8 @@
 
 ## Status
 
-This library is at an early stage of development. There's probably lots of corner cases, and the API for defining tags may still change.
+This library is at an early stage of development.
+It has been mostly used by its author.
 
 ## Differences from Liquid
 
@@ -35,7 +36,6 @@ Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1
 Other differences, that might not change:
 
 * This implementation is probably more liberal in where it accepts parentheses.
-* Two hashes with the same keys and values, or two drops that return deeply equal hashes, are equal for purposes of `uniq`. I don't know if it's practical to fix this.
 
 ## Install
 
