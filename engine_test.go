@@ -41,13 +41,13 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 
 func Example() {
 	engine := NewEngine()
-	template := `<h1>{{ page.title }}</h1>`
+	source := `<h1>{{ page.title }}</h1>`
 	bindings := map[string]interface{}{
 		"page": map[string]string{
 			"title": "Introduction",
 		},
 	}
-	out, err := engine.ParseAndRenderString(template, bindings)
+	out, err := engine.ParseAndRenderString(source, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -55,6 +55,32 @@ func Example() {
 	// Output: <h1>Introduction</h1>
 }
 
+func ExampleEngine_ParseAndRenderString() {
+	engine := NewEngine()
+	source := `{{ hello | capitalize | append: " Mundo" }}`
+	bindings := map[string]interface{}{"hello": "hola"}
+	out, err := engine.ParseAndRenderString(source, bindings)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: Hola Mundo
+}
+func ExampleEngine_ParseTemplate() {
+	engine := NewEngine()
+	source := `{{ hello | capitalize | append: " Mundo" }}`
+	bindings := map[string]interface{}{"hello": "hola"}
+	tpl, err := engine.ParseTemplate([]byte(source))
+	if err != nil {
+		log.Fatalln(err)
+	}
+	out, err := tpl.RenderString(bindings)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: Hola Mundo
+}
 func ExampleEngine_RegisterFilter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
@@ -68,6 +94,27 @@ func ExampleEngine_RegisterFilter() {
 	}
 	fmt.Println(out)
 	// Output: true
+}
+func ExampleEngine_RegisterFilter_optional_argument() {
+	engine := NewEngine()
+	// func(a, b int) int) would default the second argument to zero.
+	// Then we can't tell the difference between {{ n | inc }} and
+	// {{ n | inc: 0 }}. A function in the parameter list has a special
+	// meaning as a default parameter.
+	engine.RegisterFilter("inc", func(a int, b func(int) int) int {
+		return a + b(1)
+	})
+	template := `10 + 1 = {{ m | inc }}; 20 + 5 = {{ n | inc: 5 }}`
+	bindings := map[string]interface{}{
+		"m": 10,
+		"n": "20",
+	}
+	out, err := engine.ParseAndRenderString(template, bindings)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println(out)
+	// Output: 10 + 1 = 11; 20 + 5 = 25
 }
 
 func ExampleEngine_RegisterTag() {

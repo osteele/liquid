@@ -1,3 +1,12 @@
+// Package main defines a command-line interface to the Liquid engine.
+//
+// This command intended for testing and bug reports.
+//
+// Examples:
+//
+// 	echo '{{ "Hello " | append: "World" }}' | liquid
+// 	liquid source.tpl
+
 package main
 
 import (

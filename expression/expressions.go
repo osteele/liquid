@@ -1,4 +1,6 @@
-// Package expression parses and evaluates the expression language that is used in objects {{a.b[c]}} and tag parameters {%assign pages = site.pages | reverse%}.
+// Package expression parses and evaluates the expression language.
+//
+// This is the language that is used inside Liquid object and tags; e.g. "a.b[c]" in {{ a.b[c] }}, and "pages = site.pages | reverse" in {% assign pages = site.pages | reverse %}.
 package expression
 
 import (

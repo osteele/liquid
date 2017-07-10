@@ -1,9 +1,4 @@
-// Package parser parses template source into a render tree, which can be applied
-// to variable bindings to produce output.
-//
-// Except where noted in the documentation for the liquid package, even public symbols
-// in this package are intended to be public only to other subpackages within this
-// repo, and are not guaranteed stable even across subminor version number increments.
+// Package parser parses template source into an abstract syntax tree.
 package parser
 
 import (
