@@ -32,19 +32,24 @@ In brief, these aren't implemented:
 
 - The `cycle` and `tablerow` tags
 - `{% case %}…{% else %}` and `{% when a or b %}`
-- The `escape`, `sort_natural`, `truncatewords`, `url_decode`, and `url_encode` filters
+- The `sort_natural`, `url_decode`, and `url_encode` filters
 - Loop ranges `{% for a in 1...10 %}`
 - Error modes
 - Whitespace control
+
+These are opinionated differences that unlikely to change:
+
+- The expression parser accepts parentheses in more locations
+- The `truncatewords` filter leaves whitespace prior to the truncation point unchanged.
 
 ## Stability Guarantees
 
 This library is at an early stage of development.
 It has been mostly used by its author.
 
-Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, use `go get gopkg.in/osteele/liquid.v0.2` to stay at versions that are compatible with the v0.2 API. The v0.3 release will not in general be compatible with version 0.2.
+Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, tag `v0.2` is incompatible with `v0.1` and (hypothetical) `v0.1.1`. ([gopkg.in](http://gopkg.in) doesn't work this way, so you won't can't use `gopkg.in/osteele/liquid.v0.1` to specify version 0.1.)
 
-Even within these parameters, only the liquid package itself, and the sub-package APIs that it documents, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and other sub-packages are public only to the implementation of packages in the repo; they are not generally stable.
+Even within these parameters, only the liquid package itself, and the sub-package APIs that it documents, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and in other sub-packages are intended only for use in other packages in this repo; they are not generally stable between even sub-minor releases.
 
 ## Install
 

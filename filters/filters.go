@@ -126,7 +126,6 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("escape_once", func(s, suffix string) string {
 		return html.EscapeString(html.UnescapeString(s))
 	})
-	// TODO test case for this
 	fd.AddFilter("newline_to_br", func(s string) string {
 		return strings.Replace(s, "\n", "<br />", -1)
 	})
@@ -170,11 +169,23 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("rstrip", func(s string) string {
 		return strings.TrimRightFunc(s, unicode.IsSpace)
 	})
-	fd.AddFilter("truncate", func(s string, n int, ellipsis func(string) string) string {
+	fd.AddFilter("truncate", func(s string, length func(int) int, ellipsis func(string) string) string {
+		n := length(50)
 		el := ellipsis("...")
 		// runes aren't bytes; don't use slice
-		p := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
-		return p.ReplaceAllString(s, `$1`+el)
+		re := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
+		return re.ReplaceAllString(s, `$1`+el)
+	})
+	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
+		el := ellipsis("...")
+		n := length(15)
+		// re := regexp.MustCompile(fmt.Sprintf(`^\s*(?:\S+\s+){%d}`, n))
+		re := regexp.MustCompile(fmt.Sprintf(`^(?:\s*\S+){%d}`, n))
+		m := re.FindString(s)
+		if m == "" {
+			return s
+		}
+		return m + el
 	})
 	fd.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)

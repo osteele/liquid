@@ -52,7 +52,6 @@ var filterTests = []struct {
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
 
 	// string filters
-	// TODO escape, truncatewords, url_decode, url_encode
 	{`"Take my protein pills and put my helmet on" | replace: "my", "your"`, "Take your protein pills and put your helmet on"},
 	{`"Take my protein pills and put my helmet on" | replace_first: "my", "your"`, "Take your protein pills and put my helmet on"},
 	{`"/my/fancy/url" | append: ".html"`, "/my/fancy/url.html"},
@@ -62,6 +61,7 @@ var filterTests = []struct {
 	{`"Parker Moore" | downcase`, "parker moore"},
 	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 	{`"1 < 2 & 3" | escape_once`, "1 &lt; 2 &amp; 3"},
+	{`string_with_newlines | newline_to_br`, "<br />Hello<br />there<br />"},
 	{`"1 &lt; 2 &amp; 3" | escape_once`, "1 &lt; 2 &amp; 3"},
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
@@ -75,6 +75,15 @@ var filterTests = []struct {
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
 	{`"Ground" | truncate: 20`, "Ground"},
+	{`"Ground control to Major Tom." | truncatewords: 3`, "Ground control to..."},
+	{`"Ground control to Major Tom." | truncatewords: 3, "--"`, "Ground control to--"},
+	{`"Ground control to Major Tom." | truncatewords: 3, ""`, "Ground control to"},
+	{`"Ground control" | truncatewords: 3, ""`, "Ground control"},
+	{`"Ground" | truncatewords: 3, ""`, "Ground"},
+	{`"  Ground" | truncatewords: 3, ""`, "  Ground"},
+	{`"" | truncatewords: 3, ""`, ""},
+	{`"  " | truncatewords: 3, ""`, "  "},
+
 	{`"Parker Moore" | upcase`, "PARKER MOORE"},
 	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
 	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
@@ -157,6 +166,7 @@ var filterTestBindings = map[string]interface{}{
 		{"weight": 3},
 		{"weight": nil},
 	},
+	"string_with_newlines": "\nHello\nthere\n",
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
