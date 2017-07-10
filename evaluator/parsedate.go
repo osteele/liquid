@@ -52,8 +52,8 @@ var dateLayouts = []string{
 	"Jan 2 2006",
 }
 
-// ParseTime tries a few heuristics to parse a date from a string
-func ParseTime(s string) (time.Time, error) {
+// ParseDate tries a few heuristics to parse a date from a string
+func ParseDate(s string) (time.Time, error) {
 	if s == "now" {
 		return time.Now(), nil
 	}

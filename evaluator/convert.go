@@ -40,7 +40,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 		// convert int.Convert(string) yields "\x01" not "1"
 		return r.Convert(typ).Interface(), nil
 	case typ == timeType && r.Kind() == reflect.String:
-		return ParseTime(value.(string))
+		return ParseDate(value.(string))
 		// case reflect.PtrTo(r.Type()) == typ:
 		// 	return &value, nil
 	}

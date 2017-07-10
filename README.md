@@ -9,8 +9,8 @@
 <!-- TOC -->
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
-    - [Status](#status)
         - [Differences from Liquid](#differences-from-liquid)
+    - [Stability Guarantees](#stability-guarantees)
     - [Install](#install)
     - [Usage](#usage)
         - [Command-Line tool](#command-line-tool)
@@ -23,11 +23,6 @@
     - [License](#license)
 
 <!-- /TOC -->
-
-## Status
-
-This library is at an early stage of development.
-It has been mostly used by its author.
 
 ### Differences from Liquid
 
@@ -42,9 +37,18 @@ In brief, these aren't implemented:
 - Error modes
 - Whitespace control
 
+## Stability Guarantees
+
+This library is at an early stage of development.
+It has been mostly used by its author.
+
+Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, use `go get gopkg.in/osteele/liquid.v0.2` to stay at versions that are compatible with the v0.2 API. The v0.3 release will not in general be compatible with version 0.2.
+
+Even within these parameters, only the liquid package itself, and the sub-package APIs that it documents, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and other sub-packages are public only to the implementation of packages in the repo; they are not generally stable.
+
 ## Install
 
-`go get gopkg.in/osteele/liquid.v0.1`-- latest snapshot
+`go get gopkg.in/osteele/liquid.v0.2`-- latest snapshot
 
 `go get -u github.com/osteele/goliquid` -- development version
 
