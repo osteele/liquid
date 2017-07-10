@@ -39,6 +39,8 @@ type SourceError interface {
 // are likely to change.
 func IsTemplateError(err error) bool {
 	switch err.(type) {
+	// TODO some of these clauses, or maybe the entire function, is unnecessary
+	// now that interface calls return SourceError
 	case evaluator.TypeError:
 		return true
 	case expression.InterpreterError:

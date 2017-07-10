@@ -71,12 +71,12 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 }
 
 // ParseTemplate creates a new Template using the engine configuration.
-func (e *Engine) ParseTemplate(source []byte) (*Template, error) {
+func (e *Engine) ParseTemplate(source []byte) (*Template, SourceError) {
 	return newTemplate(&e.cfg, source)
 }
 
 // ParseAndRender parses and then renders the template.
-func (e *Engine) ParseAndRender(source []byte, b Bindings) ([]byte, error) {
+func (e *Engine) ParseAndRender(source []byte, b Bindings) ([]byte, SourceError) {
 	tpl, err := e.ParseTemplate(source)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (e *Engine) ParseAndRender(source []byte, b Bindings) ([]byte, error) {
 }
 
 // ParseAndRenderString is a convenience wrapper for ParseAndRender, that takes string input and returns a string.
-func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, error) {
+func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, SourceError) {
 	bs, err := e.ParseAndRender([]byte(source), b)
 	if err != nil {
 		return "", err

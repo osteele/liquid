@@ -23,7 +23,7 @@ func newTemplate(cfg *render.Config, source []byte) (*Template, SourceError) {
 }
 
 // Render executes the template with the specified variable bindings.
-func (t *Template) Render(vars Bindings) ([]byte, error) {
+func (t *Template) Render(vars Bindings) ([]byte, SourceError) {
 	buf := new(bytes.Buffer)
 	err := render.Render(t.root, buf, vars, *t.config)
 	if err != nil {
@@ -33,7 +33,7 @@ func (t *Template) Render(vars Bindings) ([]byte, error) {
 }
 
 // RenderString is a convenience wrapper for Render, that has string input and output.
-func (t *Template) RenderString(b Bindings) (string, error) {
+func (t *Template) RenderString(b Bindings) (string, SourceError) {
 	bs, err := t.Render(b)
 	if err != nil {
 		return "", err
