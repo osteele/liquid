@@ -11,37 +11,6 @@ import (
 )
 
 func addRenderTestTags(s Config) {
-	s.AddBlock("parse").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
-		a := c.Args
-		return func(w io.Writer, c Context) error {
-			_, err := w.Write([]byte(a))
-			return err
-		}, nil
-	})
-	s.AddBlock("eval").Renderer(func(w io.Writer, c Context) error {
-		v, err := c.EvaluateString(c.TagArgs())
-		if err != nil {
-			return err
-		}
-		_, err = w.Write([]byte(fmt.Sprint(v)))
-		return err
-	})
-	s.AddTag("tag_name", func(string) (func(io.Writer, Context) error, error) {
-		return func(w io.Writer, c Context) error {
-			_, err := w.Write([]byte(c.TagName()))
-			return err
-		}, nil
-	})
-	s.AddTag("expand_arg", func(string) (func(w io.Writer, c Context) error, error) {
-		return func(w io.Writer, c Context) error {
-			s, err := c.ExpandTagArg()
-			if err != nil {
-				return err
-			}
-			_, err = w.Write([]byte(s))
-			return err
-		}, nil
-	})
 	s.AddBlock("err2").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			return fmt.Errorf("stage 2 error")
@@ -53,12 +22,7 @@ var renderTests = []struct{ in, out string }{
 	{`{{ 12 }}`, "12"},
 	{`{{ x }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
-	{`{{ ar[1] }}`, "second"},
-	{`{% parse args %}{% endparse %}`, "args"},
-	{`{% eval x %}{% endeval %}`, "123"},
-	{`{% expand_arg x %}`, "x"},
-	{`{% expand_arg {{x}} %}`, "123"},
-	{`{% tag_name %}`, "tag_name"},
+	{`{{ array[1] }}`, "second"},
 }
 
 var renderErrorTests = []struct{ in, out string }{
@@ -67,7 +31,8 @@ var renderErrorTests = []struct{ in, out string }{
 }
 
 var renderTestBindings = map[string]interface{}{
-	"x": 123,
+	"x":     123,
+	"array": []string{"first", "second", "third"},
 	"obj": map[string]interface{}{
 		"a": 1,
 	},
@@ -87,19 +52,18 @@ var renderTestBindings = map[string]interface{}{
 		{"weight": 3},
 		{"weight": nil},
 	},
-	"ar": []string{"first", "second", "third"},
 	"page": map[string]interface{}{
 		"title": "Introduction",
 	},
 }
 
 func TestRender(t *testing.T) {
-	settings := NewConfig()
-	addRenderTestTags(settings)
-	context := newNodeContext(renderTestBindings, settings)
+	cfg := NewConfig()
+	addRenderTestTags(cfg)
+	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := settings.Compile(test.in)
+			ast, err := cfg.Compile(test.in)
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
 			err = renderNode(ast, buf, context)
@@ -110,12 +74,12 @@ func TestRender(t *testing.T) {
 }
 
 func TestRenderErrors(t *testing.T) {
-	settings := NewConfig()
-	addRenderTestTags(settings)
-	context := newNodeContext(renderTestBindings, settings)
+	cfg := NewConfig()
+	addRenderTestTags(cfg)
+	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := settings.Compile(test.in)
+			ast, err := cfg.Compile(test.in)
 			require.NoErrorf(t, err, test.in)
 			err = renderNode(ast, ioutil.Discard, context)
 			require.Errorf(t, err, test.in)

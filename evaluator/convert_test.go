@@ -64,6 +64,12 @@ func TestConvert_map(t *testing.T) {
 	require.Equal(t, "value", m["key"])
 }
 
+func TestConvert_map_key_error(t *testing.T) {
+	typ := reflect.TypeOf(map[string]int{})
+	_, err := Convert(map[interface{}]interface{}{"key": "value"}, typ)
+	require.Error(t, err)
+}
+
 func TestConvert_map_synonym(t *testing.T) {
 	type VariableMap map[interface{}]interface{}
 	typ := reflect.TypeOf(map[string]string{})
