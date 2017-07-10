@@ -6,7 +6,6 @@
 //
 // 	echo '{{ "Hello " | append: "World" }}' | liquid
 // 	liquid source.tpl
-
 package main
 
 import (

@@ -70,7 +70,8 @@ func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface
 	}
 }
 
-func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Context) interface{} {
+func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Context) interface{} { // nolint: gocyclo
+	const sizeString = "size"
 	return func(ctx Context) interface{} {
 		ref := reflect.ValueOf(obj(ctx))
 		switch ref.Kind() {
@@ -83,17 +84,20 @@ func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Con
 				return ToLiquid(ref.Index(0).Interface())
 			case "last":
 				return ToLiquid(ref.Index(ref.Len() - 1).Interface())
-			case "size":
+			case sizeString:
 				return ToLiquid(ref.Len())
 			}
 		case reflect.String:
-			if attr == "size" {
+			if attr == sizeString {
 				return ToLiquid(ref.Len())
 			}
 		case reflect.Map:
 			value := ref.MapIndex(reflect.ValueOf(attr))
 			if value.Kind() != reflect.Invalid {
 				return ToLiquid(value.Interface())
+			}
+			if attr == sizeString {
+				return reflect.ValueOf(attr).Len()
 			}
 		}
 		return nil

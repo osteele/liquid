@@ -24,22 +24,24 @@ var evaluatorTests = []struct {
 	{`n`, 123},
 
 	// Attributes
-	{`obj.a`, "first"},
-	{`obj.b.c`, "d"},
-	{`obj.x`, nil},
+	{`hash.a`, "first"},
+	{`hash.b.c`, "d"},
+	{`hash.x`, nil},
 	{`fruits.first`, "apples"},
 	{`fruits.last`, "plums"},
 	{`empty_list.first`, nil},
 	{`empty_list.last`, nil},
 	{`"abc".size`, 3},
 	{`fruits.size`, 4},
+	{`hash.size`, 4},
+	{`hash_with_size_key.size`, "key_value"},
 
 	// Indices
 	{`array[1]`, "second"},
 	{`array[-1]`, "third"}, // undocumented
 	{`array[100]`, nil},
-	{`obj[1]`, nil},
-	{`obj.c[0]`, "r"},
+	{`hash[1]`, nil},
+	{`hash.c[0]`, "r"},
 
 	// Expressions
 	{`(n)`, 123},
@@ -93,7 +95,7 @@ var evaluatorTests = []struct {
 	{`"seafood" contains "foo"`, true},
 	{`"seafood" contains "bar"`, false},
 	{`array contains "first"`, true},
-	{`obj_array contains "first"`, true},
+	{`interface_array contains "first"`, true},
 	{`"foo" contains "missing"`, false},
 	{`nil contains "missing"`, false},
 
@@ -102,16 +104,17 @@ var evaluatorTests = []struct {
 }
 
 var evaluatorTestBindings = (map[string]interface{}{
-	"n":          123,
-	"array":      []string{"first", "second", "third"},
-	"obj_array":  []interface{}{"first", "second", "third"},
-	"empty_list": []interface{}{},
-	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
-	"obj": map[string]interface{}{
+	"n":               123,
+	"array":           []string{"first", "second", "third"},
+	"interface_array": []interface{}{"first", "second", "third"},
+	"empty_list":      []interface{}{},
+	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
+	"hash": map[string]interface{}{
 		"a": "first",
 		"b": map[string]interface{}{"c": "d"},
 		"c": []string{"r", "g", "b"},
 	},
+	"hash_with_size_key": map[string]interface{}{"size": "key_value"},
 })
 
 func TestEvaluator(t *testing.T) {
