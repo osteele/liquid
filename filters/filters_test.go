@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -181,6 +182,8 @@ var filterTestBindings = map[string]interface{}{
 }
 
 func TestFilters(t *testing.T) {
+	require.NoError(t, os.Setenv("TZ", "America/New_York"))
+
 	var (
 		m1 = map[string]interface{}{"name": "m1"}
 		m2 = map[string]interface{}{"name": "m2"}

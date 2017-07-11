@@ -35,7 +35,6 @@ var dateLayouts = []string{
 	// observed in the wild; plus some variants
 	"2006-01-02 15:04:05 -07:00",
 	"2006-01-02 15:04:05 -0700",
-	"2006-01-02 15:04:05 -7", // doesn't work; uses strptime instead
 	"2006-01-02 15:04:05 MST",
 	"2006-01-02 15:04:05",
 	"2006-01-02 15:04",
