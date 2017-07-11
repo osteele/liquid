@@ -73,7 +73,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 		identifier = (alpha | '_') . (alnum | '_' | '-')*  '?'? ;
 		# TODO what can a property name contain?
-		property = '.' (alnum | '_' | '-')+ ;
+		property = '.' (alnum | '_' | '-')+ '?' ? ;
 		int = '-'? digit+ ;
 		float = '-'? (digit+ '.' digit* | '.' digit+) ;
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
