@@ -9,8 +9,8 @@
 <!-- TOC -->
 
 - [Go Liquid Template Parser](#go-liquid-template-parser)
-        - [Differences from Liquid](#differences-from-liquid)
-    - [Stability Guarantees](#stability-guarantees)
+    - [Differences from Liquid](#differences-from-liquid)
+    - [Stability](#stability)
     - [Install](#install)
     - [Usage](#usage)
         - [Command-Line tool](#command-line-tool)
@@ -24,7 +24,7 @@
 
 <!-- /TOC -->
 
-### Differences from Liquid
+## Differences from Liquid
 
 Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1) for a list of differences from Liquid.
 
@@ -42,7 +42,7 @@ These are opinionated differences that unlikely to change:
 - The expression parser accepts parentheses in more locations
 - The `truncatewords` filter leaves whitespace prior to the truncation point unchanged.
 
-## Stability Guarantees
+## Stability
 
 This library is at an early stage of development.
 It has been mostly used by its author.
