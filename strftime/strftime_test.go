@@ -42,6 +42,7 @@ func TestStrftime(t *testing.T) {
 		{"%Y/%-m/%-d", "2006/1/2"},
 		{"%a, %b %d, %Y %z", "Mon, Jan 02, 2006 -0500"},
 		{"%a, %b %d, %Y %Z", "Mon, Jan 02, 2006 EST"},
+		{"", ""},
 	}
 	for _, test := range tests {
 		s, err := Strftime(test.format, rt)
