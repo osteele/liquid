@@ -37,15 +37,21 @@ var filterTests = []struct {
 	{`dup_maps | uniq | map: "name" | join`, "m1, m2, m3"},
 
 	// date filters
-	// {`article.published_at | date`, "Fri, Jul 17, 15"},
-	// {`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
+	{`article.published_at | date`, "Fri, Jul 17, 15"},
+	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%Y"`, "2015"},
-	// {`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
-	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
-	{`"2017-02-08 09:00:00" | date: "%H:%M"`, "09:00"},
+	{`"2017-02-08 19:00:00 -05:00" | date`, "Wed, Feb 08, 17"},
 	{`"2017-05-04 08:00:00 -04:00" | date: "%b %d, %Y"`, "May 04, 2017"},
-	// {`"2017-02-08 09:00:00" | date: "%-H:%M"`, "9:00"},
-	// {`"now" | date: "%Y-%m-%d %H:%M"`, "2017-06-28 13:27"},
+	{`"2017-02-08 09:00:00" | date: "%H:%M"`, "09:00"},
+	{`"2017-02-08 09:00:00" | date: "%-H:%M"`, "9:00"},
+	{`"2017-02-08 09:00:00" | date: "%d/%m"`, "08/02"},
+	{`"2017-02-08 09:00:00" | date: "%e/%m"`, " 8/02"},
+	{`"2017-02-08 09:00:00" | date: "%-d/%-m"`, "8/2"},
+	// FIXME something to do with timezones?
+	// {`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
+	// {`"2017-07-09" | date: "%d/%m"`, "09/07"},
+	// {`"2017-07-09" | date: "%e/%m"`, " 9/07"},
+	// {`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
 
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},

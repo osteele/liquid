@@ -99,11 +99,10 @@ Please refer to the [contribution guidelines](./CONTRIBUTING.md).
 
 ## Attribution
 
-| Package                                               | Author          | Description                                  | License            |
-|-------------------------------------------------------|-----------------|----------------------------------------------|--------------------|
-| [gopkg.in/yaml.v2](https://github.com/go-yaml/yaml)   | Canonical       | YAML support (for printing parse trees)      | Apache License 2.0 |
-| [jeffjen/datefmt](https://github.com/jeffjen/datefmt) | Jeffrey Jen     | Go bindings to GNU `strftime` and `strptime` | MIT                |
-| [Ragel](http://www.colm.net/open-source/ragel/)       | Adrian Thurston | scanning expressions                         | MIT                |
+| Package                                             | Author          | Description                             | License            |
+|-----------------------------------------------------|-----------------|-----------------------------------------|--------------------|
+| [gopkg.in/yaml.v2](https://github.com/go-yaml/yaml) | Canonical       | YAML support (for printing parse trees) | Apache License 2.0 |
+| [Ragel](http://www.colm.net/open-source/ragel/)     | Adrian Thurston | scanning expressions                    | MIT                |
 
 Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.
 

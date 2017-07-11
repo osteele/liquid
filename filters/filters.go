@@ -13,8 +13,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/jeffjen/datefmt"
 	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/strftime"
 )
 
 // A FilterDictionary holds filters.
@@ -73,7 +73,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		f := format("%a, %b %d, %y")
 		// TODO %\d*N -> truncated fractional seconds, default 9
 		f = strings.Replace(f, "%N", "", -1)
-		return datefmt.Strftime(f, t)
+		return strftime.Strftime(f, t)
 	})
 
 	// numbers

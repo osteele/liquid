@@ -51,7 +51,7 @@ func ParseDate(s string) (time.Time, error) {
 		return time.Now(), nil
 	}
 	for _, layout := range dateLayouts {
-		t, err := time.Parse(layout, s)
+		t, err := time.ParseInLocation(layout, s, time.Local)
 		if err == nil {
 			return t, nil
 		}
