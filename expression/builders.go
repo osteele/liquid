@@ -1,6 +1,8 @@
 package expression
 
 import (
+	"fmt"
+	"math"
 	"reflect"
 	"strings"
 )
@@ -39,18 +41,26 @@ func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
 	}
 }
 
-func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface{} { // nolint: gocyclo
+func makeIndexExpr(objFn, indexFn func(Context) interface{}) func(Context) interface{} { // nolint: gocyclo
 	return func(ctx Context) interface{} {
-		ref := reflect.ValueOf(obj(ctx))
-		i := reflect.ValueOf(index(ctx))
-		if !ref.IsValid() || !i.IsValid() {
+		ref := reflect.ValueOf(objFn(ctx))
+		ix := indexFn(ctx)
+		ixRef := reflect.ValueOf(ix)
+		if !ref.IsValid() || !ixRef.IsValid() {
 			return nil
 		}
 		switch ref.Kind() {
 		case reflect.Array, reflect.Slice:
-			switch i.Kind() {
+			switch ixRef.Kind() {
+			case reflect.Float32, reflect.Float64:
+				if n, frac := math.Modf(ixRef.Float()); frac == 0 {
+					ix = int(n)
+					ixRef = reflect.ValueOf(ix)
+				}
+			}
+			switch ixRef.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				n := int(i.Int())
+				n := int(ixRef.Int())
 				if n < 0 {
 					n = ref.Len() + n
 				}
@@ -59,8 +69,9 @@ func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface
 				}
 			}
 		case reflect.Map:
-			if i.Type().ConvertibleTo(ref.Type().Key()) {
-				item := ref.MapIndex(i.Convert(ref.Type().Key()))
+			fmt.Println("map")
+			if ixRef.Type().ConvertibleTo(ref.Type().Key()) {
+				item := ref.MapIndex(ixRef.Convert(ref.Type().Key()))
 				if item.IsValid() {
 					return ToLiquid(item.Interface())
 				}
@@ -70,10 +81,10 @@ func makeIndexExpr(obj, index func(Context) interface{}) func(Context) interface
 	}
 }
 
-func makeObjectPropertyExpr(obj func(Context) interface{}, attr string) func(Context) interface{} { // nolint: gocyclo
+func makeObjectPropertyExpr(objFn func(Context) interface{}, attr string) func(Context) interface{} { // nolint: gocyclo
 	const sizeString = "size"
 	return func(ctx Context) interface{} {
-		ref := reflect.ValueOf(obj(ctx))
+		ref := reflect.ValueOf(objFn(ctx))
 		switch ref.Kind() {
 		case reflect.Array, reflect.Slice:
 			if ref.Len() == 0 {
