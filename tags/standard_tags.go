@@ -20,7 +20,7 @@ func AddStandardTags(c render.Config) {
 	c.AddTag("break", breakTag)
 	c.AddTag("continue", continueTag)
 	c.AddBlock("capture").Compiler(captureTagParser)
-	c.AddBlock("case").Clause("when").Compiler(caseTagParser)
+	c.AddBlock("case").Clause("when").Clause("else").Compiler(caseTagParser)
 	c.AddBlock("comment")
 	c.AddBlock("for").Compiler(loopTagParser)
 	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagParser(true))
@@ -57,29 +57,40 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		return nil, err
 	}
 	type caseRec struct {
-		expr expression.Expression
+		// expr expression.Expression
+		test func(interface{}, render.Context) (bool, error)
 		node *render.BlockNode
 	}
 	cases := []caseRec{}
 	for _, clause := range node.Clauses {
-		bfn, err := expression.Parse(clause.Args)
-		if err != nil {
-			return nil, err
+		testFn := func(interface{}, render.Context) (bool, error) { return true, nil }
+		if clause.Token.Name == "when" {
+			clauseExpr, err := expression.Parse(clause.Args)
+			if err != nil {
+				return nil, err
+			}
+			testFn = func(sel interface{}, ctx render.Context) (bool, error) {
+				value, err := ctx.Evaluate(clauseExpr)
+				if err != nil {
+					return false, err
+				}
+				return evaluator.Equal(sel, value), nil
+			}
 		}
-		cases = append(cases, caseRec{bfn, clause})
+		cases = append(cases, caseRec{testFn, clause})
 	}
 	return func(w io.Writer, ctx render.Context) error {
-		value, err := ctx.Evaluate(expr)
+		sel, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
 		}
-		for _, branch := range cases {
-			b, err := ctx.Evaluate(branch.expr)
+		for _, clause := range cases {
+			f, err := clause.test(sel, ctx)
 			if err != nil {
 				return err
 			}
-			if evaluator.Equal(value, b) {
-				return ctx.RenderChild(w, branch.node)
+			if f {
+				return ctx.RenderChild(w, clause.node)
 			}
 		}
 		return nil

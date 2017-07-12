@@ -31,7 +31,7 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 In brief, these aren't implemented:
 
 - The `cycle` and `tablerow` tags
-- `{% case %}…{% else %}` and `{% when a or b %}`
+- `{% when a or b %}`
 - The `sort_natural`, `url_decode`, and `url_encode` filters
 - Loop ranges `{% for a in 1...10 %}`
 - Error modes
