@@ -6,7 +6,7 @@ import "fmt"
 type Error interface {
 	error
 	Cause() error
-	Filename() string
+	Path() string
 	LineNumber() int
 }
 
@@ -45,7 +45,7 @@ func (e *sourceLocError) Cause() error {
 	return e.cause
 }
 
-func (e *sourceLocError) Filename() string {
+func (e *sourceLocError) Path() string {
 	return e.Pathname
 }
 

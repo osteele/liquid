@@ -6,7 +6,7 @@ import (
 
 // An Error is an error during template rendering.
 type Error interface {
-	Filename() string
+	Path() string
 	LineNumber() int
 	Cause() error
 	Error() string

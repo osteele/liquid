@@ -28,7 +28,7 @@ type Renderer func(render.Context) (string, error)
 type SourceError interface {
 	error
 	Cause() error
-	Filename() string
+	Path() string
 	LineNumber() int
 }
 
