@@ -23,7 +23,7 @@ func (g blockSyntaxFake) IsBlockEnd() bool { return strings.HasPrefix(string(g),
 func (g blockSyntaxFake) IsBlockStart() bool {
 	return g == "for" || g == "if" || g == "unless"
 }
-func (g blockSyntaxFake) IsBranch() bool       { return g == "else" }
+func (g blockSyntaxFake) IsClause() bool       { return g == "else" }
 func (g blockSyntaxFake) ParentTags() []string { return []string{"unless"} }
 func (g blockSyntaxFake) RequiresParent() bool { return g == "else" || g.IsBlockEnd() }
 func (g blockSyntaxFake) TagName() string      { return string(g) }

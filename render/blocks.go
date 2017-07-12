@@ -13,7 +13,7 @@ type BlockCompiler func(BlockNode) (func(io.Writer, Context) error, error)
 // blockSyntax tells the parser how to parse a control tag.
 type blockSyntax struct {
 	name                  string
-	isBranchTag, isEndTag bool
+	isClauseTag, isEndTag bool
 	syntaxModel           *blockSyntax
 	parent                *blockSyntax
 	parser                BlockCompiler
@@ -32,9 +32,9 @@ func (s *blockSyntax) CanHaveParent(parent parser.BlockSyntax) bool {
 
 func (s *blockSyntax) IsBlock() bool        { return true }
 func (s *blockSyntax) IsBlockEnd() bool     { return s.isEndTag }
-func (s *blockSyntax) IsBlockStart() bool   { return !s.isBranchTag && !s.isEndTag }
-func (s *blockSyntax) IsBranch() bool       { return s.isBranchTag }
-func (s *blockSyntax) RequiresParent() bool { return s.isBranchTag || s.isEndTag }
+func (s *blockSyntax) IsBlockStart() bool   { return !s.isClauseTag && !s.isEndTag }
+func (s *blockSyntax) IsClause() bool       { return s.isClauseTag }
+func (s *blockSyntax) RequiresParent() bool { return s.isClauseTag || s.isEndTag }
 
 func (s *blockSyntax) ParentTags() []string {
 	if s.parent == nil {
@@ -72,15 +72,10 @@ func (g grammar) AddBlock(name string) blockDefBuilder { // nolint: golint
 	return blockDefBuilder{g, ct}
 }
 
-// Branch tells the parser that the named tag can appear immediately between this tag and its end tag,
+// Clause tells the parser that the named tag can appear immediately between this tag and its end tag,
 // so long as it is not nested within any other control tag.
-func (b blockDefBuilder) Branch(name string) blockDefBuilder {
-	b.addBlockDef(&blockSyntax{name: name, isBranchTag: true, parent: b.tag})
-	return b
-}
-
-// Governs tells the parser that the tags can appear anywhere between this tag and its end tag.
-func (b blockDefBuilder) Governs(_ []string) blockDefBuilder {
+func (b blockDefBuilder) Clause(name string) blockDefBuilder {
+	b.addBlockDef(&blockSyntax{name: name, isClauseTag: true, parent: b.tag})
 	return b
 }
 

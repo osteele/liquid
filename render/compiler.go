@@ -23,7 +23,7 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		if err != nil {
 			return nil, err
 		}
-		branches, err := c.compileBlocks(n.Branches)
+		branches, err := c.compileBlocks(n.Clauses)
 		if err != nil {
 			return nil, err
 		}
@@ -61,7 +61,7 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 			}
 			return &TagNode{n.Token, f}, nil
 		}
-		return nil, parser.Errorf(n, "unknown tag: %s", n.Name)
+		return nil, parser.Errorf(n, "unknown tag %q", n.Name)
 	case *parser.ASTText:
 		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:

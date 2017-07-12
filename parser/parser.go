@@ -79,9 +79,9 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 					}
 					push()
 					ap = &bn.Body
-				case cs.IsBranch():
+				case cs.IsClause():
 					n := &ASTBlock{Token: tok, syntax: cs}
-					bn.Branches = append(bn.Branches, n)
+					bn.Clauses = append(bn.Clauses, n)
 					ap = &n.Body
 				case cs.IsBlockEnd():
 					pop := func() {

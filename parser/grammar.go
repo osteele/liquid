@@ -11,7 +11,7 @@ type BlockSyntax interface {
 	CanHaveParent(BlockSyntax) bool
 	IsBlockEnd() bool
 	IsBlockStart() bool
-	IsBranch() bool
+	IsClause() bool
 	ParentTags() []string
 	RequiresParent() bool
 	TagName() string

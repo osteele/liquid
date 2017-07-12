@@ -17,16 +17,15 @@ func AddStandardTags(c render.Config) {
 	// blocks
 	// The parser only recognize the comment and raw tags if they've been defined,
 	// but it ignores any syntax specified here.
-	loopTags := []string{"break", "continue", "cycle"}
 	c.AddTag("break", breakTag)
 	c.AddTag("continue", continueTag)
 	c.AddBlock("capture").Compiler(captureTagParser)
-	c.AddBlock("case").Branch("when").Compiler(caseTagParser)
+	c.AddBlock("case").Clause("when").Compiler(caseTagParser)
 	c.AddBlock("comment")
-	c.AddBlock("for").Governs(loopTags).Compiler(loopTagParser)
-	c.AddBlock("if").Branch("else").Branch("elsif").Compiler(ifTagParser(true))
+	c.AddBlock("for").Compiler(loopTagParser)
+	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagParser(true))
 	c.AddBlock("raw")
-	c.AddBlock("tablerow").Governs(loopTags)
+	c.AddBlock("tablerow")
 	c.AddBlock("unless").Compiler(ifTagParser(false))
 }
 

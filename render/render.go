@@ -23,7 +23,7 @@ func renderNode(node Node, w io.Writer, ctx nodeContext) Error { // nolint: gocy
 	case *BlockNode:
 		cd, ok := ctx.config.findBlockDef(n.Name)
 		if !ok || cd.parser == nil {
-			// this should have been detected during compilation
+			// this should have been detected during compilation; it's an implementation error if it happens here
 			panic(fmt.Errorf("unknown tag: %s", n.Name))
 		}
 		renderer := n.renderer

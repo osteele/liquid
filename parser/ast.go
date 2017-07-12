@@ -13,9 +13,9 @@ type ASTNode interface {
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
 	Token
-	syntax   BlockSyntax
-	Body     []ASTNode   // Body is the nodes before the first branch
-	Branches []*ASTBlock // E.g. else and elseif w/in an if
+	syntax  BlockSyntax
+	Body    []ASTNode   // Body is the nodes before the first branch
+	Clauses []*ASTBlock // E.g. else and elseif w/in an if
 }
 
 // ASTRaw holds the text between the start and end of a raw tag.
@@ -46,7 +46,9 @@ type ASTSeq struct {
 	sourcelessNode
 }
 
-// FIXME requiring this is a bad design
+// It shouldn't be possible to get an error from one of these node types.
+// If it is, this needs to be re-thought to figure out where the source
+// location comes from.
 type sourcelessNode struct{}
 
 func (n *sourcelessNode) SourceLocation() SourceLoc {
