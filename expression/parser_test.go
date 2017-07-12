@@ -7,8 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var parseTests = []struct{ in, expected string }{
-	{"a | filter: b", "parse error"},
+var parseTests = []struct {
+	in     string
+	expect interface{}
+}{
+	{`a | filter: b`, 3},
+	{`%assign a = 3`, nil},
+	{`{%cycle 'a'`, []interface{}{"a"}},
+	{`{%cycle 'a', 'b'`, []interface{}{"a", "b"}},
 }
 
 var parseErrorTests = []struct{ in, expected string }{
@@ -25,7 +31,7 @@ func TestParse(t *testing.T) {
 			require.NoError(t, err, test.in)
 			value, err := expr.Evaluate(ctx)
 			require.NoError(t, err, test.in)
-			require.Equal(t, 3, value, test.in)
+			require.Equal(t, test.expect, value, test.in)
 		})
 	}
 }

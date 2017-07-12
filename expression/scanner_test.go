@@ -83,4 +83,7 @@ func TestLex(t *testing.T) {
 	require.Equal(t, "ab_c", ts[1].typ.name)
 	require.Equal(t, "ab-c", ts[2].typ.name)
 	require.Equal(t, "abc?", ts[3].typ.name)
+
+	ts, _ = scanExpression(`{%cycle 'a', 'b'`)
+	require.Len(t, ts, 4)
 }

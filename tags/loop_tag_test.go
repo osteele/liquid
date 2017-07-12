@@ -55,7 +55,11 @@ var loopTests = []struct{ in, expected string }{
 	{`{% for a in array %}{% if a == 'second' %}{% break %}{% endif %}{{ a }}{% endfor %}`, "first"},
 	{`{% for a in array %}{% if a == 'second' %}{% continue %}{% endif %}{{ a }}.{% endfor %}`, "first.third."},
 
+	// hash
 	{`{% for a in hash %}{{ a }}{% endfor %}`, "a"},
+
+	// cycle
+	{`{% for a in array %}{% cycle 'even', 'odd' %}.{% endfor %}`, "even.odd.even."},
 }
 
 var loopErrorTests = []struct{ in, expected string }{

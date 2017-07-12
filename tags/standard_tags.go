@@ -19,6 +19,7 @@ func AddStandardTags(c render.Config) {
 	// but it ignores any syntax specified here.
 	c.AddTag("break", breakTag)
 	c.AddTag("continue", continueTag)
+	c.AddTag("cycle", cycleTag)
 	c.AddBlock("capture").Compiler(captureTagParser)
 	c.AddBlock("case").Clause("when").Clause("else").Compiler(caseTagParser)
 	c.AddBlock("comment")

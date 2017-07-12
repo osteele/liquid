@@ -16,15 +16,17 @@ func init() {
    name     string
    val      interface{}
    f        func(Context) interface{}
+   arglist  []func(Context) interface{}
    loopmods loopModifiers
    filter_params []valueFn
 }
 %type <f> expr rel filtered cond loop
 %type<filter_params> filter_params
 %type<loopmods> loop_modifiers
+%type<arglist> arglist moreargs
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
-%token ASSIGN LOOP
+%token ARGLIST ASSIGN LOOP
 %token EQ NEQ GE LE FOR IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
@@ -38,10 +40,27 @@ start:
 		return nil
 	}
 }
-| LOOP loop { yylex.(*lexer).val = $2 }
+| ARGLIST arglist ';' {
+	args := $2
+	yylex.(*lexer).val = func(ctx Context) interface{} {
+		result := make([]interface{}, len(args))
+		for i, fn := range args {
+			result[i] = fn(ctx)
+		}
+		return result
+	}
+}
+| LOOP loop  ';' { yylex.(*lexer).val = $2 }
 ;
 
-loop: IDENTIFIER IN filtered loop_modifiers ';' {
+arglist:
+  expr moreargs { $$ = append([]func(Context) interface{}{$1}, $2...) };
+
+moreargs : /* empty */ { $$ = []func(Context) interface{}{}}
+| ',' expr moreargs  { $$ = append([]func(Context) interface{}{$2}, $3...) }
+;
+
+loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4
 	$$ = func(ctx Context) interface{} {
 		return &Loop{name, expr(ctx), mods}

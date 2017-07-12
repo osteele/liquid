@@ -79,8 +79,9 @@ func (lex *lexer) Lex(out *yySymType) int {
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
 
 		main := |*
-			"%assign" => { tok = ASSIGN; fbreak; };
-			"%loop" => { tok = LOOP; fbreak; };
+			"%assign " => { tok = ASSIGN; fbreak; };
+			"{%cycle " => { tok = ARGLIST; fbreak; };
+			"%loop " => { tok = LOOP; fbreak; };
 			int => Int;
 			float => Float;
 			string => String;

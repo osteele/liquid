@@ -9,18 +9,51 @@ import (
 	"github.com/osteele/liquid/render"
 )
 
+const forloopVarName = "forloop"
+
 var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
 var errLoopBreak = fmt.Errorf("break outside a loop")
 
-func breakTag(parameters string) (func(io.Writer, render.Context) error, error) {
+func breakTag(string) (func(io.Writer, render.Context) error, error) {
 	return func(_ io.Writer, ctx render.Context) error {
 		return ctx.WrapError(errLoopBreak)
 	}, nil
 }
 
-func continueTag(parameters string) (func(io.Writer, render.Context) error, error) {
+func continueTag(string) (func(io.Writer, render.Context) error, error) {
 	return func(_ io.Writer, ctx render.Context) error {
 		return ctx.WrapError(errLoopContinueLoop)
+	}, nil
+}
+
+func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
+	return func(w io.Writer, ctx render.Context) error {
+		expr, err := expression.Parse("{%cycle " + args)
+		if err != nil {
+			return err
+		}
+		value, err := ctx.Evaluate(expr)
+		if err != nil {
+			return err
+		}
+		array := value.([]interface{})
+		if len(array) == 0 {
+			return nil
+		}
+		loopVar := ctx.Get(forloopVarName)
+		if loopVar == nil {
+			return ctx.Errorf("cycle must be within a forloop")
+		}
+		// the next few lines could panic if the user spoofs us by creating their own loop object
+		// “C++ protects against accident, not against fraud.” – Bjarne Stroustrup
+		loopRec := loopVar.(map[string]interface{})
+		cycleMap := loopRec[".cycles"].(map[string]int)
+		group := ""
+		n := cycleMap[group]
+		cycleMap[group] = n + 1
+		fmt.Println(cycleMap)
+		_, err = w.Write([]byte(fmt.Sprint(array[n%len(array)])))
+		return err
 	}, nil
 }
 
@@ -69,11 +102,11 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				length = rt.Len()
 			}
 		}
-		const forloopName = "forloop"
 		defer func(index, forloop interface{}) {
-			ctx.Set(forloopName, index)
+			ctx.Set(forloopVarName, index)
 			ctx.Set(loop.Variable, forloop)
-		}(ctx.Get(forloopName), ctx.Get(loop.Variable))
+		}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
+		cycleMap := map[string]int{}
 	loop:
 		for i := 0; i < length; i++ {
 			j := i
@@ -81,7 +114,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				j = rt.Len() - 1 - i
 			}
 			ctx.Set(loop.Variable, rt.Index(j).Interface())
-			ctx.Set(forloopName, map[string]interface{}{
+			ctx.Set(forloopVarName, map[string]interface{}{
 				"first":   i == 0,
 				"last":    i == length-1,
 				"index":   i + 1,
@@ -89,6 +122,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				"rindex":  length - i,
 				"rindex0": length - i - 1,
 				"length":  length,
+				".cycles": cycleMap,
 			})
 			err := ctx.RenderChildren(w)
 			switch {
