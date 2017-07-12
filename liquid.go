@@ -33,7 +33,7 @@ type SourceError interface {
 }
 
 // IsTemplateError returns true iff the error represents an error in the template
-// syntax or execution. It is used to distinguish errors in input values from errors in the Liquid implemtation, or the implementation of tags and filters, themselves.
+// syntax or execution. It is used to distinguish errors in input values from errors in the Liquid implementation, or the implementation of tags and filters, themselves.
 //
 // Use this function to avoid coding the specific types of subpackage errors, which
 // are likely to change.
@@ -48,8 +48,6 @@ func IsTemplateError(err error) bool {
 	case expression.ParseError:
 		return true
 	case parser.Error:
-		return true
-	case render.CompilationError:
 		return true
 	case render.Error:
 		return true
