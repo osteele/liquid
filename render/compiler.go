@@ -33,9 +33,9 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 			return nil, parser.Errorf(n, "undefined tag %q", n.Name)
 		}
 		node := BlockNode{
-			Token:    n.Token,
-			Body:     body,
-			Branches: branches,
+			Token:   n.Token,
+			Body:    body,
+			Clauses: branches,
 		}
 		if cd.parser != nil {
 			r, err := cd.parser(node)

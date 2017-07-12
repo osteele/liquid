@@ -61,12 +61,12 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		node *render.BlockNode
 	}
 	cases := []caseRec{}
-	for _, branch := range node.Branches {
-		bfn, err := expression.Parse(branch.Args)
+	for _, clause := range node.Clauses {
+		bfn, err := expression.Parse(clause.Args)
 		if err != nil {
 			return nil, err
 		}
-		cases = append(cases, caseRec{bfn, branch})
+		cases = append(cases, caseRec{bfn, clause})
 	}
 	return func(w io.Writer, ctx render.Context) error {
 		value, err := ctx.Evaluate(expr)
@@ -102,7 +102,7 @@ func ifTagParser(polarity bool) func(render.BlockNode) (func(io.Writer, render.C
 		branches := []branchRec{
 			{expr, &node},
 		}
-		for _, c := range node.Branches {
+		for _, c := range node.Clauses {
 			test := expression.Constant(true)
 			switch c.Name {
 			case "else":

@@ -10,7 +10,7 @@ import (
 // Node is a node of the render tree.
 type Node interface {
 	SourceLocation() parser.SourceLoc // for error reporting
-	SourceText() string                // for error reporting
+	SourceText() string               // for error reporting
 }
 
 // BlockNode represents a {% tag %}…{% endtag %}.
@@ -18,7 +18,7 @@ type BlockNode struct {
 	parser.Token
 	renderer func(io.Writer, Context) error
 	Body     []Node
-	Branches []*BlockNode
+	Clauses  []*BlockNode
 }
 
 // RawNode holds the text between the start and end of a raw tag.
