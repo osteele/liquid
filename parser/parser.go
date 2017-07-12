@@ -8,67 +8,14 @@ import (
 	"github.com/osteele/liquid/expression"
 )
 
-// TODO DRY or consolidate with Error, compilationError
-
-// A ParseError is a parse error during the template parsing.
-type ParseError interface {
-	error
-	Cause() error
-	Filename() string
-	LineNumber() int
-}
-
-type parseError struct {
-	SourceLoc
-	context string
-	message string
-	cause   error
-}
-
-func (e *parseError) Cause() error {
-	return e.cause
-}
-
-func (e *parseError) Filename() string {
-	return e.Pathname
-}
-
-func (e *parseError) LineNumber() int {
-	return e.LineNo
-}
-
-func (e *parseError) Error() string {
-	locative := " in " + e.context
-	if e.Pathname != "" {
-		locative = " in " + e.Pathname
-	}
-	return fmt.Sprintf("Liquid exception: Liquid syntax error (line %d): %s%s", e.LineNo, e.message, locative)
-}
-
-func parseErrorf(loc SourceLoc, context, format string, a ...interface{}) *parseError {
-	return &parseError{loc, context, fmt.Sprintf(format, a...), nil}
-}
-
-func wrapParseError(err error, n ASTNode) ParseError {
-	if err == nil {
-		return nil
-	}
-	if e, ok := err.(ParseError); ok {
-		return e
-	}
-	re := parseErrorf(n.SourceLocation(), n.SourceText(), "%s", err)
-	re.cause = err
-	return re
-}
-
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
-func (c Config) Parse(source string) (ASTNode, ParseError) {
+func (c Config) Parse(source string) (ASTNode, Error) {
 	tokens := Scan(source, c.Filename, c.LineNo)
 	return c.parseTokens(tokens)
 }
 
 // Parse creates an AST from a sequence of tokens.
-func (c Config) parseTokens(tokens []Token) (ASTNode, ParseError) { // nolint: gocyclo
+func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		syntax BlockSyntax
@@ -104,7 +51,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, ParseError) { // nolint: g
 		case tok.Type == ObjTokenType:
 			expr, err := expression.Parse(tok.Args)
 			if err != nil {
-				return nil, wrapParseError(err, tok)
+				return nil, WrapError(err, tok)
 			}
 			*ap = append(*ap, &ASTObject{tok, expr})
 		case tok.Type == TextTokenType:
@@ -123,7 +70,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, ParseError) { // nolint: g
 					if sd != nil {
 						suffix = "; immediate parent is " + sd.TagName()
 					}
-					return nil, parseErrorf(tok.SourceLoc, tok.Source, "%s not inside %s%s", tok.Name, strings.Join(cs.ParentTags(), " or "), suffix)
+					return nil, Errorf(tok, "%s not inside %s%s", tok.Name, strings.Join(cs.ParentTags(), " or "), suffix)
 				case cs.IsBlockStart():
 					push := func() {
 						stack = append(stack, frame{syntax: sd, node: bn, ap: ap})
@@ -152,7 +99,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, ParseError) { // nolint: g
 		}
 	}
 	if bn != nil {
-		return nil, parseErrorf(bn.SourceLoc, bn.Source, "unterminated %s block", bn.Name)
+		return nil, Errorf(bn, "unterminated %s block", bn.Name)
 	}
 	return root, nil
 }

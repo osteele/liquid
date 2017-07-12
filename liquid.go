@@ -47,7 +47,7 @@ func IsTemplateError(err error) bool {
 		return true
 	case expression.ParseError:
 		return true
-	case parser.ParseError:
+	case parser.Error:
 		return true
 	case render.CompilationError:
 		return true
