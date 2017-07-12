@@ -158,7 +158,7 @@ func (c rendererContext) Set(name string, value interface{}) {
 }
 
 func (c rendererContext) SourceFile() string {
-	return c.ctx.config.Filename
+	return c.ctx.config.SourcePath
 }
 
 func (c rendererContext) TagArgs() string {

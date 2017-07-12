@@ -44,13 +44,13 @@ func (t *Template) RenderString(b Bindings) (string, SourceError) {
 // SetSourcePath sets the filename. This is used for error reporting,
 // and as the reference path for relative pathnames in the {% include %} tag.
 func (t *Template) SetSourcePath(filename string) {
-	t.config.Filename = filename
+	t.config.SourcePath = filename
 }
 
 // SetSourceLocation sets the source path as SetSourcePath, and also
 // the line number of the first line of the template text, for use in
 // error reporting.
 func (t *Template) SetSourceLocation(filename string, lineNo int) {
-	t.config.Filename = filename
+	t.config.SourcePath = filename
 	t.config.LineNo = lineNo
 }

@@ -14,7 +14,7 @@ var includeTestBindings = map[string]interface{}{}
 
 func TestIncludeTag(t *testing.T) {
 	config := render.NewConfig()
-	config.Filename = "testdata/include_source.html"
+	config.SourcePath = "testdata/include_source.html"
 	AddStandardTags(config)
 
 	ast, err := config.Compile(`{% include "include_target.html" %}`)
