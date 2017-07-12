@@ -5,12 +5,12 @@ import (
 	"sort"
 )
 
-type genericSortable []interface{}
-
 // Sort any []interface{} value.
 func Sort(data []interface{}) {
 	sort.Sort(genericSortable(data))
 }
+
+type genericSortable []interface{}
 
 // Len is part of sort.Interface.
 func (s genericSortable) Len() int {

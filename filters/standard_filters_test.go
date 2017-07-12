@@ -36,8 +36,10 @@ var filterTests = []struct {
 	{`dup_ints | uniq | join`, "1, 2, 3"},
 	{`dup_strings | uniq | join`, "one, two, three"},
 	{`dup_maps | uniq | map: "name" | join`, "m1, m2, m3"},
+	{`mixed_case_list | sort_natural | join`, "a, B, c"},
+	{`mixed_case_objects | sort_natural: 'key' | map: 'key' | join`, "a, B, c"},
 
-	// date filters
+	// date filters``
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%Y"`, "2015"},
@@ -157,8 +159,14 @@ var filterTestBindings = map[string]interface{}{
 	"article": map[string]interface{}{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
 	},
-	"empty_list": []interface{}{},
-	"fruits":     []string{"apples", "oranges", "peaches", "plums"},
+	"empty_list":      []interface{}{},
+	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
+	"mixed_case_list": []string{"c", "a", "B"},
+	"mixed_case_objects": []map[string]interface{}{
+		map[string]interface{}{"key": "c"},
+		map[string]interface{}{"key": "a"},
+		map[string]interface{}{"key": "B"},
+	},
 	"obj": map[string]interface{}{
 		"a": 1,
 	},

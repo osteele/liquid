@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -145,6 +146,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("replace_first", func(s, old, new string) string {
 		return strings.Replace(s, old, new, 1)
 	})
+	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
 		// runes aren't bytes; don't use slice
 		n := length(1)
@@ -218,36 +220,86 @@ func joinFilter(array []interface{}, sep func(string) string) interface{} {
 }
 
 func reverseFilter(array []interface{}) interface{} {
-	out := make([]interface{}, len(array))
+	result := make([]interface{}, len(array))
 	for i, x := range array {
-		out[len(out)-1-i] = x
+		result[len(result)-1-i] = x
 	}
-	return out
+	return result
 }
 
 func sortFilter(array []interface{}, key interface{}) []interface{} {
-	out := make([]interface{}, len(array))
-	copy(out, array)
+	result := make([]interface{}, len(array))
+	copy(result, array)
 	if key == nil {
-		evaluator.Sort(out)
+		evaluator.Sort(result)
 	} else {
-		evaluator.SortByProperty(out, key.(string), true)
+		evaluator.SortByProperty(result, key.(string), true)
 	}
-	return out
+	return result
+}
+
+func sortNaturalFilter(array []interface{}, key interface{}) interface{} {
+	result := make([]interface{}, len(array))
+	copy(result, array)
+	switch {
+	case reflect.ValueOf(array).Len() == 0:
+	case key != nil:
+		sort.Sort(keySortable{result, func(m interface{}) string {
+			rv := reflect.ValueOf(m)
+			if rv.Kind() != reflect.Map {
+				return ""
+			}
+			ev := rv.MapIndex(reflect.ValueOf(key))
+			if ev.CanInterface() {
+				if s, ok := ev.Interface().(string); ok {
+					return strings.ToLower(s)
+				}
+			}
+			return ""
+		}})
+	case reflect.TypeOf(array[0]).Kind() == reflect.String:
+		sort.Sort(keySortable{result, func(s interface{}) string {
+			return strings.ToUpper(s.(string))
+		}})
+	}
+	return result
+}
+
+type keySortable struct {
+	slice []interface{}
+	keyFn func(interface{}) string
+}
+
+// Len is part of sort.Interface.
+func (s keySortable) Len() int {
+	return len(s.slice)
+}
+
+// Swap is part of sort.Interface.
+func (s keySortable) Swap(i, j int) {
+	a := s.slice
+	a[i], a[j] = a[j], a[i]
+}
+
+// Less is part of sort.Interface.
+func (s keySortable) Less(i, j int) bool {
+	k, sl := s.keyFn, s.slice
+	a, b := k(sl[i]), k(sl[j])
+	return a < b
 }
 
 func splitFilter(s, sep string) interface{} {
-	out := strings.Split(s, sep)
+	result := strings.Split(s, sep)
 	// This matches Jekyll's observed behavior.
 	// TODO test case
-	if len(out) > 0 && out[len(out)-1] == "" {
-		out = out[:len(out)-1]
+	if len(result) > 0 && result[len(result)-1] == "" {
+		result = result[:len(result)-1]
 	}
-	return out
+	return result
 }
 
 func uniqFilter(array []interface{}) []interface{} {
-	out := []interface{}{}
+	result := []interface{}{}
 	seenInts := map[int]bool{}
 	seenStrings := map[string]bool{}
 	seen := func(item interface{}) bool {
@@ -275,7 +327,7 @@ func uniqFilter(array []interface{}) []interface{} {
 			// }
 			// the O(n^2) case:
 			// TODO use == if the values are comparable
-			for _, v := range out {
+			for _, v := range result {
 				if reflect.DeepEqual(item, v) {
 					return true
 				}
@@ -285,8 +337,8 @@ func uniqFilter(array []interface{}) []interface{} {
 	}
 	for _, e := range array {
 		if !seen(e) {
-			out = append(out, e)
+			result = append(result, e)
 		}
 	}
-	return out
+	return result
 }

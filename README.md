@@ -32,7 +32,6 @@ In brief, these aren't implemented:
 
 - The `cycle` and `tablerow` tags
 - `{% when a or b %}`
-- The `sort_natural` filter
 - Loop ranges `{% for a in 1...10 %}`
 - Error modes
 - Whitespace control
