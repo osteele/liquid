@@ -4,7 +4,7 @@
 
 > “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
 
-`liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in [gojekyll](https://github.com/osteele/gojekyll).
+`liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
 
 <!-- TOC -->
 
@@ -26,7 +26,7 @@
 
 ## Differences from Liquid
 
-Refer to the [feature parity board](https://github.com/osteele/liquid/projects/1) for a list of differences from Liquid.
+The [feature parity board](https://github.com/osteele/liquid/projects/1) lists differences from Liquid.
 
 In brief, these aren't implemented:
 
@@ -47,13 +47,13 @@ These are opinionated differences that unlikely to change:
 This library is at an early stage of development.
 It has been mostly used by its author.
 
-Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, tag `v0.2` is incompatible with `v0.1` and (hypothetical) `v0.1.1`. ([gopkg.in](http://gopkg.in) doesn't work this way, so you won't can't use `gopkg.in/osteele/liquid.v0.1` to specify version 0.1.)
+Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, tag `v0.2` is incompatible with `v0.1`. ([gopkg.in](http://gopkg.in) doesn't work this way, so you won't can't use `gopkg.in/osteele/liquid.v0.1` to specify version 0.1.)
 
-Even within these parameters, only the liquid package itself, and the sub-package APIs that it documents, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and in other sub-packages are intended only for use in other packages in this repo; they are not generally stable between even sub-minor releases.
+Even within these parameters, only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and in other sub-packages are intended only for use in other packages in this repo; they are not generally stable even between sub-minor releases.
 
 ## Install
 
-`go get gopkg.in/osteele/liquid.v0.2`-- latest snapshot
+`go get gopkg.in/osteele/liquid.v0`-- latest snapshot
 
 `go get -u github.com/osteele/goliquid` -- development version
 
@@ -75,7 +75,7 @@ fmt.Println(out)
 
 ### Command-Line tool
 
-`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line `liquid` program in your GO bin.
+`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line `liquid` executable.
 This is intended to make it easier to create test cases for bug reports.
 
 ```bash

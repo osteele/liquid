@@ -1,7 +1,6 @@
 package expression
 
 import (
-	"fmt"
 	"math"
 	"reflect"
 	"strings"
@@ -69,7 +68,6 @@ func makeIndexExpr(objFn, indexFn func(Context) interface{}) func(Context) inter
 				}
 			}
 		case reflect.Map:
-			fmt.Println("map")
 			if ixRef.Type().ConvertibleTo(ref.Type().Key()) {
 				item := ref.MapIndex(ixRef.Convert(ref.Type().Key()))
 				if item.IsValid() {
