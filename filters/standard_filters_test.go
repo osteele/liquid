@@ -96,6 +96,10 @@ var filterTests = []struct {
 	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
 	{`"          So much room for activities!          " | rstrip`, "          So much room for activities!"},
 
+	{`"%27Stop%21%27+said+Fred" | url_decode`, "'Stop!' said Fred"},
+	{`"john@liquid.com" | url_encode`, "john%40liquid.com"},
+	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
+
 	// number filters
 	{`-17 | abs`, 17},
 	{`4 | abs`, 4},

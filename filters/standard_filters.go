@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"math"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strings"
@@ -190,6 +191,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)
 	})
+	fd.AddFilter("url_encode", url.QueryEscape)
+	fd.AddFilter("url_decode", url.QueryUnescape)
 
 	// debugging extensions
 	// inspect is from Jekyll
