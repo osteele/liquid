@@ -57,7 +57,7 @@ type rendererContext struct {
 }
 
 func (c rendererContext) Errorf(format string, a ...interface{}) Error {
-	return renderErrorf(c.node.SourceLocation(), c.node.SourceText(), format, a...)
+	return renderErrorf(c.node, format, a...)
 }
 
 func (c rendererContext) WrapError(err error) Error {

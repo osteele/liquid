@@ -58,5 +58,5 @@ func (e *sourceLocError) Error() string {
 	if e.Pathname != "" {
 		locative = " in " + e.Pathname
 	}
-	return fmt.Sprintf("Liquid exception: Liquid syntax error (line %d): %s%s", e.LineNo, e.message, locative)
+	return fmt.Sprintf("Liquid error (line %d): %s%s", e.LineNo, e.message, locative)
 }
