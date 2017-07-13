@@ -25,7 +25,7 @@ type Cycle struct {
 	Values []string
 }
 
-// An Loop is a parse of a {% loop %} statement
+// A Loop is a parse of a {% loop %} statement
 type Loop struct {
 	Variable string
 	Expr     Expression

@@ -18,43 +18,20 @@ var parseErrorTests = []struct{ in, expected string }{
 }
 
 var tagTests = []struct{ in, expected string }{
-	// variables
+	// variable tags
 	{`{% assign av = 1 %}{{ av }}`, "1"},
 	{`{% assign av = obj.a %}{{ av }}`, "1"},
 	{`{% capture x %}captured{% endcapture %}{{ x }}`, "captured"},
 
-	// TODO test whether this requires matching interior tags
+	// TODO research whether Liquid requires matching interior tags
 	{`{% comment %}{{ a }}{% unknown %}{% endcomment %}`, ""},
 
-	// conditionals
-	{`{% case 1 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, "a"},
-	{`{% case 2 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, "b"},
-	{`{% case 3 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, ""},
-	{`{% case 1 %}{% when 1 %}a{% else %}b{% endcase %}`, "a"},
-	{`{% case 2 %}{% when 1 %}a{% else %}b{% endcase %}`, "b"},
-
-	{`{% if true %}true{% endif %}`, "true"},
-	{`{% if false %}false{% endif %}`, ""},
-	{`{% if 0 %}true{% endif %}`, "true"},
-	{`{% if 1 %}true{% endif %}`, "true"},
-	{`{% if x %}true{% endif %}`, "true"},
-	{`{% if y %}true{% endif %}`, ""},
-	{`{% if true %}true{% endif %}`, "true"},
-	{`{% if false %}false{% endif %}`, ""},
-	{`{% if true %}true{% else %}false{% endif %}`, "true"},
-	{`{% if false %}false{% else %}true{% endif %}`, "true"},
-	{`{% if true %}0{% elsif true %}1{% else %}2{% endif %}`, "0"},
-	{`{% if false %}0{% elsif true %}1{% else %}2{% endif %}`, "1"},
-	{`{% if false %}0{% elsif false %}1{% else %}2{% endif %}`, "2"},
-
-	{`{% unless true %}false{% endunless %}`, ""},
-	{`{% unless false %}true{% endunless %}`, "true"},
-
-	// TODO test whether this requires matching interior tags
+	// TODO research whether Liquid requires matching interior tags
 	{`pre{% raw %}{{ a }}{% unknown %}{% endraw %}post`, "pre{{ a }}{% unknown %}post"},
 	{`pre{% raw %}{% if false %}anyway-{% endraw %}post`, "pre{% if false %}anyway-post"},
 }
 
+// this is also used in the other test files
 var tagTestBindings = map[string]interface{}{
 	"x": 123,
 	"obj": map[string]interface{}{
