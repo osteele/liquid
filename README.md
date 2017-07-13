@@ -30,10 +30,8 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 
 In brief, these aren't implemented:
 
-- The group property of the `cycle` tag
-- The `tablerow` tag
-- `{% when a or b %}`
 - Loop ranges `{% for a in 1...10 %}`
+- The `tablerow` tag
 - Error modes
 - Whitespace control
 

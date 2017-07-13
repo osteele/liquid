@@ -14,8 +14,13 @@ var cfTagTests = []struct{ in, expected string }{
 	{`{% case 1 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, "a"},
 	{`{% case 2 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, "b"},
 	{`{% case 3 %}{% when 1 %}a{% when 2 %}b{% endcase %}`, ""},
+	// else
 	{`{% case 1 %}{% when 1 %}a{% else %}b{% endcase %}`, "a"},
 	{`{% case 2 %}{% when 1 %}a{% else %}b{% endcase %}`, "b"},
+	// disjunction
+	{`{% case 1 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "a"},
+	{`{% case 2 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "a"},
+	{`{% case 3 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "b"},
 
 	// if
 	{`{% if true %}true{% endif %}`, "true"},

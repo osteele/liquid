@@ -5,13 +5,14 @@ const (
 	AssignStatementSelector = "%assign "
 	CycleStatementSelector  = "{%cycle "
 	LoopStatementSelector   = "%loop "
+	WhenStatementSelector   = "{%when "
 )
 
 // A Statement is the result of parsing a string.
 type Statement struct{ parseValue }
 
 // Expression returns a statement's expression function.
-func (s *Statement) Expression() Expression { return &expression{s.val} }
+// func (s *Statement) Expression() Expression { return &expression{s.val} }
 
 // An Assignment is a parse of an {% assign %} statement
 type Assignment struct {
@@ -21,7 +22,7 @@ type Assignment struct {
 
 // A Cycle is a parse of an {% assign %} statement
 type Cycle struct {
-	Group string
+	Group  string
 	Values []string
 }
 
@@ -36,6 +37,11 @@ type loopModifiers struct {
 	Limit    *int
 	Offset   int
 	Reversed bool
+}
+
+// A When is a parse of a {% when %} clause
+type When struct {
+	Exprs []Expression
 }
 
 // ParseStatement parses an statement into an Expression that can evaluated to return a

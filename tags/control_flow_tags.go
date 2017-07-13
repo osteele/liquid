@@ -4,39 +4,58 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/evaluator"
-	"github.com/osteele/liquid/expression"
+	e "github.com/osteele/liquid/expression"
 	"github.com/osteele/liquid/render"
 )
 
+type caseInterpreter interface {
+	body() *render.BlockNode
+	test(interface{}, render.Context) (bool, error)
+}
+type exprCase struct {
+	e.When
+	b *render.BlockNode
+}
+
+func (c exprCase) body() *render.BlockNode { return c.b }
+
+func (c exprCase) test(caseValue interface{}, ctx render.Context) (bool, error) {
+	for _, expr := range c.Exprs {
+		whenValue, err := ctx.Evaluate(expr)
+		if err != nil {
+			return false, err
+		}
+		if evaluator.Equal(caseValue, whenValue) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type elseCase struct{ b *render.BlockNode }
+
+func (c elseCase) body() *render.BlockNode { return c.b }
+
+func (c elseCase) test(interface{}, render.Context) (bool, error) { return true, nil }
+
 func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO parse error on non-empty node.Body
-	// TODO case can include an else
-	expr, err := expression.Parse(node.Args)
+	expr, err := e.Parse(node.Args)
 	if err != nil {
 		return nil, err
 	}
-	type caseRec struct {
-		// expr expression.Expression
-		test func(interface{}, render.Context) (bool, error)
-		node *render.BlockNode
-	}
-	cases := []caseRec{}
+	cases := []caseInterpreter{}
 	for _, clause := range node.Clauses {
-		testFn := func(interface{}, render.Context) (bool, error) { return true, nil }
-		if clause.Token.Name == "when" {
-			clauseExpr, err := expression.Parse(clause.Args)
+		switch clause.Token.Name {
+		case "when":
+			stmt, err := e.ParseStatement(e.WhenStatementSelector, clause.Args)
 			if err != nil {
 				return nil, err
 			}
-			testFn = func(sel interface{}, ctx render.Context) (bool, error) {
-				value, err := ctx.Evaluate(clauseExpr)
-				if err != nil {
-					return false, err
-				}
-				return evaluator.Equal(sel, value), nil
-			}
+			cases = append(cases, exprCase{stmt.When, clause})
+		default: // should be a check for "else", but I like the metacircularity
+			cases = append(cases, elseCase{clause})
 		}
-		cases = append(cases, caseRec{testFn, clause})
 	}
 	return func(w io.Writer, ctx render.Context) error {
 		sel, err := ctx.Evaluate(expr)
@@ -44,12 +63,12 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 			return err
 		}
 		for _, clause := range cases {
-			f, err := clause.test(sel, ctx)
+			b, err := clause.test(sel, ctx)
 			if err != nil {
 				return err
 			}
-			if f {
-				return ctx.RenderChild(w, clause.node)
+			if b {
+				return ctx.RenderChild(w, clause.body())
 			}
 		}
 		return nil
@@ -59,26 +78,26 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 func ifTagParser(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
 	return func(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
-			test expression.Expression
+			test e.Expression
 			body *render.BlockNode
 		}
-		expr, err := expression.Parse(node.Args)
+		expr, err := e.Parse(node.Args)
 		if err != nil {
 			return nil, err
 		}
 		if !polarity {
-			expr = expression.Not(expr)
+			expr = e.Not(expr)
 		}
 		branches := []branchRec{
 			{expr, &node},
 		}
 		for _, c := range node.Clauses {
-			test := expression.Constant(true)
+			test := e.Constant(true)
 			switch c.Name {
 			case "else":
 			// TODO parse error if this isn't the last branch
 			case "elsif":
-				t, err := expression.Parse(c.Args)
+				t, err := e.Parse(c.Args)
 				if err != nil {
 					return nil, err
 				}

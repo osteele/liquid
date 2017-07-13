@@ -18,6 +18,7 @@ func init() {
    f        func(Context) interface{}
    s        string
    ss       []string
+   exprs    []Expression
    cycle    Cycle
    cyclefn  func(string) Cycle
    loop     Loop
@@ -26,6 +27,7 @@ func init() {
 }
 %type <f> expr rel filtered cond
 %type<filter_params> filter_params
+%type<exprs> exprs expr2
 %type<cycle> cycle
 %type<cyclefn> cycle2
 %type<ss> cycle3
@@ -34,7 +36,7 @@ func init() {
 %type<s> string
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
-%token ASSIGN CYCLE LOOP
+%token ASSIGN CYCLE LOOP WHEN
 %token EQ NEQ GE LE IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
@@ -45,7 +47,8 @@ start:
 	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
 | CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }
-| LOOP loop  ';' { yylex.(*lexer).Loop = $2 }
+| LOOP loop  ';'  { yylex.(*lexer).Loop = $2 }
+| WHEN exprs ';'   { yylex.(*lexer).When = When{$2} }
 ;
 
 cycle: string cycle2 { $$ = $2($1) };
@@ -64,6 +67,12 @@ cycle2:
 cycle3:
   /* empty */ { $$ = []string{} }
 | ',' string cycle3 { $$ = append([]string{$2}, $3...) }
+;
+
+exprs: expr expr2 { $$ = append([]Expression{&expression{$1}}, $2...) } ;
+expr2:
+  /* empty */    { $$ = []Expression{} }
+| ',' expr expr2 { $$ = append([]Expression{&expression{$2}}, $3...) }
 ;
 
 string: LITERAL {

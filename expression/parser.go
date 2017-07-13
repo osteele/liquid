@@ -10,7 +10,8 @@ type parseValue struct {
 	Assignment
 	Cycle
 	Loop
-	val   func(Context) interface{}
+	When
+	val func(Context) interface{}
 }
 
 // ParseError represents a parse error. The yacc-generated compiler
