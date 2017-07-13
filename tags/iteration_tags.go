@@ -75,6 +75,9 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 			return err
 		}
 		iter := makeIterator(val)
+		if iter == nil {
+			return nil
+		}
 		iter = applyLoopModifiers(loop, iter)
 		// shallow-bind the loop variables; restore on exit
 		defer func(index, forloop interface{}) {
@@ -127,6 +130,9 @@ func makeIterator(value interface{}) iterable {
 	if iter, ok := value.(iterable); ok {
 		return iter
 	}
+	if value == nil {
+		return nil
+	}
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Array, reflect.Slice:
 		return sliceWrapper(reflect.ValueOf(value))
@@ -138,7 +144,7 @@ func makeIterator(value interface{}) iterable {
 		}
 		return sliceWrapper(reflect.ValueOf(array))
 	default:
-		return sliceWrapper(reflect.ValueOf([]int{}))
+		return nil
 	}
 }
 
