@@ -25,7 +25,7 @@ func init() {
    loopmods loopModifiers
    filter_params []valueFn
 }
-%type <f> expr rel filtered cond
+%type <f> expr rel filtered cond int_or_var loop_expr
 %type<filter_params> filter_params
 %type<exprs> exprs expr2
 %type<cycle> cycle
@@ -47,8 +47,8 @@ start:
 	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
 | CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }
-| LOOP loop  ';'  { yylex.(*lexer).Loop = $2 }
-| WHEN exprs ';'   { yylex.(*lexer).When = When{$2} }
+| LOOP loop ';'   { yylex.(*lexer).Loop = $2 }
+| WHEN exprs ';'  { yylex.(*lexer).When = When{$2} }
 ;
 
 cycle: string cycle2 { $$ = $2($1) };
@@ -83,10 +83,22 @@ string: LITERAL {
 	$$ = s
 };
 
-loop: IDENTIFIER IN filtered loop_modifiers {
+loop: IDENTIFIER IN loop_expr loop_modifiers {
 	name, expr, mods := $1, $3, $4
 	$$ = Loop{name, &expression{expr}, mods}
 }
+;
+
+loop_expr : '(' int_or_var '.' '.' int_or_var ')' {
+  $$ = makeRangeExpr($2, $5)
+}
+| filtered
+;
+
+// TODO DRY w/ expr
+int_or_var:
+  LITERAL { val := $1; $$ = func(Context) interface{} { return val } }
+| IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
 ;
 
 loop_modifiers: /* empty */ { $$ = loopModifiers{} }
@@ -121,7 +133,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 ;
 
 expr:
-  LITERAL { val := $1; $$ = func(_ Context) interface{} { return val } }
+  LITERAL { val := $1; $$ = func(Context) interface{} { return val } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }

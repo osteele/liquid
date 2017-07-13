@@ -62,6 +62,10 @@ var loopTests = []struct{ in, expected string }{
 	{`{% for a in array %}{% cycle 'even', 'odd' %}.{% endfor %}`, "even.odd.even."},
 	{`{% for a in array %}{% cycle '0', '1' %},{% cycle '0', '1' %}.{% endfor %}`, "0,1.0,1.0,1."},
 	// {`{% for a in array %}{% cycle group: 'a', '0', '1' %},{% cycle '0', '1' %}.{% endfor %}`, "0,1.0,1.0,1."},
+
+	// range
+	{`{% for i in (3 .. 5) %}{{i}}.{% endfor %}`, "3.4.5."},
+	// {`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
 }
 
 var loopErrorTests = []struct{ in, expected string }{

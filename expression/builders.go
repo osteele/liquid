@@ -1,10 +1,34 @@
 package expression
 
 import (
+	"fmt"
 	"math"
 	"reflect"
 	"strings"
+
+	"github.com/osteele/liquid/evaluator"
 )
+
+type rangeObj struct {
+	b, e int
+}
+
+// Len is in the iteration interface
+func (r rangeObj) Len() int { return r.e + 1 - r.b }
+
+// Index is in the iteration interface
+func (r rangeObj) Index(i int) interface{} { return r.b + i }
+
+func makeRangeExpr(startFn, endFn func(Context) interface{}) func(Context) interface{} {
+	return func(ctx Context) interface{} {
+		var proto int
+		b := evaluator.MustConvert(startFn(ctx), reflect.TypeOf(proto))
+		e := evaluator.MustConvert(endFn(ctx), reflect.TypeOf(proto))
+		r := rangeObj{b.(int), e.(int)}
+		fmt.Println("made a range", b, e, r, r.Len(), r.Index(1))
+		return r
+	}
+}
 
 func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} { // nolint: gocyclo
 	return func(ctx Context) interface{} {
