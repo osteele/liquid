@@ -17,11 +17,13 @@ func init() {
    val      interface{}
    f        func(Context) interface{}
    arglist  []func(Context) interface{}
+   loop     Loop
    loopmods loopModifiers
    filter_params []valueFn
 }
-%type <f> expr rel filtered cond loop
+%type <f> expr rel filtered cond
 %type<filter_params> filter_params
+%type<loop> loop
 %type<loopmods> loop_modifiers
 %type<arglist> arglist moreargs
 %token <val> LITERAL
@@ -34,7 +36,7 @@ func init() {
 start:
   cond ';' { yylex.(*lexer).val = $1 }
 | ASSIGN IDENTIFIER '=' filtered ';' {
-	yylex.(*lexer).assgn = Assignment{$2, &expression{$4}}
+	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
 | ARGLIST arglist ';' {
 	args := $2
@@ -46,7 +48,7 @@ start:
 		return result
 	}
 }
-| LOOP loop  ';' { yylex.(*lexer).val = $2 }
+| LOOP loop  ';' { yylex.(*lexer).Loop = $2 }
 ;
 
 arglist:
@@ -58,9 +60,7 @@ moreargs : /* empty */ { $$ = []func(Context) interface{}{}}
 
 loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4
-	$$ = func(ctx Context) interface{} {
-		return &Loop{name, expr(ctx), mods}
-	}
+	$$ = Loop{name, &expression{expr}, mods}
 }
 ;
 

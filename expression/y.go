@@ -22,6 +22,7 @@ type yySymType struct {
 	val           interface{}
 	f             func(Context) interface{}
 	arglist       []func(Context) interface{}
+	loop          Loop
 	loopmods      loopModifiers
 	filter_params []valueFn
 }
@@ -99,7 +100,7 @@ var yyAct = [...]int{
 	21, 55, 20, 53, 9, 10, 13, 14, 4, 3,
 	5, 22, 56, 12, 58, 6, 38, 19, 36, 22,
 	2, 63, 61, 62, 39, 40, 15, 64, 11, 31,
-	32, 1, 30, 16, 59, 54, 18,
+	32, 1, 30, 16, 59, 18, 54,
 }
 var yyPact = [...]int{
 
@@ -118,9 +119,9 @@ var yyPgo = [...]int{
 }
 var yyR1 = [...]int{
 
-	0, 10, 10, 10, 10, 8, 9, 9, 5, 7,
+	0, 10, 10, 10, 10, 8, 9, 9, 6, 7,
 	7, 7, 1, 1, 1, 1, 1, 3, 3, 3,
-	6, 6, 2, 2, 2, 2, 2, 2, 2, 2,
+	5, 5, 2, 2, 2, 2, 2, 2, 2, 2,
 	4, 4, 4,
 }
 var yyR2 = [...]int{
@@ -133,11 +134,11 @@ var yyR2 = [...]int{
 var yyChk = [...]int{
 
 	-1000, -10, -4, 9, 8, 10, -2, -3, -1, 4,
-	5, 28, 23, 16, 17, 5, -8, -1, -5, 5,
+	5, 28, 23, 16, 17, 5, -8, -1, -6, 5,
 	20, 7, 26, 11, 12, 22, 21, 13, 14, 18,
 	-4, -2, -2, 24, 23, -9, 25, 23, 15, 5,
 	6, -1, -1, -1, -1, -1, -1, -1, -1, 29,
-	-3, -1, -1, -3, -6, -1, 27, 23, -9, -7,
+	-3, -1, -1, -3, -5, -1, 27, 23, -9, -7,
 	25, 5, 6, -1, 4,
 }
 var yyDef = [...]int{
@@ -514,19 +515,19 @@ yydefault:
 
 	case 1:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:35
+		//line expressions.y:37
 		{
 			yylex.(*lexer).val = yyDollar[1].f
 		}
 	case 2:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line expressions.y:36
+		//line expressions.y:38
 		{
-			yylex.(*lexer).assgn = Assignment{yyDollar[2].name, &expression{yyDollar[4].f}}
+			yylex.(*lexer).Assignment = Assignment{yyDollar[2].name, &expression{yyDollar[4].f}}
 		}
 	case 3:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:39
+		//line expressions.y:41
 		{
 			args := yyDollar[2].arglist
 			yylex.(*lexer).val = func(ctx Context) interface{} {
@@ -539,36 +540,34 @@ yydefault:
 		}
 	case 4:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:49
+		//line expressions.y:51
 		{
-			yylex.(*lexer).val = yyDollar[2].f
+			yylex.(*lexer).Loop = yyDollar[2].loop
 		}
 	case 5:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line expressions.y:53
+		//line expressions.y:55
 		{
 			yyVAL.arglist = append([]func(Context) interface{}{yyDollar[1].f}, yyDollar[2].arglist...)
 		}
 	case 6:
 		yyDollar = yyS[yypt-0 : yypt+1]
-		//line expressions.y:55
+		//line expressions.y:57
 		{
 			yyVAL.arglist = []func(Context) interface{}{}
 		}
 	case 7:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line expressions.y:56
+		//line expressions.y:58
 		{
 			yyVAL.arglist = append([]func(Context) interface{}{yyDollar[2].f}, yyDollar[3].arglist...)
 		}
 	case 8:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line expressions.y:59
+		//line expressions.y:61
 		{
 			name, expr, mods := yyDollar[1].name, yyDollar[3].f, yyDollar[4].loopmods
-			yyVAL.f = func(ctx Context) interface{} {
-				return &Loop{name, expr(ctx), mods}
-			}
+			yyVAL.loop = Loop{name, &expression{expr}, mods}
 		}
 	case 9:
 		yyDollar = yyS[yypt-0 : yypt+1]

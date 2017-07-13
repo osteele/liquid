@@ -35,14 +35,13 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 	if err != nil {
 		return nil, err
 	}
-	assignment := stmt.Assignment()
 	return func(w io.Writer, ctx render.Context) error {
-		value, err := ctx.Evaluate(assignment.ValueFn)
+		value, err := ctx.Evaluate(stmt.Assignment.ValueFn)
 		if err != nil {
 			return err
 		}
 		_ = value
-		ctx.Set(assignment.Name, value)
+		ctx.Set(stmt.Assignment.Variable, value)
 		return nil
 	}, nil
 }

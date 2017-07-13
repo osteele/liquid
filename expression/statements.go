@@ -10,22 +10,19 @@ const (
 // A Statement is the result of parsing a string.
 type Statement struct{ parseValue }
 
-// Assignment returns a statement's assignment record.
-func (s *Statement) Assignment() Assignment { return s.assgn }
-
-// Expression returns a statement's expression.
+// Expression returns a statement's expression function.
 func (s *Statement) Expression() Expression { return &expression{s.val} }
 
 // Assignment captures the parse of an {% assign %} statement
 type Assignment struct {
-	Name    string
-	ValueFn Expression
+	Variable string
+	ValueFn  Expression
 }
 
 // Loop captures the parse of a {% loop %} statement
 type Loop struct {
 	Variable string
-	Expr     interface{}
+	Expr     Expression
 	loopModifiers
 }
 

@@ -58,26 +58,18 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	}, nil
 }
 
-func parseLoopExpression(source string) (expression.Expression, error) {
-	stmt, err := expression.ParseStatement(expression.LoopStatementSelector, source)
-	if err != nil {
-		return nil, err
-	}
-	return stmt.Expression(), nil
-}
-
 func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
-	expr, err := parseLoopExpression(node.Args)
+	stmt, err := expression.ParseStatement(expression.LoopStatementSelector, node.Args)
 	if err != nil {
 		return nil, err
 	}
+	loop := stmt.Loop
 	return func(w io.Writer, ctx render.Context) error {
-		val, err := ctx.Evaluate(expr)
+		val, err := ctx.Evaluate(loop.Expr)
 		if err != nil {
 			return err
 		}
-		loop := val.(*expression.Loop)
-		rt := reflect.ValueOf(loop.Expr)
+		rt := reflect.ValueOf(val)
 		switch rt.Kind() {
 		case reflect.Map:
 			array := make([]interface{}, 0, rt.Len())

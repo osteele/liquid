@@ -7,7 +7,8 @@ package expression
 import "fmt"
 
 type parseValue struct {
-	assgn Assignment
+	Assignment
+	Loop
 	val   func(Context) interface{}
 }
 
