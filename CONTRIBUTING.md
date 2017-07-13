@@ -20,7 +20,7 @@ Fork and clone the repo.
 
 Install package dependencies and development tools:
 
-* `make install-dev-tools`
+* `make setup`
 * `go get -t ./...`
 
 ### Test and Lint
