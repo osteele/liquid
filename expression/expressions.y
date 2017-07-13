@@ -27,7 +27,7 @@ func init() {
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
 %token ARGLIST ASSIGN LOOP
-%token EQ NEQ GE LE FOR IN AND OR CONTAINS
+%token EQ NEQ GE LE IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
 %%

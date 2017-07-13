@@ -79,14 +79,21 @@ func (lex *lexer) Lex(out *yySymType) int {
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
 
 		main := |*
+			# statement selectors, should match constants in parser.go
 			"%assign " => { tok = ASSIGN; fbreak; };
 			"{%cycle " => { tok = ARGLIST; fbreak; };
 			"%loop " => { tok = LOOP; fbreak; };
+
+			# literals
 			int => Int;
 			float => Float;
 			string => String;
+
+			# constants
 			("true" | "false") => Bool;
 			"nil" => { tok = LITERAL; out.val = nil; fbreak; };
+
+			# relations
 			"==" => { tok = EQ; fbreak; };
 			"!=" => { tok = NEQ; fbreak; };
 			">=" => { tok = GE; fbreak; };
@@ -94,11 +101,14 @@ func (lex *lexer) Lex(out *yySymType) int {
 			"and" => { tok = AND; fbreak; };
 			"or" => { tok = OR; fbreak; };
 			"contains" => { tok = CONTAINS; fbreak; };
-			"for" => { tok = FOR; fbreak; };
+
+			# keywords
 			"in" => { tok = IN; fbreak; };
+
 			identifier ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
 			identifier => Identifier;
 			property => { tok = PROPERTY; out.name = string(lex.data[lex.ts+1:lex.te]); fbreak; };
+
 			space+;
 			any => { tok = int(lex.data[lex.ts]); fbreak; };
 		*|;

@@ -5,15 +5,15 @@ import "strconv"
 
 //line scanner.go:9
 var _expression_actions []byte = []byte{
-	0, 1, 0, 1, 1, 1, 2, 1, 11,
-	1, 12, 1, 13, 1, 14, 1, 15,
-	1, 16, 1, 17, 1, 18, 1, 19,
-	1, 20, 1, 21, 1, 22, 1, 23,
-	1, 24, 1, 25, 1, 26, 1, 27,
-	1, 28, 1, 29, 2, 2, 3, 2,
+	0, 1, 0, 1, 1, 1, 2, 1, 10,
+	1, 11, 1, 12, 1, 13, 1, 14,
+	1, 15, 1, 16, 1, 17, 1, 18,
+	1, 19, 1, 20, 1, 21, 1, 22,
+	1, 23, 1, 24, 1, 25, 1, 26,
+	1, 27, 1, 28, 2, 2, 3, 2,
 	2, 4, 2, 2, 5, 2, 2, 6,
 	2, 2, 7, 2, 2, 8, 2, 2,
-	9, 2, 2, 10,
+	9,
 }
 
 var _expression_key_offsets []int16 = []int16{
@@ -22,9 +22,8 @@ var _expression_key_offsets []int16 = []int16{
 	17, 18, 19, 20, 47, 50, 51, 52,
 	54, 55, 58, 60, 63, 71, 80, 89,
 	90, 91, 92, 102, 103, 114, 125, 136,
-	147, 158, 169, 180, 191, 202, 214, 225,
-	236, 247, 258, 269, 280, 291, 302, 313,
-	324,
+	147, 158, 169, 180, 191, 202, 213, 224,
+	235, 246, 257, 268, 279, 290, 301, 312,
 }
 
 var _expression_trans_keys []byte = []byte{
@@ -53,22 +52,21 @@ var _expression_trans_keys []byte = []byte{
 	65, 90, 97, 122, 45, 58, 63, 95,
 	110, 48, 57, 65, 90, 97, 122, 45,
 	58, 63, 95, 115, 48, 57, 65, 90,
-	97, 122, 45, 58, 63, 95, 97, 111,
-	48, 57, 65, 90, 98, 122, 45, 58,
-	63, 95, 108, 48, 57, 65, 90, 97,
-	122, 45, 58, 63, 95, 115, 48, 57,
-	65, 90, 97, 122, 45, 58, 63, 95,
-	101, 48, 57, 65, 90, 97, 122, 45,
-	58, 63, 95, 114, 48, 57, 65, 90,
-	97, 122, 45, 58, 63, 95, 110, 48,
-	57, 65, 90, 97, 122, 45, 58, 63,
-	95, 105, 48, 57, 65, 90, 97, 122,
-	45, 58, 63, 95, 108, 48, 57, 65,
-	90, 97, 122, 45, 58, 63, 95, 114,
+	97, 122, 45, 58, 63, 95, 97, 48,
+	57, 65, 90, 98, 122, 45, 58, 63,
+	95, 108, 48, 57, 65, 90, 97, 122,
+	45, 58, 63, 95, 115, 48, 57, 65,
+	90, 97, 122, 45, 58, 63, 95, 101,
 	48, 57, 65, 90, 97, 122, 45, 58,
-	63, 95, 114, 48, 57, 65, 90, 97,
-	122, 45, 58, 63, 95, 117, 48, 57,
-	65, 90, 97, 122, 37,
+	63, 95, 110, 48, 57, 65, 90, 97,
+	122, 45, 58, 63, 95, 105, 48, 57,
+	65, 90, 97, 122, 45, 58, 63, 95,
+	108, 48, 57, 65, 90, 97, 122, 45,
+	58, 63, 95, 114, 48, 57, 65, 90,
+	97, 122, 45, 58, 63, 95, 114, 48,
+	57, 65, 90, 97, 122, 45, 58, 63,
+	95, 117, 48, 57, 65, 90, 97, 122,
+	37,
 }
 
 var _expression_single_lengths []byte = []byte{
@@ -77,9 +75,8 @@ var _expression_single_lengths []byte = []byte{
 	1, 1, 1, 19, 1, 1, 1, 2,
 	1, 1, 0, 1, 2, 3, 3, 1,
 	1, 1, 4, 1, 5, 5, 5, 5,
-	5, 5, 5, 5, 5, 6, 5, 5,
 	5, 5, 5, 5, 5, 5, 5, 5,
-	1,
+	5, 5, 5, 5, 5, 5, 5, 1,
 }
 
 var _expression_range_lengths []byte = []byte{
@@ -89,8 +86,7 @@ var _expression_range_lengths []byte = []byte{
 	0, 1, 1, 1, 3, 3, 3, 0,
 	0, 0, 3, 0, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3,
-	0,
+	3, 3, 3, 3, 3, 3, 3, 0,
 }
 
 var _expression_index_offsets []int16 = []int16{
@@ -99,9 +95,8 @@ var _expression_index_offsets []int16 = []int16{
 	32, 34, 36, 38, 62, 65, 67, 69,
 	72, 74, 77, 79, 82, 88, 95, 102,
 	104, 106, 108, 116, 118, 127, 136, 145,
-	154, 163, 172, 181, 190, 199, 209, 218,
-	227, 236, 245, 254, 263, 272, 281, 290,
-	299,
+	154, 163, 172, 181, 190, 199, 208, 217,
+	226, 235, 244, 253, 262, 271, 280, 289,
 }
 
 var _expression_indicies []byte = []byte{
@@ -130,7 +125,8 @@ var _expression_indicies []byte = []byte{
 	67, 33, 33, 33, 60, 33, 58, 59,
 	33, 68, 33, 33, 33, 60, 33, 58,
 	59, 33, 69, 33, 33, 33, 60, 33,
-	58, 59, 33, 70, 71, 33, 33, 33,
+	58, 59, 33, 70, 33, 33, 33, 60,
+	33, 58, 59, 33, 71, 33, 33, 33,
 	60, 33, 58, 59, 33, 72, 33, 33,
 	33, 60, 33, 58, 59, 33, 73, 33,
 	33, 33, 60, 33, 58, 59, 33, 74,
@@ -139,10 +135,8 @@ var _expression_indicies []byte = []byte{
 	33, 76, 33, 33, 33, 60, 33, 58,
 	59, 33, 77, 33, 33, 33, 60, 33,
 	58, 59, 33, 78, 33, 33, 33, 60,
-	33, 58, 59, 33, 79, 33, 33, 33,
-	60, 33, 58, 59, 33, 80, 33, 33,
-	33, 60, 33, 58, 59, 33, 73, 33,
-	33, 33, 60, 81, 43,
+	33, 58, 59, 33, 72, 33, 33, 33,
+	60, 79, 43,
 }
 
 var _expression_trans_targs []byte = []byte{
@@ -150,13 +144,12 @@ var _expression_trans_targs []byte = []byte{
 	19, 8, 9, 10, 19, 11, 26, 14,
 	15, 16, 17, 18, 19, 19, 20, 21,
 	22, 23, 24, 25, 28, 27, 31, 32,
-	33, 34, 36, 38, 45, 50, 51, 53,
-	54, 56, 19, 19, 19, 1, 7, 12,
+	33, 34, 36, 38, 45, 49, 50, 52,
+	53, 55, 19, 19, 19, 1, 7, 12,
 	19, 19, 29, 30, 19, 19, 19, 19,
 	19, 19, 19, 35, 19, 37, 34, 39,
-	40, 41, 42, 43, 44, 34, 46, 49,
-	47, 48, 34, 34, 34, 52, 34, 34,
-	55, 13,
+	40, 41, 42, 43, 44, 34, 46, 47,
+	48, 34, 34, 51, 34, 34, 54, 13,
 }
 
 var _expression_trans_actions []byte = []byte{
@@ -164,13 +157,12 @@ var _expression_trans_actions []byte = []byte{
 	7, 0, 0, 0, 11, 0, 0, 0,
 	0, 0, 0, 0, 9, 27, 0, 0,
 	5, 5, 5, 5, 0, 0, 0, 0,
-	0, 66, 0, 0, 0, 0, 0, 0,
+	0, 63, 0, 0, 0, 0, 0, 0,
 	0, 5, 37, 39, 17, 0, 0, 0,
 	31, 29, 0, 0, 35, 25, 21, 15,
 	19, 43, 23, 0, 33, 0, 51, 0,
 	0, 0, 0, 0, 0, 57, 0, 0,
-	0, 0, 45, 60, 63, 0, 48, 54,
-	0, 0,
+	0, 45, 60, 0, 48, 54, 0, 0,
 }
 
 var _expression_to_state_actions []byte = []byte{
@@ -181,7 +173,6 @@ var _expression_to_state_actions []byte = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-	0,
 }
 
 var _expression_from_state_actions []byte = []byte{
@@ -192,7 +183,6 @@ var _expression_from_state_actions []byte = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
-	0,
 }
 
 var _expression_eof_trans []int16 = []int16{
@@ -202,8 +192,7 @@ var _expression_eof_trans []int16 = []int16{
 	44, 44, 49, 50, 44, 53, 49, 44,
 	44, 44, 58, 61, 61, 61, 61, 61,
 	61, 61, 61, 61, 61, 61, 61, 61,
-	61, 61, 61, 61, 61, 61, 61, 61,
-	44,
+	61, 61, 61, 61, 61, 61, 61, 44,
 }
 
 const expression_start int = 19
@@ -231,7 +220,7 @@ func newLexer(data []byte) *lexer {
 		pe:   len(data),
 	}
 
-//line scanner.go:239
+//line scanner.go:228
 	{
 		lex.cs = expression_start
 		lex.ts = 0
@@ -247,7 +236,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 	eof := lex.pe
 	tok := 0
 
-//line scanner.go:256
+//line scanner.go:245
 	{
 		var _klen int
 		var _trans int
@@ -268,7 +257,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = (lex.p)
 
-//line scanner.go:276
+//line scanner.go:265
 			}
 		}
 
@@ -347,51 +336,48 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line scanner.rl:38
 				lex.act = 7
 			case 4:
-//line scanner.rl:89
+//line scanner.rl:94
 				lex.act = 8
 			case 5:
-//line scanner.rl:94
+//line scanner.rl:101
 				lex.act = 13
 			case 6:
-//line scanner.rl:95
+//line scanner.rl:102
 				lex.act = 14
 			case 7:
-//line scanner.rl:96
+//line scanner.rl:103
 				lex.act = 15
 			case 8:
-//line scanner.rl:97
+//line scanner.rl:106
 				lex.act = 16
 			case 9:
-//line scanner.rl:98
-				lex.act = 17
-			case 10:
 //line scanner.rl:43
-				lex.act = 19
-			case 11:
-//line scanner.rl:82
+				lex.act = 18
+			case 10:
+//line scanner.rl:83
 				lex.te = (lex.p) + 1
 				{
 					tok = ASSIGN
 					(lex.p)++
 					goto _out
 				}
-			case 12:
-//line scanner.rl:83
+			case 11:
+//line scanner.rl:84
 				lex.te = (lex.p) + 1
 				{
 					tok = ARGLIST
 					(lex.p)++
 					goto _out
 				}
-			case 13:
-//line scanner.rl:84
+			case 12:
+//line scanner.rl:85
 				lex.te = (lex.p) + 1
 				{
 					tok = LOOP
 					(lex.p)++
 					goto _out
 				}
-			case 14:
+			case 13:
 //line scanner.rl:66
 				lex.te = (lex.p) + 1
 				{
@@ -402,40 +388,40 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 
 				}
-			case 15:
-//line scanner.rl:90
+			case 14:
+//line scanner.rl:97
 				lex.te = (lex.p) + 1
 				{
 					tok = EQ
 					(lex.p)++
 					goto _out
 				}
-			case 16:
-//line scanner.rl:91
+			case 15:
+//line scanner.rl:98
 				lex.te = (lex.p) + 1
 				{
 					tok = NEQ
 					(lex.p)++
 					goto _out
 				}
-			case 17:
-//line scanner.rl:92
+			case 16:
+//line scanner.rl:99
 				lex.te = (lex.p) + 1
 				{
 					tok = GE
 					(lex.p)++
 					goto _out
 				}
-			case 18:
-//line scanner.rl:93
+			case 17:
+//line scanner.rl:100
 				lex.te = (lex.p) + 1
 				{
 					tok = LE
 					(lex.p)++
 					goto _out
 				}
-			case 19:
-//line scanner.rl:99
+			case 18:
+//line scanner.rl:108
 				lex.te = (lex.p) + 1
 				{
 					tok = KEYWORD
@@ -443,8 +429,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 					(lex.p)++
 					goto _out
 				}
-			case 20:
-//line scanner.rl:101
+			case 19:
+//line scanner.rl:110
 				lex.te = (lex.p) + 1
 				{
 					tok = PROPERTY
@@ -452,15 +438,15 @@ func (lex *lexer) Lex(out *yySymType) int {
 					(lex.p)++
 					goto _out
 				}
-			case 21:
-//line scanner.rl:103
+			case 20:
+//line scanner.rl:113
 				lex.te = (lex.p) + 1
 				{
 					tok = int(lex.data[lex.ts])
 					(lex.p)++
 					goto _out
 				}
-			case 22:
+			case 21:
 //line scanner.rl:48
 				lex.te = (lex.p)
 				(lex.p)--
@@ -475,7 +461,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 
 				}
-			case 23:
+			case 22:
 //line scanner.rl:57
 				lex.te = (lex.p)
 				(lex.p)--
@@ -490,7 +476,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 
 				}
-			case 24:
+			case 23:
 //line scanner.rl:43
 				lex.te = (lex.p)
 				(lex.p)--
@@ -501,8 +487,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 
 				}
-			case 25:
-//line scanner.rl:101
+			case 24:
+//line scanner.rl:110
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -511,13 +497,13 @@ func (lex *lexer) Lex(out *yySymType) int {
 					(lex.p)++
 					goto _out
 				}
-			case 26:
-//line scanner.rl:102
+			case 25:
+//line scanner.rl:112
 				lex.te = (lex.p)
 				(lex.p)--
 
-			case 27:
-//line scanner.rl:103
+			case 26:
+//line scanner.rl:113
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -525,15 +511,15 @@ func (lex *lexer) Lex(out *yySymType) int {
 					(lex.p)++
 					goto _out
 				}
-			case 28:
-//line scanner.rl:103
+			case 27:
+//line scanner.rl:113
 				(lex.p) = (lex.te) - 1
 				{
 					tok = int(lex.data[lex.ts])
 					(lex.p)++
 					goto _out
 				}
-			case 29:
+			case 28:
 //line NONE:1
 				switch lex.act {
 				case 7:
@@ -578,18 +564,11 @@ func (lex *lexer) Lex(out *yySymType) int {
 				case 16:
 					{
 						(lex.p) = (lex.te) - 1
-						tok = FOR
-						(lex.p)++
-						goto _out
-					}
-				case 17:
-					{
-						(lex.p) = (lex.te) - 1
 						tok = IN
 						(lex.p)++
 						goto _out
 					}
-				case 19:
+				case 18:
 					{
 						(lex.p) = (lex.te) - 1
 
@@ -601,7 +580,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					}
 				}
 
-//line scanner.go:539
+//line scanner.go:521
 			}
 		}
 
@@ -616,7 +595,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = 0
 
-//line scanner.go:553
+//line scanner.go:535
 			}
 		}
 
@@ -639,7 +618,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 	}
 
-//line scanner.rl:107
+//line scanner.rl:117
 
 	return tok
 }

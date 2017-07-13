@@ -23,10 +23,6 @@ type Context interface {
 	Evaluate(expr expression.Expression) (interface{}, error)
 	// Evaluate compiles and interprets an expression, such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
 	EvaluateString(source string) (interface{}, error)
-	// EvaluateStatement evaluates a statement of the expression syntax.
-	// Tag must be a special string known to the compiler.
-	// For example, {% for %} uses this to parse the loop syntax.
-	EvaluateStatement(tag, source string) (interface{}, error)
 	// ExpandTagArg renders the current tag argument string as a Liquid template.
 	// It enables the implementation of tags such as {% avatar {{page.author}} %}, from the jekyll-avatar plugin; or Jekyll's {% include %} parameters.
 	ExpandTagArg() (string, error)
@@ -66,10 +62,6 @@ func (c rendererContext) WrapError(err error) Error {
 
 func (c rendererContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
-}
-
-func (c rendererContext) EvaluateStatement(tag, source string) (interface{}, error) {
-	return c.EvaluateString(fmt.Sprintf("%%%s %s", tag, source))
 }
 
 // EvaluateString evaluates an expression within the template context.

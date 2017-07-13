@@ -6,6 +6,13 @@ package expression
 
 import "fmt"
 
+// These strings match lexer tokens.
+const (
+	AssignStatementSelector = "%assign "
+	CycleStatementSelector  = "{%cycle "
+	LoopStatementSelector   = "%loop "
+)
+
 // Loop describes the result of parsing and then evaluating a loop statement.
 type Loop struct {
 	Variable string
@@ -44,6 +51,12 @@ func Parse(source string) (expr Expression, err error) {
 		return nil, ParseError(fmt.Errorf("parse error in %q", source).Error())
 	}
 	return &expression{lexer.val}, nil
+}
+
+// ParseStatement parses an statement into an Expression that can evaluated to return a
+// structure specific to the statement.
+func ParseStatement(sel, source string) (expr Expression, err error) {
+	return Parse(sel + source)
 }
 
 // EvaluateString is a wrapper for Parse and Evaluate.
