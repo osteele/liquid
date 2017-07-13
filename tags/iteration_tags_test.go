@@ -65,7 +65,7 @@ var loopTests = []struct{ in, expected string }{
 
 	// range
 	{`{% for i in (3 .. 5) %}{{i}}.{% endfor %}`, "3.4.5."},
-	// {`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
+	{`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
 }
 
 var loopErrorTests = []struct{ in, expected string }{

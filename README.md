@@ -30,7 +30,6 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 
 In brief, these aren't implemented:
 
-- Loop ranges `{% for a in 1...10 %}`
 - The `tablerow` tag
 - Error modes
 - Whitespace control
