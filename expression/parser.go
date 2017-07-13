@@ -8,6 +8,7 @@ import "fmt"
 
 type parseValue struct {
 	Assignment
+	Cycle
 	Loop
 	val   func(Context) interface{}
 }

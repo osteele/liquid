@@ -81,7 +81,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 		main := |*
 			# statement selectors, should match constants in parser.go
 			"%assign " => { tok = ASSIGN; fbreak; };
-			"{%cycle " => { tok = ARGLIST; fbreak; };
+			"{%cycle " => { tok = CYCLE; fbreak; };
 			"%loop " => { tok = LOOP; fbreak; };
 
 			# literals

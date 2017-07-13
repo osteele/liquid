@@ -365,7 +365,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line scanner.rl:84
 				lex.te = (lex.p) + 1
 				{
-					tok = ARGLIST
+					tok = CYCLE
 					(lex.p)++
 					goto _out
 				}

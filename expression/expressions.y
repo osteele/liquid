@@ -16,19 +16,25 @@ func init() {
    name     string
    val      interface{}
    f        func(Context) interface{}
-   arglist  []func(Context) interface{}
+   s        string
+   ss       []string
+   cycle    Cycle
+   cyclefn  func(string) Cycle
    loop     Loop
    loopmods loopModifiers
    filter_params []valueFn
 }
 %type <f> expr rel filtered cond
 %type<filter_params> filter_params
+%type<cycle> cycle
+%type<cyclefn> cycle2
+%type<ss> cycle3
 %type<loop> loop
 %type<loopmods> loop_modifiers
-%type<arglist> arglist moreargs
+%type<s> string
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
-%token ARGLIST ASSIGN LOOP
+%token ASSIGN CYCLE LOOP
 %token EQ NEQ GE LE IN AND OR CONTAINS
 %left '.' '|'
 %left '<' '>'
@@ -38,25 +44,35 @@ start:
 | ASSIGN IDENTIFIER '=' filtered ';' {
 	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
-| ARGLIST arglist ';' {
-	args := $2
-	yylex.(*lexer).val = func(ctx Context) interface{} {
-		result := make([]interface{}, len(args))
-		for i, fn := range args {
-			result[i] = fn(ctx)
-		}
-		return result
-	}
-}
+| CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }
 | LOOP loop  ';' { yylex.(*lexer).Loop = $2 }
 ;
 
-arglist:
-  expr moreargs { $$ = append([]func(Context) interface{}{$1}, $2...) };
+cycle: string cycle2 { $$ = $2($1) };
 
-moreargs : /* empty */ { $$ = []func(Context) interface{}{}}
-| ',' expr moreargs  { $$ = append([]func(Context) interface{}{$2}, $3...) }
+cycle2:
+  ':' string cycle3 {
+	h, t := $2, $3
+	$$ = func(g string) Cycle { return Cycle{g, append([]string{h}, t...)} }
+  }
+| cycle3 {
+	vals := $1
+	$$ = func(h string) Cycle { return Cycle{Values: append([]string{h}, vals...)} }
+  }
 ;
+
+cycle3:
+  /* empty */ { $$ = []string{} }
+| ',' string cycle3 { $$ = append([]string{$2}, $3...) }
+;
+
+string: LITERAL {
+	s, ok := $1.(string)
+	if !ok {
+		panic(ParseError(fmt.Sprintf("expected a string for %q", $1)))
+	}
+	$$ = s
+};
 
 loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4

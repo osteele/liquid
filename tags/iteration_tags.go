@@ -31,16 +31,8 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	if err != nil {
 		return nil, err
 	}
-	expr := stmt.Expression()
+	cycle := stmt.Cycle
 	return func(w io.Writer, ctx render.Context) error {
-		value, err := ctx.Evaluate(expr)
-		if err != nil {
-			return err
-		}
-		array := value.([]interface{})
-		if len(array) == 0 {
-			return nil
-		}
 		loopVar := ctx.Get(forloopVarName)
 		if loopVar == nil {
 			return ctx.Errorf("cycle must be within a forloop")
@@ -49,11 +41,11 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		// “C++ protects against accident, not against fraud.” – Bjarne Stroustrup
 		loopRec := loopVar.(map[string]interface{})
 		cycleMap := loopRec[".cycles"].(map[string]int)
-		group := ""
+		group, values := cycle.Group, cycle.Values
 		n := cycleMap[group]
 		cycleMap[group] = n + 1
-		fmt.Println(cycleMap)
-		_, err = w.Write([]byte(fmt.Sprint(array[n%len(array)])))
+		// The parser guarantees that there will be at least one item.
+		_, err = w.Write([]byte(values[n%len(values)]))
 		return err
 	}, nil
 }

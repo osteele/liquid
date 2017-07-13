@@ -13,13 +13,19 @@ type Statement struct{ parseValue }
 // Expression returns a statement's expression function.
 func (s *Statement) Expression() Expression { return &expression{s.val} }
 
-// Assignment captures the parse of an {% assign %} statement
+// An Assignment is a parse of an {% assign %} statement
 type Assignment struct {
 	Variable string
 	ValueFn  Expression
 }
 
-// Loop captures the parse of a {% loop %} statement
+// A Cycle is a parse of an {% assign %} statement
+type Cycle struct {
+	Group string
+	Values []string
+}
+
+// An Loop is a parse of a {% loop %} statement
 type Loop struct {
 	Variable string
 	Expr     Expression
