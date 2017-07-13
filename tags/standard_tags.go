@@ -31,13 +31,19 @@ func AddStandardTags(c render.Config) {
 }
 
 func assignTag(source string) (func(io.Writer, render.Context) error, error) {
-	expr, err := expression.ParseStatement(expression.AssignStatementSelector, source)
+	stmt, err := expression.ParseStatement(expression.AssignStatementSelector, source)
 	if err != nil {
 		return nil, err
 	}
+	assignment := stmt.Assignment()
 	return func(w io.Writer, ctx render.Context) error {
-		_, err := ctx.Evaluate(expr)
-		return err
+		value, err := ctx.Evaluate(assignment.ValueFn)
+		if err != nil {
+			return err
+		}
+		_ = value
+		ctx.Set(assignment.Name, value)
+		return nil
 	}, nil
 }
 

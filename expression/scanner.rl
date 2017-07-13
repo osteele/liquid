@@ -11,10 +11,10 @@ import "strconv"
 }%%
 
 type lexer struct {
+	parseValue
     data []byte
     p, pe, cs int
     ts, te, act int
-		val func(Context) interface{}
 }
 
 func (l* lexer) token() string {

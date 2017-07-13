@@ -27,10 +27,11 @@ func continueTag(string) (func(io.Writer, render.Context) error, error) {
 }
 
 func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
-	expr, err := expression.ParseStatement(expression.CycleStatementSelector, args)
+	stmt, err := expression.ParseStatement(expression.CycleStatementSelector, args)
 	if err != nil {
 		return nil, err
 	}
+	expr := stmt.Expression()
 	return func(w io.Writer, ctx render.Context) error {
 		value, err := ctx.Evaluate(expr)
 		if err != nil {
@@ -58,11 +59,11 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 }
 
 func parseLoopExpression(source string) (expression.Expression, error) {
-	expr, err := expression.ParseStatement(expression.LoopStatementSelector, source)
+	stmt, err := expression.ParseStatement(expression.LoopStatementSelector, source)
 	if err != nil {
 		return nil, err
 	}
-	return expr, nil
+	return stmt.Expression(), nil
 }
 
 func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo

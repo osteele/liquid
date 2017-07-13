@@ -12,9 +12,9 @@ var parseTests = []struct {
 	expect interface{}
 }{
 	{`a | filter: b`, 3},
-	{`%assign a = 3`, nil},
-	{`{%cycle 'a'`, []interface{}{"a"}},
-	{`{%cycle 'a', 'b'`, []interface{}{"a", "b"}},
+	// {`%assign a = 3`, nil},
+	// {`{%cycle 'a'`, []interface{}{"a"}},
+	// {`{%cycle 'a', 'b'`, []interface{}{"a", "b"}},
 }
 
 var parseErrorTests = []struct{ in, expected string }{
@@ -29,6 +29,7 @@ func TestParse(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			expr, err := Parse(test.in)
 			require.NoError(t, err, test.in)
+			_ = expr
 			value, err := expr.Evaluate(ctx)
 			require.NoError(t, err, test.in)
 			require.Equal(t, test.expect, value, test.in)

@@ -93,7 +93,7 @@ func TestParseErrors(t *testing.T) {
 		})
 	}
 }
-func TestTags(t *testing.T) {
+func TestStandardTags(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 	for i, test := range tagTests {

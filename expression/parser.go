@@ -6,33 +6,27 @@ package expression
 
 import "fmt"
 
-// These strings match lexer tokens.
-const (
-	AssignStatementSelector = "%assign "
-	CycleStatementSelector  = "{%cycle "
-	LoopStatementSelector   = "%loop "
-)
-
-// Loop describes the result of parsing and then evaluating a loop statement.
-type Loop struct {
-	Variable string
-	Expr     interface{}
-	loopModifiers
+type parseValue struct {
+	assgn Assignment
+	val   func(Context) interface{}
 }
 
-type loopModifiers struct {
-	Limit    *int
-	Offset   int
-	Reversed bool
-}
-
-// ParseError represents a parse error.
+// ParseError represents a parse error. The yacc-generated compiler
+// doesn't use error returns; this lets us recognize them.
 type ParseError string
 
 func (e ParseError) Error() string { return string(e) }
 
 // Parse parses an expression string into an Expression.
 func Parse(source string) (expr Expression, err error) {
+	p, err := parse(source)
+	if err != nil {
+		return nil, err
+	}
+	return &expression{p.val}, nil
+}
+
+func parse(source string) (p *parseValue, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
@@ -45,18 +39,13 @@ func Parse(source string) (expr Expression, err error) {
 			}
 		}
 	}()
-	lexer := newLexer([]byte(source + ";"))
-	n := yyParse(lexer)
+	// FIXME hack to recognize EOF
+	lex := newLexer([]byte(source + ";"))
+	n := yyParse(lex)
 	if n != 0 {
 		return nil, ParseError(fmt.Errorf("parse error in %q", source).Error())
 	}
-	return &expression{lexer.val}, nil
-}
-
-// ParseStatement parses an statement into an Expression that can evaluated to return a
-// structure specific to the statement.
-func ParseStatement(sel, source string) (expr Expression, err error) {
-	return Parse(sel + source)
+	return &lex.parseValue, nil
 }
 
 // EvaluateString is a wrapper for Parse and Evaluate.

@@ -34,11 +34,7 @@ func init() {
 start:
   cond ';' { yylex.(*lexer).val = $1 }
 | ASSIGN IDENTIFIER '=' filtered ';' {
-	name, expr := $2, $4
-	yylex.(*lexer).val = func(ctx Context) interface{} {
-		ctx.Set(name, expr(ctx))
-		return nil
-	}
+	yylex.(*lexer).assgn = Assignment{$2, &expression{$4}}
 }
 | ARGLIST arglist ';' {
 	args := $2
@@ -74,7 +70,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 	case "reversed":
 		$1.Reversed = true
 	default:
-		panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", $2)))
+		panic(ParseError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
 	$$ = $1
 }
@@ -93,7 +89,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 		}
 		$1.Offset = offset
 	default:
-		panic(ParseError(fmt.Sprintf("undefined loop modifier: %s", $2)))
+		panic(ParseError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
 	$$ = $1
 }
