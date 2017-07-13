@@ -14,6 +14,11 @@ const forloopVarName = "forloop"
 var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
 var errLoopBreak = fmt.Errorf("break outside a loop")
 
+type iterable interface {
+	Len() int
+	Index(int) interface{}
+}
+
 func breakTag(string) (func(io.Writer, render.Context) error, error) {
 	return func(_ io.Writer, ctx render.Context) error {
 		return ctx.WrapError(errLoopBreak)
@@ -50,7 +55,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	}, nil
 }
 
-func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	stmt, err := expression.ParseStatement(expression.LoopStatementSelector, node.Args)
 	if err != nil {
 		return nil, err
@@ -61,52 +66,25 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		if err != nil {
 			return err
 		}
-		rt := reflect.ValueOf(val)
-		switch rt.Kind() {
-		case reflect.Map:
-			array := make([]interface{}, 0, rt.Len())
-			for _, k := range rt.MapKeys() {
-				array = append(array, k.Interface())
-			}
-			rt = reflect.ValueOf(array)
-		case reflect.Array, reflect.Slice:
-		// proceed
-		default:
-			return nil
-		}
-		if loop.Offset > 0 {
-			if loop.Offset > rt.Len() {
-				return nil
-			}
-			rt = rt.Slice(loop.Offset, rt.Len())
-		}
-		length := rt.Len()
-		if loop.Limit != nil {
-			length = *loop.Limit
-			if length > rt.Len() {
-				length = rt.Len()
-			}
-		}
+		iter := makeIterator(val)
+		iter = applyLoopModifiers(loop, iter)
+		// shallow-bind the loop variables; restore on exit
 		defer func(index, forloop interface{}) {
 			ctx.Set(forloopVarName, index)
 			ctx.Set(loop.Variable, forloop)
 		}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
 		cycleMap := map[string]int{}
 	loop:
-		for i := 0; i < length; i++ {
-			j := i
-			if loop.Reversed {
-				j = rt.Len() - 1 - i
-			}
-			ctx.Set(loop.Variable, rt.Index(j).Interface())
+		for i, len := 0, iter.Len(); i < len; i++ {
+			ctx.Set(loop.Variable, iter.Index(i))
 			ctx.Set(forloopVarName, map[string]interface{}{
 				"first":   i == 0,
-				"last":    i == length-1,
+				"last":    i == len-1,
 				"index":   i + 1,
 				"index0":  i,
-				"rindex":  length - i,
-				"rindex0": length - i - 1,
-				"length":  length,
+				"rindex":  len - i,
+				"rindex0": len - i - 1,
+				"length":  len,
 				".cycles": cycleMap,
 			})
 			err := ctx.RenderChildren(w)
@@ -123,4 +101,77 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		}
 		return nil
 	}, nil
+}
+
+func applyLoopModifiers(loop expression.Loop, iter iterable) iterable {
+	if loop.Reversed {
+		iter = reverseWrapper{iter}
+	}
+	if loop.Offset > 0 {
+		iter = offsetWrapper{iter, loop.Offset}
+	}
+	if loop.Limit != nil {
+		iter = limitWrapper{iter, *loop.Limit}
+	}
+	return iter
+}
+func makeIterator(value interface{}) iterable {
+	if iter, ok := value.(iterable); ok {
+		return iter
+	}
+	switch reflect.TypeOf(value).Kind() {
+	case reflect.Array, reflect.Slice:
+		return sliceWrapper(reflect.ValueOf(value))
+	case reflect.Map:
+		rt := reflect.ValueOf(value)
+		array := make([]interface{}, 0, rt.Len())
+		for _, k := range rt.MapKeys() {
+			array = append(array, k.Interface())
+		}
+		return sliceWrapper(reflect.ValueOf(array))
+	default:
+		return sliceWrapper(reflect.ValueOf([]int{}))
+	}
+}
+
+type sliceWrapper reflect.Value
+
+func (w sliceWrapper) Len() int                { return reflect.Value(w).Len() }
+func (w sliceWrapper) Index(i int) interface{} { return reflect.Value(w).Index(i).Interface() }
+
+type limitWrapper struct {
+	i iterable
+	n int
+}
+
+func (w limitWrapper) Len() int                { return intMin(w.n, w.i.Len()) }
+func (w limitWrapper) Index(i int) interface{} { return w.i.Index(i) }
+
+type offsetWrapper struct {
+	i iterable
+	n int
+}
+
+func (w offsetWrapper) Len() int                { return intMax(0, w.i.Len()-w.n) }
+func (w offsetWrapper) Index(i int) interface{} { return w.i.Index(i + w.n) }
+
+type reverseWrapper struct {
+	i iterable
+}
+
+func (w reverseWrapper) Len() int                { return w.i.Len() }
+func (w reverseWrapper) Index(i int) interface{} { return w.i.Index(w.i.Len() - 1 - i) }
+
+func intMax(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
