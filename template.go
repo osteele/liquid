@@ -14,7 +14,9 @@ type Template struct {
 	config *render.Config
 }
 
-func newTemplate(cfg *render.Config, source []byte) (*Template, SourceError) {
+func newTemplate(cfg *render.Config, source []byte, path string, line int) (*Template, SourceError) {
+	cfg.SourcePath = path
+	cfg.LineNo = line
 	root, err := cfg.Compile(string(source))
 	if err != nil {
 		return nil, err

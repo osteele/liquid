@@ -18,7 +18,7 @@ func (e InterpreterError) Error() string { return string(e) }
 type UndefinedFilter string
 
 func (e UndefinedFilter) Error() string {
-	return fmt.Sprintf("undefined filter: %s", string(e))
+	return fmt.Sprintf("undefined filter %q", string(e))
 }
 
 type valueFn func(Context) interface{}

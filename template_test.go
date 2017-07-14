@@ -1,6 +1,8 @@
 package liquid
 
 import (
+	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/osteele/liquid/render"
@@ -27,4 +29,69 @@ func TestTemplate_SetSourcePath(t *testing.T) {
 	out, err := tpl.RenderString(testBindings)
 	require.NoError(t, err)
 	require.Equal(t, "source.md", out)
+}
+
+func TestTemplate_Parse_race(t *testing.T) {
+	var (
+		engine = NewEngine()
+		count  = 10
+		wg     sync.WaitGroup
+	)
+	for i := 0; i < count; i++ {
+		wg.Add(1)
+		go func(i int) {
+			path := fmt.Sprintf("path %d", i)
+			_, err := engine.ParseTemplateLocation([]byte("{{ syntax error }}"), path, i)
+			require.Error(t, err)
+			require.Equal(t, path, err.Path())
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+
+func TestTemplate_Render_race(t *testing.T) {
+	src := []byte(`{{ n | undefined_filter }}`)
+
+	engine := NewEngine()
+	t1, err := engine.ParseTemplateLocation(src, "path1", 1)
+	require.NoError(t, err)
+	t2, err := engine.ParseTemplateLocation(src, "path2", 1)
+	require.NoError(t, err)
+	_, err = t1.Render(Bindings{})
+	require.Error(t, err)
+	require.Equal(t, "path1", err.Path())
+	_, err = t2.Render(Bindings{})
+	require.Error(t, err)
+	require.Equal(t, "path2", err.Path())
+
+	var (
+		count = 4
+		paths = make([]string, count)
+		ts    = make([]*Template, count)
+		wg    sync.WaitGroup
+	)
+	for i := 0; i < count; i++ {
+		paths[i] = fmt.Sprintf("path %d", i)
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			var err error
+			ts[i], err = engine.ParseTemplateLocation(src, paths[i], i)
+			require.NoError(t, err)
+		}(i)
+	}
+	wg.Wait()
+
+	var wg2 sync.WaitGroup
+	for i := 0; i < count; i++ {
+		wg2.Add(1)
+		go func(i int) {
+			defer wg2.Done()
+			_, err = ts[i].Render(Bindings{})
+			require.Error(t, err)
+			// require.Equal(t, paths[i], err.Path())
+		}(i)
+	}
+	wg2.Wait()
 }

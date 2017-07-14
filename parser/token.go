@@ -37,6 +37,10 @@ func (c Token) SourceLocation() SourceLoc { return c.SourceLoc }
 // SourceText returns the token's source text, for use in error reporting.
 func (c Token) SourceText() string { return c.Source }
 
+// IsZero returns a boolean indicating whether the location doesn't have a set path.
+func (s SourceLoc) IsZero() bool { return s.Pathname == "" }
+
+
 func (c Token) String() string {
 	switch c.Type {
 	case TextTokenType:

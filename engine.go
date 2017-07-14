@@ -67,8 +67,18 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 }
 
 // ParseTemplate creates a new Template using the engine configuration.
+//
+// The template is initialized from the engine configuration. It currently
+// contains a copy. Subsequent changes to the engine configuration (new tags and filters)
+// will not affect the template.
 func (e *Engine) ParseTemplate(source []byte) (*Template, SourceError) {
-	return newTemplate(&e.cfg, source)
+	return newTemplate(&e.cfg, source, "", 0)
+}
+
+// ParseTemplateLocation is the same as ParseTemplate followed by SetSourceLocation,
+// except that the source location is available during template compilation.
+func (e *Engine) ParseTemplateLocation(source []byte, path string, line int) (*Template, SourceError) {
+	return newTemplate(&e.cfg, source, path, line)
 }
 
 // ParseAndRender parses and then renders the template.
