@@ -10,7 +10,7 @@ package liquid
 
 import (
 	"github.com/osteele/liquid/evaluator"
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 )
@@ -43,9 +43,9 @@ func IsTemplateError(err error) bool {
 	// now that interface calls return SourceError
 	case evaluator.TypeError:
 		return true
-	case expression.InterpreterError:
+	case expressions.InterpreterError:
 		return true
-	case expression.ParseError:
+	case expressions.ParseError:
 		return true
 	case parser.Error:
 		return true

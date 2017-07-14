@@ -1,5 +1,5 @@
 %{
-package expression
+package expressions
 import (
     "fmt"
 	"github.com/osteele/liquid/evaluator"

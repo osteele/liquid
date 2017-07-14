@@ -1,4 +1,4 @@
-package expression
+package expressions
 
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {

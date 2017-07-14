@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/osteele/liquid/evaluator"
-	e "github.com/osteele/liquid/expression"
+	e "github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
 

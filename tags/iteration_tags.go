@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
 
@@ -33,7 +33,7 @@ func continueTag(string) (func(io.Writer, render.Context) error, error) {
 }
 
 func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
-	stmt, err := expression.ParseStatement(expression.CycleStatementSelector, args)
+	stmt, err := expressions.ParseStatement(expressions.CycleStatementSelector, args)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 	if m := loopRepairMatcher.FindStringSubmatch(src); m != nil {
 		src = m[1] + " .. " + m[2]
 	}
-	stmt, err := expression.ParseStatement(expression.LoopStatementSelector, src)
+	stmt, err := expressions.ParseStatement(expressions.LoopStatementSelector, src)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +114,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 	}, nil
 }
 
-func applyLoopModifiers(loop expression.Loop, iter iterable) iterable {
+func applyLoopModifiers(loop expressions.Loop, iter iterable) iterable {
 	if loop.Reversed {
 		iter = reverseWrapper{iter}
 	}

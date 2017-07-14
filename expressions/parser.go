@@ -2,7 +2,7 @@
 //go:generate gofmt -w scanner.go
 //go:generate goyacc expressions.y
 
-package expression
+package expressions
 
 import "fmt"
 

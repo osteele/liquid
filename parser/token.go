@@ -14,7 +14,7 @@ type Token struct {
 // TokenType is the type of a Chunk
 type TokenType int
 
-//go:generate stringer -type=TokenType
+////go:generate stringer -type=TokenType
 
 const (
 	// TextTokenType is the type of a text Chunk

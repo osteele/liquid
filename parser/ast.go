@@ -1,7 +1,7 @@
 package parser
 
 import (
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 )
 
 // ASTNode is a node of an AST.
@@ -37,7 +37,7 @@ type ASTText struct {
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
 	Token
-	Expr expression.Expression
+	Expr expressions.Expression
 }
 
 // ASTSeq is a sequence of nodes.

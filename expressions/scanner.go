@@ -1,5 +1,5 @@
 //line scanner.rl:1
-package expression
+package expressions
 
 import "strconv"
 

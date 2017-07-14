@@ -1,10 +1,10 @@
 package parser
 
-import "github.com/osteele/liquid/expression"
+import "github.com/osteele/liquid/expressions"
 
 // A Config holds configuration information for parsing and rendering.
 type Config struct {
-	expression.Config
+	expressions.Config
 	Grammar    Grammar
 	SourcePath string
 	LineNo     int

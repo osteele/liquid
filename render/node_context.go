@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 )
 
 // nodeContext provides the evaluation context for rendering the AST.
@@ -34,11 +34,11 @@ func (c nodeContext) Clone() nodeContext {
 }
 
 // Evaluate evaluates an expression within the template context.
-func (c nodeContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
+func (c nodeContext) Evaluate(expr expressions.Expression) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case expression.InterpreterError:
+			case expressions.InterpreterError:
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
@@ -46,5 +46,5 @@ func (c nodeContext) Evaluate(expr expression.Expression) (out interface{}, err 
 			}
 		}
 	}()
-	return expr.Evaluate(expression.NewContext(c.bindings, c.config.Config.Config))
+	return expr.Evaluate(expressions.NewContext(c.bindings, c.config.Config.Config))
 }

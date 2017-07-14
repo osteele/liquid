@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 	"github.com/stretchr/testify/require"
 )
 
@@ -203,13 +203,13 @@ func TestFilters(t *testing.T) {
 	)
 	filterTestBindings["dup_maps"] = []interface{}{m1, m2, m1, m3}
 
-	settings := expression.NewConfig()
+	settings := expressions.NewConfig()
 	AddStandardFilters(&settings)
-	context := expression.NewContext(filterTestBindings, settings)
+	context := expressions.NewContext(filterTestBindings, settings)
 
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			actual, err := expression.EvaluateString(test.in, context)
+			actual, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
 			expected := test.expected
 			switch v := actual.(type) {

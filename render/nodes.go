@@ -3,7 +3,7 @@ package render
 import (
 	"io"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/parser"
 )
 
@@ -41,7 +41,7 @@ type TextNode struct {
 // ObjectNode is an {{ object }} object.
 type ObjectNode struct {
 	parser.Token
-	expr expression.Expression
+	expr expressions.Expression
 }
 
 // SeqNode is a sequence of nodes.

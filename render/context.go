@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 )
 
 // Context provides the rendering context for a tag renderer.
@@ -20,7 +20,7 @@ type Context interface {
 	// Use this to distinguish template errors from implementation errors.
 	Errorf(format string, a ...interface{}) Error
 	// Evaluate evaluates an expression within the template context.
-	Evaluate(expr expression.Expression) (interface{}, error)
+	Evaluate(expr expressions.Expression) (interface{}, error)
 	// Evaluate compiles and interprets an expression, such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
 	EvaluateString(source string) (interface{}, error)
 	// ExpandTagArg renders the current tag argument string as a Liquid template.
@@ -60,7 +60,7 @@ func (c rendererContext) WrapError(err error) Error {
 	return wrapRenderError(err, c.node)
 }
 
-func (c rendererContext) Evaluate(expr expression.Expression) (out interface{}, err error) {
+func (c rendererContext) Evaluate(expr expressions.Expression) (out interface{}, err error) {
 	return c.ctx.Evaluate(expr)
 }
 
@@ -69,7 +69,7 @@ func (c rendererContext) EvaluateString(source string) (out interface{}, err err
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case expression.InterpreterError:
+			case expressions.InterpreterError:
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
@@ -77,7 +77,7 @@ func (c rendererContext) EvaluateString(source string) (out interface{}, err err
 			}
 		}
 	}()
-	return expression.EvaluateString(source, expression.NewContext(c.ctx.bindings, c.ctx.config.Config.Config))
+	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.config.Config.Config))
 }
 
 // Get gets a variable value within an evaluation context.

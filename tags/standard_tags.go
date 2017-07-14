@@ -4,7 +4,7 @@ package tags
 import (
 	"io"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
 
@@ -30,7 +30,7 @@ func AddStandardTags(c render.Config) {
 }
 
 func assignTag(source string) (func(io.Writer, render.Context) error, error) {
-	stmt, err := expression.ParseStatement(expression.AssignStatementSelector, source)
+	stmt, err := expressions.ParseStatement(expressions.AssignStatementSelector, source)
 	if err != nil {
 		return nil, err
 	}

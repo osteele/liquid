@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/osteele/liquid/expression"
+	"github.com/osteele/liquid/expressions"
 )
 
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
@@ -49,7 +49,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 				rawTag.Slices = append(rawTag.Slices, tok.Source)
 			}
 		case tok.Type == ObjTokenType:
-			expr, err := expression.Parse(tok.Args)
+			expr, err := expressions.Parse(tok.Args)
 			if err != nil {
 				return nil, WrapError(err, tok)
 			}

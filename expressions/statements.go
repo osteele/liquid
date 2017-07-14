@@ -1,4 +1,4 @@
-package expression
+package expressions
 
 // These strings match lexer tokens.
 const (

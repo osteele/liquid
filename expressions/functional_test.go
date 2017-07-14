@@ -1,4 +1,4 @@
-package expression
+package expressions
 
 import (
 	"testing"
