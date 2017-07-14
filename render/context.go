@@ -14,35 +14,43 @@ import (
 //
 // This interface shares the compatibility committments of the top-level liquid package.
 type Context interface {
-	// Get retrieves the value of a variable from the lexical environment.
+	// Get retrieves the value of a variable from the current lexical environment.
 	Get(name string) interface{}
-	// Errorf creates a render Error, that includes the source location.
-	// Use this to distinguish template errors from implementation errors.
+	// Errorf creates a SourceError, that includes the source location.
+	// Use this to distinguish errors in the template from implementation errors
+	// in the template engine.
 	Errorf(format string, a ...interface{}) Error
-	// Evaluate evaluates an expression within the template context.
-	Evaluate(expr expressions.Expression) (interface{}, error)
-	// Evaluate compiles and interprets an expression, such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
-	EvaluateString(source string) (interface{}, error)
+	// Evaluate evaluates a compiled expression within the current lexical context.
+	Evaluate(expressions.Expression) (interface{}, error)
+	// EvaluateString compiles and evaluates a string expression such as “x”, “x < 10", or “a.b | split | first | default: 10”, within the current lexical context.
+	EvaluateString(string) (interface{}, error)
 	// ExpandTagArg renders the current tag argument string as a Liquid template.
-	// It enables the implementation of tags such as {% avatar {{page.author}} %}, from the jekyll-avatar plugin; or Jekyll's {% include %} parameters.
+	// It enables the implementation of tags such as Jekyll's "{% include {{ page.my_variable }} %}" andjekyll-avatar's  "{% avatar {{page.author}} %}".
 	ExpandTagArg() (string, error)
-	// InnerString is the rendered children of the current block.
+	// InnerString is the rendered content of the current block.
+	// It's used in the implementation of the Liquid "capture" tag and the Jekyll "highlght" tag.
 	InnerString() (string, error)
-	RenderChild(io.Writer, *BlockNode) error
+	// RenderBlock is used in the implementation of the built-in control flow tags.
+	// It's not guaranteed stable.
+	RenderBlock(io.Writer, *BlockNode) error
+	// RenderChildren is used in the implementation of the built-in control flow tags.
+	// It's not guaranteed stable.
 	RenderChildren(io.Writer) Error
+	// RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
+	// RenderFile does not cache the compiled template.
 	RenderFile(string, map[string]interface{}) (string, error)
-	// Set updates the value of a variable in the lexical environment.
-	// For example, {% assign %} and {% capture %} use this.
+	// Set updates the value of a variable in the current lexical environment.
+	// It's used in the implementation of the {% assign %} and {% capture %} tags.
 	Set(name string, value interface{})
 	// SourceFile retrieves the value set by template.SetSourcePath.
-	// {% include %} uses this.
+	// It's used in the implementation of the {% include %} tag.
 	SourceFile() string
 	// TagArgs returns the text of the current tag, not including its name.
 	// For example, the arguments to {% my_tag a b c %} would be “a b c”.
 	TagArgs() string
-	// TagName returns the name of the current tag.
+	// TagName returns the name of the current tag; for example "my_tag" for {% my_tag a b c %}.
 	TagName() string
-	// WrapError creates a new error that records the source location.
+	// WrapError creates a new error that records the source location from the current context.
 	WrapError(err error) Error
 }
 
