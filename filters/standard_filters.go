@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 	"unicode"
@@ -227,67 +226,6 @@ func reverseFilter(array []interface{}) interface{} {
 	return result
 }
 
-func sortFilter(array []interface{}, key interface{}) []interface{} {
-	result := make([]interface{}, len(array))
-	copy(result, array)
-	if key == nil {
-		evaluator.Sort(result)
-	} else {
-		evaluator.SortByProperty(result, key.(string), true)
-	}
-	return result
-}
-
-func sortNaturalFilter(array []interface{}, key interface{}) interface{} {
-	result := make([]interface{}, len(array))
-	copy(result, array)
-	switch {
-	case reflect.ValueOf(array).Len() == 0:
-	case key != nil:
-		sort.Sort(keySortable{result, func(m interface{}) string {
-			rv := reflect.ValueOf(m)
-			if rv.Kind() != reflect.Map {
-				return ""
-			}
-			ev := rv.MapIndex(reflect.ValueOf(key))
-			if ev.CanInterface() {
-				if s, ok := ev.Interface().(string); ok {
-					return strings.ToLower(s)
-				}
-			}
-			return ""
-		}})
-	case reflect.TypeOf(array[0]).Kind() == reflect.String:
-		sort.Sort(keySortable{result, func(s interface{}) string {
-			return strings.ToUpper(s.(string))
-		}})
-	}
-	return result
-}
-
-type keySortable struct {
-	slice []interface{}
-	keyFn func(interface{}) string
-}
-
-// Len is part of sort.Interface.
-func (s keySortable) Len() int {
-	return len(s.slice)
-}
-
-// Swap is part of sort.Interface.
-func (s keySortable) Swap(i, j int) {
-	a := s.slice
-	a[i], a[j] = a[j], a[i]
-}
-
-// Less is part of sort.Interface.
-func (s keySortable) Less(i, j int) bool {
-	k, sl := s.keyFn, s.slice
-	a, b := k(sl[i]), k(sl[j])
-	return a < b
-}
-
 func splitFilter(s, sep string) interface{} {
 	result := strings.Split(s, sep)
 	// This matches Jekyll's observed behavior.
@@ -298,47 +236,35 @@ func splitFilter(s, sep string) interface{} {
 	return result
 }
 
-func uniqFilter(array []interface{}) []interface{} {
-	result := []interface{}{}
-	seenInts := map[int]bool{}
-	seenStrings := map[string]bool{}
+func uniqFilter(array []interface{}) (result []interface{}) {
+	seenMap := map[interface{}]bool{}
 	seen := func(item interface{}) bool {
-		item = evaluator.ToLiquid(item)
-		switch v := item.(type) {
-		case int:
-			if seenInts[v] {
+		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
+			if seenMap[item] {
 				return true
 			}
-			seenInts[v] = true
-		case string:
-			if seenStrings[v] {
+			seenMap[item] = true
+			return false
+		}
+		// the O(n^2) case:
+		for _, other := range result {
+			if eqItems(item, other) {
 				return true
-			}
-			seenStrings[v] = true
-		default:
-			// switch reflect.TypeOf(item).Kind() {
-			// case reflect.Array, reflect.Map, reflect.Slice, reflect.Struct:
-			// 	// addr is never dereferenced, and false negatives are okay
-			// 	addr := reflect.ValueOf(item).UnsafeAddr()
-			// 	if seenAddrs[addr] {
-			// 		return true
-			// 	}
-			// 	seenAddrs[addr] = true
-			// }
-			// the O(n^2) case:
-			// TODO use == if the values are comparable
-			for _, v := range result {
-				if reflect.DeepEqual(item, v) {
-					return true
-				}
 			}
 		}
 		return false
 	}
-	for _, e := range array {
-		if !seen(e) {
-			result = append(result, e)
+	for _, item := range array {
+		if !seen(item) {
+			result = append(result, item)
 		}
 	}
-	return result
+	return
+}
+
+func eqItems(a, b interface{}) bool {
+	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
+		return a == b
+	}
+	return reflect.DeepEqual(a, b)
 }

@@ -11,21 +11,6 @@ import (
 	"reflect"
 )
 
-// Contains returns a boolean indicating whether array is a sequence that contains item.
-func Contains(array interface{}, item interface{}) bool {
-	item = ToLiquid(item)
-	ref := reflect.ValueOf(array)
-	switch ref.Kind() {
-	case reflect.Array, reflect.Slice:
-		for i := 0; i < ref.Len(); i++ {
-			if ref.Index(i).Interface() == item {
-				return true
-			}
-		}
-	}
-	return false
-}
-
 // Length returns the length of a string or array. In keeping with Liquid semantics,
 // and contra Go, it does not return the size of a map.
 func Length(value interface{}) int {
