@@ -1,8 +1,4 @@
-// Package render renders a template parse tree.
-//
-// Except where noted in the documentation for the liquid package, even public symbols
-// in this package are intended to be public only to other subpackages within this
-// repo, and are not guaranteed stable even across subminor version number increments.
+// Package render renders a compiled template parse tree.
 package render
 
 import (

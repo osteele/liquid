@@ -17,11 +17,13 @@ import (
 
 // Bindings is a map of variable names to values.
 //
-// Clients need not use this type. It is used solely for documentation. Callers can use unconverted instances
-// of map[interface] itself as argument values to functions declared with this parameter type.
+// Clients need not use this type. It is used solely for documentation. Callers can use instances
+// of map[string]interface{} itself as argument values to functions declared with this parameter type.
 type Bindings map[string]interface{}
 
-// A Renderer returns the rendered string for a block.
+// A Renderer returns the rendered string for a block. This is the type of a tag definition.
+//
+// See the examples at Engine.RegisterTag and Engine.RegisterBlock.
 type Renderer func(render.Context) (string, error)
 
 // SourceError records an error with a source location and optional cause.

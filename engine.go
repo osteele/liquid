@@ -50,11 +50,7 @@ func (e *Engine) RegisterFilter(name string, fn interface{}) {
 
 // RegisterTag defines a tag e.g. {% tag %}.
 //
-// RegisterTag defines a tag, for use as `{% tag args %}`.
-//
-// Examples:
-//
-// * https://github.com/osteele/gojekyll/blob/master/tags/tags.go
+// Further examples are in https://github.com/osteele/gojekyll/blob/master/tags/tags.go
 func (e *Engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.
