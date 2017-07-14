@@ -7,7 +7,7 @@ import (
 )
 
 // Compile parses a source template. It returns an AST root, that can be evaluated.
-func (c Config) Compile(source string, loc parser.SourceLoc) (parser.ASTNode, parser.Error) {
+func (c Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Error) {
 	root, err := c.Parse(source, loc)
 	if err != nil {
 		return nil, err

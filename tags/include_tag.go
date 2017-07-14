@@ -9,7 +9,7 @@ import (
 
 func includeTag(source string) (func(io.Writer, render.Context) error, error) {
 	return func(w io.Writer, ctx render.Context) error {
-		// It might be more efficient to add an context interface to render bytes
+		// It might be more efficient to add a context interface to render bytes
 		// to a writer. The status quo keeps the interface light at the expense of some overhead
 		// here.
 		value, err := ctx.EvaluateString(ctx.TagArgs())

@@ -96,12 +96,12 @@ func (c rendererContext) Get(name string) interface{} {
 func (c rendererContext) ExpandTagArg() (string, error) {
 	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
-		p, err := c.ctx.config.Compile(args, c.node.SourceLoc)
+		root, err := c.ctx.config.Compile(args, c.node.SourceLoc)
 		if err != nil {
 			return "", err
 		}
 		buf := new(bytes.Buffer)
-		err = renderNode(p, buf, c.ctx)
+		err = root.render(buf, c.ctx)
 		if err != nil {
 			return "", err
 		}
@@ -110,8 +110,8 @@ func (c rendererContext) ExpandTagArg() (string, error) {
 	return args, nil
 }
 
-// RenderChild renders a node.
-func (c rendererContext) RenderChild(w io.Writer, b *BlockNode) error {
+// RenderBlock renders a node.
+func (c rendererContext) RenderBlock(w io.Writer, b *BlockNode) error {
 	return c.ctx.RenderSequence(w, b.Body)
 }
 
@@ -128,7 +128,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (
 	if err != nil {
 		return "", err
 	}
-	ast, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
 	if err != nil {
 		return "", err
 	}
@@ -137,7 +137,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (
 		c.ctx.bindings[k] = v
 	}
 	buf := new(bytes.Buffer)
-	if err := renderNode(ast, buf, nc); err != nil {
+	if err := root.render(buf, nc); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

@@ -64,10 +64,10 @@ func TestRender(t *testing.T) {
 	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := cfg.Compile(test.in, parser.SourceLoc{})
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = renderNode(ast, buf, context)
+			err = root.render(buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
@@ -80,9 +80,9 @@ func TestRenderErrors(t *testing.T) {
 	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := cfg.Compile(test.in, parser.SourceLoc{})
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = renderNode(ast, ioutil.Discard, context)
+			err = root.render(ioutil.Discard, context)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.out, test.in)
 		})

@@ -68,7 +68,7 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				return err
 			}
 			if b {
-				return ctx.RenderChild(w, clause.body())
+				return ctx.RenderBlock(w, clause.body())
 			}
 		}
 		return nil
@@ -113,7 +113,7 @@ func ifTagParser(polarity bool) func(render.BlockNode) (func(io.Writer, render.C
 					return err
 				}
 				if value != nil && value != false {
-					return ctx.RenderChild(w, b.body)
+					return ctx.RenderBlock(w, b.body)
 				}
 			}
 			return nil

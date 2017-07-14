@@ -62,10 +62,10 @@ func TestContext(t *testing.T) {
 	context := newNodeContext(contextTestBindings, cfg)
 	for i, test := range contextTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := cfg.Compile(test.in, parser.SourceLoc{})
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = renderNode(ast, buf, context)
+			err = root.render(buf, context)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
