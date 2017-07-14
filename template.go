@@ -3,6 +3,7 @@ package liquid
 import (
 	"bytes"
 
+	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 )
 
@@ -10,14 +11,13 @@ import (
 //
 // Use Engine.ParseTemplate to create a template.
 type Template struct {
-	root   render.Node
-	config *render.Config
+	root render.Node
+	cfg  *render.Config
 }
 
 func newTemplate(cfg *render.Config, source []byte, path string, line int) (*Template, SourceError) {
-	cfg.SourcePath = path
-	cfg.LineNo = line
-	root, err := cfg.Compile(string(source))
+	loc := parser.SourceLoc{Pathname: path, LineNo: line}
+	root, err := cfg.Compile(string(source), loc)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func newTemplate(cfg *render.Config, source []byte, path string, line int) (*Tem
 // Render executes the template with the specified variable bindings.
 func (t *Template) Render(vars Bindings) ([]byte, SourceError) {
 	buf := new(bytes.Buffer)
-	err := render.Render(t.root, buf, vars, *t.config)
+	err := render.Render(t.root, buf, vars, *t.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -41,18 +41,4 @@ func (t *Template) RenderString(b Bindings) (string, SourceError) {
 		return "", err
 	}
 	return string(bs), nil
-}
-
-// SetSourcePath sets the filename. This is used for error reporting,
-// and as the reference path for relative pathnames in the {% include %} tag.
-func (t *Template) SetSourcePath(filename string) {
-	t.config.SourcePath = filename
-}
-
-// SetSourceLocation sets the source path as SetSourcePath, and also
-// the line number of the first line of the template text, for use in
-// error reporting.
-func (t *Template) SetSourceLocation(filename string, lineNo int) {
-	t.config.SourcePath = filename
-	t.config.LineNo = lineNo
 }

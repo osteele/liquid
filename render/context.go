@@ -88,7 +88,7 @@ func (c rendererContext) Get(name string) interface{} {
 func (c rendererContext) ExpandTagArg() (string, error) {
 	args := c.TagArgs()
 	if strings.Contains(args, "{{") {
-		p, err := c.ctx.config.Compile(args)
+		p, err := c.ctx.config.Compile(args, c.node.SourceLoc)
 		if err != nil {
 			return "", err
 		}
@@ -120,7 +120,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (
 	if err != nil {
 		return "", err
 	}
-	ast, err := c.ctx.config.Compile(string(source))
+	ast, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
 	if err != nil {
 		return "", err
 	}
@@ -150,7 +150,7 @@ func (c rendererContext) Set(name string, value interface{}) {
 }
 
 func (c rendererContext) SourceFile() string {
-	return c.ctx.config.SourcePath
+	return c.node.SourceLoc.Pathname
 }
 
 func (c rendererContext) TagArgs() string {

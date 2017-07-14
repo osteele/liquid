@@ -51,7 +51,6 @@ func exitIfErr(err error) {
 func render(b []byte, filename string) {
 	tpl, err := liquid.NewEngine().ParseTemplate(b)
 	exitIfErr(err)
-	tpl.SetSourcePath(filename)
 	out, err := tpl.Render(map[string]interface{}{})
 	exitIfErr(err)
 	os.Stdout.Write(out) // nolint: gas, errcheck

@@ -23,12 +23,23 @@ func TestTemplate_SetSourcePath(t *testing.T) {
 	engine.RegisterTag("sourcepath", func(c render.Context) (string, error) {
 		return c.SourceFile(), nil
 	})
-	tpl, err := engine.ParseTemplate([]byte(`{% sourcepath %}`))
+	tpl, err := engine.ParseTemplateLocation([]byte(`{% sourcepath %}`), "source.md", 1)
 	require.NoError(t, err)
-	tpl.SetSourcePath("source.md")
 	out, err := tpl.RenderString(testBindings)
 	require.NoError(t, err)
 	require.Equal(t, "source.md", out)
+
+	src := []byte(`{{ n | undefined_filter }}`)
+	t1, err := engine.ParseTemplateLocation(src, "path1", 1)
+	require.NoError(t, err)
+	t2, err := engine.ParseTemplateLocation(src, "path2", 1)
+	require.NoError(t, err)
+	_, err = t1.Render(Bindings{})
+	require.Error(t, err)
+	require.Equal(t, "path1", err.Path())
+	_, err = t2.Render(Bindings{})
+	require.Error(t, err)
+	require.Equal(t, "path2", err.Path())
 }
 
 func TestTemplate_Parse_race(t *testing.T) {
@@ -52,21 +63,10 @@ func TestTemplate_Parse_race(t *testing.T) {
 
 func TestTemplate_Render_race(t *testing.T) {
 	src := []byte(`{{ n | undefined_filter }}`)
-
 	engine := NewEngine()
-	t1, err := engine.ParseTemplateLocation(src, "path1", 1)
-	require.NoError(t, err)
-	t2, err := engine.ParseTemplateLocation(src, "path2", 1)
-	require.NoError(t, err)
-	_, err = t1.Render(Bindings{})
-	require.Error(t, err)
-	require.Equal(t, "path1", err.Path())
-	_, err = t2.Render(Bindings{})
-	require.Error(t, err)
-	require.Equal(t, "path2", err.Path())
 
 	var (
-		count = 4
+		count = 10
 		paths = make([]string, count)
 		ts    = make([]*Template, count)
 		wg    sync.WaitGroup
@@ -88,9 +88,9 @@ func TestTemplate_Render_race(t *testing.T) {
 		wg2.Add(1)
 		go func(i int) {
 			defer wg2.Done()
-			_, err = ts[i].Render(Bindings{})
+			_, err := ts[i].Render(Bindings{})
 			require.Error(t, err)
-			// require.Equal(t, paths[i], err.Path())
+			require.Equal(t, paths[i], err.Path())
 		}(i)
 	}
 	wg2.Wait()

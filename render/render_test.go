@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -63,7 +64,7 @@ func TestRender(t *testing.T) {
 	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := cfg.Compile(test.in)
+			ast, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
 			err = renderNode(ast, buf, context)
@@ -79,7 +80,7 @@ func TestRenderErrors(t *testing.T) {
 	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := cfg.Compile(test.in)
+			ast, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			err = renderNode(ast, ioutil.Discard, context)
 			require.Errorf(t, err, test.in)

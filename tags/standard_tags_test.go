@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
 )
@@ -63,7 +64,7 @@ func TestParseErrors(t *testing.T) {
 	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := settings.Compile(test.in)
+			ast, err := settings.Compile(test.in, parser.SourceLoc{})
 			require.Nilf(t, ast, test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
@@ -75,7 +76,7 @@ func TestStandardTags(t *testing.T) {
 	AddStandardTags(config)
 	for i, test := range tagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := config.Compile(test.in)
+			ast, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
 			err = render.Render(ast, buf, tagTestBindings, config)

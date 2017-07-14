@@ -23,7 +23,7 @@ var scannerCountTests = []struct {
 }
 
 func TestScan(t *testing.T) {
-	scan := func(src string) []Token { return Scan(src, "", 1) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}) }
 	tokens := scan("12")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)

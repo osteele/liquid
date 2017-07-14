@@ -5,6 +5,7 @@ import (
 	"io"
 	"testing"
 
+	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +27,7 @@ func TestCompileErrors(t *testing.T) {
 	addCompilerTestTags(settings)
 	for i, test := range compilerErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			_, err := settings.Compile(test.in)
+			_, err := settings.Compile(test.in, parser.SourceLoc{})
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})
