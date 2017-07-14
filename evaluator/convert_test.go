@@ -43,6 +43,13 @@ var convertTests = []struct {
 	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
 	{redConvertible{}, "", "red"},
 }
+var convertErrorTests = []struct {
+	value, proto, expected interface{}
+}{
+	{map[string]bool{"k": true}, map[int]bool{}, "map key"},
+	{map[string]string{"k": "v"}, map[string]int{}, "map value"},
+	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, "map value"},
+}
 
 func TestConvert(t *testing.T) {
 	for i, test := range convertTests {
@@ -55,6 +62,19 @@ func TestConvert(t *testing.T) {
 		})
 	}
 }
+
+func TestConvert_errors(t *testing.T) {
+	for i, test := range convertErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			typ := reflect.TypeOf(test.proto)
+			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
+			_, err := Convert(test.value, typ)
+			require.Errorf(t, err, name)
+			require.Containsf(t, err.Error(), test.expected, name)
+		})
+	}
+}
+
 func TestConvert_map(t *testing.T) {
 	typ := reflect.TypeOf(map[string]string{})
 	v, err := Convert(map[interface{}]interface{}{"key": "value"}, typ)
@@ -62,12 +82,6 @@ func TestConvert_map(t *testing.T) {
 	m, ok := v.(map[string]string)
 	require.True(t, ok)
 	require.Equal(t, "value", m["key"])
-}
-
-func TestConvert_map_key_error(t *testing.T) {
-	typ := reflect.TypeOf(map[string]int{})
-	_, err := Convert(map[interface{}]interface{}{"key": "value"}, typ)
-	require.Error(t, err)
 }
 
 func TestConvert_map_synonym(t *testing.T) {

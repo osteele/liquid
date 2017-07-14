@@ -3,6 +3,8 @@ package tags
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"testing"
 
 	"github.com/osteele/liquid/parser"
@@ -43,17 +45,53 @@ var cfTagTests = []struct{ in, expected string }{
 	{`{% unless false %}true{% endunless %}`, "true"},
 }
 
+var cfTagCompilationErrorTests = []struct{ in, expected string }{
+	{`{% case syntax error %}{% when 1 %}{% endcase %}`, "syntax error"},
+}
+
+var cfTagErrorTests = []struct{ in, expected string }{
+	{`{% case 1 %}{% when 1 %}{% error %}{% endcase %}`, "tag render error"},
+}
+
 func TestControlFlowTags(t *testing.T) {
-	config := render.NewConfig()
-	AddStandardTags(config)
+	cfg := render.NewConfig()
+	AddStandardTags(cfg)
+
 	for i, test := range cfTagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := config.Compile(test.in, parser.SourceLoc{})
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = render.Render(ast, buf, tagTestBindings, config)
+			err = render.Render(root, buf, tagTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
+}
+
+func TestControlFlowTags_errors(t *testing.T) {
+	cfg := render.NewConfig()
+	AddStandardTags(cfg)
+	cfg.AddTag("error", func(string) (func(io.Writer, render.Context) error, error) {
+		return func(io.Writer, render.Context) error {
+			return fmt.Errorf("tag render error")
+		}, nil
+	})
+
+	for i, test := range cfTagCompilationErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			_, err := cfg.Compile(test.in, parser.SourceLoc{})
+			require.Errorf(t, err, test.in)
+			require.Contains(t, err.Error(), test.expected, test.in)
+		})
+	}
+	for i, test := range cfTagErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+			err = render.Render(root, ioutil.Discard, tagTestBindings, cfg)
+			require.Errorf(t, err, test.in)
+			require.Contains(t, err.Error(), test.expected, test.in)
 		})
 	}
 }

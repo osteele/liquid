@@ -35,15 +35,17 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
 	value = ToLiquid(value)
 	r := reflect.ValueOf(value)
-	switch {
-	case typ.Kind() != reflect.String && value != nil && r.Type().ConvertibleTo(typ):
-		// convert int.Convert(string) yields "\x01" not "1"
+	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
+	if typ.Kind() != reflect.String && value != nil && r.Type().ConvertibleTo(typ) {
 		return r.Convert(typ).Interface(), nil
-	case typ == timeType && r.Kind() == reflect.String:
-		return ParseDate(value.(string))
-		// case reflect.PtrTo(r.Type()) == typ:
-		// 	return &value, nil
 	}
+	if typ == timeType && r.Kind() == reflect.String {
+		return ParseDate(value.(string))
+	}
+	// currently unused:
+	// case reflect.PtrTo(r.Type()) == typ:
+	// 	return &value, nil
+	// }
 	switch typ.Kind() {
 	case reflect.Bool:
 		return !(value == nil || value == false), nil
@@ -59,8 +61,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 		}
 	case reflect.Float32, reflect.Float64:
 		switch value := value.(type) {
-		case int:
-			return float64(value), nil
+		// case int is handled by r.Convert(type) above
 		case string:
 			return strconv.ParseFloat(value, 64)
 		}

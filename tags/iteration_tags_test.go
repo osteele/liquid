@@ -3,6 +3,7 @@ package tags
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/osteele/liquid/parser"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var loopTests = []struct{ in, expected string }{
+var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ a }} {% endfor %}`, "first second third "},
 
 	// loop modifiers
@@ -69,12 +70,19 @@ var loopTests = []struct{ in, expected string }{
 	{`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
 }
 
-var loopErrorTests = []struct{ in, expected string }{
-	{`{% break %}`, "break outside a loop"},
-	{`{% continue %}`, "continue outside a loop"},
+var iterationSyntaxErrorTests = []struct{ in, expected string }{
+	{`{% for a b c %}{% endfor %}`, "parse error"},
+	{`{% for a in array offset %}{% endfor %}`, "undefined loop modifier"},
+	{`{% cycle %}`, "parse error"},
 }
 
-var loopTestBindings = map[string]interface{}{
+var iterationErrorTests = []struct{ in, expected string }{
+	{`{% break %}`, "break outside a loop"},
+	{`{% continue %}`, "continue outside a loop"},
+	{`{% cycle 'a', 'b' %}`, "cycle must be within a forloop"},
+}
+
+var iterationTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
 	"hash":  map[string]interface{}{"a": 1},
 }
@@ -82,12 +90,12 @@ var loopTestBindings = map[string]interface{}{
 func TestLoopTag(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
-	for i, test := range loopTests {
+	for i, test := range iterationTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := config.Compile(test.in, parser.SourceLoc{})
+			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = render.Render(ast, buf, loopTestBindings, config)
+			err = render.Render(root, buf, iterationTestBindings, config)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
 		})
@@ -97,12 +105,20 @@ func TestLoopTag(t *testing.T) {
 func TestLoopTag_errors(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
-	for i, test := range loopErrorTests {
+
+	for i, test := range iterationSyntaxErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := config.Compile(test.in, parser.SourceLoc{})
+			_, err := config.Compile(test.in, parser.SourceLoc{})
+			require.Errorf(t, err, test.in)
+			require.Containsf(t, err.Error(), test.expected, test.in)
+		})
+	}
+
+	for i, test := range iterationErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			buf := new(bytes.Buffer)
-			err = render.Render(ast, buf, loopTestBindings, config)
+			err = render.Render(root, ioutil.Discard, iterationTestBindings, config)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})

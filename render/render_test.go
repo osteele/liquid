@@ -12,23 +12,27 @@ import (
 )
 
 func addRenderTestTags(s Config) {
-	s.AddBlock("err2").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
+	s.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
-			return fmt.Errorf("stage 2 error")
+			return fmt.Errorf("errblock error")
 		}, nil
 	})
 }
 
 var renderTests = []struct{ in, out string }{
+	{`{{ nil }}`, ""},
+	{`{{ true }}`, "true"},
+	{`{{ false }}`, "false"},
 	{`{{ 12 }}`, "12"},
+	{`{{ 12.3 }}`, "12.3"},
+	{`{{ "abc" }}`, "abc"},
 	{`{{ x }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ array[1] }}`, "second"},
 }
 
 var renderErrorTests = []struct{ in, out string }{
-	// {"{%if syntax error%}{%endif%}", "parse error"},
-	{`{% err2 %}{% enderr2 %}`, "stage 2 error"},
+	{`{% errblock %}{% enderrblock %}`, "errblock error"},
 }
 
 var renderTestBindings = map[string]interface{}{

@@ -1,13 +1,13 @@
 %{
 package expressions
 import (
-    "fmt"
+  "fmt"
 	"github.com/osteele/liquid/evaluator"
 )
 
 func init() {
 	// This allows adding and removing references to fmt in the rules below,
-	// without having to edit the import statement to avoid erorrs each time.
+	// without having to comment and un-comment the import statement above.
 	_ = fmt.Sprint("")
 }
 
