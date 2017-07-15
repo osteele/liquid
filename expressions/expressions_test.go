@@ -117,7 +117,7 @@ var evaluatorTestBindings = (map[string]interface{}{
 	"hash_with_size_key": map[string]interface{}{"size": "key_value"},
 })
 
-func TestEvaluator(t *testing.T) {
+func TestEvaluateString(t *testing.T) {
 	cfg := NewConfig()
 	cfg.AddFilter("length", strings.Count)
 	ctx := NewContext(evaluatorTestBindings, cfg)
@@ -128,6 +128,12 @@ func TestEvaluator(t *testing.T) {
 			require.Equalf(t, test.expected, val, test.in)
 		})
 	}
+
+	_, err := EvaluateString("syntax error", ctx)
+	require.Error(t, err)
+
+	_, err = EvaluateString("1 | undefined_filter", ctx)
+	require.Error(t, err)
 }
 
 func TestClosure(t *testing.T) {

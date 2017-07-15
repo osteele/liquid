@@ -30,7 +30,7 @@ var (
 func main() {
 	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprint(stderr, err) // nolint: gas
-		exit(1)
+		os.Exit(1)
 	}
 }
 
@@ -41,42 +41,38 @@ func run(args []string) error {
 		if _, err := io.Copy(buf, stdin); err != nil {
 			return err
 		}
-		render(buf.Bytes(), "")
+		return render(buf.Bytes(), "")
 	case args[0] == "-h" || args[0] == "--help":
-		usage(false)
+		usage()
 	case strings.HasPrefix(args[0], "-"):
-		usage(true)
+		usage()
 		exit(1)
 	case len(args) == 1:
 		s, err := ioutil.ReadFile(args[0])
 		if err != nil {
 			return err
 		}
-		render(s, args[0])
+		return render(s, args[0])
 	default:
-		usage(true)
+		usage()
+		exit(1)
 	}
 	return nil
 }
 
-func exitIfErr(err error) {
-	if err != nil {
-		fmt.Fprint(stdout, err) // nolint: gas
-		exit(1)
-	}
-}
-
-func render(b []byte, filename string) {
+func render(b []byte, filename string) (err error) {
 	tpl, err := liquid.NewEngine().ParseTemplate(b)
-	exitIfErr(err)
+	if err != nil {
+		return err
+	}
 	out, err := tpl.Render(map[string]interface{}{})
-	exitIfErr(err)
-	stdout.Write(out) // nolint: gas, errcheck
+	if err != nil {
+		return err
+	}
+	_, err = stdout.Write(out)
+	return err
 }
 
-func usage(error bool) {
-	fmt.Printf("usage: %s [FILE]\n", os.Args[0])
-	if error {
-		exit(1)
-	}
+func usage() {
+	fmt.Fprintf(stdout, "usage: %s [FILE]\n", os.Args[0]) // nolint: gas
 }
