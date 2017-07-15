@@ -19,32 +19,50 @@ import (
 	"github.com/osteele/liquid"
 )
 
+// for testing
+var (
+	stderr           = os.Stderr
+	stdout io.Writer = os.Stdout
+	stdin  io.Reader = os.Stdin
+	exit             = os.Exit
+)
+
 func main() {
-	args := os.Args[1:]
+	if err := run(os.Args[1:]); err != nil {
+		fmt.Fprint(stderr, err) // nolint: gas
+		exit(1)
+	}
+}
+
+func run(args []string) error {
 	switch {
 	case len(args) == 0:
 		buf := new(bytes.Buffer)
-		_, err := io.Copy(buf, os.Stdin)
-		exitIfErr(err)
+		if _, err := io.Copy(buf, stdin); err != nil {
+			return err
+		}
 		render(buf.Bytes(), "")
 	case args[0] == "-h" || args[0] == "--help":
 		usage(false)
 	case strings.HasPrefix(args[0], "-"):
 		usage(true)
-		os.Exit(1)
+		exit(1)
 	case len(args) == 1:
 		s, err := ioutil.ReadFile(args[0])
-		exitIfErr(err)
+		if err != nil {
+			return err
+		}
 		render(s, args[0])
 	default:
 		usage(true)
 	}
+	return nil
 }
 
 func exitIfErr(err error) {
 	if err != nil {
-		fmt.Fprint(os.Stdout, err) // nolint: gas
-		os.Exit(1)
+		fmt.Fprint(stdout, err) // nolint: gas
+		exit(1)
 	}
 }
 
@@ -53,12 +71,12 @@ func render(b []byte, filename string) {
 	exitIfErr(err)
 	out, err := tpl.Render(map[string]interface{}{})
 	exitIfErr(err)
-	os.Stdout.Write(out) // nolint: gas, errcheck
+	stdout.Write(out) // nolint: gas, errcheck
 }
 
 func usage(error bool) {
 	fmt.Printf("usage: %s [FILE]\n", os.Args[0])
 	if error {
-		os.Exit(1)
+		exit(1)
 	}
 }

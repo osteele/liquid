@@ -114,3 +114,12 @@ func TestConvert_map_to_array(t *testing.T) {
 // 	require.NotNil(t, ptr)
 // 	require.Equal(t, "ab", *ptr)
 // }
+
+func TestMustConvert(t *testing.T) {
+	typ := reflect.TypeOf("")
+	v := MustConvert(2, typ)
+	require.Equal(t, "2", v)
+
+	typ = reflect.TypeOf(2)
+	require.Panics(t, func() { MustConvert("xxx", typ) })
+}

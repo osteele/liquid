@@ -7,6 +7,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestContext_AddFilter(t *testing.T) {
+	cfg := NewConfig()
+	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) int { return 0 }) })
+	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) (a int, e error) { return }) })
+	require.Panics(t, func() { cfg.AddFilter("f", func() int { return 0 }) })
+	require.Panics(t, func() { cfg.AddFilter("f", func(int) {}) })
+	// require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, b int) { return }) })
+	require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, e error, b int) { return }) })
+}
+
 func TestContext_runFilter(t *testing.T) {
 	cfg := NewConfig()
 	constant := func(value interface{}) valueFn {

@@ -25,6 +25,8 @@ var filterTests = []struct {
 	{`pages | map: 'category' | join`, "business, celebrities, <nil>, lifestyle, sports, <nil>, technology"},
 	{`pages | map: 'category' | compact | join`, "business, celebrities, lifestyle, sports, technology"},
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
+	// {`",John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
+	// {`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
 	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
@@ -67,6 +69,7 @@ var filterTests = []struct {
 	{`"website.com" | append: "/index.html"`, "website.com/index.html"},
 	{`"title" | capitalize`, "Title"},
 	{`"my great title" | capitalize`, "My great title"},
+	{`"" | capitalize`, ""},
 	{`"Parker Moore" | downcase`, "parker moore"},
 	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 	{`"1 < 2 & 3" | escape_once`, "1 &lt; 2 &amp; 3"},
@@ -79,7 +82,10 @@ var filterTests = []struct {
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+
 	{`"Have <em>you</em> read <strong>Ulysses</strong>?" | strip_html`, "Have you read Ulysses?"},
+	{`string_with_newlines | strip_newlines`, "Hellothere"},
+
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
@@ -135,6 +141,7 @@ var filterTests = []struct {
 	{`5 | divided_by: 3`, 1},
 	{`20 | divided_by: 7`, 2},
 	{`20 | divided_by: 7.0`, 2.857142857142857},
+	{`20 | divided_by: 's'`, nil},
 
 	{`1.2 | round`, 1},
 	{`2.7 | round`, 3},
@@ -143,6 +150,8 @@ var filterTests = []struct {
 	// Jekyll extensions; added here for convenient testing
 	// TODO add this just to the test environment
 	{`obj | inspect`, `{"a":1}`},
+	{`1 | type`, `int`},
+	{`"1" | type`, `string`},
 }
 
 func timeMustParse(s string) time.Time {

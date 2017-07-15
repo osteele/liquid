@@ -12,13 +12,15 @@ var parseTests = []struct {
 	expect interface{}
 }{
 	{`a | filter: b`, 3},
-	// {`%assign a = 3`, nil},
-	// {`{%cycle 'a'`, []interface{}{"a"}},
-	// {`{%cycle 'a', 'b'`, []interface{}{"a", "b"}},
 }
 
 var parseErrorTests = []struct{ in, expected string }{
 	{"a syntax error", "parse error"},
+	{`%assign a`, "parse error"},
+	{`%assign a 3`, "parse error"},
+	{`%cycle 'a' 'b'`, "parse error"},
+	{`%loop a in in`, "parse error"},
+	{`%when a b`, "parse error"},
 }
 
 func TestParse(t *testing.T) {
@@ -35,6 +37,36 @@ func TestParse(t *testing.T) {
 			require.Equal(t, test.expect, value, test.in)
 		})
 	}
+}
+
+func TestParseStatement(t *testing.T) {
+	stmt, err := ParseStatement(AssignStatementSelector, "a = b")
+	require.NoError(t, err)
+	require.Equal(t, "a", stmt.Assignment.Variable)
+
+	stmt, err = ParseStatement(CycleStatementSelector, "'a', 'b'")
+	require.NoError(t, err)
+	require.Equal(t, "", stmt.Cycle.Group)
+	require.Len(t, stmt.Cycle.Values, 2)
+	require.Equal(t, []string{"a", "b"}, stmt.Cycle.Values)
+
+	stmt, err = ParseStatement(CycleStatementSelector, "'g': 'a', 'b'")
+	require.NoError(t, err)
+	require.Equal(t, "g", stmt.Cycle.Group)
+	require.Len(t, stmt.Cycle.Values, 2)
+	require.Equal(t, []string{"a", "b"}, stmt.Cycle.Values)
+
+	stmt, err = ParseStatement(LoopStatementSelector, "x in array reversed offset: 2 limit: 3")
+	require.NoError(t, err)
+	require.Equal(t, "x", stmt.Loop.Variable)
+	require.True(t, stmt.Loop.Reversed)
+	require.Equal(t, 2, stmt.Loop.Offset)
+	require.NotNil(t, stmt.Loop.Limit)
+	require.Equal(t, 3, *stmt.Loop.Limit)
+
+	stmt, err = ParseStatement(WhenStatementSelector, "a, b")
+	require.NoError(t, err)
+	require.Len(t, stmt.When.Exprs, 2)
 }
 
 func TestParse_errors(t *testing.T) {

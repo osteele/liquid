@@ -28,6 +28,7 @@ var renderTests = []struct{ in, out string }{
 	{`{{ "abc" }}`, "abc"},
 	{`{{ x }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
+	{`{{ array }}`, "firstsecondthird"},
 	{`{{ array[1] }}`, "second"},
 }
 

@@ -31,7 +31,7 @@ func (c *Config) AddFilter(name string, fn interface{}) {
 		panic(fmt.Errorf("a filter must be a function"))
 	case rf.Type().NumIn() < 1:
 		panic(fmt.Errorf("a filter function must have at least one input"))
-	case rf.Type().NumOut() > 2:
+	case rf.Type().NumOut() < 1 || 2 < rf.Type().NumOut():
 		panic(fmt.Errorf("a filter must be have one or two outputs"))
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
