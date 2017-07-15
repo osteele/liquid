@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/osteele/liquid/parser"
@@ -68,6 +70,20 @@ var iterationTests = []struct{ in, expected string }{
 	// range
 	{`{% for i in (3 .. 5) %}{{i}}.{% endfor %}`, "3.4.5."},
 	{`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
+
+	// tablerow
+	{`{% tablerow product in products %}{{ product }}{% endtablerow %}`,
+		`<tr class="row1"><td class="col1">Cool Shirt</td>
+	<td class="col2">Alien Poster</td>
+	<td class="col3">Batman Poster</td>
+	<td class="col4">Bullseye Shirt</td>
+	<td class="col5">Another Classic Vinyl</td>
+	<td class="col6">Awesome Jeans</td></tr>`},
+
+	{`{% tablerow product in products cols:2 %}{{ product }}{% endtablerow %}`,
+		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
+		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
+	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
 }
 
 var iterationSyntaxErrorTests = []struct{ in, expected string }{
@@ -85,9 +101,12 @@ var iterationErrorTests = []struct{ in, expected string }{
 var iterationTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
 	"hash":  map[string]interface{}{"a": 1},
+	"products": []string{
+		"Cool Shirt", "Alien Poster", "Batman Poster", "Bullseye Shirt", "Another Classic Vinyl", "Awesome Jeans",
+	},
 }
 
-func TestLoopTag(t *testing.T) {
+func TestIterationTags(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 	for i, test := range iterationTests {
@@ -97,7 +116,13 @@ func TestLoopTag(t *testing.T) {
 			buf := new(bytes.Buffer)
 			err = render.Render(root, buf, iterationTestBindings, config)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.expected, buf.String(), test.in)
+			actual := buf.String()
+			if strings.Contains(test.in, "{% tablerow") {
+				replaceWS := regexp.MustCompile(`\n\s*`).ReplaceAllString
+				actual = replaceWS(actual, "")
+				test.expected = replaceWS(test.expected, "")
+			}
+			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}
 }

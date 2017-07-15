@@ -37,6 +37,7 @@ type loopModifiers struct {
 	Limit    *int
 	Offset   int
 	Reversed bool
+	Cols     int
 }
 
 // A When is a parse of a {% when %} clause

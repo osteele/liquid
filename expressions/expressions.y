@@ -1,7 +1,8 @@
 %{
 package expressions
 import (
-  "fmt"
+	"fmt"
+	"math"
 	"github.com/osteele/liquid/evaluator"
 )
 
@@ -101,7 +102,7 @@ int_or_var:
 | IDENTIFIER { name := $1; $$ = func(ctx Context) interface{} { return ctx.Get(name) } }
 ;
 
-loop_modifiers: /* empty */ { $$ = loopModifiers{} }
+loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
 | loop_modifiers IDENTIFIER {
 	switch $2 {
 	case "reversed":
@@ -113,6 +114,12 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 }
 | loop_modifiers KEYWORD LITERAL { // TODO can this be a variable?
 	switch $2 {
+	case "cols":
+		cols, ok := $3.(int)
+		if !ok {
+			panic(ParseError(fmt.Sprintf("loop cols must an integer")))
+		}
+		$1.Cols = cols
 	case "limit":
 		limit, ok := $3.(int)
 		if !ok {

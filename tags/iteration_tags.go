@@ -69,6 +69,7 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		return nil, err
 	}
 	loop := stmt.Loop
+	dec := makeLoopDecorator(node.Name, loop)
 	return func(w io.Writer, ctx render.Context) error {
 		val, err := ctx.Evaluate(loop.Expr)
 		if err != nil {
@@ -98,7 +99,9 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 				"length":  len,
 				".cycles": cycleMap,
 			})
+			dec.before(w, i)
 			err := ctx.RenderChildren(w)
+			dec.after(w, i, len)
 			switch {
 			case err == nil:
 			// fall through
@@ -112,6 +115,50 @@ func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 		}
 		return nil
 	}, nil
+}
+
+func makeLoopDecorator(tagName string, loop expressions.Loop) loopDecorator {
+	if tagName == "tablerow" {
+		return tableRowDecorator(loop.Cols)
+	}
+	return nullLoopDecorator{}
+}
+
+type loopDecorator interface {
+	before(io.Writer, int)
+	after(io.Writer, int, int)
+}
+
+type nullLoopDecorator struct{}
+
+func (d nullLoopDecorator) before(io.Writer, int)     {}
+func (d nullLoopDecorator) after(io.Writer, int, int) {}
+
+type tableRowDecorator int
+
+func (c tableRowDecorator) before(w io.Writer, i int) {
+	cols := int(c)
+	row, col := i/cols, i%cols
+	if col == 0 {
+		if _, err := fmt.Fprintf(w, `<tr class="row%d">`, row+1); err != nil {
+			panic(err)
+		}
+	}
+	if _, err := fmt.Fprintf(w, `<td class="col%d">`, col+1); err != nil {
+		panic(err)
+	}
+}
+
+func (c tableRowDecorator) after(w io.Writer, i, len int) {
+	cols := int(c)
+	if _, err := io.WriteString(w, `</td>`); err != nil {
+		panic(err)
+	}
+	if (i+1)%cols == 0 || i+1 == len {
+		if _, err := io.WriteString(w, `</tr>`); err != nil {
+			panic(err)
+		}
+	}
 }
 
 func applyLoopModifiers(loop expressions.Loop, iter iterable) iterable {

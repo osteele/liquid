@@ -25,7 +25,7 @@ func AddStandardTags(c render.Config) {
 	c.AddBlock("for").Compiler(loopTagParser)
 	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagParser(true))
 	c.AddBlock("raw")
-	c.AddBlock("tablerow")
+	c.AddBlock("tablerow").Compiler(loopTagParser)
 	c.AddBlock("unless").Compiler(ifTagParser(false))
 }
 
