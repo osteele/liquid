@@ -1,0 +1,1 @@
+{% capture horse %}file system{% endcapture %}Now I'm on a {{ horse }}!
