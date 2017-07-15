@@ -19,14 +19,14 @@ func AddStandardTags(c render.Config) {
 	c.AddTag("break", breakTag)
 	c.AddTag("continue", continueTag)
 	c.AddTag("cycle", cycleTag)
-	c.AddBlock("capture").Compiler(captureTagParser)
-	c.AddBlock("case").Clause("when").Clause("else").Compiler(caseTagParser)
+	c.AddBlock("capture").Compiler(captureTagCompiler)
+	c.AddBlock("case").Clause("when").Clause("else").Compiler(caseTagCompiler)
 	c.AddBlock("comment")
-	c.AddBlock("for").Compiler(loopTagParser)
-	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagParser(true))
+	c.AddBlock("for").Compiler(loopTagCompiler)
+	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagCompiler(true))
 	c.AddBlock("raw")
-	c.AddBlock("tablerow").Compiler(loopTagParser)
-	c.AddBlock("unless").Compiler(ifTagParser(false))
+	c.AddBlock("tablerow").Compiler(loopTagCompiler)
+	c.AddBlock("unless").Compiler(ifTagCompiler(false))
 }
 
 func assignTag(source string) (func(io.Writer, render.Context) error, error) {
@@ -45,7 +45,7 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 	}, nil
 }
 
-func captureTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
+func captureTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO verify syntax
 	varname := node.Args
 	return func(w io.Writer, ctx render.Context) error {

@@ -59,7 +59,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 // TODO is the Liquid syntax compatible with a context-free lexer instead?
 var loopRepairMatcher = regexp.MustCompile(`^(.+\s+in\s+\(.+)\.\.(.+\).*)$`)
 
-func loopTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
+func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	src := node.Args
 	if m := loopRepairMatcher.FindStringSubmatch(src); m != nil {
 		src = m[1] + " .. " + m[2]

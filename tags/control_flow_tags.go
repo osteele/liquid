@@ -38,7 +38,7 @@ func (c elseCase) body() *render.BlockNode { return c.b }
 
 func (c elseCase) test(interface{}, render.Context) (bool, error) { return true, nil }
 
-func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
+func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO parse error on non-empty node.Body
 	expr, err := e.Parse(node.Args)
 	if err != nil {
@@ -75,7 +75,7 @@ func caseTagParser(node render.BlockNode) (func(io.Writer, render.Context) error
 	}, nil
 }
 
-func ifTagParser(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
 	return func(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
 			test e.Expression
