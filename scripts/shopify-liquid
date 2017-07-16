@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+require 'liquid'
+
+Liquid::Template.error_mode = :strict
+
+source = $stdin.read
+template = Liquid::Template.parse(source)
+out = template.render({}, { strict_filters: true })
+# for e in template.errors do
+#     # $stderr.puts e
+# end
+$stdout.write(out)
