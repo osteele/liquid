@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"regexp"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
@@ -56,15 +55,8 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	}, nil
 }
 
-// TODO is the Liquid syntax compatible with a context-free lexer instead?
-var loopRepairMatcher = regexp.MustCompile(`^(.+\s+in\s+\(.+)\.\.(.+\).*)$`)
-
 func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
-	src := node.Args
-	if m := loopRepairMatcher.FindStringSubmatch(src); m != nil {
-		src = m[1] + " .. " + m[2]
-	}
-	stmt, err := expressions.ParseStatement(expressions.LoopStatementSelector, src)
+	stmt, err := expressions.ParseStatement(expressions.LoopStatementSelector, node.Args)
 	if err != nil {
 		return nil, err
 	}

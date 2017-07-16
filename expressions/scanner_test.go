@@ -88,7 +88,7 @@ func TestLex(t *testing.T) {
 	require.Len(t, ts, 4)
 
 	ts, _ = scanExpression(`%loop i in (3 .. 5)`)
-	require.Len(t, ts, 9)
+	require.Len(t, ts, 8)
 
 	// ts, _ = scanExpression(`%loop i in (3..5)`)
 	// require.Len(t, ts, 9)

@@ -38,7 +38,7 @@ func init() {
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
 %token ASSIGN CYCLE LOOP WHEN
-%token EQ NEQ GE LE IN AND OR CONTAINS
+%token EQ NEQ GE LE IN AND OR CONTAINS DOTDOT
 %left '.' '|'
 %left '<' '>'
 %%
@@ -90,8 +90,8 @@ loop: IDENTIFIER IN loop_expr loop_modifiers {
 }
 ;
 
-loop_expr : '(' int_or_var '.' '.' int_or_var ')' {
-  $$ = makeRangeExpr($2, $5)
+loop_expr : '(' int_or_var DOTDOT int_or_var ')' {
+  $$ = makeRangeExpr($2, $4)
 }
 | filtered
 ;

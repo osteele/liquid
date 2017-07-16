@@ -72,10 +72,10 @@ func (lex *lexer) Lex(out *yySymType) int {
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
 		identifier = (alpha | '_') . (alnum | '_' | '-')*  '?'? ;
-		# TODO what can a property name contain?
-		property = '.' (alnum | '_' | '-')+ '?' ? ;
+		# TODO is this the form for a property? (in which case can share w/ identifier)
+		property = '.' (alpha | '_') . (alnum | '_' | '-')* '?' ? ;
 		int = '-'? digit+ ;
-		float = '-'? (digit+ '.' digit* | '.' digit+) ;
+		float = '-'? digit+ ('.' digit+)? ;
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
 
 		main := |*
@@ -105,6 +105,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 			# keywords
 			"in" => { tok = IN; fbreak; };
+			".." => { tok = DOTDOT; fbreak; };
 
 			identifier ':' => { tok = KEYWORD; out.name = string(lex.data[lex.ts:lex.te-1]); fbreak; };
 			identifier => Identifier;
