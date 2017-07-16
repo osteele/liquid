@@ -12,6 +12,15 @@ import (
 )
 
 func addRenderTestTags(s Config) {
+	s.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, _ Context) error {
+			_, err := io.WriteString(w, "y")
+			return err
+		}, nil
+	})
+	s.AddTag("null", func(string) (func(io.Writer, Context) error, error) {
+		return func(io.Writer, Context) error { return nil }, nil
+	})
 	s.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			return fmt.Errorf("errblock error")
@@ -20,16 +29,42 @@ func addRenderTestTags(s Config) {
 }
 
 var renderTests = []struct{ in, out string }{
+	// literals representations
 	{`{{ nil }}`, ""},
 	{`{{ true }}`, "true"},
 	{`{{ false }}`, "false"},
 	{`{{ 12 }}`, "12"},
 	{`{{ 12.3 }}`, "12.3"},
 	{`{{ "abc" }}`, "abc"},
+	{`{{ array }}`, "firstsecondthird"},
+
+	// variables and properties
 	{`{{ x }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
-	{`{{ array }}`, "firstsecondthird"},
 	{`{{ array[1] }}`, "second"},
+
+	// whitespace control
+	// {` {{ 1 }} `, " 1 "},
+	{` {{- 1 }} `, "1 "},
+	{` {{ 1 -}} `, " 1"},
+	{` {{- 1 -}} `, "1"},
+	{` {{- nil -}} `, ""},
+	{`x {{ 1 }} z`, "x 1 z"},
+	{`x {{- 1 }} z`, "x1 z"},
+	{`x {{ 1 -}} z`, "x 1z"},
+	{`x {{- 1 -}} z`, "x1z"},
+	{`x {{ nil }} z`, "x  z"},
+	{`x {{- nil }} z`, "x z"},
+	{`x {{ nil -}} z`, "x z"},
+	{`x {{- nil -}} z`, "xz"},
+	{`x {% null %} z`, "x  z"},
+	{`x {%- null %} z`, "x z"},
+	{`x {% null -%} z`, "x z"},
+	{`x {%- null -%} z`, "xz"},
+	{`x {% y %} z`, "x y z"},
+	{`x {%- y %} z`, "xy z"},
+	{`x {% y -%} z`, "x yz"},
+	{`x {%- y -%} z`, "xyz"},
 }
 
 var renderErrorTests = []struct{ in, out string }{
@@ -66,13 +101,12 @@ var renderTestBindings = map[string]interface{}{
 func TestRender(t *testing.T) {
 	cfg := NewConfig()
 	addRenderTestTags(cfg)
-	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = root.render(buf, context)
+			err = Render(root, buf, renderTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
@@ -82,12 +116,11 @@ func TestRender(t *testing.T) {
 func TestRenderErrors(t *testing.T) {
 	cfg := NewConfig()
 	addRenderTestTags(cfg)
-	context := newNodeContext(renderTestBindings, cfg)
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = root.render(ioutil.Discard, context)
+			err = Render(root, ioutil.Discard, renderTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.out, test.in)
 		})

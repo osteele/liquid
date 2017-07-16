@@ -59,13 +59,12 @@ var contextTestBindings = map[string]interface{}{
 func TestContext(t *testing.T) {
 	cfg := NewConfig()
 	addContextTestTags(cfg)
-	context := newNodeContext(contextTestBindings, cfg)
 	for i, test := range contextTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = root.render(buf, context)
+			err = Render(root, buf, contextTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})

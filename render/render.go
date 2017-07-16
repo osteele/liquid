@@ -11,10 +11,24 @@ import (
 
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) Error {
-	return node.render(w, newNodeContext(vars, c))
+	tw := trimWriter{w: w}
+	defer tw.Flush()
+	return node.render(&tw, newNodeContext(vars, c))
 }
 
-func (n *BlockNode) render(w io.Writer, ctx nodeContext) Error {
+// RenderASTSequence renders a sequence of nodes.
+func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
+	tw := trimWriter{w: w}
+	defer tw.Flush()
+	for _, n := range seq {
+		if err := n.render(&tw, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 	cd, ok := ctx.config.findBlockDef(n.Name)
 	if !ok || cd.parser == nil {
 		// this should have been detected during compilation; it's an implementation error if it happens here
@@ -28,7 +42,7 @@ func (n *BlockNode) render(w io.Writer, ctx nodeContext) Error {
 	return wrapRenderError(err, n)
 }
 
-func (n *RawNode) render(w io.Writer, ctx nodeContext) Error {
+func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 	for _, s := range n.slices {
 		_, err := io.WriteString(w, s)
 		if err != nil {
@@ -38,15 +52,20 @@ func (n *RawNode) render(w io.Writer, ctx nodeContext) Error {
 	return nil
 }
 
-func (n *ObjectNode) render(w io.Writer, ctx nodeContext) Error {
+func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
+	w.TrimLeft(n.TrimLeft)
 	value, err := ctx.Evaluate(n.expr)
 	if err != nil {
 		return wrapRenderError(err, n)
 	}
-	return wrapRenderError(writeObject(value, w), n)
+	if err := wrapRenderError(writeObject(value, w), n); err != nil {
+		return err
+	}
+	w.TrimRight(n.TrimRight)
+	return nil
 }
 
-func (n *SeqNode) render(w io.Writer, ctx nodeContext) Error {
+func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
 	for _, c := range n.Children {
 		if err := c.render(w, ctx); err != nil {
 			return err
@@ -55,11 +74,14 @@ func (n *SeqNode) render(w io.Writer, ctx nodeContext) Error {
 	return nil
 }
 
-func (n *TagNode) render(w io.Writer, ctx nodeContext) Error {
-	return wrapRenderError(n.renderer(w, rendererContext{ctx, n, nil}), n)
+func (n *TagNode) render(w *trimWriter, ctx nodeContext) Error {
+	w.TrimLeft(n.TrimLeft)
+	err := wrapRenderError(n.renderer(w, rendererContext{ctx, n, nil}), n)
+	w.TrimRight(n.TrimRight)
+	return err
 }
 
-func (n *TextNode) render(w io.Writer, ctx nodeContext) Error {
+func (n *TextNode) render(w *trimWriter, ctx nodeContext) Error {
 	_, err := io.WriteString(w, n.Source)
 	return wrapRenderError(err, n)
 }
@@ -86,14 +108,4 @@ func writeObject(value interface{}, w io.Writer) error {
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
 	}
-}
-
-// RenderASTSequence renders a sequence of nodes.
-func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
-	for _, n := range seq {
-		if err := n.render(w, c); err != nil {
-			return err
-		}
-	}
-	return nil
 }

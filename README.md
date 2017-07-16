@@ -1,14 +1,14 @@
-# Go Liquid Template Parser
+# Liquid Template Parser
 
  [![][travis-svg]][travis-url] [![][coveralls-svg]][coveralls-url] [![][go-report-card-svg]][go-report-card-url] [![][godoc-svg]][godoc-url] [![][license-svg]][license-url]
 
-`liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
+`liquid` is a Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid). It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
 
 > “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
 
 <!-- TOC -->
 
-- [Go Liquid Template Parser](#go-liquid-template-parser)
+- [Liquid Template Parser](#liquid-template-parser)
     - [Differences from Liquid](#differences-from-liquid)
     - [Stability](#stability)
     - [Install](#install)
@@ -31,7 +31,6 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 In brief, these aren't implemented:
 
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
-- Whitespace control
 - Non-strict filters. An undefined filter is currently an error.
 - Strict variables. An undefined variable is not an error.
 

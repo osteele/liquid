@@ -11,7 +11,7 @@ import (
 type Node interface {
 	SourceLocation() parser.SourceLoc // for error reporting
 	SourceText() string               // for error reporting
-	render( io.Writer,  nodeContext) Error
+	render(*trimWriter, nodeContext) Error
 }
 
 // BlockNode represents a {% tag %}…{% endtag %}.
