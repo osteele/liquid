@@ -12,18 +12,25 @@ import (
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) Error {
 	tw := trimWriter{w: w}
-	defer tw.Flush()
-	return node.render(&tw, newNodeContext(vars, c))
+	if err := node.render(&tw, newNodeContext(vars, c)); err != nil {
+		return err
+	}
+	if err := tw.Flush(); err != nil {
+		panic(err)
+	}
+	return nil
 }
 
 // RenderASTSequence renders a sequence of nodes.
 func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	tw := trimWriter{w: w}
-	defer tw.Flush()
 	for _, n := range seq {
 		if err := n.render(&tw, c); err != nil {
 			return err
 		}
+	}
+	if err := tw.Flush(); err != nil {
+		panic(err)
 	}
 	return nil
 }
