@@ -31,8 +31,9 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 In brief, these aren't implemented:
 
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
-- Non-strict variables and filters. (Undefined variables and filters are always errors.)
 - Whitespace control
+- Non-strict filters. An undefined filter is currently an error.
+- Strict variables. An undefined variable is not an error.
 
 ## Stability
 
