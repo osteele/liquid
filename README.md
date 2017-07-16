@@ -43,20 +43,18 @@ These are opinionated differences that unlikely to change:
 This library is at an early stage of development.
 It has been mostly used by its author.
 
-Until it reaches 1.0, breaking changes will accompanied by a bump in the minor version, not the major version. For example, tag `v0.2` is incompatible with `v0.1`. ([gopkg.in](http://gopkg.in) doesn't work this way, so you won't can't use `gopkg.in/osteele/liquid.v0.1` to specify version 0.1.)
-
-Even within these parameters, only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore has the same stability guarantees as `liquid.Engine` and `liquid.Template`. Other "public" definitions in `render` and in other sub-packages are intended only for use in other packages in this repo; they are not generally stable even between sub-minor releases.
+Only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore won't change incompatibly with minor versions.
 
 ## Install
 
-`go get gopkg.in/osteele/liquid.v0`-- latest snapshot
+`go get gopkg.in/osteele/liquid.v1`– latest snapshot
 
-`go get -u github.com/osteele/goliquid` -- development version
+`go get -u github.com/osteele/goliquid` – development version
 
 ## Usage
 
 ```go
-engine := NewEngine()
+engine := liquid.NewEngine()
 template := `<h1>{{ page.title }}</h1>`
 bindings := map[string]interface{}{
     "page": map[string]string{
