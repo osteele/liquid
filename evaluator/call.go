@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -12,12 +13,22 @@ import (
 // The function should return one or two values; the second value,
 // if present, should be an error.
 func Call(fn reflect.Value, args []interface{}) (interface{}, error) {
-	in := convertArguments(fn, args)
+	in, err := convertCallArguments(fn, args)
+	if err != nil {
+		return nil, err
+	}
 	results := fn.Call(in)
-	return convertResults(results)
+	return convertCallResults(results)
 }
 
-func convertResults(results []reflect.Value) (interface{}, error) {
+// A CallParityError is a mismatch between the argument and parameter counts.
+type CallParityError struct{ NumArgs, NumParams int }
+
+func (e *CallParityError) Error() string {
+	return fmt.Sprintf("wrong number of arguments (given %d, expected %d)", e.NumArgs, e.NumParams)
+}
+
+func convertCallResults(results []reflect.Value) (interface{}, error) {
 	if len(results) > 1 && results[1].Interface() != nil {
 		switch e := results[1].Interface().(type) {
 		case error:
@@ -30,14 +41,13 @@ func convertResults(results []reflect.Value) (interface{}, error) {
 }
 
 // Convert args to match the input types of function fn.
-func convertArguments(fn reflect.Value, args []interface{}) (results []reflect.Value) {
+func convertCallArguments(fn reflect.Value, args []interface{}) (results []reflect.Value, err error) {
 	rt := fn.Type()
+	if len(args) > rt.NumIn() {
+		return nil, &CallParityError{NumArgs: len(args), NumParams: rt.NumIn()}
+	}
 	results = make([]reflect.Value, rt.NumIn())
 	for i, arg := range args {
-		if i >= rt.NumIn() {
-			// ignore extra arguments
-			break
-		}
 		typ := rt.In(i)
 		switch {
 		case isDefaultFunctionType(typ):

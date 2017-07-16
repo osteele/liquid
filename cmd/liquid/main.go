@@ -29,7 +29,7 @@ var (
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprint(stderr, err) // nolint: gas
+		fmt.Fprintln(stderr, err) // nolint: gas
 		os.Exit(1)
 	}
 }

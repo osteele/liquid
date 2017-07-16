@@ -27,7 +27,11 @@ func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{
 
 func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
 	return func(ctx Context) interface{} {
-		return ctx.ApplyFilter(name, fn, args)
+		result, err := ctx.ApplyFilter(name, fn, args)
+		if err != nil {
+			panic(err)
+		}
+		return result
 	}
 }
 

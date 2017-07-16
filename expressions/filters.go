@@ -49,7 +49,7 @@ func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) interface{} {
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (interface{}, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
@@ -69,13 +69,15 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 	}
 	out, err := evaluator.Call(fr, args)
 	if err != nil {
-		panic(err)
+		if e, ok := err.(*evaluator.CallParityError); ok {
+			err = &evaluator.CallParityError{NumArgs: e.NumArgs - 1, NumParams: e.NumParams - 1}
+		}
+		return nil, err
 	}
-	out = ToLiquid(out)
 	switch out := out.(type) {
 	case []byte:
-		return string(out)
+		return string(out), nil
 	default:
-		return out
+		return out, nil
 	}
 }

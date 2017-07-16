@@ -2,7 +2,7 @@ package expressions
 
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {
-	ApplyFilter(string, valueFn, []valueFn) interface{}
+	ApplyFilter(string, valueFn, []valueFn) (interface{}, error)
 	// Clone returns a copy with a new variable binding map
 	// (so that copy.Set does effect the source context.)
 	Clone() Context

@@ -1,6 +1,7 @@
 package render
 
 import (
+	"github.com/osteele/liquid/evaluator"
 	"github.com/osteele/liquid/expressions"
 )
 
@@ -39,6 +40,8 @@ func (c nodeContext) Evaluate(expr expressions.Expression) (out interface{}, err
 		if r := recover(); r != nil {
 			switch e := r.(type) {
 			case expressions.InterpreterError:
+				err = e
+			case *evaluator.CallParityError:
 				err = e
 			default:
 				// fmt.Println(string(debug.Stack()))
