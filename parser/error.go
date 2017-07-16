@@ -26,20 +26,16 @@ func WrapError(err error, loc Locatable) Error {
 	if err == nil {
 		return nil
 	}
-	// fmt.Println("wrap", err)
 	if e, ok := err.(Error); ok {
 		// re-wrap the error, if the inner layer implemented the locatable interface
 		// but didn't actually provide any information
-		// fmt.Println("about to wrap", err, e)
 		if e.Path() != "" || loc.SourceLocation().IsZero() {
-			// fmt.Println("wrapped")
 			return e
 		}
 		if e.Cause() != nil {
 			err = e.Cause()
 		}
 	}
-	// fmt.Println("wrapping in", loc, loc.SourceLocation())
 	re := Errorf(loc, "%s", err)
 	re.cause = err
 	return re
@@ -65,9 +61,13 @@ func (e *sourceLocError) LineNumber() int {
 }
 
 func (e *sourceLocError) Error() string {
+	line := ""
+	if e.LineNo > 0 {
+		line = fmt.Sprintf(" (line %d)", e.LineNo)
+	}
 	locative := " in " + e.context
 	if e.Pathname != "" {
 		locative = " in " + e.Pathname
 	}
-	return fmt.Sprintf("Liquid error (line %d): %s%s", e.LineNo, e.message, locative)
+	return fmt.Sprintf("Liquid error%s: %s%s", line, e.message, locative)
 }
