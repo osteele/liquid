@@ -2,9 +2,9 @@
 
  [![][travis-svg]][travis-url] [![][coveralls-svg]][coveralls-url] [![][go-report-card-svg]][go-report-card-url] [![][godoc-svg]][godoc-url] [![][license-svg]][license-url]
 
-> “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
-
 `liquid` ports [Shopify Liquid templates](https://shopify.github.io/liquid) to Go. It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
+
+> “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
 
 <!-- TOC -->
 
@@ -30,13 +30,9 @@ The [feature parity board](https://github.com/osteele/liquid/projects/1) lists d
 
 In brief, these aren't implemented:
 
-- Error modes
+- Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
+- Non-strict variables and filters. (Undefined variables and filters are always errors.)
 - Whitespace control
-
-These are opinionated differences that unlikely to change:
-
-- The expression parser accepts parentheses in more locations
-- The `truncatewords` filter leaves whitespace prior to the truncation point unchanged.
 
 ## Stability
 
@@ -47,9 +43,9 @@ Only the liquid package itself, and the sub-package types that are used in that 
 
 ## Install
 
-`go get gopkg.in/osteele/liquid.v1`– latest snapshot
+`go get gopkg.in/osteele/liquid.v1` # latest snapshot
 
-`go get -u github.com/osteele/goliquid` – development version
+`go get -u github.com/osteele/goliquid` # development version
 
 ## Usage
 
