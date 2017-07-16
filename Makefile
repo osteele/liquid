@@ -23,9 +23,10 @@ generate:
 	go generate ./...
 
 setup: ## install dependencies and development tools
-	go get github.com/alecthomas/gometalinter
 	go get golang.org/x/tools/cmd/stringer
 	go install golang.org/x/tools/cmd/goyacc
+	go get -t ./...
+	go get github.com/alecthomas/gometalinter
 	gometalinter --install
 
 lint: ## lint the package
