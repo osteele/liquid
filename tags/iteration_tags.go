@@ -51,7 +51,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		n := cycleMap[group]
 		cycleMap[group] = n + 1
 		// The parser guarantees that there will be at least one item.
-		_, err = w.Write([]byte(values[n%len(values)]))
+		_, err = io.WriteString(w, values[n%len(values)])
 		return err
 	}, nil
 }

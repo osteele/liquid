@@ -25,7 +25,7 @@ func includeTag(source string) (func(io.Writer, render.Context) error, error) {
 		if err != nil {
 			return err
 		}
-		_, err = w.Write([]byte(s))
+		_, err = io.WriteString(w, s)
 		return err
 	}, nil
 }

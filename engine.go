@@ -28,7 +28,7 @@ func (e *Engine) RegisterBlock(name string, td Renderer) {
 		if err != nil {
 			return err
 		}
-		_, err = w.Write([]byte(s))
+		_, err = io.WriteString(w, s)
 		return err
 	})
 }
@@ -60,7 +60,7 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 			if err != nil {
 				return err
 			}
-			_, err = w.Write([]byte(s))
+			_, err = io.WriteString(w, s)
 			return err
 		}, nil
 	})

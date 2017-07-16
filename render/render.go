@@ -30,7 +30,7 @@ func (n *BlockNode) render(w io.Writer, ctx nodeContext) Error {
 
 func (n *RawNode) render(w io.Writer, ctx nodeContext) Error {
 	for _, s := range n.slices {
-		_, err := w.Write([]byte(s))
+		_, err := io.WriteString(w, s)
 		if err != nil {
 			return wrapRenderError(err, n)
 		}
@@ -60,7 +60,7 @@ func (n *TagNode) render(w io.Writer, ctx nodeContext) Error {
 }
 
 func (n *TextNode) render(w io.Writer, ctx nodeContext) Error {
-	_, err := w.Write([]byte(n.Source))
+	_, err := io.WriteString(w, n.Source)
 	return wrapRenderError(err, n)
 }
 
@@ -83,7 +83,7 @@ func writeObject(value interface{}, w io.Writer) error {
 		}
 		return nil
 	default:
-		_, err := w.Write([]byte(fmt.Sprint(value)))
+		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
 	}
 }

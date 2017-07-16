@@ -16,19 +16,19 @@ func addContextTestTags(s Config) {
 		if err != nil {
 			return err
 		}
-		_, err = w.Write([]byte(fmt.Sprint(v)))
+		_, err = fmt.Fprint(w, v)
 		return err
 	})
 	s.AddBlock("parse").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		a := c.Args
 		return func(w io.Writer, c Context) error {
-			_, err := w.Write([]byte(a))
+			_, err := io.WriteString(w, a)
 			return err
 		}, nil
 	})
 	s.AddTag("tag_name", func(string) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
-			_, err := w.Write([]byte(c.TagName()))
+			_, err := io.WriteString(w, c.TagName())
 			return err
 		}, nil
 	})
@@ -38,7 +38,7 @@ func addContextTestTags(s Config) {
 			if err != nil {
 				return err
 			}
-			_, err = w.Write([]byte(s))
+			_, err = io.WriteString(w, s)
 			return err
 		}, nil
 	})
