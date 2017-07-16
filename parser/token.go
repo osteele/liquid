@@ -2,13 +2,14 @@ package parser
 
 import "fmt"
 
-// A Token is either an object {{a.b}}, a tag {%if a>b%}, or a text chunk (anything outside of {{}} and {%%}.)
+// A Token is an object {{ a.b }}, a tag {% if a>b %}, or a text chunk (anything outside of {{}} and {%%}.)
 type Token struct {
-	Type      TokenType
-	SourceLoc SourceLoc
-	Name      string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
-	Args      string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
-	Source    string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
+	Type                TokenType
+	SourceLoc           SourceLoc
+	Name                string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
+	Args                string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
+	Source              string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
+	TrimLeft, TrimRight bool   // Trim whitespace left or right of this token; from {{- tag -}} and {%- expr -%}
 }
 
 // TokenType is the type of a Chunk
@@ -39,7 +40,6 @@ func (c Token) SourceText() string { return c.Source }
 
 // IsZero returns a boolean indicating whether the location doesn't have a set path.
 func (s SourceLoc) IsZero() bool { return s.Pathname == "" }
-
 
 func (c Token) String() string {
 	switch c.Type {
