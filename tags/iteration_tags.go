@@ -176,10 +176,11 @@ func makeIterator(value interface{}) iterable {
 	case reflect.Array, reflect.Slice:
 		return sliceWrapper(reflect.ValueOf(value))
 	case reflect.Map:
-		rt := reflect.ValueOf(value)
-		array := make([]interface{}, 0, rt.Len())
-		for _, k := range rt.MapKeys() {
-			array = append(array, k.Interface())
+		rv := reflect.ValueOf(value)
+		array := make([][]interface{}, rv.Len())
+		for i, k := range rv.MapKeys() {
+			v := rv.MapIndex(k)
+			array[i] = []interface{}{k.Interface(), v.Interface()}
 		}
 		return sliceWrapper(reflect.ValueOf(array))
 	default:

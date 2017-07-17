@@ -29,7 +29,7 @@ func (g blockSyntaxFake) RequiresParent() bool { return g == "else" || g.IsBlock
 func (g blockSyntaxFake) TagName() string      { return string(g) }
 
 var parseErrorTests = []struct{ in, expected string }{
-	{"{% if test %}", "unterminated if block"},
+	{"{% if test %}", `unterminated "if" block`},
 	{"{% if test %}{% endunless %}", "not inside unless"},
 	// TODO tag syntax could specify statement type to catch these in parser
 	// {"{{ syntax error }}", "parse error"},
