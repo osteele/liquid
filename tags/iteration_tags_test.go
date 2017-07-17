@@ -60,7 +60,7 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{% if a == 'second' %}{% continue %}{% endif %}{{ a }}.{% endfor %}`, "first.third."},
 
 	// hash
-	{`{% for a in hash %}{{ a }}{% endfor %}`, "a"},
+	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
 
 	// cycle
 	{`{% for a in array %}{% cycle 'even', 'odd' %}.{% endfor %}`, "even.odd.even."},
