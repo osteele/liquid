@@ -111,7 +111,7 @@ func (b blockDefBuilder) Compiler(fn BlockCompiler) {
 // Renderer sets the render action for a control tag definition.
 func (b blockDefBuilder) Renderer(fn func(io.Writer, Context) error) {
 	b.tag.parser = func(node BlockNode) (func(io.Writer, Context) error, error) {
-		// TODO parse error if there are arguments?
+		// TODO syntax error if there are arguments?
 		return fn, nil
 	}
 }

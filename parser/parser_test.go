@@ -32,8 +32,8 @@ var parseErrorTests = []struct{ in, expected string }{
 	{"{% if test %}", `unterminated "if" block`},
 	{"{% if test %}{% endunless %}", "not inside unless"},
 	// TODO tag syntax could specify statement type to catch these in parser
-	// {"{{ syntax error }}", "parse error"},
-	// {"{% for syntax error %}{% endfor %}", "parse error"},
+	// {"{{ syntax error }}", "syntax error"},
+	// {"{% for syntax error %}{% endfor %}", "syntax error"},
 }
 
 var parserTests = []struct{ in string }{

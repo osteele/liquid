@@ -75,8 +75,8 @@ func TestContext(t *testing.T) {
 }
 
 var contextErrorTests = []struct{ in, expect string }{
-	{`{% test_evaluate_string syntax error %}`, "parse error"},
-	{`{% test_expand_tag_arg {{ syntax error }} %}`, "parse error"},
+	{`{% test_evaluate_string syntax error %}`, "syntax error"},
+	{`{% test_expand_tag_arg {{ syntax error }} %}`, "syntax error"},
 	{`{% test_expand_tag_arg {{ x | undefined_filter }} %}`, "undefined filter"},
 }
 

@@ -39,7 +39,7 @@ func (c elseCase) body() *render.BlockNode { return c.b }
 func (c elseCase) test(interface{}, render.Context) (bool, error) { return true, nil }
 
 func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
-	// TODO parse error on non-empty node.Body
+	// TODO syntax error on non-empty node.Body
 	expr, err := e.Parse(node.Args)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 			test := e.Constant(true)
 			switch c.Name {
 			case "else":
-			// TODO parse error if this isn't the last branch
+			// TODO syntax error if this isn't the last branch
 			case "elsif":
 				t, err := e.Parse(c.Args)
 				if err != nil {

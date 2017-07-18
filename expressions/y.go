@@ -626,7 +626,7 @@ yydefault:
 		{
 			s, ok := yyDollar[1].val.(string)
 			if !ok {
-				panic(ParseError(fmt.Sprintf("expected a string for %q", yyDollar[1].val)))
+				panic(SyntaxError(fmt.Sprintf("expected a string for %q", yyDollar[1].val)))
 			}
 			yyVAL.s = s
 		}
@@ -671,7 +671,7 @@ yydefault:
 			case "reversed":
 				yyDollar[1].loopmods.Reversed = true
 			default:
-				panic(ParseError(fmt.Sprintf("undefined loop modifier %q", yyDollar[2].name)))
+				panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", yyDollar[2].name)))
 			}
 			yyVAL.loopmods = yyDollar[1].loopmods
 		}
@@ -683,23 +683,23 @@ yydefault:
 			case "cols":
 				cols, ok := yyDollar[3].val.(int)
 				if !ok {
-					panic(ParseError(fmt.Sprintf("loop cols must an integer")))
+					panic(SyntaxError(fmt.Sprintf("loop cols must an integer")))
 				}
 				yyDollar[1].loopmods.Cols = cols
 			case "limit":
 				limit, ok := yyDollar[3].val.(int)
 				if !ok {
-					panic(ParseError(fmt.Sprintf("loop limit must an integer")))
+					panic(SyntaxError(fmt.Sprintf("loop limit must an integer")))
 				}
 				yyDollar[1].loopmods.Limit = &limit
 			case "offset":
 				offset, ok := yyDollar[3].val.(int)
 				if !ok {
-					panic(ParseError(fmt.Sprintf("loop offset must an integer")))
+					panic(SyntaxError(fmt.Sprintf("loop offset must an integer")))
 				}
 				yyDollar[1].loopmods.Offset = offset
 			default:
-				panic(ParseError(fmt.Sprintf("undefined loop modifier %q", yyDollar[2].name)))
+				panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", yyDollar[2].name)))
 			}
 			yyVAL.loopmods = yyDollar[1].loopmods
 		}

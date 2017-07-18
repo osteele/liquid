@@ -15,12 +15,12 @@ var parseTests = []struct {
 }
 
 var parseErrorTests = []struct{ in, expected string }{
-	{"a syntax error", "parse error"},
-	{`%assign a`, "parse error"},
-	{`%assign a 3`, "parse error"},
-	{`%cycle 'a' 'b'`, "parse error"},
-	{`%loop a in in`, "parse error"},
-	{`%when a b`, "parse error"},
+	{"a syntax error", "syntax error"},
+	{`%assign a`, "syntax error"},
+	{`%assign a 3`, "syntax error"},
+	{`%cycle 'a' 'b'`, "syntax error"},
+	{`%loop a in in`, "syntax error"},
+	{`%when a b`, "syntax error"},
 }
 
 func TestParse(t *testing.T) {

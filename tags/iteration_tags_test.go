@@ -91,9 +91,9 @@ var iterationTests = []struct{ in, expected string }{
 }
 
 var iterationSyntaxErrorTests = []struct{ in, expected string }{
-	{`{% for a b c %}{% endfor %}`, "parse error"},
+	{`{% for a b c %}{% endfor %}`, "syntax error"},
 	{`{% for a in array offset %}{% endfor %}`, "undefined loop modifier"},
-	{`{% cycle %}`, "parse error"},
+	{`{% cycle %}`, "syntax error"},
 }
 
 var iterationErrorTests = []struct{ in, expected string }{

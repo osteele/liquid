@@ -14,11 +14,11 @@ type parseValue struct {
 	val func(Context) interface{}
 }
 
-// ParseError represents a parse error. The yacc-generated compiler
+// SyntaxError represents a syntax error. The yacc-generated compiler
 // doesn't use error returns; this lets us recognize them.
-type ParseError string
+type SyntaxError string
 
-func (e ParseError) Error() string { return string(e) }
+func (e SyntaxError) Error() string { return string(e) }
 
 // Parse parses an expression string into an Expression.
 func Parse(source string) (expr Expression, err error) {
@@ -33,7 +33,7 @@ func parse(source string) (p *parseValue, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case ParseError:
+			case SyntaxError:
 				err = e
 			case UndefinedFilter:
 				err = e
@@ -46,7 +46,7 @@ func parse(source string) (p *parseValue, err error) {
 	lex := newLexer([]byte(source + ";"))
 	n := yyParse(lex)
 	if n != 0 {
-		return nil, ParseError(fmt.Errorf("parse error in %q", source).Error())
+		return nil, SyntaxError(fmt.Errorf("syntax error in %q", source).Error())
 	}
 	return &lex.parseValue, nil
 }

@@ -13,10 +13,10 @@ import (
 
 var parseErrorTests = []struct{ in, expected string }{
 	{"{% unknown_tag %}", "unknown tag"},
-	{"{% assign v x y z %}", "parse error"},
+	{"{% assign v x y z %}", "syntax error"},
 	{"{% if syntax error %}", `unterminated "if" block`},
 	// TODO once expression parsing is moved to template parse stage
-	// {"{% if syntax error %}{% endif %}", "parse error"},
+	// {"{% if syntax error %}{% endif %}", "syntax error"},
 	// {"{% for a in ar unknown %}{{ a }} {% endfor %}", "TODO"},
 }
 

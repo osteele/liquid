@@ -2,7 +2,7 @@ package parser
 
 import "fmt"
 
-// An Error is a parse error during template parsing.
+// An Error is a syntax error during template parsing.
 type Error interface {
 	error
 	Cause() error
