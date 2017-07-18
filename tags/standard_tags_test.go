@@ -3,6 +3,7 @@ package tags
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
 	"testing"
 
 	"github.com/osteele/liquid/parser"
@@ -12,6 +13,7 @@ import (
 
 var parseErrorTests = []struct{ in, expected string }{
 	{"{% unknown_tag %}", "unknown tag"},
+	{"{% assign v x y z %}", "parse error"},
 	{"{% if syntax error %}", `unterminated "if" block`},
 	// TODO once expression parsing is moved to template parse stage
 	// {"{% if syntax error %}{% endif %}", "parse error"},
@@ -30,6 +32,10 @@ var tagTests = []struct{ in, expected string }{
 	// TODO research whether Liquid requires matching interior tags
 	{`pre{% raw %}{{ a }}{% unknown %}{% endraw %}post`, "pre{{ a }}{% unknown %}post"},
 	{`pre{% raw %}{% if false %}anyway-{% endraw %}post`, "pre{% if false %}anyway-post"},
+}
+
+var tagErrorTests = []struct{ in, expected string }{
+	{`{% assign av = x | undefined_filter %}`, "undefined filter"},
 }
 
 // this is also used in the other test files
@@ -59,29 +65,44 @@ var tagTestBindings = map[string]interface{}{
 	},
 }
 
-func TestParseErrors(t *testing.T) {
+func TestStandardTags_parse_errors(t *testing.T) {
 	settings := render.NewConfig()
 	AddStandardTags(settings)
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := settings.Compile(test.in, parser.SourceLoc{})
-			require.Nilf(t, ast, test.in)
+			root, err := settings.Compile(test.in, parser.SourceLoc{})
+			require.Nilf(t, root, test.in)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})
 	}
 }
+
 func TestStandardTags(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 	for i, test := range tagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			ast, err := config.Compile(test.in, parser.SourceLoc{})
+			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			buf := new(bytes.Buffer)
-			err = render.Render(ast, buf, tagTestBindings, config)
+			err = render.Render(root, buf, tagTestBindings, config)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
+}
+
+func TestStandardTags_render_errors(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(config)
+	for i, test := range tagErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+			err = render.Render(root, ioutil.Discard, tagTestBindings, config)
+			require.Errorf(t, err, test.in)
+			require.Containsf(t, err.Error(), test.expected, test.in)
 		})
 	}
 }

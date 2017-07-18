@@ -121,5 +121,12 @@ func TestMustConvert(t *testing.T) {
 	require.Equal(t, "2", v)
 
 	typ = reflect.TypeOf(2)
-	require.Panics(t, func() { MustConvert("xxx", typ) })
+	require.Panics(t, func() { MustConvert("x", typ) })
+}
+
+func TestMustConvertItem(t *testing.T) {
+	v := MustConvertItem(2, []string{})
+	require.Equal(t, "2", v)
+
+	require.Panics(t, func() { MustConvertItem("x", []int{}) })
 }

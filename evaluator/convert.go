@@ -124,7 +124,8 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 }
 
 // MustConvertItem converts item to conform to the type array's element, else panics.
-func MustConvertItem(item interface{}, array []interface{}) interface{} {
+// Unlike MustConvert, the second argument is a value not a type.
+func MustConvertItem(item interface{}, array interface{}) interface{} {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
 		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))

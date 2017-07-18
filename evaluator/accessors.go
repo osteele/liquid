@@ -7,7 +7,7 @@ import (
 
 // Index returns sequence[ix] according to Liquid semantics.
 func Index(sequence, ix interface{}) interface{} { // nolint: gocyclo
-	ref := reflect.ValueOf(sequence)
+	ref := reflect.ValueOf(ToLiquid(sequence))
 	ixRef := reflect.ValueOf(ix)
 	if !ref.IsValid() || !ixRef.IsValid() {
 		return nil
@@ -35,7 +35,7 @@ func Index(sequence, ix interface{}) interface{} { // nolint: gocyclo
 		if ixRef.Type().ConvertibleTo(ref.Type().Key()) {
 			item := ref.MapIndex(ixRef.Convert(ref.Type().Key()))
 			if item.IsValid() {
-				return ToLiquid(item.Interface())
+				return item.Interface()
 			}
 		}
 	}
@@ -50,7 +50,7 @@ const (
 
 // ObjectProperty object.name according to Liquid semantics.
 func ObjectProperty(object interface{}, name string) interface{} { // nolint: gocyclo
-	ref := reflect.ValueOf(object)
+	ref := reflect.ValueOf(ToLiquid(object))
 	switch ref.Kind() {
 	case reflect.Array, reflect.Slice:
 		if ref.Len() == 0 {

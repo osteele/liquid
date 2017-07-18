@@ -39,7 +39,7 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 	cd, ok := ctx.config.findBlockDef(n.Name)
 	if !ok || cd.parser == nil {
 		// this should have been detected during compilation; it's an implementation error if it happens here
-		panic(fmt.Errorf("unknown tag: %s", n.Name))
+		panic(fmt.Errorf("undefined tag %q", n.Name))
 	}
 	renderer := n.renderer
 	if renderer == nil {

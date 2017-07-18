@@ -102,7 +102,6 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 					return nil, err
 				}
 				test = t
-			default:
 			}
 			branches = append(branches, branchRec{test, c})
 		}

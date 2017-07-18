@@ -46,17 +46,21 @@ var cfTagTests = []struct{ in, expected string }{
 }
 
 var cfTagCompilationErrorTests = []struct{ in, expected string }{
+	{`{% if syntax error %}{% endif %}`, "syntax error"},
+	{`{% if true %}{% elsif syntax error %}{% endif %}`, "syntax error"},
 	{`{% case syntax error %}{% when 1 %}{% endcase %}`, "syntax error"},
 }
 
 var cfTagErrorTests = []struct{ in, expected string }{
+	{`{% if a | undefined_filter %}{% endif %}`, "undefined filter"},
+	{`{% if false %}{% elsif a | undefined_filter %}{% endif %}`, "undefined filter"},
 	{`{% case 1 %}{% when 1 %}{% error %}{% endcase %}`, "tag render error"},
+	{`{% case a | undefined_filter %}{% when 1 %}{% endcase %}`, "undefined filter"},
 }
 
 func TestControlFlowTags(t *testing.T) {
 	cfg := render.NewConfig()
 	AddStandardTags(cfg)
-
 	for i, test := range cfTagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})

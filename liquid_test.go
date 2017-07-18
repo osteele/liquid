@@ -11,8 +11,8 @@ func TestIsTemplateError(t *testing.T) {
 	require.Error(t, err)
 	_, err = NewEngine().ParseAndRenderString("{% if %}", emptyBindings)
 	require.Error(t, err)
-	_, err = NewEngine().ParseAndRenderString("{% unknown_tag %}", emptyBindings)
+	_, err = NewEngine().ParseAndRenderString("{% undefined_tag %}", emptyBindings)
 	require.Error(t, err)
-	_, err = NewEngine().ParseAndRenderString("{% a | unknown_filter %}", emptyBindings)
+	_, err = NewEngine().ParseAndRenderString("{% a | undefined_filter %}", emptyBindings)
 	require.Error(t, err)
 }

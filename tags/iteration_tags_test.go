@@ -15,12 +15,19 @@ import (
 
 var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ a }} {% endfor %}`, "first second third "},
+	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
+	{`{% for a in nil %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in false %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in 2 %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in "str" %}{{ a }}.{% endfor %}`, ""},
 
 	// loop modifiers
 	{`{% for a in array reversed %}{{ a }}.{% endfor %}`, "third.second.first."},
-	{`{% for a in array limit:2 %}{{ a }}.{% endfor %}`, "first.second."},
-	{`{% for a in array offset:1 %}{{ a }}.{% endfor %}`, "second.third."},
-	{`{% for a in array reversed limit:1 %}{{ a }}.{% endfor %}`, "third."},
+	{`{% for a in array limit: 2 %}{{ a }}.{% endfor %}`, "first.second."},
+	{`{% for a in array offset: 1 %}{{ a }}.{% endfor %}`, "second.third."},
+	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
+	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
 	// TODO investigate how these combine; does it depend on the order?
 	// {`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
 	// {`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
@@ -58,9 +65,6 @@ var iterationTests = []struct{ in, expected string }{
 
 	{`{% for a in array %}{% if a == 'second' %}{% break %}{% endif %}{{ a }}{% endfor %}`, "first"},
 	{`{% for a in array %}{% if a == 'second' %}{% continue %}{% endif %}{{ a }}.{% endfor %}`, "first.third."},
-
-	// hash
-	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
 
 	// cycle
 	{`{% for a in array %}{% cycle 'even', 'odd' %}.{% endfor %}`, "even.odd.even."},
