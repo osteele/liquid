@@ -120,12 +120,15 @@ func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (
 	if err != nil {
 		return "", err
 	}
-	nc := c.ctx.Clone()
+	bindings := map[string]interface{}{}
+	for k, v := range c.ctx.bindings {
+		bindings[k] = v
+	}
 	for k, v := range b {
-		c.ctx.bindings[k] = v
+		bindings[k] = v
 	}
 	buf := new(bytes.Buffer)
-	if err := Render(root, buf, nc.bindings, nc.config); err != nil {
+	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

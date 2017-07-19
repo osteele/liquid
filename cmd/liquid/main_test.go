@@ -25,6 +25,9 @@ func TestMain(t *testing.T) {
 	require.NoError(t, run([]string{"testdata/source.txt"}))
 	require.Contains(t, buf.String(), "file system")
 
+	// missing file
+	require.Error(t, run([]string{"testdata/missing_file"}))
+
 	// --help
 	buf = new(bytes.Buffer)
 	stdout = buf

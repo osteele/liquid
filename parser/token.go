@@ -39,7 +39,9 @@ func (c Token) SourceLocation() SourceLoc { return c.SourceLoc }
 func (c Token) SourceText() string { return c.Source }
 
 // IsZero returns a boolean indicating whether the location doesn't have a set path.
-func (s SourceLoc) IsZero() bool { return s.Pathname == "" }
+func (s SourceLoc) IsZero() bool {
+	return s.Pathname == "" && s.LineNo == 0
+}
 
 func (c Token) String() string {
 	switch c.Type {
