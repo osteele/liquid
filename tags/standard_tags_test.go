@@ -12,12 +12,12 @@ import (
 )
 
 var parseErrorTests = []struct{ in, expected string }{
-	{"{% unknown_tag %}", "unknown tag"},
+	{"{% undefined_tag %}", "undefined tag"},
 	{"{% assign v x y z %}", "syntax error"},
 	{"{% if syntax error %}", `unterminated "if" block`},
 	// TODO once expression parsing is moved to template parse stage
 	// {"{% if syntax error %}{% endif %}", "syntax error"},
-	// {"{% for a in ar unknown %}{{ a }} {% endfor %}", "TODO"},
+	// {"{% for a in ar undefined %}{{ a }} {% endfor %}", "TODO"},
 }
 
 var tagTests = []struct{ in, expected string }{
@@ -27,10 +27,10 @@ var tagTests = []struct{ in, expected string }{
 	{`{% capture x %}captured{% endcapture %}{{ x }}`, "captured"},
 
 	// TODO research whether Liquid requires matching interior tags
-	{`{% comment %}{{ a }}{% unknown %}{% endcomment %}`, ""},
+	{`{% comment %}{{ a }}{% undefined_tag %}{% endcomment %}`, ""},
 
 	// TODO research whether Liquid requires matching interior tags
-	{`pre{% raw %}{{ a }}{% unknown %}{% endraw %}post`, "pre{{ a }}{% unknown %}post"},
+	{`pre{% raw %}{{ a }}{% undefined_tag %}{% endraw %}post`, "pre{{ a }}{% undefined_tag %}post"},
 	{`pre{% raw %}{% if false %}anyway-{% endraw %}post`, "pre{% if false %}anyway-post"},
 }
 

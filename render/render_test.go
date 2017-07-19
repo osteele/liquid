@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func addRenderTestTags(s Config) {
-	s.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
+func addRenderTestTags(cfg Config) {
+	cfg.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, _ Context) error {
 			_, err := io.WriteString(w, "y")
 			return err
 		}, nil
 	})
-	s.AddTag("null", func(string) (func(io.Writer, Context) error, error) {
+	cfg.AddTag("null", func(string) (func(io.Writer, Context) error, error) {
 		return func(io.Writer, Context) error { return nil }, nil
 	})
-	s.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
+	cfg.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			return fmt.Errorf("errblock error")
 		}, nil

@@ -2,7 +2,6 @@ package render
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
@@ -74,17 +73,6 @@ func (c rendererContext) Evaluate(expr expressions.Expression) (out interface{},
 
 // EvaluateString evaluates an expression within the template context.
 func (c rendererContext) EvaluateString(source string) (out interface{}, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch e := r.(type) {
-			case expressions.InterpreterError:
-				err = e
-			default:
-				// fmt.Println(string(debug.Stack()))
-				panic(fmt.Errorf("%s during evaluation of %s", e, source))
-			}
-		}
-	}()
 	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.config.Config.Config))
 }
 

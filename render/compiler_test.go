@@ -11,18 +11,24 @@ import (
 
 func addCompilerTestTags(s Config) {
 	s.AddBlock("block").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
+		return func(io.Writer, Context) error {
+			return nil
+		}, nil
+	})
+	s.AddBlock("error_block").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return nil, fmt.Errorf("block compiler error")
 	})
 }
 
 var compilerErrorTests = []struct{ in, expected string }{
-	{`{% unknown_tag %}`, "unknown tag"},
-	{`{% block %}{% endblock %}`, "block compiler error"},
+	{`{% undefined_tag %}`, "undefined tag"},
+	{`{% error_block %}{% enderror_block %}`, "block compiler error"},
+	{`{% block %}{% undefined_tag %}{% endblock %}`, "undefined tag"},
 	// {`{% tag %}`, "tag compiler error"},
 	// {`{%for syntax error%}{%endfor%}`, "syntax error"},
 }
 
-func TestCompileErrors(t *testing.T) {
+func TestCompile_errors(t *testing.T) {
 	settings := NewConfig()
 	addCompilerTestTags(settings)
 	for i, test := range compilerErrorTests {

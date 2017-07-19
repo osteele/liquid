@@ -11,7 +11,17 @@ var parseTests = []struct {
 	in     string
 	expect interface{}
 }{
-	{`a | filter: b`, 3},
+	{`true`, true},
+	{`false`, false},
+	{`nil`, nil},
+	{`2`, 2},
+	{`"s"`, "s"},
+	{`a`, 1},
+	{`obj.prop`, 2},
+	{`a | add: b`, 3},
+	{`1 == 1`, true},
+	{`1 != 1`, false},
+	{`true and true`, true},
 }
 
 var parseErrorTests = []struct{ in, expected string }{
@@ -23,10 +33,15 @@ var parseErrorTests = []struct{ in, expected string }{
 	{`%when a b`, "syntax error"},
 }
 
+// Since the parser returns funcs, there's no easy way to test them except evaluation
 func TestParse(t *testing.T) {
 	cfg := NewConfig()
-	cfg.AddFilter("filter", func(a, b int) int { return a + b })
-	ctx := NewContext(map[string]interface{}{"a": 1, "b": 2}, cfg)
+	cfg.AddFilter("add", func(a, b int) int { return a + b })
+	ctx := NewContext(map[string]interface{}{
+		"a":   1,
+		"b":   2,
+		"obj": map[string]int{"prop": 2},
+	}, cfg)
 	for i, test := range parseTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			expr, err := Parse(test.in)

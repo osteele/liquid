@@ -28,6 +28,7 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
 	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in array offset: 10 %}{{ a }}.{% endfor %}`, ""},
 	// TODO investigate how these combine; does it depend on the order?
 	// {`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
 	// {`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
@@ -100,6 +101,8 @@ var iterationErrorTests = []struct{ in, expected string }{
 	{`{% break %}`, "break outside a loop"},
 	{`{% continue %}`, "continue outside a loop"},
 	{`{% cycle 'a', 'b' %}`, "cycle must be within a forloop"},
+	{`{% for a in array | undefined_filter %}{% endfor %}`, "undefined filter"},
+	{`{% for a in array %}{{ a | undefined_filter }}{% endfor %}`, "undefined filter"},
 }
 
 var iterationTestBindings = map[string]interface{}{
@@ -131,7 +134,7 @@ func TestIterationTags(t *testing.T) {
 	}
 }
 
-func TestLoopTag_errors(t *testing.T) {
+func TestIterationTags_errors(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 
@@ -144,7 +147,7 @@ func TestLoopTag_errors(t *testing.T) {
 	}
 
 	for i, test := range iterationErrorTests {
-		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i+1+len(iterationSyntaxErrorTests)), func(t *testing.T) {
 			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
 			err = render.Render(root, ioutil.Discard, iterationTestBindings, config)

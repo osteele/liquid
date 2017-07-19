@@ -45,6 +45,7 @@ func run(args []string) error {
 	case args[0] == "-h" || args[0] == "--help":
 		usage()
 	case strings.HasPrefix(args[0], "-"):
+		// undefined flag
 		usage()
 		exit(1)
 	case len(args) == 1:

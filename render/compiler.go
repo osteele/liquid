@@ -61,7 +61,7 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 			}
 			return &TagNode{n.Token, f}, nil
 		}
-		return nil, parser.Errorf(n, "unknown tag %q", n.Name)
+		return nil, parser.Errorf(n, "undefined tag %q", n.Name)
 	case *parser.ASTText:
 		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:
