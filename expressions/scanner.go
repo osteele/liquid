@@ -210,7 +210,6 @@ const expression_error int = -1
 const expression_en_main int = 23
 
 //line scanner.rl:11
-
 type lexer struct {
 	parseValue
 	data        []byte
@@ -657,7 +656,6 @@ func (lex *lexer) Lex(out *yySymType) int {
 	}
 
 //line scanner.rl:120
-
 	return tok
 }
 

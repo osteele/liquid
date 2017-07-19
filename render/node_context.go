@@ -23,6 +23,7 @@ func newNodeContext(scope map[string]interface{}, c Config) nodeContext {
 	}
 	return nodeContext{vars, c}
 }
+
 // Evaluate evaluates an expression within the template context.
 func (c nodeContext) Evaluate(expr expressions.Expression) (out interface{}, err error) {
 	return expr.Evaluate(expressions.NewContext(c.bindings, c.config.Config.Config))

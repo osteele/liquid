@@ -10,8 +10,6 @@ import (
 )
 
 // Context provides the rendering context for a tag renderer.
-//
-// This interface shares the compatibility committments of the top-level liquid package.
 type Context interface {
 	// Get retrieves the value of a variable from the current lexical environment.
 	Get(name string) interface{}
