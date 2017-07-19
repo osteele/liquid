@@ -4,8 +4,6 @@
 
 `liquid` is a Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid). It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
 
-> “Any sufficiently complicated C or Fortran program contains an ad-hoc, informally-specified, bug-ridden, slow implementation of half of Common Lisp.” – Philip Greenspun
-
 <!-- TOC -->
 
 - [Liquid Template Parser](#liquid-template-parser)
