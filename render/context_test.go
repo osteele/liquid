@@ -45,6 +45,16 @@ func addContextTestTags(s Config) {
 			return err
 		}, nil
 	})
+	s.AddTag("test_render_file", func(filename string) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			s, err := c.RenderFile(filename, map[string]interface{}{"shadowed": 2})
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, s)
+			return err
+		}, nil
+	})
 }
 
 var contextTests = []struct{ in, out string }{
@@ -53,10 +63,22 @@ var contextTests = []struct{ in, out string }{
 	{`{% test_expand_tag_arg x %}`, "x"},
 	{`{% test_expand_tag_arg {{x}} %}`, "123"},
 	{`{% test_tag_name %}`, "test_tag_name"},
+	{`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
+		"rendered shadowed=2; unshadowed=1"},
+}
+
+var contextErrorTests = []struct{ in, expect string }{
+	{`{% test_evaluate_string syntax error %}`, "syntax error"},
+	{`{% test_expand_tag_arg {{ syntax error }} %}`, "syntax error"},
+	{`{% test_expand_tag_arg {{ x | undefined_filter }} %}`, "undefined filter"},
+	{`{% test_render_file testdata/missing_file %}`, "no such file"},
+	{`{% test_render_file testdata/render_file_syntax_error.txt %}`, "syntax error"},
+	{`{% test_render_file testdata/render_file_runtime_error.txt %}`, "undefined tag"},
 }
 
 var contextTestBindings = map[string]interface{}{
-	"x": 123,
+	"x":        123,
+	"shadowed": 1,
 }
 
 func TestContext(t *testing.T) {
@@ -72,12 +94,6 @@ func TestContext(t *testing.T) {
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
 	}
-}
-
-var contextErrorTests = []struct{ in, expect string }{
-	{`{% test_evaluate_string syntax error %}`, "syntax error"},
-	{`{% test_expand_tag_arg {{ syntax error }} %}`, "syntax error"},
-	{`{% test_expand_tag_arg {{ x | undefined_filter }} %}`, "undefined filter"},
 }
 
 func TestContext_errors(t *testing.T) {
