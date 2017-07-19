@@ -172,9 +172,9 @@ var filterTestBindings = map[string]interface{}{
 	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
 	"mixed_case_list": []string{"c", "a", "B"},
 	"mixed_case_objects": []map[string]interface{}{
-		map[string]interface{}{"key": "c"},
-		map[string]interface{}{"key": "a"},
-		map[string]interface{}{"key": "B"},
+		{"key": "c"},
+		{"key": "a"},
+		{"key": "B"},
 	},
 	"obj": map[string]interface{}{
 		"a": 1,
