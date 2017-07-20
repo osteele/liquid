@@ -44,10 +44,14 @@ func TestValue_string(t *testing.T) {
 	require.True(t, av.Contains(ValueOf("foo")))
 	require.False(t, av.Contains(ValueOf("bar")))
 	require.Equal(t, 7, av.PropertyValue(ValueOf("size")).Interface())
+
+	require.True(t, ValueOf("seaf00d").Contains(ValueOf(0)))
 }
 
 func TestValue_hash(t *testing.T) {
 	h := ValueOf(map[string]interface{}{"key": "value"})
+	require.True(t, h.Contains(ValueOf("key")))
+	require.False(t, h.Contains(ValueOf("missing_key")))
 	require.Equal(t, "value", h.IndexValue(ValueOf("key")).Interface())
 	require.Equal(t, nil, h.IndexValue(ValueOf("missing_key")).Interface())
 	require.Equal(t, 1, h.PropertyValue(ValueOf("size")).Interface())

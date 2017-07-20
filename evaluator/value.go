@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 )
@@ -98,11 +99,21 @@ func (v arrayValue) Contains(elem Value) bool {
 	return false
 }
 
-func (v stringValue) Contains(substr Value) bool {
-	if s, ok := substr.Interface().(string); ok {
-		return strings.Contains(v.basis.(string), s)
+func (v mapValue) Contains(index Value) bool {
+	rv := reflect.ValueOf(v.basis)
+	iv := reflect.ValueOf(index.Interface())
+	if rv.Type().Key() == iv.Type() {
+		return rv.MapIndex(iv).IsValid()
 	}
 	return false
+}
+
+func (v stringValue) Contains(substr Value) bool {
+	s, ok := substr.Interface().(string)
+	if !ok {
+		s = fmt.Sprint(substr.Interface())
+	}
+	return strings.Contains(v.basis.(string), s)
 }
 
 func (v arrayValue) IndexValue(index Value) Value {
