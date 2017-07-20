@@ -210,6 +210,7 @@ const expression_error int = -1
 const expression_en_main int = 23
 
 //line scanner.rl:11
+
 type lexer struct {
 	parseValue
 	data        []byte
@@ -343,25 +344,25 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line scanner.rl:38
 				lex.act = 8
 			case 4:
-//line scanner.rl:96
+//line scanner.rl:95
 				lex.act = 9
 			case 5:
-//line scanner.rl:103
+//line scanner.rl:102
 				lex.act = 14
 			case 6:
-//line scanner.rl:104
+//line scanner.rl:103
 				lex.act = 15
 			case 7:
-//line scanner.rl:105
+//line scanner.rl:104
 				lex.act = 16
 			case 8:
-//line scanner.rl:108
+//line scanner.rl:107
 				lex.act = 17
 			case 9:
 //line scanner.rl:43
 				lex.act = 20
 			case 10:
-//line scanner.rl:84
+//line scanner.rl:83
 				lex.te = (lex.p) + 1
 				{
 					tok = ASSIGN
@@ -369,7 +370,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 11:
-//line scanner.rl:85
+//line scanner.rl:84
 				lex.te = (lex.p) + 1
 				{
 					tok = CYCLE
@@ -377,7 +378,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 12:
-//line scanner.rl:86
+//line scanner.rl:85
 				lex.te = (lex.p) + 1
 				{
 					tok = LOOP
@@ -385,7 +386,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 13:
-//line scanner.rl:87
+//line scanner.rl:86
 				lex.te = (lex.p) + 1
 				{
 					tok = WHEN
@@ -404,7 +405,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 15:
-//line scanner.rl:99
+//line scanner.rl:98
 				lex.te = (lex.p) + 1
 				{
 					tok = EQ
@@ -412,7 +413,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 16:
-//line scanner.rl:100
+//line scanner.rl:99
 				lex.te = (lex.p) + 1
 				{
 					tok = NEQ
@@ -420,7 +421,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 17:
-//line scanner.rl:101
+//line scanner.rl:100
 				lex.te = (lex.p) + 1
 				{
 					tok = GE
@@ -428,7 +429,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 18:
-//line scanner.rl:102
+//line scanner.rl:101
 				lex.te = (lex.p) + 1
 				{
 					tok = LE
@@ -436,7 +437,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 19:
-//line scanner.rl:109
+//line scanner.rl:108
 				lex.te = (lex.p) + 1
 				{
 					tok = DOTDOT
@@ -444,7 +445,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 20:
-//line scanner.rl:111
+//line scanner.rl:110
 				lex.te = (lex.p) + 1
 				{
 					tok = KEYWORD
@@ -453,7 +454,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 21:
-//line scanner.rl:113
+//line scanner.rl:112
 				lex.te = (lex.p) + 1
 				{
 					tok = PROPERTY
@@ -462,7 +463,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 22:
-//line scanner.rl:116
+//line scanner.rl:115
 				lex.te = (lex.p) + 1
 				{
 					tok = int(lex.data[lex.ts])
@@ -511,7 +512,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 26:
-//line scanner.rl:113
+//line scanner.rl:112
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -521,12 +522,12 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 27:
-//line scanner.rl:115
+//line scanner.rl:114
 				lex.te = (lex.p)
 				(lex.p)--
 
 			case 28:
-//line scanner.rl:116
+//line scanner.rl:115
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -549,7 +550,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 30:
-//line scanner.rl:116
+//line scanner.rl:115
 				(lex.p) = (lex.te) - 1
 				{
 					tok = int(lex.data[lex.ts])
@@ -655,7 +656,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 	}
 
-//line scanner.rl:120
+//line scanner.rl:119
+
 	return tok
 }
 

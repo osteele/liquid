@@ -40,7 +40,7 @@ func (c closure) Evaluate() (interface{}, error) {
 }
 
 type expression struct {
-	evaluator func(Context) interface{}
+	evaluator func(Context) evaluator.Value
 }
 
 func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
@@ -58,5 +58,5 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 			}
 		}
 	}()
-	return e.evaluator(ctx), nil
+	return e.evaluator(ctx).Interface(), nil
 }

@@ -1,48 +1,42 @@
 package expressions
 
 import (
-	"reflect"
-
 	"github.com/osteele/liquid/evaluator"
 )
 
-func makeRangeExpr(startFn, endFn func(Context) interface{}) func(Context) interface{} {
-	return func(ctx Context) interface{} {
-		var proto int
-		b := evaluator.MustConvert(startFn(ctx), reflect.TypeOf(proto))
-		e := evaluator.MustConvert(endFn(ctx), reflect.TypeOf(proto))
-		return evaluator.NewRange(b.(int), e.(int))
+func makeRangeExpr(startFn, endFn func(Context) evaluator.Value) func(Context) evaluator.Value {
+	return func(ctx Context) evaluator.Value {
+		a := startFn(ctx).Int()
+		b := endFn(ctx).Int()
+		return evaluator.ValueOf(evaluator.NewRange(a, b))
 	}
 }
 
-func makeContainsExpr(e1, e2 func(Context) interface{}) func(Context) interface{} {
-	return func(ctx Context) interface{} {
-		s, ok := e2((ctx)).(string)
-		if !ok {
-			return false
-		}
-		return evaluator.ContainsString(e1(ctx), s)
+func makeContainsExpr(e1, e2 func(Context) evaluator.Value) func(Context) evaluator.Value {
+	return func(ctx Context) evaluator.Value {
+		return evaluator.ValueOf(e1(ctx).Contains(e2(ctx)))
 	}
 }
 
 func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
-	return func(ctx Context) interface{} {
+	return func(ctx Context) evaluator.Value {
 		result, err := ctx.ApplyFilter(name, fn, args)
 		if err != nil {
 			panic(err)
 		}
-		return result
+		return evaluator.ValueOf(result)
 	}
 }
 
-func makeIndexExpr(sequenceFn, indexFn func(Context) interface{}) func(Context) interface{} {
-	return func(ctx Context) interface{} {
-		return evaluator.Index(sequenceFn(ctx), indexFn(ctx))
+func makeIndexExpr(sequenceFn, indexFn func(Context) evaluator.Value) func(Context) evaluator.Value {
+	return func(ctx Context) evaluator.Value {
+		return sequenceFn(ctx).IndexValue(indexFn(ctx))
 	}
 }
 
-func makeObjectPropertyExpr(objFn func(Context) interface{}, name string) func(Context) interface{} {
-	return func(ctx Context) interface{} {
-		return evaluator.ObjectProperty(objFn(ctx), name)
+func makeObjectPropertyExpr(objFn func(Context) evaluator.Value, name string) func(Context) evaluator.Value {
+	index := evaluator.ValueOf(name)
+	return func(ctx Context) evaluator.Value {
+		return objFn(ctx).PropertyValue(index)
 	}
 }

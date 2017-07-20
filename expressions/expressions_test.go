@@ -33,7 +33,7 @@ var evaluatorTests = []struct {
 	{`empty_list.last`, nil},
 	{`"abc".size`, 3},
 	{`fruits.size`, 4},
-	{`hash.size`, 4},
+	{`hash.size`, 3},
 	{`hash_with_size_key.size`, "key_value"},
 
 	// Indices
@@ -122,7 +122,7 @@ func TestEvaluateString(t *testing.T) {
 	cfg.AddFilter("length", strings.Count)
 	ctx := NewContext(evaluatorTestBindings, cfg)
 	for i, test := range evaluatorTests {
-		t.Run(fmt.Sprint(i), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
 			val, err := EvaluateString(test.in, ctx)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, val, test.in)

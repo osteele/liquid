@@ -4,14 +4,18 @@
 
 package expressions
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/osteele/liquid/evaluator"
+)
 
 type parseValue struct {
 	Assignment
 	Cycle
 	Loop
 	When
-	val func(Context) interface{}
+	val func(Context) evaluator.Value
 }
 
 // SyntaxError represents a syntax error. The yacc-generated compiler

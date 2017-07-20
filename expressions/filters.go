@@ -21,7 +21,7 @@ func (e UndefinedFilter) Error() string {
 	return fmt.Sprintf("undefined filter %q", string(e))
 }
 
-type valueFn func(Context) interface{}
+type valueFn func(Context) evaluator.Value
 
 // AddFilter adds a filter to the filter dictionary.
 func (c *Config) AddFilter(name string, fn interface{}) {
@@ -55,16 +55,16 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 		panic(UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(filter)
-	args := []interface{}{receiver(ctx)}
+	args := []interface{}{receiver(ctx).Interface()}
 	for i, param := range params {
 		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
-			expr, err := Parse(param(ctx).(string))
+			expr, err := Parse(param(ctx).Interface().(string))
 			if err != nil {
 				panic(err)
 			}
 			args = append(args, closure{expr, ctx})
 		} else {
-			args = append(args, param(ctx))
+			args = append(args, param(ctx).Interface())
 		}
 	}
 	out, err := evaluator.Call(fr, args)

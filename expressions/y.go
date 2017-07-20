@@ -21,7 +21,7 @@ type yySymType struct {
 	yys           int
 	name          string
 	val           interface{}
-	f             func(Context) interface{}
+	f             func(Context) evaluator.Value
 	s             string
 	ss            []string
 	exprs         []Expression
@@ -648,14 +648,14 @@ yydefault:
 		//line expressions.y:101
 		{
 			val := yyDollar[1].val
-			yyVAL.f = func(Context) interface{} { return val }
+			yyVAL.f = func(Context) evaluator.Value { return evaluator.ValueOf(val) }
 		}
 	case 19:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line expressions.y:102
 		{
 			name := yyDollar[1].name
-			yyVAL.f = func(ctx Context) interface{} { return ctx.Get(name) }
+			yyVAL.f = func(ctx Context) evaluator.Value { return evaluator.ValueOf(ctx.Get(name)) }
 		}
 	case 20:
 		yyDollar = yyS[yypt-0 : yypt+1]
@@ -708,14 +708,14 @@ yydefault:
 		//line expressions.y:143
 		{
 			val := yyDollar[1].val
-			yyVAL.f = func(Context) interface{} { return val }
+			yyVAL.f = func(Context) evaluator.Value { return evaluator.ValueOf(val) }
 		}
 	case 24:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		//line expressions.y:144
 		{
 			name := yyDollar[1].name
-			yyVAL.f = func(ctx Context) interface{} { return ctx.Get(name) }
+			yyVAL.f = func(ctx Context) evaluator.Value { return evaluator.ValueOf(ctx.Get(name)) }
 		}
 	case 25:
 		yyDollar = yyS[yypt-2 : yypt+1]
@@ -764,9 +764,9 @@ yydefault:
 		//line expressions.y:163
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return evaluator.Equal(a, b)
+				return evaluator.ValueOf(a.Equal(b))
 			}
 		}
 	case 35:
@@ -774,9 +774,9 @@ yydefault:
 		//line expressions.y:170
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return !evaluator.Equal(a, b)
+				return evaluator.ValueOf(!a.Equal(b))
 			}
 		}
 	case 36:
@@ -784,9 +784,9 @@ yydefault:
 		//line expressions.y:177
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return evaluator.Less(b, a)
+				return evaluator.ValueOf(b.Less(a))
 			}
 		}
 	case 37:
@@ -794,9 +794,9 @@ yydefault:
 		//line expressions.y:184
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return evaluator.Less(a, b)
+				return evaluator.ValueOf(a.Less(b))
 			}
 		}
 	case 38:
@@ -804,9 +804,9 @@ yydefault:
 		//line expressions.y:191
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return evaluator.Less(b, a) || evaluator.Equal(a, b)
+				return evaluator.ValueOf(b.Less(a) || a.Equal(b))
 			}
 		}
 	case 39:
@@ -814,9 +814,9 @@ yydefault:
 		//line expressions.y:198
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
+			yyVAL.f = func(ctx Context) evaluator.Value {
 				a, b := fa(ctx), fb(ctx)
-				return evaluator.Less(a, b) || evaluator.Equal(a, b)
+				return evaluator.ValueOf(a.Less(b) || a.Equal(b))
 			}
 		}
 	case 40:
@@ -830,8 +830,8 @@ yydefault:
 		//line expressions.y:210
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
-				return evaluator.IsTrue(fa(ctx)) && evaluator.IsTrue(fb(ctx))
+			yyVAL.f = func(ctx Context) evaluator.Value {
+				return evaluator.ValueOf(fa(ctx).Test() && fb(ctx).Test())
 			}
 		}
 	case 43:
@@ -839,8 +839,8 @@ yydefault:
 		//line expressions.y:216
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
-			yyVAL.f = func(ctx Context) interface{} {
-				return evaluator.IsTrue(fa(ctx)) || evaluator.IsTrue(fb(ctx))
+			yyVAL.f = func(ctx Context) evaluator.Value {
+				return evaluator.ValueOf(fa(ctx).Test() || fb(ctx).Test())
 			}
 		}
 	}
