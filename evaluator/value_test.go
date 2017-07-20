@@ -54,4 +54,9 @@ func TestValue_hash(t *testing.T) {
 
 	withSizeKey := ValueOf(map[string]interface{}{"size": "value"})
 	require.Equal(t, "value", withSizeKey.IndexValue(ValueOf("size")).Interface())
+
+	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
+	require.Equal(t, "value", hashPtr.IndexValue(ValueOf("key")).Interface())
+	require.Equal(t, nil, hashPtr.IndexValue(ValueOf("missing_key")).Interface())
+	require.Equal(t, 1, hashPtr.PropertyValue(ValueOf("size")).Interface())
 }

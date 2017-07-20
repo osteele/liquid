@@ -36,6 +36,9 @@ func ValueOf(value interface{}) Value {
 		return wrapperValue{value}
 	}
 	switch rk {
+	case reflect.Ptr:
+		rv := reflect.ValueOf(value)
+		return ValueOf(rv.Elem().Interface())
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
 	case reflect.Array, reflect.Slice:
