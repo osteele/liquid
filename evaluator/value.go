@@ -103,13 +103,13 @@ func (v stringValue) Contains(substr Value) bool {
 }
 
 func (v arrayValue) IndexValue(index Value) Value {
-	array := reflect.ValueOf(v.basis)
+	rv := reflect.ValueOf(v.basis)
 	if n, ok := index.Interface().(int); ok {
 		if n < 0 {
-			n += array.Len()
+			n += rv.Len()
 		}
-		if 0 <= n && n < array.Len() {
-			return ValueOf(array.Index(n).Interface())
+		if 0 <= n && n < rv.Len() {
+			return ValueOf(rv.Index(n).Interface())
 		}
 	}
 	return nilValue
@@ -118,7 +118,7 @@ func (v arrayValue) IndexValue(index Value) Value {
 func (v mapValue) IndexValue(index Value) Value {
 	rv := reflect.ValueOf(v.basis)
 	iv := reflect.ValueOf(index.Interface())
-	if rv.Type().Elem() == iv.Type() {
+	if rv.Type().Key() == iv.Type() {
 		ev := rv.MapIndex(iv)
 		if ev.IsValid() {
 			return ValueOf(ev.Interface())
@@ -127,18 +127,24 @@ func (v mapValue) IndexValue(index Value) Value {
 	return nilValue
 }
 
+const (
+	firstKey = "first"
+	lastKey  = "last"
+	sizeKey  = "size"
+)
+
 func (v arrayValue) PropertyValue(index Value) Value {
 	rv := reflect.ValueOf(v.basis)
 	switch index.Interface() {
-	case "first":
+	case firstKey:
 		if rv.Len() > 0 {
 			return ValueOf(rv.Index(0).Interface())
 		}
-	case "last":
+	case lastKey:
 		if rv.Len() > 0 {
 			return ValueOf(rv.Index(rv.Len() - 1).Interface())
 		}
-	case "size":
+	case sizeKey:
 		return ValueOf(rv.Len())
 	}
 	return nilValue
@@ -146,12 +152,12 @@ func (v arrayValue) PropertyValue(index Value) Value {
 
 func (v mapValue) PropertyValue(index Value) Value {
 	rv := reflect.ValueOf(v.Interface())
-	ix := reflect.ValueOf(index.Interface())
-	e := rv.MapIndex(ix)
+	iv := reflect.ValueOf(index.Interface())
+	ev := rv.MapIndex(iv)
 	switch {
-	case e.IsValid():
-		return ValueOf(e.Interface())
-	case index.Interface() == "size":
+	case ev.IsValid():
+		return ValueOf(ev.Interface())
+	case index.Interface() == sizeKey:
 		return ValueOf(rv.Len())
 	default:
 		return nilValue
@@ -159,7 +165,7 @@ func (v mapValue) PropertyValue(index Value) Value {
 }
 
 func (v stringValue) PropertyValue(index Value) Value {
-	if index.Interface() == "size" {
+	if index.Interface() == sizeKey {
 		return ValueOf(len(v.basis.(string)))
 	}
 	return nilValue
