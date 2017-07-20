@@ -79,7 +79,7 @@ expr2:
 string: LITERAL {
 	s, ok := $1.(string)
 	if !ok {
-		panic(ParseError(fmt.Sprintf("expected a string for %q", $1)))
+		panic(SyntaxError(fmt.Sprintf("expected a string for %q", $1)))
 	}
 	$$ = s
 };
@@ -108,7 +108,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
 	case "reversed":
 		$1.Reversed = true
 	default:
-		panic(ParseError(fmt.Sprintf("undefined loop modifier %q", $2)))
+		panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
 	$$ = $1
 }
@@ -117,23 +117,23 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
 	case "cols":
 		cols, ok := $3.(int)
 		if !ok {
-			panic(ParseError(fmt.Sprintf("loop cols must an integer")))
+			panic(SyntaxError(fmt.Sprintf("loop cols must an integer")))
 		}
 		$1.Cols = cols
 	case "limit":
 		limit, ok := $3.(int)
 		if !ok {
-			panic(ParseError(fmt.Sprintf("loop limit must an integer")))
+			panic(SyntaxError(fmt.Sprintf("loop limit must an integer")))
 		}
 		$1.Limit = &limit
 	case "offset":
 		offset, ok := $3.(int)
 		if !ok {
-			panic(ParseError(fmt.Sprintf("loop offset must an integer")))
+			panic(SyntaxError(fmt.Sprintf("loop offset must an integer")))
 		}
 		$1.Offset = offset
 	default:
-		panic(ParseError(fmt.Sprintf("undefined loop modifier %q", $2)))
+		panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
 	$$ = $1
 }
