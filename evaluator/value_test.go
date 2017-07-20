@@ -97,4 +97,20 @@ func TestValue_struct(t *testing.T) {
 	require.Equal(t, 3, s.PropertyValue(ValueOf("M1")).Interface())
 	require.Equal(t, 4, s.PropertyValue(ValueOf("M2")).Interface())
 	require.Panics(t, func() { s.PropertyValue(ValueOf("M2e")) })
+	require.Equal(t, -1, s.IndexValue(ValueOf("F")).Interface())
+
+	p := ValueOf(&testValueStruct{
+		F:  -1,
+		F1: func() int { return 1 },
+	})
+	require.True(t, p.Contains(ValueOf("F")))
+	require.True(t, p.Contains(ValueOf("F1")))
+	require.Equal(t, -1, p.PropertyValue(ValueOf("F")).Interface())
+	require.Equal(t, 1, p.PropertyValue(ValueOf("F1")).Interface())
+	require.Equal(t, 3, p.PropertyValue(ValueOf("M1")).Interface())
+	require.Equal(t, 4, p.PropertyValue(ValueOf("M2")).Interface())
+	require.Panics(t, func() { p.PropertyValue(ValueOf("M2e")) })
+	require.Equal(t, 3, p.PropertyValue(ValueOf("PM1")).Interface())
+	require.Equal(t, 4, p.PropertyValue(ValueOf("PM2")).Interface())
+	require.Panics(t, func() { p.PropertyValue(ValueOf("PM2e")) })
 }

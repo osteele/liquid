@@ -39,6 +39,9 @@ func ValueOf(value interface{}) Value {
 	switch rk {
 	case reflect.Ptr:
 		rv := reflect.ValueOf(value)
+		if rv.Type().Elem().Kind() == reflect.Struct {
+			return structValue{wrapperValue{value}}
+		}
 		return ValueOf(rv.Elem().Interface())
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
@@ -125,6 +128,9 @@ func (v structValue) Contains(elem Value) bool {
 		return false
 	}
 	rt := reflect.TypeOf(v.basis)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
 	if _, found := rt.FieldByName(name); found {
 		return true
 	}
@@ -157,6 +163,10 @@ func (v mapValue) IndexValue(index Value) Value {
 		}
 	}
 	return nilValue
+}
+
+func (v structValue) IndexValue(index Value) Value {
+	return v.PropertyValue(index)
 }
 
 const (
@@ -210,6 +220,14 @@ func (v structValue) PropertyValue(index Value) Value {
 	}
 	rv := reflect.ValueOf(v.basis)
 	rt := reflect.TypeOf(v.basis)
+	if _, found := rt.MethodByName(name); found {
+		m := rv.MethodByName(name)
+		return v.invoke(m)
+	}
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+		rv = rv.Elem()
+	}
 	if _, found := rt.FieldByName(name); found {
 		fv := rv.FieldByName(name)
 		if fv.Kind() == reflect.Func {
