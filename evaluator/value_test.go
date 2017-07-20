@@ -1,6 +1,7 @@
 package evaluator
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -63,4 +64,37 @@ func TestValue_hash(t *testing.T) {
 	require.Equal(t, "value", hashPtr.IndexValue(ValueOf("key")).Interface())
 	require.Equal(t, nil, hashPtr.IndexValue(ValueOf("missing_key")).Interface())
 	require.Equal(t, 1, hashPtr.PropertyValue(ValueOf("size")).Interface())
+}
+
+type testValueStruct struct {
+	F   int
+	F1  func() int
+	F2  func() (int, error)
+	F2e func() (int, error)
+}
+
+func (tv testValueStruct) M1() int           { return 3 }
+func (tv testValueStruct) M2() (int, error)  { return 4, nil }
+func (tv testValueStruct) M2e() (int, error) { return 4, fmt.Errorf("expected error") }
+
+func (tv *testValueStruct) PM1() int           { return 3 }
+func (tv *testValueStruct) PM2() (int, error)  { return 4, nil }
+func (tv *testValueStruct) PM2e() (int, error) { return 4, fmt.Errorf("expected error") }
+
+func TestValue_struct(t *testing.T) {
+	s := ValueOf(testValueStruct{
+		F:   -1,
+		F1:  func() int { return 1 },
+		F2:  func() (int, error) { return 2, nil },
+		F2e: func() (int, error) { return 0, fmt.Errorf("expected error") },
+	})
+	require.True(t, s.Contains(ValueOf("F")))
+	require.True(t, s.Contains(ValueOf("F1")))
+	require.Equal(t, -1, s.PropertyValue(ValueOf("F")).Interface())
+	require.Equal(t, 1, s.PropertyValue(ValueOf("F1")).Interface())
+	require.Equal(t, 2, s.PropertyValue(ValueOf("F2")).Interface())
+	require.Panics(t, func() { s.PropertyValue(ValueOf("F2e")) })
+	require.Equal(t, 3, s.PropertyValue(ValueOf("M1")).Interface())
+	require.Equal(t, 4, s.PropertyValue(ValueOf("M2")).Interface())
+	require.Panics(t, func() { s.PropertyValue(ValueOf("M2e")) })
 }
