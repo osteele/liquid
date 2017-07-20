@@ -14,10 +14,10 @@ clean: ## remove binary files
 	rm -f ${LIB} ${CMD}
 
 deps: ## list dependencies
-	go list -f '{{join .Deps "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
+	@go list -f '{{join .Deps "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
 
 imports: ## list imports
-	go list -f '{{join .Imports "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
+	@go list -f '{{join .Imports "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
 
 generate:
 	go generate ./...
@@ -30,7 +30,7 @@ setup: ## install dependencies and development tools
 	gometalinter --install
 
 lint: ## lint the package
-	gometalinter ./... --deadline=5m --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
+	gometalinter ./... --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
 	@echo lint passed
 
 test: ## test the package
