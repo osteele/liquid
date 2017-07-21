@@ -53,6 +53,8 @@ func TestValue_IndexValue(t *testing.T) {
 	av := ValueOf([]string{"first", "second", "third"})
 	require.Equal(t, "first", av.IndexValue(ValueOf(0)).Interface())
 	require.Equal(t, "third", av.IndexValue(ValueOf(-1)).Interface())
+	require.Equal(t, "second", av.IndexValue(ValueOf(1.0)).Interface())
+	require.Equal(t, "second", av.IndexValue(ValueOf(1.1)).Interface())
 
 	hv := ValueOf(map[string]interface{}{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())

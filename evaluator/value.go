@@ -148,13 +148,23 @@ func (v structValue) Contains(elem Value) bool {
 
 func (v arrayValue) IndexValue(index Value) Value {
 	rv := reflect.ValueOf(v.basis)
-	if n, ok := index.Interface().(int); ok {
-		if n < 0 {
-			n += rv.Len()
-		}
-		if 0 <= n && n < rv.Len() {
-			return ValueOf(rv.Index(n).Interface())
-		}
+	var n int
+	switch ix := index.Interface().(type) {
+	case int:
+		n = ix
+	case float32:
+		// this how Ruby arrays, and therefore Liquid arrays, work
+		n = int(ix)
+	case float64:
+		n = int(ix)
+	default:
+		return nilValue
+	}
+	if n < 0 {
+		n += rv.Len()
+	}
+	if 0 <= n && n < rv.Len() {
+		return ValueOf(rv.Index(n).Interface())
 	}
 	return nilValue
 }
