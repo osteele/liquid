@@ -21,6 +21,16 @@ func (e UndefinedFilter) Error() string {
 	return fmt.Sprintf("undefined filter %q", string(e))
 }
 
+// FilterError is the error returned by a filter when it is applied
+type FilterError struct {
+	FilterName string
+	Err        error
+}
+
+func (e FilterError) Error() string {
+	return fmt.Sprintf("error applying filter %q (%q)", e.FilterName, e.Err)
+}
+
 type valueFn func(Context) evaluator.Value
 
 // AddFilter adds a filter to the filter dictionary.

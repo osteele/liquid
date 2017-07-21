@@ -1,6 +1,7 @@
 package expressions
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -133,6 +134,10 @@ func TestEvaluateString(t *testing.T) {
 	require.Error(t, err)
 
 	_, err = EvaluateString("1 | undefined_filter", ctx)
+	require.Error(t, err)
+
+	cfg.AddFilter("error", func(input interface{}) (string, error) { return "", errors.New("test error") })
+	_, err = EvaluateString("1 | error", ctx)
 	require.Error(t, err)
 }
 
