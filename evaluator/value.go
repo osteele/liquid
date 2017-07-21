@@ -8,13 +8,19 @@ import (
 
 // A Value is a Liquid runtime value.
 type Value interface {
+	// Value retrieval
+	Interface() interface{}
+	Int() int
+
+	// Comparison
 	Equal(Value) bool
 	Less(Value) bool
-	IndexValue(Value) Value
+
 	Contains(Value) bool
-	Int() int
-	Interface() interface{}
+	IndexValue(Value) Value
 	PropertyValue(Value) Value
+
+	// Predicate
 	Test() bool
 }
 

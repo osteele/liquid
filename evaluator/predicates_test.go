@@ -14,13 +14,3 @@ func TestIsEmpty(t *testing.T) {
 	require.False(t, IsEmpty([]string{""}))
 	require.False(t, IsEmpty(map[string]interface{}{"k": "v"}))
 }
-
-func TestIsTrue(t *testing.T) {
-	require.False(t, IsTrue(nil))
-	require.False(t, IsTrue(false))
-	require.True(t, IsTrue(true))
-	require.True(t, IsTrue(0))
-	require.True(t, IsTrue(""))
-	require.True(t, IsTrue([]string{}))
-	require.True(t, IsTrue(map[string]interface{}{}))
-}

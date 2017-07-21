@@ -27,11 +27,6 @@ var lessTests = []struct {
 	{[]string{"a"}, []string{"a"}, false},
 }
 
-func TestContains(t *testing.T) {
-	require.True(t, Contains([]int{1, 2}, 2))
-	require.False(t, Contains([]int{1, 2}, 3))
-}
-
 func TestLess(t *testing.T) {
 	for i, test := range lessTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
