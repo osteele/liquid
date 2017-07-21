@@ -12,6 +12,7 @@
     - [Install](#install)
     - [Usage](#usage)
         - [Command-Line tool](#command-line-tool)
+    - [Values](#values)
     - [Contributing](#contributing)
     - [References](#references)
     - [Attribution](#attribution)
@@ -24,9 +25,7 @@
 
 ## Differences from Liquid
 
-The [feature parity board](https://github.com/osteele/liquid/projects/1) lists differences from Liquid.
-
-In brief, these aren't implemented:
+These features of Shopify Liquid aren't implemented:
 
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
 - Non-strict filters. An undefined filter is currently an error.
@@ -72,6 +71,40 @@ usage: liquid [FILE]
 $ echo '{{ "Hello World" | downcase | split: " " | first | append: "!"}}' | liquid
 hello!
 ```
+
+## Values
+
+`Render` and friends take a `Bindings` parameter. This is a map of `string` to `interface{}`, that associates template variable names with Go values.
+
+Any Go value can be used as a variable value. These values have special meaning:
+
+- `false` and `nil`
+  - These, and no other values, are recognized as false by `and`, `or, `{% if %}`, `{% elsif %}`, and `{% case %}`.
+- Integers
+  - (Only) integers can be used as array indices: `array[1]`; `array[n]`, where `array` has an array value and `n` has an integer value.
+  - (Only) integers can be used as the endpoints of a range: `{% for item in (1..5) %}`, `{% for item in (start..end) %}` where `start` and `end` have integer values.
+- Integers and floats
+  - Integers and floats are converted to their join type for comparison: `1 == 1.0` evaluates to `true`.  Similarly, `int8(1)`, `int16(1)`, `uint8(1)` etc. are all `==`.
+  - [There is currently no special treatment of complex numbers.]
+- Integers, floats, and strings
+  - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`, `>=`. Integers and floats can be meaningfully compared with each other. Strings can be meaningfully compared with each other but not with other values. Any other comparison, e.g. `1 < "one"`, `1 > "one"`, will always be false.
+- Arrays (and slices)
+  - An array can be indexed by integer `array[1]`; `array[n]` where `n` has an integer value.
+  - Arrays have `first`, `last`, and `size` properties: `array.first == array[0]`, `array[array.size-1] == array.last` (where `array.size > 0`)
+- Maps
+  - A map can be indexed by a string: `hash[“key”]`; `hash[s]` where `s` has a string value
+  - A map can be accessed using property syntax `hash.key`
+  - Maps have a special `size` property, that returns the size of the map.
+- Drops
+  - A value `value` of a type that implements the `Drop` interface acts as the value `value.ToLiquid()`. There is no guarantee about how many times `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which both uses a different interface for drops, and makes stronger guarantees.]
+- Structs
+  - A public field of a struct can be accessed by its name `value.FieldName`, `value[“fieldName”]`.
+    - If the struct is tagged with `liquid:”name”`, it is accessed as `value.name`  instead of by the name of the structure field.
+    - If the value of the field is a function that takes no arguments and returns either one or two arguments, accessing it invokes the function, and the value of the property is its first return value.
+    - If the second return value is non-nil, accessing the field panics instead.
+  - A function defined on a struct can be accessed by its name `value.Func`, `value[“Func”]`.
+    - The same rules apply as to accessing a func-valued public field.
+  - Note that despite being array- and map-like, structs do not have a special `value.size` property.
 
 ## Contributing
 
