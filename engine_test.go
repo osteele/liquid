@@ -35,3 +35,31 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 		})
 	}
 }
+
+func TestEngine_ParseAndRenderString_ptr_to_hash(t *testing.T) {
+	params := map[string]interface{}{
+		"message": &map[string]interface{}{
+			"Text": "hello",
+		},
+	}
+	engine := NewEngine()
+	template := "{{ message.Text }}"
+	str, err := engine.ParseAndRenderString(template, params)
+	require.NoError(t, err)
+	require.Equal(t, "hello", str)
+}
+
+type testStruct struct{ Text string }
+
+func TestEngine_ParseAndRenderString_struct(t *testing.T) {
+	params := map[string]interface{}{
+		"message": testStruct{
+			Text: "hello",
+		},
+	}
+	engine := NewEngine()
+	template := "{{ message.Text }}"
+	str, err := engine.ParseAndRenderString(template, params)
+	require.NoError(t, err)
+	require.Equal(t, "hello", str)
+}
