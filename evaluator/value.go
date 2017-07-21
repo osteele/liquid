@@ -26,7 +26,8 @@ type Value interface {
 
 // ValueOf returns a Value that wraps its argument.
 // If the argument is already a Value, it returns this.
-func ValueOf(value interface{}) Value {
+func ValueOf(value interface{}) Value { // nolint: gocyclo
+	// interned values
 	switch value {
 	case nil:
 		return nilValue
@@ -35,7 +36,10 @@ func ValueOf(value interface{}) Value {
 	case false:
 		return falseValue
 	}
-	if v, ok := value.(Value); ok {
+	switch v := value.(type) {
+	case drop:
+		return dropWrapper{d: v}
+	case Value:
 		return v
 	}
 	rk := reflect.TypeOf(value).Kind()

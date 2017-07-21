@@ -51,7 +51,7 @@ func (s sortableByProperty) Swap(i, j int) {
 
 // Less is part of sort.Interface.
 func (s sortableByProperty) Less(i, j int) bool {
-	// index returns the value at the s.key, if in is a map that contains this key
+	// index returns the value at s.key, if in is a map that contains this key
 	index := func(i int) interface{} {
 		value := ToLiquid(s.data[i])
 		rt := reflect.ValueOf(value)
