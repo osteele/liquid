@@ -97,3 +97,10 @@ func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, Source
 	}
 	return string(bs), nil
 }
+
+// SetDelims sets the delimiters for parsing the template. This sets the character characters that
+// are used for '{', '}' and '%'
+func (e *Engine) SetDelims(objectLeft, objectRight, tag byte) *Engine {
+	e.cfg.Delims = []byte{objectLeft, objectRight, tag}
+	return e
+}

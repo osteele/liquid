@@ -23,7 +23,7 @@ var scannerCountTests = []struct {
 }
 
 func TestScan(t *testing.T) {
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
 	tokens := scan("12")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
@@ -69,7 +69,7 @@ func TestScan(t *testing.T) {
 
 func TestScan_ws(t *testing.T) {
 	// whitespace control
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
 
 	wsTests := []struct {
 		in, expect  string

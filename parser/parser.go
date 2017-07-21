@@ -10,7 +10,7 @@ import (
 
 // Parse parses a source template. It returns an AST root, that can be compiled and evaluated.
 func (c Config) Parse(source string, loc SourceLoc) (ASTNode, Error) {
-	tokens := Scan(source, loc)
+	tokens := Scan(source, loc, c.Delims)
 	return c.parseTokens(tokens)
 }
 

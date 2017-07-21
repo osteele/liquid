@@ -1,14 +1,23 @@
 package parser
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 )
 
-var tokenMatcher = regexp.MustCompile(`{{-?\s*(.+?)\s*-?}}|{%-?\s*(\w+)(?:\s+((?:[^%]|%[^}])+?))?\s*-?%}`)
-
 // Scan breaks a string into a sequence of Tokens.
-func Scan(data string, loc SourceLoc) (tokens []Token) {
+func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
+	// Configure the token matcher to respect the delimeters passed to it
+	if len(delims) != 3 {
+		delims = []byte{'{', '}', '%'}
+	}
+	objectLeft := string(delims[0]) + string(delims[0])
+	objectRight := string(delims[1]) + string(delims[1])
+	tagLeft := string(delims[0]) + string(delims[2])
+	tagRight := string(delims[2]) + string(delims[1])
+	var tokenMatcher = regexp.MustCompile(fmt.Sprintf(`%v-?\s*(.+?)\s*-?%v|%v-?\s*(\w+)(?:\s+((?:[^%%]|%%[^}])+?))?\s*-?%v`, objectLeft, objectRight, tagLeft, tagRight))
+
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	p, pe := 0, len(data)
@@ -20,7 +29,7 @@ func Scan(data string, loc SourceLoc) (tokens []Token) {
 		}
 		source := data[ts:te]
 		switch data[ts+1] {
-		case '{':
+		case delims[0]:
 			tok := Token{
 				Type:      ObjTokenType,
 				SourceLoc: loc,
@@ -30,7 +39,7 @@ func Scan(data string, loc SourceLoc) (tokens []Token) {
 				TrimRight: source[len(source)-3] == '-',
 			}
 			tokens = append(tokens, tok)
-		case '%':
+		case delims[2]:
 			tok := Token{
 				Type:      TagTokenType,
 				SourceLoc: loc,

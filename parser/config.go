@@ -6,6 +6,7 @@ import "github.com/osteele/liquid/expressions"
 type Config struct {
 	expressions.Config
 	Grammar Grammar
+	Delims  []byte
 }
 
 // NewConfig creates a parser Config.
