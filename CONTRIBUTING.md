@@ -4,7 +4,7 @@ Here's some ways to help:
 
 * Select an item from the [issues list](https://github.com/osteele/liquid/issues)
 * Search the sources for FIXME and TODO comments.
-* Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master). Once it reaches 90%, we can submit a PR to [Awesome Go](https://github.com/avelino/awesome-go/)!
+* Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master).
 
 Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
 
