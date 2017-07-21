@@ -43,7 +43,7 @@ Only the liquid package itself, and the sub-package types that are used in that 
 
 `go get gopkg.in/osteele/liquid.v1` # latest snapshot
 
-`go get -u github.com/osteele/goliquid` # development version
+`go get -u github.com/osteele/liquid` # development version
 
 ## Usage
 
