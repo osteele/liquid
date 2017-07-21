@@ -15,10 +15,15 @@ var filterTests = []struct {
 	expected interface{}
 }{
 	// value filters
-	{`4.99 | default: 2.99`, 4.99},
 	{`undefined | default: 2.99`, 2.99},
+	{`nil | default: 2.99`, 2.99},
 	{`false | default: 2.99`, 2.99},
+	{`"" | default: 2.99`, 2.99},
 	{`empty_list | default: 2.99`, 2.99},
+	{`empty_hash | default: 2.99`, 2.99},
+	{`true | default: 2.99`, true},
+	{`"true" | default: 2.99`, "true"},
+	{`4.99 | default: 2.99`, 4.99},
 
 	// array filters
 	// TODO sort_natural, uniq
@@ -169,6 +174,7 @@ var filterTestBindings = map[string]interface{}{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
 	},
 	"empty_list":      []interface{}{},
+	"empty_hash":      map[string]interface{}{},
 	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
 	"mixed_case_list": []string{"c", "a", "B"},
 	"mixed_case_objects": []map[string]interface{}{

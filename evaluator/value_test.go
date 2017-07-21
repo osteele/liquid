@@ -10,11 +10,12 @@ import (
 func TestValue(t *testing.T) {
 	var (
 		nv = ValueOf(nil)
-		// fv = ValueOf(false)
-		// tv = ValueOf(true)
 		iv = ValueOf(123)
-		// fv = ValueOf(123.0)
 	)
+	require.Equal(t, nil, nv.Interface())
+	require.Equal(t, true, ValueOf(true).Interface())
+	require.Equal(t, false, ValueOf(false).Interface())
+	require.Equal(t, 123, iv.Interface())
 	require.Equal(t, 123, iv.Int())
 	require.Panics(t, func() { nv.Int() })
 	require.True(t, iv.Equal(ValueOf(123)))
