@@ -22,7 +22,10 @@ func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
 	return func(ctx Context) evaluator.Value {
 		result, err := ctx.ApplyFilter(name, fn, args)
 		if err != nil {
-			panic(err)
+			panic(FilterError{
+				FilterName: name,
+				Err:        err,
+			})
 		}
 		return evaluator.ValueOf(result)
 	}
