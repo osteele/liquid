@@ -205,7 +205,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return string(s)
 	})
 	fd.AddFilter("type", func(value interface{}) string {
-		return reflect.TypeOf(value).String()
+		return fmt.Sprintf("%T", value)
 	})
 }
 
