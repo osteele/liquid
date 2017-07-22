@@ -95,3 +95,16 @@ func TestTemplate_Render_race(t *testing.T) {
 	}
 	wg2.Wait()
 }
+
+func BenchmarkTemplate_Render(b *testing.B) {
+	engine := NewEngine()
+	bindings := Bindings{"a": "string value"}
+	tpl, err := engine.ParseString(`{% for i in (1..1000) %}{% if i > 500 %}{{a}}{% else %}0{% endif %}{% endfor %}`)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		tpl.Render(bindings)
+	}
+}

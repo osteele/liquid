@@ -1,7 +1,9 @@
 package liquid
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -62,4 +64,20 @@ func TestEngine_ParseAndRenderString_struct(t *testing.T) {
 	str, err := engine.ParseAndRenderString(template, params)
 	require.NoError(t, err)
 	require.Equal(t, "hello", str)
+}
+
+func BenchmarkEngine_Parse(b *testing.B) {
+	engine := NewEngine()
+	buf := new(bytes.Buffer)
+	for i := 0; i < 1000; i++ {
+		io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
+		io.WriteString(buf, `loop{% for item in array %}loop{% break %}{% endfor %}`)
+		io.WriteString(buf, `case{% case value %}{% when a %}{% when b %{% endcase %}`)
+		io.WriteString(buf, `expr{{ a and b }}{{ a add: b }}`)
+	}
+	s := buf.Bytes()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		engine.ParseTemplate(s)
+	}
 }
