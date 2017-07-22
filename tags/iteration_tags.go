@@ -5,6 +5,8 @@ import (
 	"io"
 	"reflect"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
@@ -172,6 +174,9 @@ func makeIterator(value interface{}) iterable {
 	if value == nil {
 		return nil
 	}
+	if ms, ok := value.(yaml.MapSlice); ok {
+		return mapSliceWrapper{ms}
+	}
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Array, reflect.Slice:
 		return sliceWrapper(reflect.ValueOf(value))
@@ -192,6 +197,14 @@ type sliceWrapper reflect.Value
 
 func (w sliceWrapper) Len() int                { return reflect.Value(w).Len() }
 func (w sliceWrapper) Index(i int) interface{} { return reflect.Value(w).Index(i).Interface() }
+
+type mapSliceWrapper struct{ ms yaml.MapSlice }
+
+func (w mapSliceWrapper) Len() int { return len(w.ms) }
+func (w mapSliceWrapper) Index(i int) interface{} {
+	item := w.ms[i]
+	return []interface{}{item.Key, item.Value}
+}
 
 type limitWrapper struct {
 	i iterable

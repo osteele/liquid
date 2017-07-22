@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
@@ -15,11 +17,12 @@ import (
 
 var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ a }} {% endfor %}`, "first second third "},
-	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
 	{`{% for a in nil %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in false %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in 2 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in "str" %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
+	{`{% for a in map_slice %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1.b=2."},
 
 	// loop modifiers
 	{`{% for a in array reversed %}{{ a }}.{% endfor %}`, "third.second.first."},
@@ -107,7 +110,9 @@ var iterationErrorTests = []struct{ in, expected string }{
 
 var iterationTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
-	"hash":  map[string]interface{}{"a": 1},
+	// hash has only one element, since iteration order is non-deterministic
+	"hash":      map[string]interface{}{"a": 1},
+	"map_slice": yaml.MapSlice{{Key: "a", Value: 1}, {Key: "b", Value: 2}},
 	"products": []string{
 		"Cool Shirt", "Alien Poster", "Batman Poster", "Bullseye Shirt", "Another Classic Vinyl", "Awesome Jeans",
 	},
@@ -135,12 +140,12 @@ func TestIterationTags(t *testing.T) {
 }
 
 func TestIterationTags_errors(t *testing.T) {
-	config := render.NewConfig()
-	AddStandardTags(config)
+	cfg := render.NewConfig()
+	AddStandardTags(cfg)
 
 	for i, test := range iterationSyntaxErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			_, err := config.Compile(test.in, parser.SourceLoc{})
+			_, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})
@@ -148,9 +153,9 @@ func TestIterationTags_errors(t *testing.T) {
 
 	for i, test := range iterationErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1+len(iterationSyntaxErrorTests)), func(t *testing.T) {
-			root, err := config.Compile(test.in, parser.SourceLoc{})
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = render.Render(root, ioutil.Discard, iterationTestBindings, config)
+			err = render.Render(root, ioutil.Discard, iterationTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
 		})

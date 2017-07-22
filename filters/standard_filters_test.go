@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/osteele/liquid/expressions"
 	"github.com/stretchr/testify/require"
 )
@@ -21,9 +23,12 @@ var filterTests = []struct {
 	{`"" | default: 2.99`, 2.99},
 	{`empty_list | default: 2.99`, 2.99},
 	{`empty_hash | default: 2.99`, 2.99},
+	{`empty_map_slice | default: 2.99`, 2.99},
 	{`true | default: 2.99`, true},
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
+	{`fruits | default: 2.99 | join`, "apples, oranges, peaches, plums"},
+	// {`map_slice | default: 2.99`, "here"},
 
 	// array filters
 	// TODO sort_natural, uniq
@@ -175,7 +180,9 @@ var filterTestBindings = map[string]interface{}{
 	},
 	"empty_list":      []interface{}{},
 	"empty_hash":      map[string]interface{}{},
+	"empty_map_slice": yaml.MapSlice{},
 	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
+	"map_slice":       yaml.MapSlice{{Key: "first", Value: 1}, {Key: "second", Value: 2}},
 	"mixed_case_list": []string{"c", "a", "B"},
 	"mixed_case_objects": []map[string]interface{}{
 		{"key": "c"},
@@ -218,9 +225,9 @@ func TestFilters(t *testing.T) {
 	)
 	filterTestBindings["dup_maps"] = []interface{}{m1, m2, m1, m3}
 
-	settings := expressions.NewConfig()
-	AddStandardFilters(&settings)
-	context := expressions.NewContext(filterTestBindings, settings)
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	context := expressions.NewContext(filterTestBindings, cfg)
 
 	for i, test := range filterTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {

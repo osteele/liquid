@@ -9,6 +9,9 @@ type mapSliceValue struct {
 	valueEmbed
 }
 
+// func (v mapSliceValue) Equal(o Value) bool     { return v.slice == o.Interface() }
+func (v mapSliceValue) Interface() interface{} { return v.slice }
+
 func (v mapSliceValue) Contains(elem Value) bool {
 	e := elem.Interface()
 	for _, item := range v.slice {
