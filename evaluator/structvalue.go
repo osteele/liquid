@@ -1,6 +1,10 @@
 package evaluator
 
-import "reflect"
+import (
+	"reflect"
+)
+
+type structValue struct{ wrapperValue }
 
 func (v structValue) IndexValue(index Value) Value {
 	return v.PropertyValue(index)
@@ -13,12 +17,15 @@ func (v structValue) Contains(elem Value) bool {
 	}
 	rt := reflect.TypeOf(v.basis)
 	if rt.Kind() == reflect.Ptr {
+		if _, found := rt.MethodByName(name); found {
+			return true
+		}
 		rt = rt.Elem()
 	}
-	if _, found := rt.FieldByName(name); found {
+	if _, found := rt.MethodByName(name); found {
 		return true
 	}
-	if _, found := rt.MethodByName(name); found {
+	if _, found := v.findField(name); found {
 		return true
 	}
 	return false
@@ -31,26 +38,48 @@ func (v structValue) PropertyValue(index Value) Value {
 	}
 	rv := reflect.ValueOf(v.basis)
 	rt := reflect.TypeOf(v.basis)
+	if rt.Kind() == reflect.Ptr {
+		if _, found := rt.MethodByName(name); found {
+			m := rv.MethodByName(name)
+			return v.invoke(m)
+		}
+		rt = rt.Elem()
+		rv = rv.Elem()
+	}
 	if _, found := rt.MethodByName(name); found {
 		m := rv.MethodByName(name)
 		return v.invoke(m)
 	}
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
-		rv = rv.Elem()
-	}
-	if _, found := rt.FieldByName(name); found {
-		fv := rv.FieldByName(name)
+	if field, found := v.findField(name); found {
+		fv := rv.FieldByName(field.Name)
 		if fv.Kind() == reflect.Func {
 			return v.invoke(fv)
 		}
 		return ValueOf(fv.Interface())
 	}
-	if _, found := rt.MethodByName(name); found {
-		m := rv.MethodByName(name)
-		return v.invoke(m)
-	}
 	return nilValue
+}
+
+const tagKey = "liquid"
+
+// like FieldByName, but obeys `liquid:"name"` tags
+func (v structValue) findField(name string) (*reflect.StructField, bool) {
+	rt := reflect.TypeOf(v.basis)
+	if rt.Kind() == reflect.Ptr {
+		rt = rt.Elem()
+	}
+	if field, found := rt.FieldByName(name); found {
+		if _, ok := field.Tag.Lookup(tagKey); !ok {
+			return &field, true
+		}
+	}
+	for i, n := 0, rt.NumField(); i < n; i++ {
+		field := rt.Field(i)
+		if field.Tag.Get(tagKey) == name {
+			return &field, true
+		}
+	}
+	return nil, false
 }
 
 func (v structValue) invoke(fv reflect.Value) Value {

@@ -109,7 +109,6 @@ var trueValue = wrapperValue{true}
 type arrayValue struct{ wrapperValue }
 type mapValue struct{ wrapperValue }
 type stringValue struct{ wrapperValue }
-type structValue struct{ wrapperValue }
 
 func (v arrayValue) Contains(elem Value) bool {
 	rv := reflect.ValueOf(v.basis)

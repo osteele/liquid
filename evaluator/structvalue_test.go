@@ -8,10 +8,12 @@ import (
 )
 
 type testValueStruct struct {
-	F   int
-	F1  func() int
-	F2  func() (int, error)
-	F2e func() (int, error)
+	F       int
+	Renamed int `liquid:"name"`
+	Omitted int `liquid:""`
+	F1      func() int
+	F2      func() (int, error)
+	F2e     func() (int, error)
 }
 
 func (tv testValueStruct) M1() int           { return 3 }
@@ -24,16 +26,26 @@ func (tv *testValueStruct) PM2e() (int, error) { return 4, fmt.Errorf("expected 
 
 func TestValue_struct(t *testing.T) {
 	s := ValueOf(testValueStruct{
-		F:   -1,
-		F1:  func() int { return 1 },
-		F2:  func() (int, error) { return 2, nil },
-		F2e: func() (int, error) { return 0, fmt.Errorf("expected error") },
+		F:       -1,
+		Renamed: 100,
+		Omitted: 200,
+		F1:      func() int { return 1 },
+		F2:      func() (int, error) { return 2, nil },
+		F2e:     func() (int, error) { return 0, fmt.Errorf("expected error") },
 	})
 
 	// fields
 	require.True(t, s.Contains(ValueOf("F")))
 	require.True(t, s.Contains(ValueOf("F1")))
 	require.Equal(t, -1, s.PropertyValue(ValueOf("F")).Interface())
+
+	// field tags
+	require.False(t, s.Contains(ValueOf("Renamed")))
+	require.False(t, s.Contains(ValueOf("Omitted")))
+	require.True(t, s.Contains(ValueOf("name")))
+	require.Equal(t, nil, s.PropertyValue(ValueOf("Renamed")).Interface())
+	require.Equal(t, nil, s.PropertyValue(ValueOf("Omitted")).Interface())
+	require.Equal(t, 100, s.PropertyValue(ValueOf("name")).Interface())
 
 	// func fields
 	require.Equal(t, 1, s.PropertyValue(ValueOf("F1")).Interface())
