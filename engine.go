@@ -71,6 +71,11 @@ func (e *Engine) ParseTemplate(source []byte) (*Template, SourceError) {
 	return newTemplate(&e.cfg, source, "", 0)
 }
 
+// ParseString creates a new Template using the engine configuration.
+func (e *Engine) ParseString(source string) (*Template, SourceError) {
+	return e.ParseTemplate([]byte(source))
+}
+
 // ParseTemplateLocation is the same as ParseTemplate, except that the source location is used
 // for error reporting and for the {% include %} tag.
 //

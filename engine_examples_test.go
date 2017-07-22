@@ -39,7 +39,7 @@ func ExampleEngine_ParseTemplate() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
 	bindings := map[string]interface{}{"hello": "hola"}
-	tpl, err := engine.ParseTemplate([]byte(source))
+	tpl, err := engine.ParseString(source)
 	if err != nil {
 		log.Fatalln(err)
 	}
