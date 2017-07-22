@@ -3,6 +3,8 @@ package evaluator
 import (
 	"testing"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,33 +47,59 @@ func TestValue_IndexValue(t *testing.T) {
 	require.Nil(t, ValueOf(false).PropertyValue(ValueOf("first")).Interface())
 	require.Nil(t, ValueOf(12).PropertyValue(ValueOf("first")).Interface())
 
+	// empty list
 	empty := ValueOf([]string{})
 	require.Equal(t, nil, empty.IndexValue(ValueOf(0)).Interface())
 	require.Equal(t, nil, empty.IndexValue(ValueOf(-1)).Interface())
 
+	// list
 	av := ValueOf([]string{"first", "second", "third"})
 	require.Equal(t, "first", av.IndexValue(ValueOf(0)).Interface())
 	require.Equal(t, "third", av.IndexValue(ValueOf(-1)).Interface())
 	require.Equal(t, "second", av.IndexValue(ValueOf(1.0)).Interface())
 	require.Equal(t, "second", av.IndexValue(ValueOf(1.1)).Interface())
 
+	// hash
 	hv := ValueOf(map[string]interface{}{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())
 	require.Equal(t, nil, hv.IndexValue(ValueOf("missing_key")).Interface())
 
+	// hash ptr
 	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
 	require.Equal(t, "value", hashPtr.IndexValue(ValueOf("key")).Interface())
 	require.Equal(t, nil, hashPtr.IndexValue(ValueOf("missing_key")).Interface())
+
+	// MapSlice
+	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
+	require.Equal(t, "value", msv.IndexValue(ValueOf("key")).Interface())
+	require.Equal(t, nil, msv.IndexValue(ValueOf("missing_key")).Interface())
 }
 
 func TestValue_PropertyValue(t *testing.T) {
+	// empty list
 	empty := ValueOf([]string{})
 	require.Equal(t, nil, empty.PropertyValue(ValueOf("first")).Interface())
 	require.Equal(t, nil, empty.PropertyValue(ValueOf("last")).Interface())
 
+	// list
 	av := ValueOf([]string{"first", "second", "third"})
 	require.Equal(t, "first", av.PropertyValue(ValueOf("first")).Interface())
 	require.Equal(t, "third", av.PropertyValue(ValueOf("last")).Interface())
+
+	// hash
+	hv := ValueOf(map[string]interface{}{"key": "value"})
+	require.Equal(t, "value", hv.PropertyValue(ValueOf("key")).Interface())
+	require.Equal(t, nil, hv.PropertyValue(ValueOf("missing_key")).Interface())
+
+	// hash ptr
+	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
+	require.Equal(t, "value", hashPtr.PropertyValue(ValueOf("key")).Interface())
+	require.Equal(t, nil, hashPtr.PropertyValue(ValueOf("missing_key")).Interface())
+
+	// MapSlice
+	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
+	require.Equal(t, "value", msv.PropertyValue(ValueOf("key")).Interface())
+	require.Equal(t, nil, msv.PropertyValue(ValueOf("missing_key")).Interface())
 }
 
 func TestValue_Contains(t *testing.T) {
@@ -95,6 +123,11 @@ func TestValue_Contains(t *testing.T) {
 	hv := ValueOf(map[string]interface{}{"key": "value"})
 	require.True(t, hv.Contains(ValueOf("key")))
 	require.False(t, hv.Contains(ValueOf("missing_key")))
+
+	// MapSlice
+	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
+	require.True(t, msv.Contains(ValueOf("key")))
+	require.False(t, msv.Contains(ValueOf("missing_key")))
 }
 
 func TestValue_PropertyValue_size(t *testing.T) {
@@ -102,20 +135,34 @@ func TestValue_PropertyValue_size(t *testing.T) {
 	require.Nil(t, ValueOf(false).PropertyValue(ValueOf("size")).Interface())
 	require.Nil(t, ValueOf(12).PropertyValue(ValueOf("size")).Interface())
 
+	// string
 	require.Equal(t, 7, ValueOf("seafood").PropertyValue(ValueOf("size")).Interface())
 
+	// empty list
 	empty := ValueOf([]string{})
 	require.Equal(t, 0, empty.PropertyValue(ValueOf("size")).Interface())
 
+	// list
 	av := ValueOf([]string{"first", "second", "third"})
 	require.Equal(t, 3, av.PropertyValue(ValueOf("size")).Interface())
 
+	// hash
 	hv := ValueOf(map[string]interface{}{"key": "value"})
 	require.Equal(t, 1, hv.PropertyValue(ValueOf("size")).Interface())
 
+	// hash with "size" key
 	withSizeKey := ValueOf(map[string]interface{}{"size": "value"})
 	require.Equal(t, "value", withSizeKey.IndexValue(ValueOf("size")).Interface())
 
+	// hash pointer
 	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
 	require.Equal(t, 1, hashPtr.PropertyValue(ValueOf("size")).Interface())
+
+	// MapSlice
+	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
+	require.Equal(t, 1, msv.PropertyValue(ValueOf("size")).Interface())
+
+	// MapSlice with "size" key
+	msv = ValueOf(yaml.MapSlice{{Key: "size", Value: "value"}})
+	require.Equal(t, "value", msv.PropertyValue(ValueOf("size")).Interface())
 }

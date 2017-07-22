@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 // A Value is a Liquid runtime value.
@@ -36,9 +38,12 @@ func ValueOf(value interface{}) Value { // nolint: gocyclo
 	case false:
 		return falseValue
 	}
+	// interfaces
 	switch v := value.(type) {
 	case drop:
 		return dropWrapper{d: v}
+	case yaml.MapSlice:
+		return mapSliceValue{slice: v}
 	case Value:
 		return v
 	}

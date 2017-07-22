@@ -105,6 +105,8 @@ Any Go value can be used as a variable value. These values have special meaning:
   - A function defined on a struct can be accessed by its name `value.Func`, `value[“Func”]`.
     - The same rules apply as to accessing a func-valued public field.
   - Note that despite being array- and map-like, structs do not have a special `value.size` property.
+- MapSlice
+  - An instance of yaml.MapSlice acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
 
 ## Contributing
 
@@ -120,10 +122,10 @@ Please refer to the [contribution guidelines](./CONTRIBUTING.md).
 
 ## Attribution
 
-| Package                                             | Author          | Description                             | License            |
-|-----------------------------------------------------|-----------------|-----------------------------------------|--------------------|
-| [Ragel](http://www.colm.net/open-source/ragel/)     | Adrian Thurston | scanning expressions                    | MIT                |
-| [gopkg.in/yaml.v2](https://github.com/go-yaml/yaml) | Canonical       | YAML support (for printing parse trees) | Apache License 2.0 |
+| Package                                             | Author          | Description          | License            |
+|-----------------------------------------------------|-----------------|----------------------|--------------------|
+| [Ragel](http://www.colm.net/open-source/ragel/)     | Adrian Thurston | scanning expressions | MIT                |
+| [gopkg.in/yaml.v2](https://github.com/go-yaml/yaml) | Canonical       | MapSlice             | Apache License 2.0 |
 
 Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.
 
