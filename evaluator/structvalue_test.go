@@ -10,7 +10,7 @@ import (
 type testValueStruct struct {
 	F       int
 	Renamed int `liquid:"name"`
-	Omitted int `liquid:""`
+	Omitted int `liquid:"-"`
 	F1      func() int
 	F2      func() (int, error)
 	F2e     func() (int, error)
