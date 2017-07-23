@@ -109,7 +109,14 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 			return out.Interface(), nil
 		}
 	case reflect.String:
-		return fmt.Sprint(value), nil
+		switch value := value.(type) {
+		case []byte:
+			return string(value), nil
+		case fmt.Stringer:
+			return value.String(), nil
+		default:
+			return fmt.Sprint(value), nil
+		}
 	}
 	return nil, conversionError("", value, typ)
 }

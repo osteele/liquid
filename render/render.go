@@ -99,6 +99,14 @@ func writeObject(value interface{}, w io.Writer) error {
 	if value == nil {
 		return nil
 	}
+	switch value := value.(type) {
+	case []byte:
+		_, err := w.Write(value)
+		return err
+	case fmt.Stringer:
+		_, err := io.WriteString(w, value.String())
+		return err
+	}
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
 	case reflect.Array, reflect.Slice:

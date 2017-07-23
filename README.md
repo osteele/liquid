@@ -98,13 +98,15 @@ Any Go value can be used as a variable value. These values have special meaning:
 - Drops
   - A value `value` of a type that implements the `Drop` interface acts as the value `value.ToLiquid()`. There is no guarantee about how many times `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which both uses a different interface for drops, and makes stronger guarantees.]
 - Structs
-  - A public field of a struct can be accessed by its name `value.FieldName`, `value[“fieldName”]`.
-    - If the struct is tagged with `liquid:”name”`, it is accessed as `value.name`  instead of by the name of the structure field.
+  - A public field of a struct can be accessed by its name: `value.FieldName`, `value[“fieldName”]`.
+    - A field tagged e.g. `liquid:”name”` is accessed as `value.name` instead.
     - If the value of the field is a function that takes no arguments and returns either one or two arguments, accessing it invokes the function, and the value of the property is its first return value.
     - If the second return value is non-nil, accessing the field panics instead.
-  - A function defined on a struct can be accessed by its name `value.Func`, `value[“Func”]`.
+  - A function defined on a struct can be accessed by function name e.g. `value.Func`, `value[“Func”]`.
     - The same rules apply as to accessing a func-valued public field.
   - Note that despite being array- and map-like, structs do not have a special `value.size` property.
+- `[]byte`
+  - A value of type `[]byte` is rendered as the corresponding string, and presented as a string to filters that expect one. A `[]byte` is not (currently) equivalent to a `string` for all uses; for example, `a < b`, `a contains b`, `hash[b]` will not behave as expected where `a` or `b` is a `[]byte`.
 - MapSlice
   - An instance of yaml.MapSlice acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
 
