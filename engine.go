@@ -98,9 +98,12 @@ func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, Source
 	return string(bs), nil
 }
 
-// SetDelims sets the delimiters for parsing the template. This sets the character characters that
-// are used for '{', '}' and '%'
-func (e *Engine) SetDelims(objectLeft, objectRight, tag byte) *Engine {
-	e.cfg.Delims = []byte{objectLeft, objectRight, tag}
+// Delims sets the action delimiters to the specified strings, to be used in subsequent calls to
+// ParseTemplate, ParseTemplateLocation, ParseAndRender, or ParseAndRenderString. An empty delimiter
+// stands for the corresponding default: { and } for the general delimiters and % for the tag
+// modifier. This results in objects being delimited with "{{" and "}}" and tags "{%" and "%}". The
+// return value is the engine, so calls can be chained.
+func (e *Engine) Delims(left, right, tag byte) *Engine {
+	e.cfg.Delims = []byte{left, right, tag}
 	return e
 }

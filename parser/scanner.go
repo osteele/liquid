@@ -8,15 +8,18 @@ import (
 
 // Scan breaks a string into a sequence of Tokens.
 func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
-	// Configure the token matcher to respect the delimeters passed to it
+	// delims = {, }, % => delimiters = {{, }}, {%, %}
 	if len(delims) != 3 {
 		delims = []byte{'{', '}', '%'}
 	}
-	objectLeft := string(delims[0]) + string(delims[0])
-	objectRight := string(delims[1]) + string(delims[1])
-	tagLeft := string(delims[0]) + string(delims[2])
-	tagRight := string(delims[2]) + string(delims[1])
-	var tokenMatcher = regexp.MustCompile(fmt.Sprintf(`%v-?\s*(.+?)\s*-?%v|%v-?\s*(\w+)(?:\s+((?:[^%%]|%%[^}])+?))?\s*-?%v`, objectLeft, objectRight, tagLeft, tagRight))
+	delimiters := formFullDelimiters(delims)
+	tokenMatcher := regexp.MustCompile(
+		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*(\w+)(?:\s+((?:[^%%]|%%[^}])+?))?\s*-?%s`,
+			// QuoteMeta will escape any of these that are regex commands
+			regexp.QuoteMeta(delimiters[0]), regexp.QuoteMeta(delimiters[1]),
+			regexp.QuoteMeta(delimiters[2]), regexp.QuoteMeta(delimiters[3]),
+		),
+	)
 
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
@@ -60,4 +63,17 @@ func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
 		tokens = append(tokens, Token{Type: TextTokenType, SourceLoc: loc, Source: data[p:]})
 	}
 	return tokens
+}
+
+// formFullDelimiters converts the single character byte delimiters into the full string actual
+// delimiters.
+func formFullDelimiters(delims []byte) []string {
+	// Configure the token matcher to respect the delimiters passed to it. The default delims are '{',
+	// '}', '%' which turn into "{{" and "}}" for objects and "{%" and "%}" for tags
+	fullDelimiters := make([]string, 4, 4)
+	fullDelimiters[0] = string([]byte{delims[0], delims[0]})
+	fullDelimiters[1] = string([]byte{delims[1], delims[1]})
+	fullDelimiters[2] = string([]byte{delims[0], delims[2]})
+	fullDelimiters[3] = string([]byte{delims[2], delims[1]})
+	return fullDelimiters
 }
