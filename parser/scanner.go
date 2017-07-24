@@ -7,19 +7,13 @@ import (
 )
 
 // Scan breaks a string into a sequence of Tokens.
-func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
-	// delims = {, }, % => delimiters = {{, }}, {%, %}
-	if len(delims) != 3 {
-		delims = []byte{'{', '}', '%'}
+func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
+
+	// Apply defaults
+	if len(delims) != 4 {
+		delims = []string{"{{", "}}", "{%", "%}"}
 	}
-	delimiters := formFullDelimiters(delims)
-	tokenMatcher := regexp.MustCompile(
-		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*(\w+)(?:\s+((?:[^%%]|%%[^}])+?))?\s*-?%s`,
-			// QuoteMeta will escape any of these that are regex commands
-			regexp.QuoteMeta(delimiters[0]), regexp.QuoteMeta(delimiters[1]),
-			regexp.QuoteMeta(delimiters[2]), regexp.QuoteMeta(delimiters[3]),
-		),
-	)
+	tokenMatcher := formTokenMatcher(delims)
 
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
@@ -31,8 +25,8 @@ func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
 			loc.LineNo += strings.Count(data[p:ts], "\n")
 		}
 		source := data[ts:te]
-		switch data[ts+1] {
-		case delims[0]:
+		switch {
+		case data[ts:ts+len(delims[0])] == delims[0]:
 			tok := Token{
 				Type:      ObjTokenType,
 				SourceLoc: loc,
@@ -42,7 +36,7 @@ func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
 				TrimRight: source[len(source)-3] == '-',
 			}
 			tokens = append(tokens, tok)
-		case delims[2]:
+		case data[ts:ts+len(delims[2])] == delims[2]:
 			tok := Token{
 				Type:      TagTokenType,
 				SourceLoc: loc,
@@ -65,15 +59,27 @@ func Scan(data string, loc SourceLoc, delims []byte) (tokens []Token) {
 	return tokens
 }
 
-// formFullDelimiters converts the single character byte delimiters into the full string actual
-// delimiters.
-func formFullDelimiters(delims []byte) []string {
-	// Configure the token matcher to respect the delimiters passed to it. The default delims are '{',
-	// '}', '%' which turn into "{{" and "}}" for objects and "{%" and "%}" for tags
-	fullDelimiters := make([]string, 4, 4)
-	fullDelimiters[0] = string([]byte{delims[0], delims[0]})
-	fullDelimiters[1] = string([]byte{delims[1], delims[1]})
-	fullDelimiters[2] = string([]byte{delims[0], delims[2]})
-	fullDelimiters[3] = string([]byte{delims[2], delims[1]})
-	return fullDelimiters
+func formTokenMatcher(delims []string) *regexp.Regexp {
+	// On ending a tag we need to exclude anything that appears to be ending a tag that's nested
+	// inside the tag. We form the exlusion expression here.
+	// For example, if delims is default the exclusion expression is "[^%]|%[^}]".
+	// If tagRight is "TAG!RIGHT" then expression is
+	// [^T]|T[^A]|TA[^G]|TAG[^!]|TAG![^R]|TAG!R[^I]|TAG!RI[^G]|TAG!RIG[^H]|TAG!RIGH[^T]
+	exclusion := []string{}
+	for idx, val := range delims[3] {
+		exclusion = append(exclusion, "[^"+string(val)+"]")
+		if idx > 0 {
+			exclusion[idx] = delims[3][0:idx] + exclusion[idx]
+		}
+	}
+
+	tokenMatcher := regexp.MustCompile(
+		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
+			// QuoteMeta will escape any of these that are regex commands
+			regexp.QuoteMeta(delims[0]), regexp.QuoteMeta(delims[1]),
+			regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),
+		),
+	)
+
+	return tokenMatcher
 }
