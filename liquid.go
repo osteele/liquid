@@ -24,6 +24,8 @@ type Bindings map[string]interface{}
 type Renderer func(render.Context) (string, error)
 
 // SourceError records an error with a source location and optional cause.
+//
+// SourceError does not depend on, but is compatible with, the causer interface of https://github.com/pkg/errors.
 type SourceError interface {
 	error
 	Cause() error

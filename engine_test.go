@@ -66,6 +66,17 @@ func TestEngine_ParseAndRenderString_struct(t *testing.T) {
 	require.Equal(t, "hello", str)
 }
 
+func TestEngine_ParseAndRender_errors(t *testing.T) {
+	_, err := NewEngine().ParseAndRenderString("{{ syntax error }}", emptyBindings)
+	require.Error(t, err)
+	_, err = NewEngine().ParseAndRenderString("{% if %}", emptyBindings)
+	require.Error(t, err)
+	_, err = NewEngine().ParseAndRenderString("{% undefined_tag %}", emptyBindings)
+	require.Error(t, err)
+	_, err = NewEngine().ParseAndRenderString("{% a | undefined_filter %}", emptyBindings)
+	require.Error(t, err)
+}
+
 func BenchmarkEngine_Parse(b *testing.B) {
 	engine := NewEngine()
 	buf := new(bytes.Buffer)

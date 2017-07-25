@@ -11,23 +11,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var includeTestBindings = map[string]interface{}{}
+var includeTestBindings = map[string]interface{}{
+	"test": true,
+	"var":  "value",
+}
 
 func TestIncludeTag(t *testing.T) {
 	config := render.NewConfig()
 	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
 	AddStandardTags(config)
 
-	ast, err := config.Compile(`{% include "include_target.html" %}`, loc)
+	// basic functionality
+	root, err := config.Compile(`{% include "include_target.html" %}`, loc)
 	require.NoError(t, err)
 	buf := new(bytes.Buffer)
-	err = render.Render(ast, buf, includeTestBindings, config)
+	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)
 	require.Equal(t, "include target", strings.TrimSpace(buf.String()))
 
-	ast, err = config.Compile(`{% include 10 %}`, loc)
+	// tag and variable
+	root, err = config.Compile(`{% include "include_target_2.html" %}`, loc)
 	require.NoError(t, err)
-	err = render.Render(ast, ioutil.Discard, includeTestBindings, config)
+	buf = new(bytes.Buffer)
+	err = render.Render(root, buf, includeTestBindings, config)
+	require.NoError(t, err)
+	require.Equal(t, "value", strings.TrimSpace(buf.String()))
+
+	// errors
+	root, err = config.Compile(`{% include 10 %}`, loc)
+	require.NoError(t, err)
+	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "requires a string")
+
+	root, err = config.Compile(`{% include "missing_file.html" %}`, loc)
+	require.NoError(t, err)
+	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "no such file")
 }
