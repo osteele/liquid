@@ -30,7 +30,7 @@ setup: ## install dependencies and development tools
 	gometalinter --install
 
 lint: ## lint the package
-	gometalinter ./... --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
+	gometalinter ./... --tests --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
 	@echo lint passed
 
 test: ## test the package
