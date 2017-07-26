@@ -3,6 +3,7 @@ package evaluator
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,7 +17,18 @@ func TestCall(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "5,10.", value)
 
-	// extra arguments
+	// extra arguments (variadic)
+	fnVaridic := func(a string, b ...string) string {
+		return a + "," + strings.Join(b, ",") + "."
+	}
+	value, err = Call(reflect.ValueOf(fnVaridic), []interface{}{5, 10})
+	require.NoError(t, err)
+	require.Equal(t, "5,10.", value)
+	value, err = Call(reflect.ValueOf(fnVaridic), []interface{}{5, 10, 15, 20})
+	require.NoError(t, err)
+	require.Equal(t, "5,10,15,20.", value)
+
+	// extra arguments (non variadic)
 	_, err = Call(reflect.ValueOf(fn), []interface{}{5, 10, 20})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "wrong number of arguments")
