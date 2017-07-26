@@ -4,6 +4,9 @@
 package expressions
 
 import (
+	"fmt"
+	"runtime/debug"
+
 	"github.com/osteele/liquid/evaluator"
 )
 
@@ -55,10 +58,29 @@ func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 				err = e
 			case FilterError:
 				err = e
+			case error:
+				panic(&rethrownError{e, debug.Stack()})
 			default:
 				panic(r)
 			}
 		}
 	}()
 	return e.evaluator(ctx).Interface(), nil
+}
+
+// rethrownError is for use in a re-thrown error from panic recovery.
+// When printed, it prints the original stacktrace.
+// This works around a frequent problem, that it's difficult to debug an error inside a filter
+// or ToLiquid implementation because Evaluate's recover replaces the stacktrace.
+type rethrownError struct {
+	cause error
+	stack []byte
+}
+
+func (e *rethrownError) Error() string {
+	return fmt.Sprintf("%s\nOriginal stacktrace:\n%s\n", e.cause, string(e.stack))
+}
+
+func (e *rethrownError) Cause() error {
+	return e.cause
 }
