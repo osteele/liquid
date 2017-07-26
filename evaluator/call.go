@@ -43,12 +43,21 @@ func convertCallResults(results []reflect.Value) (interface{}, error) {
 // Convert args to match the input types of function fn.
 func convertCallArguments(fn reflect.Value, args []interface{}) (results []reflect.Value, err error) {
 	rt := fn.Type()
-	if len(args) > rt.NumIn() {
+	if len(args) > rt.NumIn() && !rt.IsVariadic() {
 		return nil, &CallParityError{NumArgs: len(args), NumParams: rt.NumIn()}
 	}
-	results = make([]reflect.Value, rt.NumIn())
+	if rt.IsVariadic() {
+		results = make([]reflect.Value, len(args))
+	} else {
+		results = make([]reflect.Value, rt.NumIn())
+	}
 	for i, arg := range args {
-		typ := rt.In(i)
+		var typ reflect.Type
+		if rt.IsVariadic() && i >= rt.NumIn()-1 {
+			typ = rt.In(rt.NumIn() - 1).Elem()
+		} else {
+			typ = rt.In(i)
+		}
 		switch {
 		case isDefaultFunctionType(typ):
 			results[i] = makeConstantFunction(typ, arg)
