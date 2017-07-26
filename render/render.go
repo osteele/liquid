@@ -65,7 +65,7 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	if err != nil {
 		return wrapRenderError(err, n)
 	}
-	if err := wrapRenderError(writeObject(value, w), n); err != nil {
+	if err := wrapRenderError(writeObject(w, value), n); err != nil {
 		return err
 	}
 	w.TrimRight(n.TrimRight)
@@ -94,7 +94,7 @@ func (n *TextNode) render(w *trimWriter, ctx nodeContext) Error {
 }
 
 // writeObject writes a value used in an object node
-func writeObject(value interface{}, w io.Writer) error {
+func writeObject(w io.Writer, value interface{}) error {
 	value = evaluator.ToLiquid(value)
 	if value == nil {
 		return nil
@@ -103,9 +103,8 @@ func writeObject(value interface{}, w io.Writer) error {
 	case []byte:
 		_, err := w.Write(value)
 		return err
-	case fmt.Stringer:
-		_, err := io.WriteString(w, value.String())
-		return err
+		// there used be a case on fmt.Stringer here, but fmt.Sprint produces better results than obj.Write
+		// for instances of error and *string
 	}
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
@@ -113,12 +112,14 @@ func writeObject(value interface{}, w io.Writer) error {
 		for i := 0; i < rt.Len(); i++ {
 			item := rt.Index(i)
 			if item.IsValid() {
-				if err := writeObject(item.Interface(), w); err != nil {
+				if err := writeObject(w, item.Interface()); err != nil {
 					return err
 				}
 			}
 		}
 		return nil
+	case reflect.Ptr:
+		return writeObject(w, reflect.ValueOf(value).Elem())
 	default:
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
