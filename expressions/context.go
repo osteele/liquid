@@ -1,5 +1,7 @@
 package expressions
 
+import "github.com/osteele/liquid/values"
+
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {
 	ApplyFilter(string, valueFn, []valueFn) (interface{}, error)
@@ -30,7 +32,7 @@ func (c *context) Clone() Context {
 
 // Get looks up a variable value in the expression context.
 func (c *context) Get(name string) interface{} {
-	return ToLiquid(c.bindings[name])
+	return values.ToLiquid(c.bindings[name])
 }
 
 // Set sets a variable value in the expression context.
