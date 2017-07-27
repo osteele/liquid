@@ -23,7 +23,7 @@ var scannerCountTests = []struct {
 }
 
 func TestScan(t *testing.T) {
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
 	tokens := scan("12")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
@@ -69,7 +69,7 @@ func TestScan(t *testing.T) {
 
 func TestScan_ws(t *testing.T) {
 	// whitespace control
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
 
 	wsTests := []struct {
 		in, expect  string
@@ -95,6 +95,68 @@ func TestScan_ws(t *testing.T) {
 			}
 			require.Equalf(t, test.left, tok.TrimLeft, test.in)
 			require.Equalf(t, test.right, tok.TrimRight, test.in)
+		})
+	}
+}
+
+var scannerCountTestsDelims = []struct {
+	in  string
+	len int
+}{
+	{`TAG*LEFT tag arg TAG!RIGHT`, 1},
+	{`TAG*LEFT tag arg TAG!RIGHTTAG*LEFT tag TAG!RIGHT`, 2},
+	{`TAG*LEFT tag arg TAG!RIGHTTAG*LEFT tag arg TAG!RIGHTTAG*LEFT tag TAG!RIGHT`, 3},
+	{`TAG*LEFT tag TAG!RIGHTTAG*LEFT tag TAG!RIGHT`, 2},
+	{`TAG*LEFT tag arg TAG!RIGHTTAG*LEFT tag arg TAG!RIGHTTAG*LEFT tag TAG!RIGHTTAG*LEFT tag TAG!RIGHT`, 4},
+	{`OBJECT@LEFT expr OBJECT#RIGHT`, 1},
+	{`OBJECT@LEFT expr arg OBJECT#RIGHT`, 1},
+	{`OBJECT@LEFT expr OBJECT#RIGHTOBJECT@LEFT expr OBJECT#RIGHT`, 2},
+	{`OBJECT@LEFT expr arg OBJECT#RIGHTOBJECT@LEFT expr arg OBJECT#RIGHT`, 2},
+}
+
+func TestScan_delims(t *testing.T) {
+	scan := func(src string) []Token {
+		return Scan(src, SourceLoc{}, []string{"OBJECT@LEFT", "OBJECT#RIGHT", "TAG*LEFT", "TAG!RIGHT"})
+	}
+	tokens := scan("12")
+	require.NotNil(t, tokens)
+	require.Len(t, tokens, 1)
+	require.Equal(t, TextTokenType, tokens[0].Type)
+	require.Equal(t, "12", tokens[0].Source)
+
+	tokens = scan("OBJECT@LEFTobjOBJECT#RIGHT")
+	require.NotNil(t, tokens)
+	require.Len(t, tokens, 1)
+	require.Equal(t, ObjTokenType, tokens[0].Type)
+	require.Equal(t, "obj", tokens[0].Args)
+
+	tokens = scan("OBJECT@LEFT obj OBJECT#RIGHT")
+	require.NotNil(t, tokens)
+	require.Len(t, tokens, 1)
+	require.Equal(t, ObjTokenType, tokens[0].Type)
+	require.Equal(t, "obj", tokens[0].Args)
+
+	tokens = scan("TAG*LEFTtag argsTAG!RIGHT")
+	require.NotNil(t, tokens)
+	require.Len(t, tokens, 1)
+	require.Equal(t, TagTokenType, tokens[0].Type)
+	require.Equal(t, "tag", tokens[0].Name)
+	require.Equal(t, "args", tokens[0].Args)
+
+	tokens = scan("TAG*LEFT tag args TAG!RIGHT")
+	require.NotNil(t, tokens)
+	require.Len(t, tokens, 1)
+	require.Equal(t, TagTokenType, tokens[0].Type)
+	require.Equal(t, "tag", tokens[0].Name)
+	require.Equal(t, "args", tokens[0].Args)
+
+	tokens = scan("preTAG*LEFT tag args TAG!RIGHTmidOBJECT@LEFT object OBJECT#RIGHTpost")
+	require.Equal(t, `[TextTokenType{"pre"} TagTokenType{Tag:"tag", Args:"args"} TextTokenType{"mid"} ObjTokenType{"object"} TextTokenType{"post"}]`, fmt.Sprint(tokens))
+
+	for i, test := range scannerCountTestsDelims {
+		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
+			tokens := scan(test.in)
+			require.Len(t, tokens, test.len)
 		})
 	}
 }
