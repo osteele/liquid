@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 // TODO Expression and Closure are confusing names.
@@ -43,14 +43,14 @@ func (c closure) Evaluate() (interface{}, error) {
 }
 
 type expression struct {
-	evaluator func(Context) evaluator.Value
+	evaluator func(Context) values.Value
 }
 
 func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {
-			case evaluator.TypeError:
+			case values.TypeError:
 				err = e
 			case InterpreterError:
 				err = e

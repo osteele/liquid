@@ -1,4 +1,4 @@
-package evaluator
+package values
 
 type drop interface {
 	ToLiquid() interface{}

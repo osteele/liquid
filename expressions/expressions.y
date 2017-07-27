@@ -3,7 +3,7 @@ package expressions
 import (
 	"fmt"
 	"math"
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 func init() {
@@ -16,7 +16,7 @@ func init() {
 %union {
    name     string
    val      interface{}
-   f        func(Context) evaluator.Value
+   f        func(Context) values.Value
    s        string
    ss       []string
    exprs    []Expression
@@ -98,8 +98,8 @@ loop_expr : '(' int_or_var DOTDOT int_or_var ')' {
 
 // TODO DRY w/ expr
 int_or_var:
-  LITERAL { val := $1; $$ = func(Context) evaluator.Value { return evaluator.ValueOf(val) } }
-| IDENTIFIER { name := $1; $$ = func(ctx Context) evaluator.Value { return evaluator.ValueOf(ctx.Get(name)) } }
+  LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
+| IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 ;
 
 loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
@@ -140,8 +140,8 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
 ;
 
 expr:
-  LITERAL { val := $1; $$ = func(Context) evaluator.Value { return evaluator.ValueOf(val) } }
-| IDENTIFIER { name := $1; $$ = func(ctx Context) evaluator.Value { return evaluator.ValueOf(ctx.Get(name)) } }
+  LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
+| IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
 | '(' cond ')' { $$ = $2 }
@@ -162,44 +162,44 @@ rel:
   filtered
 | expr EQ expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(a.Equal(b))
+		return values.ValueOf(a.Equal(b))
 	}
 }
 | expr NEQ expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(!a.Equal(b))
+		return values.ValueOf(!a.Equal(b))
 	}
 }
 | expr '>' expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(b.Less(a))
+		return values.ValueOf(b.Less(a))
 	}
 }
 | expr '<' expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(a.Less(b))
+		return values.ValueOf(a.Less(b))
 	}
 }
 | expr GE expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(b.Less(a) || a.Equal(b))
+		return values.ValueOf(b.Less(a) || a.Equal(b))
 	}
 }
 | expr LE expr {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
+	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return evaluator.ValueOf(a.Less(b) || a.Equal(b))
+		return values.ValueOf(a.Less(b) || a.Equal(b))
 	}
 }
 | expr CONTAINS expr { $$ = makeContainsExpr($1, $3) }
@@ -209,14 +209,14 @@ cond:
   rel
 | cond AND rel {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
-		return evaluator.ValueOf(fa(ctx).Test() && fb(ctx).Test())
+	$$ = func(ctx Context) values.Value {
+		return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
 	}
 }
 | cond OR rel {
 	fa, fb := $1, $3
-	$$ = func(ctx Context) evaluator.Value {
-		return evaluator.ValueOf(fa(ctx).Test() || fb(ctx).Test())
+	$$ = func(ctx Context) values.Value {
+		return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
 	}
 }
 ;

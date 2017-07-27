@@ -1,4 +1,4 @@
-package evaluator
+package values
 
 import (
 	yaml "gopkg.in/yaml.v2"

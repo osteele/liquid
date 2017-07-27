@@ -14,8 +14,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/osteele/liquid/evaluator"
 	"github.com/osteele/liquid/strftime"
+	"github.com/osteele/liquid/values"
 )
 
 // A FilterDictionary holds filters.
@@ -27,7 +27,7 @@ type FilterDictionary interface {
 func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	// values
 	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
-		if value == nil || value == false || evaluator.IsEmpty(value) {
+		if value == nil || value == false || values.IsEmpty(value) {
 			value = defaultValue
 		}
 		return value
@@ -108,7 +108,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 
 	// sequences
-	fd.AddFilter("size", evaluator.Length)
+	fd.AddFilter("size", values.Length)
 
 	// strings
 	fd.AddFilter("append", func(s, suffix string) string {

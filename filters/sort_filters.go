@@ -5,16 +5,16 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 func sortFilter(array []interface{}, key interface{}) []interface{} {
 	result := make([]interface{}, len(array))
 	copy(result, array)
 	if key == nil {
-		evaluator.Sort(result)
+		values.Sort(result)
 	} else {
-		evaluator.SortByProperty(result, key.(string), true)
+		values.SortByProperty(result, key.(string), true)
 	}
 	return result
 }

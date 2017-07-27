@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 // An InterpreterError is an error during expression interpretation.
@@ -31,7 +31,7 @@ func (e FilterError) Error() string {
 	return fmt.Sprintf("error applying filter %q (%q)", e.FilterName, e.Err)
 }
 
-type valueFn func(Context) evaluator.Value
+type valueFn func(Context) values.Value
 
 // AddFilter adds a filter to the filter dictionary.
 func (c *Config) AddFilter(name string, fn interface{}) {
@@ -77,10 +77,10 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 			args = append(args, param(ctx).Interface())
 		}
 	}
-	out, err := evaluator.Call(fr, args)
+	out, err := values.Call(fr, args)
 	if err != nil {
-		if e, ok := err.(*evaluator.CallParityError); ok {
-			err = &evaluator.CallParityError{NumArgs: e.NumArgs - 1, NumParams: e.NumParams - 1}
+		if e, ok := err.(*values.CallParityError); ok {
+			err = &values.CallParityError{NumArgs: e.NumArgs - 1, NumParams: e.NumParams - 1}
 		}
 		return nil, err
 	}

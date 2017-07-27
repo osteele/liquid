@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestContext_AddFilter(t *testing.T) {
 func TestContext_runFilter(t *testing.T) {
 	cfg := NewConfig()
 	constant := func(value interface{}) valueFn {
-		return func(Context) evaluator.Value { return evaluator.ValueOf(value) }
+		return func(Context) values.Value { return values.ValueOf(value) }
 	}
 	receiver := constant("self")
 

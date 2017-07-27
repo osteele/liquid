@@ -7,7 +7,7 @@ package expressions
 import (
 	"fmt"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 type parseValue struct {
@@ -15,7 +15,7 @@ type parseValue struct {
 	Cycle
 	Loop
 	When
-	val func(Context) evaluator.Value
+	val func(Context) values.Value
 }
 
 // SyntaxError represents a syntax error. The yacc-generated compiler

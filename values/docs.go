@@ -1,4 +1,4 @@
-package evaluator
+package values
 
 // Package evaluator defines methods such as sorting, comparison, and type conversion, that apply to interface types.
 //

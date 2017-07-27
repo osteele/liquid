@@ -3,9 +3,9 @@ package tags
 import (
 	"io"
 
-	"github.com/osteele/liquid/evaluator"
 	e "github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
+	"github.com/osteele/liquid/values"
 )
 
 type caseInterpreter interface {
@@ -25,7 +25,7 @@ func (c exprCase) test(caseValue interface{}, ctx render.Context) (bool, error) 
 		if err != nil {
 			return false, err
 		}
-		if evaluator.Equal(caseValue, whenValue) {
+		if values.Equal(caseValue, whenValue) {
 			return true, nil
 		}
 	}

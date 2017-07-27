@@ -6,7 +6,7 @@ import (
 	"io"
 	"reflect"
 
-	"github.com/osteele/liquid/evaluator"
+	"github.com/osteele/liquid/values"
 )
 
 // Render renders the render tree.
@@ -95,7 +95,7 @@ func (n *TextNode) render(w *trimWriter, ctx nodeContext) Error {
 
 // writeObject writes a value used in an object node
 func writeObject(w io.Writer, value interface{}) error {
-	value = evaluator.ToLiquid(value)
+	value = values.ToLiquid(value)
 	if value == nil {
 		return nil
 	}
