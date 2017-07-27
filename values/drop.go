@@ -1,5 +1,7 @@
 package values
 
+import "sync"
+
 type drop interface {
 	ToLiquid() interface{}
 }
@@ -20,9 +22,16 @@ type dropWrapper struct {
 	v Value
 }
 
+// Single mutex, until proven finer granularity helps.
+var dropResolverMu sync.Mutex
+
 func (w dropWrapper) Resolve() Value {
 	if w.v == nil {
-		w.v = ValueOf(w.d.ToLiquid())
+		dropResolverMu.Lock()
+		defer dropResolverMu.Unlock()
+		if w.v == nil {
+			w.v = ValueOf(w.d.ToLiquid())
+		}
 	}
 	return w.v
 }
