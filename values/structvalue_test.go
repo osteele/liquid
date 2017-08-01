@@ -9,6 +9,7 @@ import (
 
 type testValueStruct struct {
 	F       int
+	Nest    *testValueStruct
 	Renamed int `liquid:"name"`
 	Omitted int `liquid:"-"`
 	F1      func() int
@@ -27,6 +28,7 @@ func (tv *testValueStruct) PM2e() (int, error) { return 4, fmt.Errorf("expected 
 func TestValue_struct(t *testing.T) {
 	s := ValueOf(testValueStruct{
 		F:       -1,
+		Nest:    &testValueStruct{F: -2},
 		Renamed: 100,
 		Omitted: 200,
 		F1:      func() int { return 1 },
@@ -38,6 +40,10 @@ func TestValue_struct(t *testing.T) {
 	require.True(t, s.Contains(ValueOf("F")))
 	require.True(t, s.Contains(ValueOf("F1")))
 	require.Equal(t, -1, s.PropertyValue(ValueOf("F")).Interface())
+
+	// Nesting
+	require.Equal(t, -2, s.PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("F")).Interface())
+	require.Equal(t, nil, s.PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("F")).Interface())
 
 	// field tags
 	require.False(t, s.Contains(ValueOf("Renamed")))

@@ -45,6 +45,9 @@ func (v structValue) PropertyValue(index Value) Value {
 		}
 		rt = rt.Elem()
 		rv = rv.Elem()
+		if !rv.IsValid() {
+			return nilValue
+		}
 	}
 	if _, found := rt.MethodByName(name); found {
 		m := rv.MethodByName(name)
