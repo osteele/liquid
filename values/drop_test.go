@@ -22,3 +22,41 @@ func TestValue_drop(t *testing.T) {
 	require.Equal(t, true, dv.Contains(ValueOf(testDrop{"foo"})))
 	require.Equal(t, 7, dv.PropertyValue(ValueOf("size")).Interface())
 }
+
+func TestDrop_Resolve_race(t *testing.T) {
+	d := ValueOf(testDrop{1})
+	values := make(chan int, 2)
+	for i := 0; i < 2; i++ {
+		go func() { values <- d.Int() }()
+	}
+	for i := 0; i < 2; i++ {
+		require.Equal(t, 1, <-values)
+	}
+}
+
+func BenchmarkDrop_Resolve_1(b *testing.B) {
+	d := ValueOf(testDrop{1})
+	for n := 0; n < b.N; n++ {
+		_ = d.Int()
+	}
+}
+
+func BenchmarkDrop_Resolve_2(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		d := ValueOf(testDrop{1})
+		_ = d.Int()
+	}
+}
+
+func BenchmarkDrop_Resolve_3(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		d := ValueOf(testDrop{1})
+		values := make(chan int, 10)
+		for i := cap(values); i > 0; i-- {
+			values <- d.Int()
+		}
+		for i := cap(values); i > 0; i-- {
+			_ = <-values
+		}
+	}
+}
