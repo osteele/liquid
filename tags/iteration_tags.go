@@ -44,7 +44,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		if loopVar == nil {
 			return ctx.Errorf("cycle must be within a forloop")
 		}
-		// the next few lines could panic if the user spoofs us by creating their own loop object
+		// The next few lines could panic if the user spoofs us by creating their own loop object.
 		// “C++ protects against accident, not against fraud.” – Bjarne Stroustrup
 		loopRec := loopVar.(map[string]interface{})
 		cycleMap := loopRec[".cycles"].(map[string]int)
@@ -64,58 +64,65 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	}
 	loop := stmt.Loop
 	dec := makeLoopDecorator(node.Name, loop)
-	return func(w io.Writer, ctx render.Context) error {
-		val, err := ctx.Evaluate(loop.Expr)
-		if err != nil {
+	return loopRenderer{loop, dec}.render, nil
+}
+
+type loopRenderer struct {
+	expressions.Loop
+	loopDecorator
+}
+
+func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
+	val, err := ctx.Evaluate(loop.Expr)
+	if err != nil {
+		return err
+	}
+	iter := makeIterator(val)
+	if iter == nil {
+		return nil
+	}
+	iter = applyLoopModifiers(loop.Loop, iter)
+	// shallow-bind the loop variables; restore on exit
+	defer func(index, forloop interface{}) {
+		ctx.Set(forloopVarName, index)
+		ctx.Set(loop.Variable, forloop)
+	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
+	cycleMap := map[string]int{}
+loop:
+	for i, len := 0, iter.Len(); i < len; i++ {
+		ctx.Set(loop.Variable, iter.Index(i))
+		ctx.Set(forloopVarName, map[string]interface{}{
+			"first":   i == 0,
+			"last":    i == len-1,
+			"index":   i + 1,
+			"index0":  i,
+			"rindex":  len - i,
+			"rindex0": len - i - 1,
+			"length":  len,
+			".cycles": cycleMap,
+		})
+		loop.before(w, i)
+		err := ctx.RenderChildren(w)
+		loop.after(w, i, len)
+		switch {
+		case err == nil:
+		// fall through
+		case err.Cause() == errLoopBreak:
+			break loop
+		case err.Cause() == errLoopContinueLoop:
+			continue loop
+		default:
 			return err
 		}
-		iter := makeIterator(val)
-		if iter == nil {
-			return nil
-		}
-		iter = applyLoopModifiers(loop, iter)
-		// shallow-bind the loop variables; restore on exit
-		defer func(index, forloop interface{}) {
-			ctx.Set(forloopVarName, index)
-			ctx.Set(loop.Variable, forloop)
-		}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
-		cycleMap := map[string]int{}
-	loop:
-		for i, len := 0, iter.Len(); i < len; i++ {
-			ctx.Set(loop.Variable, iter.Index(i))
-			ctx.Set(forloopVarName, map[string]interface{}{
-				"first":   i == 0,
-				"last":    i == len-1,
-				"index":   i + 1,
-				"index0":  i,
-				"rindex":  len - i,
-				"rindex0": len - i - 1,
-				"length":  len,
-				".cycles": cycleMap,
-			})
-			dec.before(w, i)
-			err := ctx.RenderChildren(w)
-			dec.after(w, i, len)
-			switch {
-			case err == nil:
-			// fall through
-			case err.Cause() == errLoopBreak:
-				break loop
-			case err.Cause() == errLoopContinueLoop:
-				continue loop
-			default:
-				return err
-			}
-		}
-		return nil
-	}, nil
+	}
+	return nil
 }
 
 func makeLoopDecorator(tagName string, loop expressions.Loop) loopDecorator {
 	if tagName == "tablerow" {
 		return tableRowDecorator(loop.Cols)
 	}
-	return nullLoopDecorator{}
+	return forLoopDecorator{}
 }
 
 type loopDecorator interface {
@@ -123,10 +130,10 @@ type loopDecorator interface {
 	after(io.Writer, int, int)
 }
 
-type nullLoopDecorator struct{}
+type forLoopDecorator struct{}
 
-func (d nullLoopDecorator) before(io.Writer, int)     {}
-func (d nullLoopDecorator) after(io.Writer, int, int) {}
+func (d forLoopDecorator) before(io.Writer, int)     {}
+func (d forLoopDecorator) after(io.Writer, int, int) {}
 
 type tableRowDecorator int
 
