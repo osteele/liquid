@@ -41,7 +41,7 @@ func ValueOf(value interface{}) Value { // nolint: gocyclo
 	// interfaces
 	switch v := value.(type) {
 	case drop:
-		return dropWrapper{d: v}
+		return &dropWrapper{d: v}
 	case yaml.MapSlice:
 		return mapSliceValue{slice: v}
 	case Value:
