@@ -1,6 +1,8 @@
 package strftime
 
 import (
+	"encoding/csv"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -16,8 +18,56 @@ func timeMustParse(f, s string) time.Time {
 	return t
 }
 
+var conversionTests = []struct{ format, expect string }{
+	// {"%1N"},
+	// {"%3N"},
+	// {"%6N"},
+	// {"%9N"},
+	{"%v", " 2-Jan-2006"},
+	{"%Z", "EST"},
+	// {"%:z", "-05:00"},
+	// {"%::z", "-05:00:00"},
+	{"%%", "%"},
+}
+
 func TestStrftime(t *testing.T) {
 	require.NoError(t, os.Setenv("TZ", "America/New_York"))
+
+	dt := timeMustParse(time.RFC3339Nano, "2006-01-02T15:04:05.123456789-05:00")
+	for _, test := range conversionTests {
+		name := fmt.Sprintf("Strftime %q", test.format)
+		actual, err := Strftime(test.format, dt)
+		require.NoErrorf(t, err, name)
+		require.Equalf(t, test.expect, actual, name)
+	}
+
+	skip := map[string]bool{}
+	f, err := os.Open("testdata/skip.csv")
+	require.NoError(t, err)
+	defer f.Close() // nolint: errcheck
+	r := csv.NewReader(f)
+	rows, err := r.ReadAll()
+	require.NoError(t, err)
+	for _, row := range rows {
+		skip[row[0]] = true
+	}
+
+	f, err = os.Open("testdata/data.csv")
+	require.NoError(t, err)
+	defer f.Close() // nolint: errcheck
+	r = csv.NewReader(f)
+	rows, err = r.ReadAll()
+	require.NoError(t, err)
+	for _, row := range rows {
+		format, expect := row[0], row[1]
+		if skip[format] {
+			continue
+		}
+		name := fmt.Sprintf("Strftime %q (cf. Ruby)", format)
+		actual, err := Strftime(format, dt)
+		require.NoErrorf(t, err, name)
+		require.Equalf(t, expect, actual, name)
+	}
 
 	ins := []struct{ source, expect string }{
 		{"02 Jan 06 15:04 UTC", "02 Jan 06 10:04 EST"},
@@ -34,7 +84,7 @@ func TestStrftime(t *testing.T) {
 		require.Equalf(t, test.expect, actual, test.source)
 	}
 
-	rt := timeMustParse(time.RFC822, "02 Jan 06 15:04 MST")
+	dt = timeMustParse(time.RFC822, "02 Jan 06 15:04 MST")
 	tests := []struct{ format, expect string }{
 		{"%a, %b %d, %Y", "Mon, Jan 02, 2006"},
 		{"%Y/%m/%d", "2006/01/02"},
@@ -45,21 +95,10 @@ func TestStrftime(t *testing.T) {
 		// {"", ""}, this errors on Travis
 	}
 	for _, test := range tests {
-		s, err := Strftime(test.format, rt)
+		s, err := Strftime(test.format, dt)
 		require.NoErrorf(t, err, test.format)
 		require.Equalf(t, test.expect, s, test.format)
 	}
-
-	dt, err := time.Parse("2006-01-02", "1776-07-15")
-	require.NoError(t, err)
-	s, err := Strftime("%Y-%m-%d", dt)
-	require.NoError(t, err)
-	// FIXME actual 1776-07-14
-	_ = s
-	// require.Equal(t, "1776-07-15", s)
-
-	// s, err := Strftime("%f", rt)
-	// require.Errorf(t, err)
 }
 
 // func TestStrptime(t *testing.T) {
