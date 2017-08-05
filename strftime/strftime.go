@@ -44,25 +44,3 @@ func Strftime(format string, t time.Time) (string, error) {
 	}
 	return C.GoString(&cOut[0]), nil
 }
-
-// Strptime wraps the C strptime function
-// func Strptime(format, s string) (time.Time, error) {
-// 	var (
-// 		tm      = C.struct_tm{}
-// 		cFormat = C.CString(format)
-// 		cin     = C.CString(s)
-// 	)
-// 	defer C.free(unsafe.Pointer(cin))     // nolint: gas
-// 	defer C.free(unsafe.Pointer(cFormat)) // nolint: gas
-// 	ptr := C.strptime(cin, cFormat, &tm)
-// 	if ptr == nil {
-// 		var zero time.Time
-// 		return zero, &time.ParseError{
-// 			Layout:     format,
-// 			Value:      s,
-// 			LayoutElem: format,
-// 			ValueElem:  s,
-// 		}
-// 	}
-// 	return time.Date(int(tm.tm_year)+1900, time.Month(tm.tm_mon+1), int(tm.tm_mday), int(tm.tm_hour), int(tm.tm_min), int(tm.tm_sec), 0, time.UTC), nil
-// }

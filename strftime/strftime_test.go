@@ -100,20 +100,3 @@ func TestStrftime(t *testing.T) {
 		require.Equalf(t, test.expect, s, test.format)
 	}
 }
-
-// func TestStrptime(t *testing.T) {
-// 	testCases := []struct{ format, in, expect string }{
-// 		{"%a, %b %d, %Y", "Thu, Jun 29, 2017", "29 Jun 17 00:00 +0000"},
-// 		{"%a, %b %d, %Y %H:%M", "Thu, Jun 29, 2017 15:30", "29 Jun 17 15:30 +0000"},
-// 		// {"%a, %b %d, %Y %H:%M %Z", "Thu, Jun 29, 2017 15:30 UTC", "29 Jun 17 15:30 +0000"},
-// 	}
-// 	for _, test := range testCases {
-// 		tm, err := Strptime(test.format, test.in)
-// 		require.NoError(t, err)
-// 		s := tm.Format(time.RFC822Z)
-// 		require.Equal(t, test.expect, s)
-// 	}
-
-// 	_, err := Strptime("%Y", "onvald")
-// 	require.Error(t, err)
-// }
