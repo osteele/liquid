@@ -1,4 +1,4 @@
-// Package render renders a compiled template parse tree.
+// Package render is an internal package that renders a compiled template parse tree.
 package render
 
 import (

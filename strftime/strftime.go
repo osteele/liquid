@@ -1,4 +1,4 @@
-// Package strftime wraps the C stdlib strftime and strptime functions.
+// Package strftime implements a Strftime function that is compatible with Ruby's Time.strftime.
 package strftime
 
 import (
@@ -10,7 +10,7 @@ import (
 	"unicode/utf8"
 )
 
-// Strftime clones Ruby's Time.strftime
+// Strftime is compatible with Ruby's Time.strftime.
 func Strftime(format string, t time.Time) (string, error) {
 	return re.ReplaceAllStringFunc(format, func(directive string) string {
 		var (

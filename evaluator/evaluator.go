@@ -1,3 +1,4 @@
+// Package evaluator is an interim internal package that forwards to package values.
 package evaluator
 
 import (

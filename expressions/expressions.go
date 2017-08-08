@@ -1,4 +1,4 @@
-// Package expressions parses and evaluates the expression language.
+// Package expressions is an internal package that parses and evaluates the expression language.
 //
 // This is the language that is used inside Liquid object and tags; e.g. "a.b[c]" in {{ a.b[c] }}, and "pages = site.pages | reverse" in {% assign pages = site.pages | reverse %}.
 package expressions

@@ -1,4 +1,4 @@
-// Package parser parses template source into an abstract syntax tree.
+// Package parser is an internal package that parses template source into an abstract syntax tree.
 package parser
 
 import (

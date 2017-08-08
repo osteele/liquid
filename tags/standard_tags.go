@@ -1,4 +1,4 @@
-// Package tags defines the standard Liquid tags.
+// Package tags is an internal package that defines the standard Liquid tags.
 package tags
 
 import (
