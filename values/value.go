@@ -169,7 +169,7 @@ func (v arrayValue) IndexValue(index Value) Value {
 func (v mapValue) IndexValue(index Value) Value {
 	rv := reflect.ValueOf(v.basis)
 	iv := reflect.ValueOf(index.Interface())
-	if rv.Type().Key() == iv.Type() {
+	if iv.IsValid() && rv.Type().Key() == iv.Type() {
 		ev := rv.MapIndex(iv)
 		if ev.IsValid() {
 			return ValueOf(ev.Interface())
@@ -198,6 +198,9 @@ func (v arrayValue) PropertyValue(index Value) Value {
 func (v mapValue) PropertyValue(index Value) Value {
 	rv := reflect.ValueOf(v.Interface())
 	iv := reflect.ValueOf(index.Interface())
+	if !iv.IsValid() {
+		return nilValue
+	}
 	ev := rv.MapIndex(iv)
 	switch {
 	case ev.IsValid():
