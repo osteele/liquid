@@ -169,8 +169,8 @@ func (v arrayValue) IndexValue(index Value) Value {
 func (v mapValue) IndexValue(index Value) Value {
 	rv := reflect.ValueOf(v.basis)
 	iv := reflect.ValueOf(index.Interface())
-	if iv.IsValid() && rv.Type().Key() == iv.Type() {
-		ev := rv.MapIndex(iv)
+	if iv.IsValid() && iv.Type().ConvertibleTo(rv.Type().Key()) {
+		ev := rv.MapIndex(iv.Convert(rv.Type().Key()))
 		if ev.IsValid() {
 			return ValueOf(ev.Interface())
 		}
