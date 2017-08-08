@@ -3,6 +3,7 @@ package tags
 import (
 	"bytes"
 	"io/ioutil"
+	"os"
 	"strings"
 	"testing"
 
@@ -43,10 +44,17 @@ func TestIncludeTag(t *testing.T) {
 	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "requires a string")
+}
 
-	root, err = config.Compile(`{% include "missing_file.html" %}`, loc)
+func TestIncludeTag_file_not_found_error(t *testing.T) {
+	config := render.NewConfig()
+	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
+	AddStandardTags(config)
+
+	// See the comment in TestIncludeTag_file_not_found_error.
+	root, err := config.Compile(`{% include "missing_file.html" %}`, loc)
 	require.NoError(t, err)
 	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
 	require.Error(t, err)
-	require.Contains(t, err.Error(), "no such file")
+	require.True(t, os.IsNotExist(err.Cause()))
 }
