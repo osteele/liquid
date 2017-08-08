@@ -119,28 +119,3 @@ func ExampleEngine_RegisterBlock() {
 	fmt.Println(out)
 	// Output: 3
 }
-
-type redConvertible struct{}
-
-func (c redConvertible) ToLiquid() interface{} {
-	return "red"
-}
-
-func ExampleDrop() {
-	// type redConvertible struct{}
-	//
-	// func (c redConvertible) ToLiquid() interface{} {
-	// 	return "red"
-	// }
-	engine := NewEngine()
-	bindings := map[string]interface{}{
-		"drop": redConvertible{},
-	}
-	template := `{{ drop }}`
-	out, err := engine.ParseAndRenderString(template, bindings)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	fmt.Println(out)
-	// Output: red
-}

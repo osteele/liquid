@@ -37,12 +37,18 @@ These features of Shopify Liquid aren't implemented:
 - Non-strict filters. An undefined filter is currently an error.
 - Strict variables. An undefined variable is not an error.
 
+Drops have a different design from the Shopify (Ruby) implementation.
+A Ruby drop sets `liquid_attributes` to a list of attributes that are exposed to Liquid.
+A Go drop implements `ToLiquid() interface{}`, that returns a proxy object.
+Conventionally, the proxy is a `map` or `struct` that defines the exposed properties.
+See <http://godoc.org/github.com/osteele/liquid#Drop> for additional information.
+
 ## Stability
 
 This library is at an early stage of development.
 It has been mostly used by its author.
 
-Only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore won't change incompatibly with minor versions.
+Only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore won't change incompatibly, if ever, until at least version 2 (at which point `gopkg.in/osteele/liquid.v1` will continue to pin to the v1 implementation).
 
 ## Install
 
