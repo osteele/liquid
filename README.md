@@ -1,13 +1,19 @@
 # Liquid Template Parser
 
- [![][travis-svg]][travis-url] [![][coveralls-svg]][coveralls-url] [![][go-report-card-svg]][go-report-card-url] [![][godoc-svg]][godoc-url] [![][license-svg]][license-url]
+ [![][travis-svg]][travis-url]
+ [![][appveyor-svg]][appveyor-url]
+ [![][coveralls-svg]][coveralls-url]
+ [![][go-report-card-svg]][go-report-card-url]
+ [![][godoc-svg]][godoc-url]
+ [![][license-svg]][license-url]
 
-`liquid` is a Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid). It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) static site generator.
+`liquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid).
+It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site generator.
 
 <!-- TOC -->
 
 - [Liquid Template Parser](#liquid-template-parser)
-    - [Differences from Liquid](#differences-from-liquid)
+    - [Compatibility](#compatibility)
     - [Stability](#stability)
     - [Install](#install)
     - [Usage](#usage)
@@ -23,7 +29,7 @@
 
 <!-- /TOC -->
 
-## Differences from Liquid
+## Compatibility
 
 These features of Shopify Liquid aren't implemented:
 
@@ -163,3 +169,6 @@ MIT License
 
 [travis-url]: https://travis-ci.org/osteele/liquid
 [travis-svg]: https://img.shields.io/travis/osteele/liquid.svg?branch=master
+
+[appveyor-url]: https://ci.appveyor.com/project/osteele/liquid
+[appveyor-svg]: https://ci.appveyor.com/api/projects/status/76tnj36879n671jx?svg=true
