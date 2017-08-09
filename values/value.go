@@ -172,7 +172,7 @@ func (v arrayValue) PropertyValue(index Value) Value {
 func (v mapValue) Contains(index Value) bool {
 	rv := reflect.ValueOf(v.value)
 	iv := reflect.ValueOf(index.Interface())
-	if rv.Type().Key() == iv.Type() {
+	if iv.IsValid() && rv.Type().Key() == iv.Type() {
 		return rv.MapIndex(iv).IsValid()
 	}
 	return false

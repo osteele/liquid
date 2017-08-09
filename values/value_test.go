@@ -47,18 +47,18 @@ func TestValue_IndexValue(t *testing.T) {
 	require.Nil(t, ValueOf(false).PropertyValue(ValueOf("first")).Interface())
 	require.Nil(t, ValueOf(12).PropertyValue(ValueOf("first")).Interface())
 
-	// empty list
+	// empty array
 	empty := ValueOf([]string{})
 	require.Nil(t, empty.IndexValue(ValueOf(0)).Interface())
 	require.Nil(t, empty.IndexValue(ValueOf(-1)).Interface())
 
-	// list
-	av := ValueOf([]string{"first", "second", "third"})
-	require.Equal(t, "first", av.IndexValue(ValueOf(0)).Interface())
-	require.Equal(t, "third", av.IndexValue(ValueOf(-1)).Interface())
-	require.Equal(t, "second", av.IndexValue(ValueOf(1.0)).Interface())
-	require.Equal(t, "second", av.IndexValue(ValueOf(1.1)).Interface())
-	require.Nil(t, av.IndexValue(ValueOf(nil)).Interface())
+	// array
+	lv := ValueOf([]string{"first", "second", "third"})
+	require.Equal(t, "first", lv.IndexValue(ValueOf(0)).Interface())
+	require.Equal(t, "third", lv.IndexValue(ValueOf(-1)).Interface())
+	require.Equal(t, "second", lv.IndexValue(ValueOf(1.0)).Interface())
+	require.Equal(t, "second", lv.IndexValue(ValueOf(1.1)).Interface())
+	require.Nil(t, lv.IndexValue(ValueOf(nil)).Interface())
 
 	// string map
 	hv := ValueOf(map[string]interface{}{"key": "value"})
@@ -69,11 +69,13 @@ func TestValue_IndexValue(t *testing.T) {
 	// interface map
 	hv = ValueOf(map[interface{}]interface{}{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())
+	require.Nil(t, hv.IndexValue(ValueOf(nil)).Interface())
 
 	// ptr to map
 	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
 	require.Equal(t, "value", hashPtr.IndexValue(ValueOf("key")).Interface())
 	require.Nil(t, hashPtr.IndexValue(ValueOf("missing_key")).Interface())
+	require.Nil(t, hashPtr.IndexValue(ValueOf(nil)).Interface())
 
 	// MapSlice
 	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
@@ -83,16 +85,16 @@ func TestValue_IndexValue(t *testing.T) {
 }
 
 func TestValue_PropertyValue(t *testing.T) {
-	// empty list
+	// empty array
 	empty := ValueOf([]string{})
 	require.Nil(t, empty.PropertyValue(ValueOf("first")).Interface())
 	require.Nil(t, empty.PropertyValue(ValueOf("last")).Interface())
 
-	// list
-	av := ValueOf([]string{"first", "second", "third"})
-	require.Equal(t, "first", av.PropertyValue(ValueOf("first")).Interface())
-	require.Equal(t, "third", av.PropertyValue(ValueOf("last")).Interface())
-	require.Nil(t, av.PropertyValue(ValueOf(nil)).Interface())
+	// array
+	lv := ValueOf([]string{"first", "second", "third"})
+	require.Equal(t, "first", lv.PropertyValue(ValueOf("first")).Interface())
+	require.Equal(t, "third", lv.PropertyValue(ValueOf("last")).Interface())
+	require.Nil(t, lv.PropertyValue(ValueOf(nil)).Interface())
 
 	// string map
 	hv := ValueOf(map[string]interface{}{"key": "value"})
@@ -124,24 +126,30 @@ func TestValue_Contains(t *testing.T) {
 	av := ValueOf([]string{"first", "second", "third"})
 	require.True(t, av.Contains(ValueOf("first")))
 	require.False(t, av.Contains(ValueOf("missing")))
+	require.False(t, av.Contains(ValueOf(nil)))
+
+	require.True(t, ValueOf([]interface{}{nil}).Contains(ValueOf(nil)))
 
 	// string
 	sv := ValueOf("seafood")
 	require.True(t, sv.Contains(ValueOf("foo")))
 	require.False(t, sv.Contains(ValueOf("bar")))
+	require.False(t, sv.Contains(ValueOf(nil)))
 
 	// string contains stringifies its argument
 	require.True(t, ValueOf("seaf00d").Contains(ValueOf(0)))
 
-	// hash
+	// map
 	hv := ValueOf(map[string]interface{}{"key": "value"})
 	require.True(t, hv.Contains(ValueOf("key")))
 	require.False(t, hv.Contains(ValueOf("missing_key")))
+	require.False(t, hv.Contains(ValueOf(nil)))
 
 	// MapSlice
 	msv := ValueOf(yaml.MapSlice{{Key: "key", Value: "value"}})
 	require.True(t, msv.Contains(ValueOf("key")))
 	require.False(t, msv.Contains(ValueOf("missing_key")))
+	require.False(t, msv.Contains(ValueOf(nil)))
 }
 
 func TestValue_PropertyValue_size(t *testing.T) {
