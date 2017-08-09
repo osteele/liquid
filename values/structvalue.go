@@ -15,7 +15,7 @@ func (v structValue) Contains(elem Value) bool {
 	if !ok {
 		return false
 	}
-	rt := reflect.TypeOf(v.basis)
+	rt := reflect.TypeOf(v.value)
 	if rt.Kind() == reflect.Ptr {
 		if _, found := rt.MethodByName(name); found {
 			return true
@@ -36,8 +36,8 @@ func (v structValue) PropertyValue(index Value) Value {
 	if !ok {
 		return nilValue
 	}
-	rv := reflect.ValueOf(v.basis)
-	rt := reflect.TypeOf(v.basis)
+	rv := reflect.ValueOf(v.value)
+	rt := reflect.TypeOf(v.value)
 	if rt.Kind() == reflect.Ptr {
 		if _, found := rt.MethodByName(name); found {
 			m := rv.MethodByName(name)
@@ -67,7 +67,7 @@ const tagKey = "liquid"
 
 // like FieldByName, but obeys `liquid:"name"` tags
 func (v structValue) findField(name string) (*reflect.StructField, bool) {
-	rt := reflect.TypeOf(v.basis)
+	rt := reflect.TypeOf(v.value)
 	if rt.Kind() == reflect.Ptr {
 		rt = rt.Elem()
 	}
