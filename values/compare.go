@@ -35,6 +35,11 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 		return ra.Convert(float64Type).Float() == rb.Convert(float64Type).Float()
 	case reflect.String:
 		return ra.String() == rb.String()
+	case reflect.Ptr:
+		if rb.Kind() == reflect.Ptr && (ra.IsNil() || rb.IsNil()) {
+			return ra.IsNil() == rb.IsNil()
+		}
+		return a == b
 	default:
 		return a == b
 	}

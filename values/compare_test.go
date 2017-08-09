@@ -47,3 +47,24 @@ func TestEqual(t *testing.T) {
 		})
 	}
 }
+
+func TestEqual_ptr(t *testing.T) {
+	var (
+		n  int
+		f  float64
+		pn *int
+		pf *float64
+		s  struct{}
+	)
+	require.True(t, Equal(&s, &s))
+	require.True(t, Equal(&n, &n))
+	require.False(t, Equal(&n, &f))
+
+	// // null pointers
+	require.True(t, Equal(pn, pn))
+	require.False(t, Equal(pn, &n))
+	// null pointers should compare equal, even if they're different types
+	require.True(t, Equal(pn, pf))
+	// require.True(t, Equal(pn, nil)) // TODO
+	// require.True(t, Equal(nil, pn)) // TODO
+}
