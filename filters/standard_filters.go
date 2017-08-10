@@ -14,8 +14,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/osteele/liquid/strftime"
 	"github.com/osteele/liquid/values"
+	strftime "github.com/osteele/rbstrftime"
 )
 
 // A FilterDictionary holds filters.
