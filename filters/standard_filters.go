@@ -15,7 +15,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/osteele/liquid/values"
-	strftime "github.com/osteele/rbstrftime"
+	"github.com/osteele/tuesday"
 )
 
 // A FilterDictionary holds filters.
@@ -74,7 +74,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		f := format("%a, %b %d, %y")
 		// TODO %\d*N -> truncated fractional seconds, default 9
 		f = strings.Replace(f, "%N", "", -1)
-		return strftime.Strftime(f, t)
+		return tuesday.Strftime(f, t)
 	})
 
 	// numbers
