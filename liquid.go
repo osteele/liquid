@@ -10,6 +10,7 @@ package liquid
 
 import (
 	"github.com/osteele/liquid/render"
+	"github.com/osteele/liquid/tags"
 )
 
 // Bindings is a map of variable names to values.
@@ -31,4 +32,10 @@ type SourceError interface {
 	Cause() error
 	Path() string
 	LineNumber() int
+}
+
+// IterationKeyedMap returns a map whose {% for %} tag iteration values are its keys, instead of [key, value] pairs.
+// Use this to create a Go map with the semantics of a Ruby struct drop.
+func IterationKeyedMap(m map[string]interface{}) tags.IterationKeyedMap {
+	return m
 }

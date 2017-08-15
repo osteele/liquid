@@ -21,8 +21,9 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in false %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in 2 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in "str" %}{{ a }}.{% endfor %}`, ""},
-	{`{% for a in hash %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
+	{`{% for a in map %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1."},
 	{`{% for a in map_slice %}{{ a[0] }}={{ a[1] }}.{% endfor %}`, "a=1.b=2."},
+	{`{% for k in keyed_map %}{{ k }}={{ keyed_map[k] }}.{% endfor %}`, "a=1.b=2."},
 
 	// loop modifiers
 	{`{% for a in array reversed %}{{ a }}.{% endfor %}`, "third.second.first."},
@@ -111,7 +112,8 @@ var iterationErrorTests = []struct{ in, expected string }{
 var iterationTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
 	// hash has only one element, since iteration order is non-deterministic
-	"hash":      map[string]interface{}{"a": 1},
+	"map":       map[string]interface{}{"a": 1},
+	"keyed_map": IterationKeyedMap(map[string]interface{}{"a": 1, "b": 2}),
 	"map_slice": yaml.MapSlice{{Key: "a", Value: 1}, {Key: "b", Value: 2}},
 	"products": []string{
 		"Cool Shirt", "Alien Poster", "Batman Poster", "Bullseye Shirt", "Another Classic Vinyl", "Awesome Jeans",

@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"sort"
 
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
+
+// An IterationKeyedMap is a map that yields its keys, instead of (key, value) pairs, when iterated.
+type IterationKeyedMap map[string]interface{}
 
 const forloopVarName = "forloop"
 
@@ -174,6 +178,7 @@ func applyLoopModifiers(loop expressions.Loop, iter iterable) iterable {
 	}
 	return iter
 }
+
 func makeIterator(value interface{}) iterable {
 	if iter, ok := value.(iterable); ok {
 		return iter
@@ -181,8 +186,11 @@ func makeIterator(value interface{}) iterable {
 	if value == nil {
 		return nil
 	}
-	if ms, ok := value.(yaml.MapSlice); ok {
-		return mapSliceWrapper{ms}
+	switch value := value.(type) {
+	case IterationKeyedMap:
+		return makeIterationKeyedMap(value)
+	case yaml.MapSlice:
+		return mapSliceWrapper{value}
 	}
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Array, reflect.Slice:
@@ -198,6 +206,17 @@ func makeIterator(value interface{}) iterable {
 	default:
 		return nil
 	}
+}
+
+func makeIterationKeyedMap(m map[string]interface{}) iterable {
+	// Iteration chooses a random start, so we need a copy of the keys to iterate through them.
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	// Sorting isn't necessary to match Shopify liquid, but it simplifies debugging.
+	sort.Strings(keys)
+	return sliceWrapper(reflect.ValueOf(keys))
 }
 
 type sliceWrapper reflect.Value
