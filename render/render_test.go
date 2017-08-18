@@ -19,7 +19,7 @@ var renderTests = []struct{ in, out string }{
 	{`{{ false }}`, "false"},
 	{`{{ 12 }}`, "12"},
 	{`{{ 12.3 }}`, "12.3"},
-	{`{{ date }}`, "2015-07-17 15:04:05 +0000 UTC"},
+	{`{{ date }}`, "2015-07-17 15:04:05 +0000"},
 	{`{{ "string" }}`, "string"},
 	{`{{ array }}`, "firstsecondthird"},
 
@@ -58,7 +58,7 @@ var renderErrorTests = []struct{ in, out string }{
 
 var renderTestBindings = map[string]interface{}{
 	"array": []string{"first", "second", "third"},
-	"date":  timeMustParse("2015-07-17T15:04:05Z"),
+	"date":  time.Date(2015, 7, 17, 15, 4, 5, 123456789, time.UTC),
 	"int":   123,
 	"sort_prop": []map[string]interface{}{
 		{"weight": 1},
@@ -126,12 +126,4 @@ func addRenderTestTags(cfg Config) {
 			return fmt.Errorf("errblock error")
 		}, nil
 	})
-}
-
-func timeMustParse(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return t
 }

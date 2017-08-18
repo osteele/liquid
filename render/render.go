@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"time"
 
 	"github.com/osteele/liquid/values"
 )
@@ -100,6 +101,9 @@ func writeObject(w io.Writer, value interface{}) error {
 		return nil
 	}
 	switch value := value.(type) {
+	case time.Time:
+		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
+		return err
 	case []byte:
 		_, err := w.Write(value)
 		return err
