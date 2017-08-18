@@ -1,6 +1,7 @@
 package filters
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -14,7 +15,7 @@ func sortFilter(array []interface{}, key interface{}) []interface{} {
 	if key == nil {
 		values.Sort(result)
 	} else {
-		values.SortByProperty(result, key.(string), true)
+		values.SortByProperty(result, fmt.Sprint(key), true)
 	}
 	return result
 }

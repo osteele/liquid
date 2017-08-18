@@ -21,20 +21,19 @@ var filterTests = []struct {
 	{`nil | default: 2.99`, 2.99},
 	{`false | default: 2.99`, 2.99},
 	{`"" | default: 2.99`, 2.99},
-	{`empty_list | default: 2.99`, 2.99},
-	{`empty_hash | default: 2.99`, 2.99},
+	{`empty_array | default: 2.99`, 2.99},
+	{`empty_map | default: 2.99`, 2.99},
 	{`empty_map_slice | default: 2.99`, 2.99},
 	{`true | default: 2.99`, true},
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
 	{`fruits | default: 2.99 | join`, "apples, oranges, peaches, plums"},
-	// {`map_slice | default: 2.99`, "here"},
 
 	// array filters
-	// TODO sort_natural, uniq
 	{`pages | map: 'category' | join`, "business, celebrities, <nil>, lifestyle, sports, <nil>, technology"},
 	{`pages | map: 'category' | compact | join`, "business, celebrities, lifestyle, sports, technology"},
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
+	// FIXME:
 	// {`",John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	// {`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
@@ -42,14 +41,14 @@ var filterTests = []struct {
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
 	{`fruits | first`, "apples"},
 	{`fruits | last`, "plums"},
-	{`empty_list | first`, nil},
-	{`empty_list | last`, nil},
-	{`empty_list | last`, nil},
+	{`empty_array | first`, nil},
+	{`empty_array | last`, nil},
+	{`empty_array | last`, nil},
 	{`dup_ints | uniq | join`, "1, 2, 3"},
 	{`dup_strings | uniq | join`, "one, two, three"},
 	{`dup_maps | uniq | map: "name" | join`, "m1, m2, m3"},
-	{`mixed_case_list | sort_natural | join`, "a, B, c"},
-	{`mixed_case_objects | sort_natural: 'key' | map: 'key' | join`, "a, B, c"},
+	{`mixed_case_array | sort_natural | join`, "a, B, c"},
+	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a, B, c"},
 
 	// date filters``
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
@@ -62,11 +61,10 @@ var filterTests = []struct {
 	{`"2017-02-08 09:00:00" | date: "%d/%m"`, "08/02"},
 	{`"2017-02-08 09:00:00" | date: "%e/%m"`, " 8/02"},
 	{`"2017-02-08 09:00:00" | date: "%-d/%-m"`, "8/2"},
-	// FIXME something to do with timezones?
-	// {`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
-	// {`"2017-07-09" | date: "%d/%m"`, "09/07"},
-	// {`"2017-07-09" | date: "%e/%m"`, " 9/07"},
-	// {`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
+	{`"March 14, 2016" | date: "%b %d, %y"`, "Mar 14, 16"},
+	{`"2017-07-09" | date: "%d/%m"`, "09/07"},
+	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
+	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
 
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
@@ -145,7 +143,7 @@ var filterTests = []struct {
 
 	{`3 | modulo: 2`, 1},
 	{`24 | modulo: 7`, 3},
-	// {`183.357 | modulo: 12`, 3.357}, // TODO test suit use inexact
+	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
 	{`16 | divided_by: 4`, 4},
 	{`5 | divided_by: 3`, 1},
@@ -159,38 +157,43 @@ var filterTests = []struct {
 
 	// Jekyll extensions; added here for convenient testing
 	// TODO add this just to the test environment
-	{`obj | inspect`, `{"a":1}`},
+	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
 }
 
-func timeMustParse(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
 var filterTestBindings = map[string]interface{}{
-	"x":       123,
-	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
-	"article": map[string]interface{}{
-		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
-	},
-	"empty_list":      []interface{}{},
-	"empty_hash":      map[string]interface{}{},
+	"empty_array":     []interface{}{},
+	"empty_map":       map[string]interface{}{},
 	"empty_map_slice": yaml.MapSlice{},
-	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
-	"map_slice":       yaml.MapSlice{{Key: "first", Value: 1}, {Key: "second", Value: 2}},
-	"mixed_case_list": []string{"c", "a", "B"},
-	"mixed_case_objects": []map[string]interface{}{
+	"map": map[string]interface{}{
+		"a": 1,
+	},
+	// "map_slice":        yaml.MapSlice{{Key: "first", Value: 1}, {Key: "second", Value: 2}},
+	"mixed_case_array": []string{"c", "a", "B"},
+	"mixed_case_hash_values": []map[string]interface{}{
 		{"key": "c"},
 		{"key": "a"},
 		{"key": "B"},
 	},
-	"obj": map[string]interface{}{
-		"a": 1,
+	"sort_prop": []map[string]interface{}{
+		{"weight": 1},
+		{"weight": 5},
+		{"weight": 3},
+		{"weight": nil},
+	},
+	"string_with_newlines": "\nHello\nthere\n",
+	"dup_ints":             []int{1, 2, 1, 3},
+	"dup_strings":          []string{"one", "two", "one", "three"},
+
+	// for examples from liquid docs
+	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
+	"fruits":  []string{"apples", "oranges", "peaches", "plums"},
+	"article": map[string]interface{}{
+		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
+	},
+	"page": map[string]interface{}{
+		"title": "Introduction",
 	},
 	"pages": []map[string]interface{}{
 		{"name": "page 1", "category": "business"},
@@ -201,18 +204,6 @@ var filterTestBindings = map[string]interface{}{
 		{"name": "page 6"},
 		{"name": "page 7", "category": "technology"},
 	},
-	"sort_prop": []map[string]interface{}{
-		{"weight": 1},
-		{"weight": 5},
-		{"weight": 3},
-		{"weight": nil},
-	},
-	"string_with_newlines": "\nHello\nthere\n",
-	"page": map[string]interface{}{
-		"title": "Introduction",
-	},
-	"dup_ints":    []int{1, 2, 1, 3},
-	"dup_strings": []string{"one", "two", "one", "three"},
 }
 
 func TestFilters(t *testing.T) {
@@ -245,4 +236,12 @@ func TestFilters(t *testing.T) {
 			require.Equalf(t, expected, actual, test.in)
 		})
 	}
+}
+
+func timeMustParse(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }

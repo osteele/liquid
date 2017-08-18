@@ -25,7 +25,7 @@ type FilterDictionary interface {
 
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
-	// values
+	// value filters
 	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || values.IsEmpty(value) {
 			value = defaultValue
@@ -33,23 +33,21 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return value
 	})
 
-	// arrays
-	fd.AddFilter("compact", func(array []interface{}) interface{} {
-		out := []interface{}{}
+	// array filters
+	fd.AddFilter("compact", func(array []interface{}) (result []interface{}) {
 		for _, item := range array {
 			if item != nil {
-				out = append(out, item)
+				result = append(result, item)
 			}
 		}
-		return out
+		return
 	})
 	fd.AddFilter("join", joinFilter)
-	fd.AddFilter("map", func(array []map[string]interface{}, key string) interface{} {
-		out := []interface{}{}
+	fd.AddFilter("map", func(array []map[string]interface{}, key string) (result []interface{}) {
 		for _, obj := range array {
-			out = append(out, obj[key])
+			result = append(result, obj[key])
 		}
-		return out
+		return result
 	})
 	fd.AddFilter("reverse", reverseFilter)
 	fd.AddFilter("sort", sortFilter)
@@ -69,15 +67,13 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 	fd.AddFilter("uniq", uniqFilter)
 
-	// dates
+	// date filters
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
 		f := format("%a, %b %d, %y")
-		// TODO %\d*N -> truncated fractional seconds, default 9
-		f = strings.Replace(f, "%N", "", -1)
 		return tuesday.Strftime(f, t)
 	})
 
-	// numbers
+	// number filters
 	fd.AddFilter("abs", math.Abs)
 	fd.AddFilter("ceil", math.Ceil)
 	fd.AddFilter("floor", math.Floor)
@@ -107,15 +103,15 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return math.Floor(n*exp+0.5) / exp
 	})
 
-	// sequences
+	// sequence filters
 	fd.AddFilter("size", values.Length)
 
-	// strings
+	// string filters
 	fd.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
 	fd.AddFilter("capitalize", func(s, suffix string) string {
-		if len(s) < 1 {
+		if len(s) == 0 {
 			return s
 		}
 		return strings.ToUpper(s[:1]) + s[1:]
@@ -160,7 +156,6 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		// TODO this probably isn't sufficient
 		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
 	})
-	// TODO test case for this
 	fd.AddFilter("strip_newlines", func(s string) string {
 		return strings.Replace(s, "\n", "", -1)
 	})
@@ -181,7 +176,6 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
 		el := ellipsis("...")
 		n := length(15)
-		// re := regexp.MustCompile(fmt.Sprintf(`^\s*(?:\S+\s+){%d}`, n))
 		re := regexp.MustCompile(fmt.Sprintf(`^(?:\s*\S+){%d}`, n))
 		m := re.FindString(s)
 		if m == "" {
@@ -195,7 +189,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("url_encode", url.QueryEscape)
 	fd.AddFilter("url_decode", url.QueryUnescape)
 
-	// debugging extensions
+	// debugging filters
 	// inspect is from Jekyll
 	fd.AddFilter("inspect", func(value interface{}) string {
 		s, err := json.Marshal(value)
@@ -229,7 +223,6 @@ func reverseFilter(array []interface{}) interface{} {
 func splitFilter(s, sep string) interface{} {
 	result := strings.Split(s, sep)
 	// This matches Jekyll's observed behavior.
-	// TODO test case
 	if len(result) > 0 && result[len(result)-1] == "" {
 		result = result[:len(result)-1]
 	}

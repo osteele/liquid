@@ -6,45 +6,30 @@ import (
 	"io"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"
 )
 
-func addRenderTestTags(cfg Config) {
-	cfg.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
-		return func(w io.Writer, _ Context) error {
-			_, err := io.WriteString(w, "y")
-			return err
-		}, nil
-	})
-	cfg.AddTag("null", func(string) (func(io.Writer, Context) error, error) {
-		return func(io.Writer, Context) error { return nil }, nil
-	})
-	cfg.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
-		return func(w io.Writer, c Context) error {
-			return fmt.Errorf("errblock error")
-		}, nil
-	})
-}
-
 var renderTests = []struct{ in, out string }{
-	// literals representations
+	// literal representations
 	{`{{ nil }}`, ""},
 	{`{{ true }}`, "true"},
 	{`{{ false }}`, "false"},
 	{`{{ 12 }}`, "12"},
 	{`{{ 12.3 }}`, "12.3"},
-	{`{{ "abc" }}`, "abc"},
+	{`{{ date }}`, "2015-07-17 15:04:05 +0000 UTC"},
+	{`{{ "string" }}`, "string"},
 	{`{{ array }}`, "firstsecondthird"},
 
 	// variables and properties
-	{`{{ x }}`, "123"},
+	{`{{ int }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ array[1] }}`, "second"},
 
 	// whitespace control
-	// {` {{ 1 }} `, " 1 "},
+	{` {{ 1 }} `, " 1 "},
 	{` {{- 1 }} `, "1 "},
 	{` {{ 1 -}} `, " 1"},
 	{` {{- 1 -}} `, "1"},
@@ -72,12 +57,20 @@ var renderErrorTests = []struct{ in, out string }{
 }
 
 var renderTestBindings = map[string]interface{}{
-	"x":     123,
 	"array": []string{"first", "second", "third"},
-	"obj": map[string]interface{}{
-		"a": 1,
+	"date":  timeMustParse("2015-07-17T15:04:05Z"),
+	"int":   123,
+	"sort_prop": []map[string]interface{}{
+		{"weight": 1},
+		{"weight": 5},
+		{"weight": 3},
+		{"weight": nil},
 	},
+	// for examples from liquid docs
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
+	"page": map[string]interface{}{
+		"title": "Introduction",
+	},
 	"pages": []map[string]interface{}{
 		{"category": "business"},
 		{"category": "celebrities"},
@@ -86,15 +79,6 @@ var renderTestBindings = map[string]interface{}{
 		{"category": "sports"},
 		{},
 		{"category": "technology"},
-	},
-	"sort_prop": []map[string]interface{}{
-		{"weight": 1},
-		{"weight": 5},
-		{"weight": 3},
-		{"weight": nil},
-	},
-	"page": map[string]interface{}{
-		"title": "Introduction",
 	},
 }
 
@@ -125,4 +109,29 @@ func TestRenderErrors(t *testing.T) {
 			require.Containsf(t, err.Error(), test.out, test.in)
 		})
 	}
+}
+
+func addRenderTestTags(cfg Config) {
+	cfg.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, _ Context) error {
+			_, err := io.WriteString(w, "y")
+			return err
+		}, nil
+	})
+	cfg.AddTag("null", func(string) (func(io.Writer, Context) error, error) {
+		return func(io.Writer, Context) error { return nil }, nil
+	})
+	cfg.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			return fmt.Errorf("errblock error")
+		}, nil
+	})
+}
+
+func timeMustParse(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
