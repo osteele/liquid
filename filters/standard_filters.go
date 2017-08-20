@@ -204,10 +204,12 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 }
 
 func joinFilter(array []interface{}, sep func(string) string) interface{} {
-	a := make([]string, len(array))
-	s := sep(", ")
-	for i, x := range array {
-		a[i] = fmt.Sprint(x)
+	a := make([]string, 0, len(array))
+	s := sep(" ")
+	for _, x := range array {
+		if x != nil {
+			a = append(a, fmt.Sprint(x))
+		}
 	}
 	return strings.Join(a, s)
 }

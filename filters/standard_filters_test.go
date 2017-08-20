@@ -27,15 +27,14 @@ var filterTests = []struct {
 	{`true | default: 2.99`, true},
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
-	{`fruits | default: 2.99 | join`, "apples, oranges, peaches, plums"},
+	{`fruits | default: 2.99 | join`, "apples oranges peaches plums"},
 
 	// array filters
-	{`pages | map: 'category' | join`, "business, celebrities, <nil>, lifestyle, sports, <nil>, technology"},
-	{`pages | map: 'category' | compact | join`, "business, celebrities, lifestyle, sports, technology"},
+	{`pages | map: 'category' | join`, "business celebrities lifestyle sports technology"},
+	{`pages | map: 'category' | compact | join`, "business celebrities lifestyle sports technology"},
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
-	// FIXME:
-	// {`",John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
-	// {`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
+	{`",John, Paul, George, Ringo" | split: ", " | join: " and "`, ",John and Paul and George and Ringo"},
+	{`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo,"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
 	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
@@ -44,11 +43,11 @@ var filterTests = []struct {
 	{`empty_array | first`, nil},
 	{`empty_array | last`, nil},
 	{`empty_array | last`, nil},
-	{`dup_ints | uniq | join`, "1, 2, 3"},
-	{`dup_strings | uniq | join`, "one, two, three"},
-	{`dup_maps | uniq | map: "name" | join`, "m1, m2, m3"},
-	{`mixed_case_array | sort_natural | join`, "a, B, c"},
-	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a, B, c"},
+	{`dup_ints | uniq | join`, "1 2 3"},
+	{`dup_strings | uniq | join`, "one two three"},
+	{`dup_maps | uniq | map: "name" | join`, "m1 m2 m3"},
+	{`mixed_case_array | sort_natural | join`, "a B c"},
+	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a B c"},
 
 	// date filters``
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
