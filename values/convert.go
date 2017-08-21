@@ -34,12 +34,12 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 // handle circular references.
 func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
 	value = ToLiquid(value)
-	r := reflect.ValueOf(value)
+	rv := reflect.ValueOf(value)
 	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
-	if typ.Kind() != reflect.String && value != nil && r.Type().ConvertibleTo(typ) {
-		return r.Convert(typ).Interface(), nil
+	if typ.Kind() != reflect.String && value != nil && rv.Type().ConvertibleTo(typ) {
+		return rv.Convert(typ).Interface(), nil
 	}
-	if typ == timeType && r.Kind() == reflect.String {
+	if typ == timeType && rv.Kind() == reflect.String {
 		return ParseDate(value.(string))
 	}
 	// currently unused:
@@ -66,8 +66,8 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 			return strconv.ParseFloat(value, 64)
 		}
 	case reflect.Map:
-		out := reflect.MakeMap(typ)
-		for _, key := range r.MapKeys() {
+		result := reflect.MakeMap(typ)
+		for _, key := range rv.MapKeys() {
 			if typ.Key().Kind() == reflect.String {
 				key = reflect.ValueOf(fmt.Sprint(key))
 			}
@@ -75,38 +75,38 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 				return nil, conversionError("map key", key, typ.Key())
 			}
 			key = key.Convert(typ.Key())
-			value := r.MapIndex(key)
+			value := rv.MapIndex(key)
 			if typ.Elem().Kind() == reflect.String {
 				value = reflect.ValueOf(fmt.Sprint(value))
 			}
 			if !value.Type().ConvertibleTo(typ.Elem()) {
 				return nil, conversionError("map value", value, typ.Elem())
 			}
-			out.SetMapIndex(key, value.Convert(typ.Elem()))
+			result.SetMapIndex(key, value.Convert(typ.Elem()))
 		}
-		return out.Interface(), nil
+		return result.Interface(), nil
 	case reflect.Slice:
-		switch r.Kind() {
+		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
-			out := reflect.MakeSlice(typ, 0, r.Len())
-			for i := 0; i < r.Len(); i++ {
-				item, err := Convert(r.Index(i).Interface(), typ.Elem())
+			result := reflect.MakeSlice(typ, 0, rv.Len())
+			for i := 0; i < rv.Len(); i++ {
+				item, err := Convert(rv.Index(i).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err
 				}
-				out = reflect.Append(out, reflect.ValueOf(item))
+				result = reflect.Append(result, reflect.ValueOf(item))
 			}
-			return out.Interface(), nil
+			return result.Interface(), nil
 		case reflect.Map:
-			out := reflect.MakeSlice(typ, 0, r.Len())
-			for _, key := range r.MapKeys() {
-				item, err := Convert(r.MapIndex(key).Interface(), typ.Elem())
+			result := reflect.MakeSlice(typ, 0, rv.Len())
+			for _, key := range rv.MapKeys() {
+				item, err := Convert(rv.MapIndex(key).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err
 				}
-				out = reflect.Append(out, reflect.ValueOf(item))
+				result = reflect.Append(result, reflect.ValueOf(item))
 			}
-			return out.Interface(), nil
+			return result.Interface(), nil
 		}
 	case reflect.String:
 		switch value := value.(type) {

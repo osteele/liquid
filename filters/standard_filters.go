@@ -34,8 +34,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 
 	// array filters
-	fd.AddFilter("compact", func(array []interface{}) (result []interface{}) {
-		for _, item := range array {
+	fd.AddFilter("compact", func(a []interface{}) (result []interface{}) {
+		for _, item := range a {
 			if item != nil {
 				result = append(result, item)
 			}
@@ -43,8 +43,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return
 	})
 	fd.AddFilter("join", joinFilter)
-	fd.AddFilter("map", func(array []map[string]interface{}, key string) (result []interface{}) {
-		for _, obj := range array {
+	fd.AddFilter("map", func(a []map[string]interface{}, key string) (result []interface{}) {
+		for _, obj := range a {
 			result = append(result, obj[key])
 		}
 		return result
@@ -53,17 +53,17 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	fd.AddFilter("first", func(array []interface{}) interface{} {
-		if len(array) == 0 {
+	fd.AddFilter("first", func(a []interface{}) interface{} {
+		if len(a) == 0 {
 			return nil
 		}
-		return array[0]
+		return a[0]
 	})
-	fd.AddFilter("last", func(array []interface{}) interface{} {
-		if len(array) == 0 {
+	fd.AddFilter("last", func(a []interface{}) interface{} {
+		if len(a) == 0 {
 			return nil
 		}
-		return array[len(array)-1]
+		return a[len(a)-1]
 	})
 	fd.AddFilter("uniq", uniqFilter)
 
@@ -203,20 +203,20 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 }
 
-func joinFilter(array []interface{}, sep func(string) string) interface{} {
-	a := make([]string, 0, len(array))
+func joinFilter(a []interface{}, sep func(string) string) interface{} {
+	ss := make([]string, 0, len(a))
 	s := sep(" ")
-	for _, x := range array {
-		if x != nil {
-			a = append(a, fmt.Sprint(x))
+	for _, v := range a {
+		if v != nil {
+			ss = append(ss, fmt.Sprint(v))
 		}
 	}
-	return strings.Join(a, s)
+	return strings.Join(ss, s)
 }
 
-func reverseFilter(array []interface{}) interface{} {
-	result := make([]interface{}, len(array))
-	for i, x := range array {
+func reverseFilter(a []interface{}) interface{} {
+	result := make([]interface{}, len(a))
+	for i, x := range a {
 		result[len(result)-1-i] = x
 	}
 	return result
@@ -231,7 +231,7 @@ func splitFilter(s, sep string) interface{} {
 	return result
 }
 
-func uniqFilter(array []interface{}) (result []interface{}) {
+func uniqFilter(a []interface{}) (result []interface{}) {
 	seenMap := map[interface{}]bool{}
 	seen := func(item interface{}) bool {
 		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
@@ -249,7 +249,7 @@ func uniqFilter(array []interface{}) (result []interface{}) {
 		}
 		return false
 	}
-	for _, item := range array {
+	for _, item := range a {
 		if !seen(item) {
 			result = append(result, item)
 		}

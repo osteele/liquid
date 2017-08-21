@@ -49,7 +49,7 @@ var filterTests = []struct {
 	{`mixed_case_array | sort_natural | join`, "a B c"},
 	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a B c"},
 
-	// date filters``
+	// date filters
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%Y"`, "2015"},
