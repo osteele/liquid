@@ -70,6 +70,34 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 	case reflect.Map:
 		et := typ.Elem()
 		result := reflect.MakeMap(typ)
+		if ms, ok := value.(yaml.MapSlice); ok {
+			for _, item := range ms {
+				var k, v reflect.Value
+				if item.Key == nil {
+					k = reflect.Zero(typ.Key())
+				} else {
+					kc, err := Convert(item.Key, typ.Key())
+					if err != nil {
+						return nil, err
+					}
+					k = reflect.ValueOf(kc)
+				}
+				if item.Value == nil {
+					v = reflect.Zero(et)
+				} else {
+					ec, err := Convert(item.Value, et)
+					if err != nil {
+						return nil, err
+					}
+					v = reflect.ValueOf(ec)
+				}
+				result.SetMapIndex(k, v)
+			}
+			return result.Interface(), nil
+		}
+		if rv.Kind() != reflect.Map {
+			return nil, conversionError("", value, typ)
+		}
 		for _, key := range rv.MapKeys() {
 			if typ.Key().Kind() == reflect.String {
 				key = reflect.ValueOf(fmt.Sprint(key))
@@ -83,7 +111,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 				ev = reflect.ValueOf(fmt.Sprint(ev))
 			}
 			if !ev.Type().ConvertibleTo(et) {
-				return nil, conversionError("map value", ev, et)
+				return nil, conversionError("map element", ev, et)
 			}
 			result.SetMapIndex(key, ev.Convert(et))
 		}
@@ -93,7 +121,6 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 		if ms, ok := value.(yaml.MapSlice); ok {
 			result := reflect.MakeSlice(typ, 0, rv.Len())
 			for _, item := range ms {
-				// TODO something more nuanced
 				if item.Value == nil {
 					if et.Kind() >= reflect.Array {
 						ev := reflect.Zero(et)
@@ -106,7 +133,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 					ev = reflect.ValueOf(fmt.Sprint(ev))
 				}
 				if !ev.Type().ConvertibleTo(et) {
-					return nil, conversionError("map value", ev, et)
+					return nil, conversionError("slice element", ev, et)
 				}
 				result = reflect.Append(result, ev.Convert(et))
 			}

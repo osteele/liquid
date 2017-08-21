@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	yaml "gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,45 +18,64 @@ func (c redConvertible) ToLiquid() interface{} {
 	return "red"
 }
 
-func timeMustParse(s string) time.Time {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
-var convertTests = []struct {
+var convertProtoTests = []struct {
 	value, proto, expected interface{}
 }{
 	{1, 1.0, float64(1)},
 	{"2", 1, int(2)},
 	{"1.2", 1.0, float64(1.2)},
-	{true, 1, 1},
-	{false, 1, 0},
-	{nil, true, false},
-	{0, true, true},
-	{"", true, true},
-	{1, "", "1"},
-	{false, "", "false"},
-	{true, "", "true"},
-	{"string", "", "string"},
-	{[]int{1, 2}, []string{}, []string{"1", "2"}},
-	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
-	{redConvertible{}, "", "red"},
 }
+
+var convertTests = []struct {
+	value, expected interface{}
+}{
+	{nil, false},
+	{true, 1},
+	{false, 0},
+	{0, true},
+	{"", true},
+	{1, "1"},
+	{false, "false"},
+	{true, "true"},
+	{"string", "string"},
+	{[]int{1, 2}, []interface{}{1, 2}},
+	{[]interface{}{1, 2}, []int{1, 2}},
+	{[]int{1, 2}, []string{"1", "2"}},
+	{yaml.MapSlice{{Key: 1, Value: 1}}, []interface{}{1}},
+	{yaml.MapSlice{{Key: 1, Value: 1}}, []string{"1"}},
+	{yaml.MapSlice{{Key: 1, Value: "a"}}, []string{"a"}},
+	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[interface{}]interface{}{1: "a"}},
+	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[int]string{1: "a"}},
+	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[string]string{"1": "a"}},
+	{yaml.MapSlice{{Key: "a", Value: 1}}, map[string]string{"a": "1"}},
+	{yaml.MapSlice{{Key: "a", Value: nil}}, map[string]interface{}{"a": nil}},
+	{yaml.MapSlice{{Key: nil, Value: 1}}, map[interface{}]string{nil: "1"}},
+	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
+	{redConvertible{}, "red"},
+}
+
 var convertErrorTests = []struct {
 	value, proto, expected interface{}
 }{
 	{map[string]bool{"k": true}, map[int]bool{}, "map key"},
-	{map[string]string{"k": "v"}, map[string]int{}, "map value"},
-	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, "map value"},
+	{map[string]string{"k": "v"}, map[string]int{}, "map element"},
+	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, "map element"},
 }
 
 func TestConvert(t *testing.T) {
-	for i, test := range convertTests {
+	for i, test := range convertProtoTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			typ := reflect.TypeOf(test.proto)
+			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
+			value, err := Convert(test.value, typ)
+			require.NoErrorf(t, err, name)
+			require.Equalf(t, test.expected, value, name)
+		})
+	}
+
+	for i, test := range convertTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			typ := reflect.TypeOf(test.expected)
 			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
 			value, err := Convert(test.value, typ)
 			require.NoErrorf(t, err, name)
@@ -129,4 +150,12 @@ func TestMustConvertItem(t *testing.T) {
 	require.Equal(t, "2", v)
 
 	require.Panics(t, func() { MustConvertItem("x", []int{}) })
+}
+
+func timeMustParse(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
 }
