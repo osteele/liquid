@@ -49,6 +49,16 @@ var filterTests = []struct {
 	{`mixed_case_array | sort_natural | join`, "a B c"},
 	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a B c"},
 
+	{`map_slice_has_nil | compact | join`, `a b`},
+	{`map_slice_2 | first`, `b`},
+	{`map_slice_2 | last`, `a`},
+	{`map_slice_2 | join`, `b a`},
+	{`map_slice_objs | map: "key" | join`, `a b`},
+	{`map_slice_2 | reverse | join`, `a b`},
+	{`map_slice_2 | sort | join`, `a b`},
+	{`map_slice_dup | join`, `a a b`},
+	{`map_slice_dup | uniq | join`, `a b`},
+
 	// date filters
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
@@ -168,7 +178,13 @@ var filterTestBindings = map[string]interface{}{
 	"map": map[string]interface{}{
 		"a": 1,
 	},
-	// "map_slice":        yaml.MapSlice{{Key: "first", Value: 1}, {Key: "second", Value: 2}},
+	"map_slice_2":       yaml.MapSlice{{Key: 1, Value: "b"}, {Key: 2, Value: "a"}},
+	"map_slice_dup":     yaml.MapSlice{{Key: 1, Value: "a"}, {Key: 2, Value: "a"}, {Key: 3, Value: "b"}},
+	"map_slice_has_nil": yaml.MapSlice{{Key: 1, Value: "a"}, {Key: 2, Value: nil}, {Key: 3, Value: "b"}},
+	"map_slice_objs": yaml.MapSlice{
+		{Key: 1, Value: map[string]interface{}{"key": "a"}},
+		{Key: 2, Value: map[string]interface{}{"key": "b"}},
+	},
 	"mixed_case_array": []string{"c", "a", "B"},
 	"mixed_case_hash_values": []map[string]interface{}{
 		{"key": "c"},

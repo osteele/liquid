@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"time"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 // A TypeError is an error during type conversion.
@@ -66,6 +68,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 			return strconv.ParseFloat(value, 64)
 		}
 	case reflect.Map:
+		et := typ.Elem()
 		result := reflect.MakeMap(typ)
 		for _, key := range rv.MapKeys() {
 			if typ.Key().Kind() == reflect.String {
@@ -75,17 +78,40 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 				return nil, conversionError("map key", key, typ.Key())
 			}
 			key = key.Convert(typ.Key())
-			value := rv.MapIndex(key)
-			if typ.Elem().Kind() == reflect.String {
-				value = reflect.ValueOf(fmt.Sprint(value))
+			ev := rv.MapIndex(key)
+			if et.Kind() == reflect.String {
+				ev = reflect.ValueOf(fmt.Sprint(ev))
 			}
-			if !value.Type().ConvertibleTo(typ.Elem()) {
-				return nil, conversionError("map value", value, typ.Elem())
+			if !ev.Type().ConvertibleTo(et) {
+				return nil, conversionError("map value", ev, et)
 			}
-			result.SetMapIndex(key, value.Convert(typ.Elem()))
+			result.SetMapIndex(key, ev.Convert(et))
 		}
 		return result.Interface(), nil
 	case reflect.Slice:
+		et := typ.Elem()
+		if ms, ok := value.(yaml.MapSlice); ok {
+			result := reflect.MakeSlice(typ, 0, rv.Len())
+			for _, item := range ms {
+				// TODO something more nuanced
+				if item.Value == nil {
+					if et.Kind() >= reflect.Array {
+						ev := reflect.Zero(et)
+						result = reflect.Append(result, ev.Convert(et))
+					}
+					continue
+				}
+				ev := reflect.ValueOf(item.Value)
+				if et.Kind() == reflect.String {
+					ev = reflect.ValueOf(fmt.Sprint(ev))
+				}
+				if !ev.Type().ConvertibleTo(et) {
+					return nil, conversionError("map value", ev, et)
+				}
+				result = reflect.Append(result, ev.Convert(et))
+			}
+			return result.Interface(), nil
+		}
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			result := reflect.MakeSlice(typ, 0, rv.Len())
