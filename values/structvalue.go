@@ -6,57 +6,57 @@ import (
 
 type structValue struct{ wrapperValue }
 
-func (v structValue) IndexValue(index Value) Value {
-	return v.PropertyValue(index)
+func (sv structValue) IndexValue(index Value) Value {
+	return sv.PropertyValue(index)
 }
 
-func (v structValue) Contains(elem Value) bool {
+func (sv structValue) Contains(elem Value) bool {
 	name, ok := elem.Interface().(string)
 	if !ok {
 		return false
 	}
-	rt := reflect.TypeOf(v.value)
-	if rt.Kind() == reflect.Ptr {
-		if _, found := rt.MethodByName(name); found {
+	st := reflect.TypeOf(sv.value)
+	if st.Kind() == reflect.Ptr {
+		if _, found := st.MethodByName(name); found {
 			return true
 		}
-		rt = rt.Elem()
+		st = st.Elem()
 	}
-	if _, found := rt.MethodByName(name); found {
+	if _, found := st.MethodByName(name); found {
 		return true
 	}
-	if _, found := v.findField(name); found {
+	if _, found := sv.findField(name); found {
 		return true
 	}
 	return false
 }
 
-func (v structValue) PropertyValue(index Value) Value {
+func (sv structValue) PropertyValue(index Value) Value {
 	name, ok := index.Interface().(string)
 	if !ok {
 		return nilValue
 	}
-	rv := reflect.ValueOf(v.value)
-	rt := reflect.TypeOf(v.value)
-	if rt.Kind() == reflect.Ptr {
-		if _, found := rt.MethodByName(name); found {
-			m := rv.MethodByName(name)
-			return v.invoke(m)
+	sr := reflect.ValueOf(sv.value)
+	st := reflect.TypeOf(sv.value)
+	if st.Kind() == reflect.Ptr {
+		if _, found := st.MethodByName(name); found {
+			m := sr.MethodByName(name)
+			return sv.invoke(m)
 		}
-		rt = rt.Elem()
-		rv = rv.Elem()
-		if !rv.IsValid() {
+		st = st.Elem()
+		sr = sr.Elem()
+		if !sr.IsValid() {
 			return nilValue
 		}
 	}
-	if _, found := rt.MethodByName(name); found {
-		m := rv.MethodByName(name)
-		return v.invoke(m)
+	if _, ok := st.MethodByName(name); ok {
+		m := sr.MethodByName(name)
+		return sv.invoke(m)
 	}
-	if field, found := v.findField(name); found {
-		fv := rv.FieldByName(field.Name)
+	if field, ok := sv.findField(name); ok {
+		fv := sr.FieldByName(field.Name)
 		if fv.Kind() == reflect.Func {
-			return v.invoke(fv)
+			return sv.invoke(fv)
 		}
 		return ValueOf(fv.Interface())
 	}
@@ -66,18 +66,18 @@ func (v structValue) PropertyValue(index Value) Value {
 const tagKey = "liquid"
 
 // like FieldByName, but obeys `liquid:"name"` tags
-func (v structValue) findField(name string) (*reflect.StructField, bool) {
-	rt := reflect.TypeOf(v.value)
-	if rt.Kind() == reflect.Ptr {
-		rt = rt.Elem()
+func (sv structValue) findField(name string) (*reflect.StructField, bool) {
+	sr := reflect.TypeOf(sv.value)
+	if sr.Kind() == reflect.Ptr {
+		sr = sr.Elem()
 	}
-	if field, found := rt.FieldByName(name); found {
+	if field, ok := sr.FieldByName(name); ok {
 		if _, ok := field.Tag.Lookup(tagKey); !ok {
 			return &field, true
 		}
 	}
-	for i, n := 0, rt.NumField(); i < n; i++ {
-		field := rt.Field(i)
+	for i, n := 0, sr.NumField(); i < n; i++ {
+		field := sr.Field(i)
 		if field.Tag.Get(tagKey) == name {
 			return &field, true
 		}
@@ -85,7 +85,7 @@ func (v structValue) findField(name string) (*reflect.StructField, bool) {
 	return nil, false
 }
 
-func (v structValue) invoke(fv reflect.Value) Value {
+func (sv structValue) invoke(fv reflect.Value) Value {
 	if fv.IsNil() {
 		return nilValue
 	}

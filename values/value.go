@@ -118,21 +118,21 @@ type arrayValue struct{ wrapperValue }
 type mapValue struct{ wrapperValue }
 type stringValue struct{ wrapperValue }
 
-func (v arrayValue) Contains(elem Value) bool {
-	rv := reflect.ValueOf(v.value)
-	e := elem.Interface()
-	for i, len := 0, rv.Len(); i < len; i++ {
-		if Equal(rv.Index(i).Interface(), e) {
+func (av arrayValue) Contains(ev Value) bool {
+	ar := reflect.ValueOf(av.value)
+	e := ev.Interface()
+	for i, len := 0, ar.Len(); i < len; i++ {
+		if Equal(ar.Index(i).Interface(), e) {
 			return true
 		}
 	}
 	return false
 }
 
-func (v arrayValue) IndexValue(index Value) Value {
-	rv := reflect.ValueOf(v.value)
+func (av arrayValue) IndexValue(iv Value) Value {
+	ar := reflect.ValueOf(av.value)
 	var n int
-	switch ix := index.Interface().(type) {
+	switch ix := iv.Interface().(type) {
 	case int:
 		n = ix
 	case float32:
@@ -144,45 +144,45 @@ func (v arrayValue) IndexValue(index Value) Value {
 		return nilValue
 	}
 	if n < 0 {
-		n += rv.Len()
+		n += ar.Len()
 	}
-	if 0 <= n && n < rv.Len() {
-		return ValueOf(rv.Index(n).Interface())
+	if 0 <= n && n < ar.Len() {
+		return ValueOf(ar.Index(n).Interface())
 	}
 	return nilValue
 }
 
-func (v arrayValue) PropertyValue(index Value) Value {
-	rv := reflect.ValueOf(v.value)
-	switch index.Interface() {
+func (av arrayValue) PropertyValue(iv Value) Value {
+	ar := reflect.ValueOf(av.value)
+	switch iv.Interface() {
 	case firstKey:
-		if rv.Len() > 0 {
-			return ValueOf(rv.Index(0).Interface())
+		if ar.Len() > 0 {
+			return ValueOf(ar.Index(0).Interface())
 		}
 	case lastKey:
-		if rv.Len() > 0 {
-			return ValueOf(rv.Index(rv.Len() - 1).Interface())
+		if ar.Len() > 0 {
+			return ValueOf(ar.Index(ar.Len() - 1).Interface())
 		}
 	case sizeKey:
-		return ValueOf(rv.Len())
+		return ValueOf(ar.Len())
 	}
 	return nilValue
 }
 
-func (v mapValue) Contains(index Value) bool {
-	rv := reflect.ValueOf(v.value)
-	iv := reflect.ValueOf(index.Interface())
-	if iv.IsValid() && rv.Type().Key() == iv.Type() {
-		return rv.MapIndex(iv).IsValid()
+func (mv mapValue) Contains(iv Value) bool {
+	mr := reflect.ValueOf(mv.value)
+	ir := reflect.ValueOf(iv.Interface())
+	if ir.IsValid() && mr.Type().Key() == ir.Type() {
+		return mr.MapIndex(ir).IsValid()
 	}
 	return false
 }
 
-func (v mapValue) IndexValue(index Value) Value {
-	rv := reflect.ValueOf(v.value)
-	iv := reflect.ValueOf(index.Interface())
-	if iv.IsValid() && iv.Type().ConvertibleTo(rv.Type().Key()) {
-		ev := rv.MapIndex(iv.Convert(rv.Type().Key()))
+func (mv mapValue) IndexValue(iv Value) Value {
+	mr := reflect.ValueOf(mv.value)
+	ir := reflect.ValueOf(iv.Interface())
+	if ir.IsValid() && ir.Type().ConvertibleTo(mr.Type().Key()) {
+		ev := mr.MapIndex(ir.Convert(mr.Type().Key()))
 		if ev.IsValid() {
 			return ValueOf(ev.Interface())
 		}
@@ -190,34 +190,34 @@ func (v mapValue) IndexValue(index Value) Value {
 	return nilValue
 }
 
-func (v mapValue) PropertyValue(index Value) Value {
-	rv := reflect.ValueOf(v.Interface())
-	iv := reflect.ValueOf(index.Interface())
-	if !iv.IsValid() {
+func (mv mapValue) PropertyValue(iv Value) Value {
+	mr := reflect.ValueOf(mv.Interface())
+	ir := reflect.ValueOf(iv.Interface())
+	if !ir.IsValid() {
 		return nilValue
 	}
-	ev := rv.MapIndex(iv)
+	ev := mr.MapIndex(ir)
 	switch {
 	case ev.IsValid():
 		return ValueOf(ev.Interface())
-	case index.Interface() == sizeKey:
-		return ValueOf(rv.Len())
+	case iv.Interface() == sizeKey:
+		return ValueOf(mr.Len())
 	default:
 		return nilValue
 	}
 }
 
-func (v stringValue) Contains(substr Value) bool {
+func (sv stringValue) Contains(substr Value) bool {
 	s, ok := substr.Interface().(string)
 	if !ok {
 		s = fmt.Sprint(substr.Interface())
 	}
-	return strings.Contains(v.value.(string), s)
+	return strings.Contains(sv.value.(string), s)
 }
 
-func (v stringValue) PropertyValue(index Value) Value {
-	if index.Interface() == sizeKey {
-		return ValueOf(len(v.value.(string)))
+func (sv stringValue) PropertyValue(iv Value) Value {
+	if iv.Interface() == sizeKey {
+		return ValueOf(len(sv.value.(string)))
 	}
 	return nilValue
 }
