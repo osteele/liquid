@@ -181,10 +181,11 @@ func (mv mapValue) Contains(iv Value) bool {
 func (mv mapValue) IndexValue(iv Value) Value {
 	mr := reflect.ValueOf(mv.value)
 	ir := reflect.ValueOf(iv.Interface())
-	if ir.IsValid() && ir.Type().ConvertibleTo(mr.Type().Key()) {
-		ev := mr.MapIndex(ir.Convert(mr.Type().Key()))
-		if ev.IsValid() {
-			return ValueOf(ev.Interface())
+	kt := mr.Type().Key()
+	if ir.IsValid() && ir.Type().ConvertibleTo(kt) && ir.Type().Comparable() {
+		er := mr.MapIndex(ir.Convert(kt))
+		if er.IsValid() {
+			return ValueOf(er.Interface())
 		}
 	}
 	return nilValue
@@ -196,10 +197,10 @@ func (mv mapValue) PropertyValue(iv Value) Value {
 	if !ir.IsValid() {
 		return nilValue
 	}
-	ev := mr.MapIndex(ir)
+	er := mr.MapIndex(ir)
 	switch {
-	case ev.IsValid():
-		return ValueOf(ev.Interface())
+	case er.IsValid():
+		return ValueOf(er.Interface())
 	case iv.Interface() == sizeKey:
 		return ValueOf(mr.Len())
 	default:

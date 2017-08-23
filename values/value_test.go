@@ -70,6 +70,8 @@ func TestValue_IndexValue(t *testing.T) {
 	hv = ValueOf(map[interface{}]interface{}{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf(nil)).Interface())
+	require.Nil(t, hv.IndexValue(ValueOf([]string{})).Interface())
+	require.Nil(t, hv.IndexValue(ValueOf(struct{}{})).Interface())
 
 	// ptr to map
 	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
