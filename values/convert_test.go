@@ -18,26 +18,28 @@ func (c redConvertible) ToLiquid() interface{} {
 	return "red"
 }
 
-var convertProtoTests = []struct {
-	value, proto, expected interface{}
-}{
-	{1, 1.0, float64(1)},
-	{"2", 1, int(2)},
-	{"1.2", 1.0, float64(1.2)},
-}
-
 var convertTests = []struct {
 	value, expected interface{}
 }{
 	{nil, false},
-	{true, 1},
 	{false, 0},
-	{0, true},
-	{"", true},
-	{1, "1"},
-	{false, "false"},
+	{true, 1},
+	{false, false},
+	{true, true},
 	{true, "true"},
+	{false, "false"},
+	{0, true},
+	{2, 2},
+	{2, "2"},
+	{2, 2.0},
+	{"", true},
+	{"2", 2},
+	{"2", 2.0},
+	{"2.0", 2.0},
+	{"2.1", 2.1},
 	{"string", "string"},
+	{[]interface{}{1, 2}, []interface{}{1, 2}},
+	{[]int{1, 2}, []int{1, 2}},
 	{[]int{1, 2}, []interface{}{1, 2}},
 	{[]interface{}{1, 2}, []int{1, 2}},
 	{[]int{1, 2}, []string{"1", "2"}},
@@ -63,16 +65,6 @@ var convertErrorTests = []struct {
 }
 
 func TestConvert(t *testing.T) {
-	for i, test := range convertProtoTests {
-		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			typ := reflect.TypeOf(test.proto)
-			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
-			value, err := Convert(test.value, typ)
-			require.NoErrorf(t, err, name)
-			require.Equalf(t, test.expected, value, name)
-		})
-	}
-
 	for i, test := range convertTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			typ := reflect.TypeOf(test.expected)
