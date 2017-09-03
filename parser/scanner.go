@@ -61,11 +61,11 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 
 func formTokenMatcher(delims []string) *regexp.Regexp {
 	// On ending a tag we need to exclude anything that appears to be ending a tag that's nested
-	// inside the tag. We form the exlusion expression here.
+	// inside the tag. We form the exclusion expression here.
 	// For example, if delims is default the exclusion expression is "[^%]|%[^}]".
 	// If tagRight is "TAG!RIGHT" then expression is
 	// [^T]|T[^A]|TA[^G]|TAG[^!]|TAG![^R]|TAG!R[^I]|TAG!RI[^G]|TAG!RIG[^H]|TAG!RIGH[^T]
-	exclusion := []string{}
+	var exclusion []string
 	for idx, val := range delims[3] {
 		exclusion = append(exclusion, "[^"+string(val)+"]")
 		if idx > 0 {
