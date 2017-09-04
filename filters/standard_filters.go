@@ -222,10 +222,16 @@ func reverseFilter(a []interface{}) interface{} {
 	return result
 }
 
+var wsre = regexp.MustCompile(`[[:space:]]+`)
+
 func splitFilter(s, sep string) interface{} {
 	result := strings.Split(s, sep)
-	// This matches Jekyll's observed behavior.
-	if len(result) > 0 && result[len(result)-1] == "" {
+	if sep == " " {
+		// Special case for Ruby, therefore Liquid
+		result = wsre.Split(s, -1)
+	}
+	// This matches Ruby / Liquid / Jekyll's observed behavior.
+	for len(result) > 0 && result[len(result)-1] == "" {
 		result = result[:len(result)-1]
 	}
 	return result
