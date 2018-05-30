@@ -54,3 +54,25 @@ func TestCall_optional(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "5,10.", value)
 }
+
+func TestCall_variadic(t *testing.T) {
+	fn := func(sep func(string) string, args ...string) string {
+		return "[" + strings.Join(args, sep(",")) + "]"
+	}
+
+	value, err := Call(reflect.ValueOf(fn), []interface{}{",", "a"})
+	require.NoError(t, err)
+	require.Equal(t, "[a]", value)
+
+	value, err = Call(reflect.ValueOf(fn), []interface{}{",", "a", "b"})
+	require.NoError(t, err)
+	require.Equal(t, "[a,b]", value)
+
+	value, err = Call(reflect.ValueOf(fn), []interface{}{","})
+	require.NoError(t, err)
+	require.Equal(t, "[]", value)
+
+	value, err = Call(reflect.ValueOf(fn), []interface{}{})
+	require.NoError(t, err)
+	require.Equal(t, "[]", value)
+}

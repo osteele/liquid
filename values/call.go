@@ -47,7 +47,11 @@ func convertCallArguments(fn reflect.Value, args []interface{}) (results []refle
 		return nil, &CallParityError{NumArgs: len(args), NumParams: rt.NumIn()}
 	}
 	if rt.IsVariadic() {
-		results = make([]reflect.Value, len(args))
+		numArgs, minArgs := len(args), rt.NumIn()-1
+		if numArgs < minArgs {
+			numArgs = minArgs
+		}
+		results = make([]reflect.Value, numArgs)
 	} else {
 		results = make([]reflect.Value, rt.NumIn())
 	}
@@ -67,8 +71,9 @@ func convertCallArguments(fn reflect.Value, args []interface{}) (results []refle
 			results[i] = reflect.ValueOf(MustConvert(arg, typ))
 		}
 	}
+
 	// create zeros and default functions for parameters without arguments
-	for i := len(args); i < rt.NumIn(); i++ {
+	for i := len(args); i < len(results); i++ {
 		typ := rt.In(i)
 		switch {
 		case isDefaultFunctionType(typ):
