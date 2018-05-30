@@ -25,6 +25,7 @@ It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) 
     - [Other Implementations](#other-implementations)
         - [Go](#go)
         - [Other Languages](#other-languages)
+    - [Contributors](#contributors)
     - [License](#license)
 
 <!-- /TOC -->
@@ -91,7 +92,7 @@ hello!
 Any Go value can be used as a variable value. These values have special meaning:
 
 - `false` and `nil`
-  - These, and no other values, are recognized as false by `and`, `or, `{% if %}`, `{% elsif %}`, and `{% case %}`.
+  - These, and no other values, are recognized as false by `and`, `or`, `{% if %}`, `{% elsif %}`, and `{% case %}`.
 - Integers
   - (Only) integers can be used as array indices: `array[1]`; `array[n]`, where `array` has an array value and `n` has an integer value.
   - (Only) integers can be used as the endpoints of a range: `{% for item in (1..5) %}`, `{% for item in (start..end) %}` where `start` and `end` have integer values.
@@ -99,28 +100,28 @@ Any Go value can be used as a variable value. These values have special meaning:
   - Integers and floats are converted to their join type for comparison: `1 == 1.0` evaluates to `true`.  Similarly, `int8(1)`, `int16(1)`, `uint8(1)` etc. are all `==`.
   - [There is currently no special treatment of complex numbers.]
 - Integers, floats, and strings
-  - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`, `>=`. Integers and floats can be meaningfully compared with each other. Strings can be meaningfully compared with each other but not with other values. Any other comparison, e.g. `1 < "one"`, `1 > "one"`, will always be false.
+  - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`, `>=`. Integers and floats can be usefully compared with each other. Strings can be usefully compared with each other, but not with other values. Any other comparison, e.g. `1 < "one"`, `1 > "one"`, is always false.
 - Arrays (and slices)
-  - An array can be indexed by integer `array[1]`; `array[n]` where `n` has an integer value.
+  - An array can be indexed by integer value: `array[1]`; `array[n]` where `n` has an integer value.
   - Arrays have `first`, `last`, and `size` properties: `array.first == array[0]`, `array[array.size-1] == array.last` (where `array.size > 0`)
 - Maps
-  - A map can be indexed by a string: `hash[“key”]`; `hash[s]` where `s` has a string value
+  - A map can be indexed by a string: `hash["key"]`; `hash[s]` where `s` has a string value
   - A map can be accessed using property syntax `hash.key`
   - Maps have a special `size` property, that returns the size of the map.
 - Drops
   - A value `value` of a type that implements the `Drop` interface acts as the value `value.ToLiquid()`. There is no guarantee about how many times `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which both uses a different interface for drops, and makes stronger guarantees.]
 - Structs
-  - A public field of a struct can be accessed by its name: `value.FieldName`, `value[“fieldName”]`.
+  - A public field of a struct can be accessed by its name: `value.FieldName`, `value["fieldName"]`.
     - A field tagged e.g. `liquid:”name”` is accessed as `value.name` instead.
     - If the value of the field is a function that takes no arguments and returns either one or two arguments, accessing it invokes the function, and the value of the property is its first return value.
     - If the second return value is non-nil, accessing the field panics instead.
-  - A function defined on a struct can be accessed by function name e.g. `value.Func`, `value[“Func”]`.
+  - A function defined on a struct can be accessed by function name e.g. `value.Func`, `value["Func"]`.
     - The same rules apply as to accessing a func-valued public field.
   - Note that despite being array- and map-like, structs do not have a special `value.size` property.
 - `[]byte`
   - A value of type `[]byte` is rendered as the corresponding string, and presented as a string to filters that expect one. A `[]byte` is not (currently) equivalent to a `string` for all uses; for example, `a < b`, `a contains b`, `hash[b]` will not behave as expected where `a` or `b` is a `[]byte`.
 - MapSlice
-  - An instance of yaml.MapSlice acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
+  - An instance of `yaml.MapSlice` acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
 
 ## Contributing
 
@@ -157,6 +158,18 @@ The [original Liquid engine](https://shopify.github.io/liquid), of course, for t
 
  See Shopify's [ports of Liquid to other environments](https://github.com/Shopify/liquid/wiki/Ports-of-Liquid-to-other-environments).
 
+## Contributors
+
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore -->
+| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
+| :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
+
 ## License
 
 MIT License
@@ -178,15 +191,3 @@ MIT License
 
 [appveyor-url]: https://ci.appveyor.com/project/osteele/liquid
 [appveyor-svg]: https://ci.appveyor.com/api/projects/status/76tnj36879n671jx?svg=true
-
-## Contributors
-
-Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore -->
-| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
-| :---: | :---: | :---: |
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
