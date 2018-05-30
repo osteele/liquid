@@ -1,0 +1,48 @@
+{
+  "projectName": "liquid",
+  "projectOwner": "osteele",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "contributors": [
+    {
+      "login": "osteele",
+      "name": "Oliver Steele",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/674?v=4",
+      "profile": "https://osteele.com/",
+      "contributions": [
+        "code",
+        "doc",
+        "ideas",
+        "infra",
+        "review",
+        "test"
+      ]
+    },
+    {
+      "login": "thessem",
+      "name": "James Littlejohn",
+      "avatar_url": "https://avatars0.githubusercontent.com/u/973593?v=4",
+      "profile": "https://github.com/thessem",
+      "contributions": [
+        "code",
+        "doc",
+        "test"
+      ]
+    },
+    {
+      "login": "nsf",
+      "name": "nsf",
+      "avatar_url": "https://avatars2.githubusercontent.com/u/12567?v=4",
+      "profile": "http://nosmileface.ru",
+      "contributions": [
+        "code",
+        "test"
+      ]
+    }
+  ]
+}
