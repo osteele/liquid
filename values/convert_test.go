@@ -89,11 +89,15 @@ var convertTests = []struct {
 }
 
 var convertErrorTests = []struct {
-	value, proto, expected interface{}
+	value, proto interface{}
+	expected     []string
 }{
-	{map[string]bool{"k": true}, map[int]bool{}, "map key"},
-	{map[string]string{"k": "v"}, map[string]int{}, "map element"},
-	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, "map element"},
+	{map[string]bool{"k": true}, map[int]bool{}, []string{"map key"}},
+	{map[string]string{"k": "v"}, map[string]int{}, []string{"map element"}},
+	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, []string{"map element"}},
+	{"notanumber", int(0), []string{"can't convert string", "to type int"}},
+	{"notanumber", uint(0), []string{"can't convert string", "to type uint"}},
+	{"notanumber", float64(0), []string{"can't convert string", "to type float64"}},
 }
 
 func TestConvert(t *testing.T) {
@@ -115,7 +119,9 @@ func TestConvert_errors(t *testing.T) {
 			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
 			_, err := Convert(test.value, typ)
 			require.Errorf(t, err, name)
-			require.Containsf(t, err.Error(), test.expected, name)
+			for _, expected := range test.expected {
+				require.Containsf(t, err.Error(), expected, name)
+			}
 		})
 	}
 }

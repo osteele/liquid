@@ -39,7 +39,11 @@ func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
 		}
 		return 0, nil
 	case string:
-		return strconv.ParseInt(value, 10, 64)
+		v, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return 0, conversionError("", value, typ)
+		}
+		return v, nil
 	}
 	return 0, conversionError("", value, typ)
 }
@@ -48,7 +52,11 @@ func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
 	switch value := value.(type) {
 	// case int is handled by rv.Convert(typ) in Convert function
 	case string:
-		return strconv.ParseFloat(value, 64)
+		v, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return 0, conversionError("", value, typ)
+		}
+		return v, nil
 	}
 	return 0, conversionError("", value, typ)
 }
