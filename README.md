@@ -13,45 +13,25 @@ It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) 
 <!-- TOC -->
 
 - [Liquid Template Parser](#liquid-template-parser)
-    - [Compatibility](#compatibility)
-    - [Stability](#stability)
-    - [Install](#install)
-    - [Usage](#usage)
-        - [Command-Line tool](#command-line-tool)
-    - [Values](#values)
-    - [Contributing](#contributing)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Command-Line tool](#command-line-tool)
+  - [Documentation](#documentation)
+    - [Status](#status)
+    - [Drops](#drops)
+    - [Value Types](#value-types)
     - [References](#references)
-    - [Attribution](#attribution)
-    - [Other Implementations](#other-implementations)
-        - [Go](#go)
-        - [Other Languages](#other-languages)
+  - [Contributing](#contributing)
     - [Contributors](#contributors)
-    - [License](#license)
+    - [Attribution](#attribution)
+  - [Other Implementations](#other-implementations)
+    - [Go](#go)
+    - [Other Languages](#other-languages)
+  - [License](#license)
 
 <!-- /TOC -->
 
-## Compatibility
-
-These features of Shopify Liquid aren't implemented:
-
-- Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
-- Non-strict filters. An undefined filter is currently an error.
-- Strict variables. An undefined variable is not an error.
-
-Drops have a different design from the Shopify (Ruby) implementation.
-A Ruby drop sets `liquid_attributes` to a list of attributes that are exposed to Liquid.
-A Go drop implements `ToLiquid() interface{}`, that returns a proxy object.
-Conventionally, the proxy is a `map` or `struct` that defines the exposed properties.
-See <http://godoc.org/github.com/osteele/liquid#Drop> for additional information.
-
-## Stability
-
-This library is at an early stage of development.
-It has been mostly used by its author.
-
-Only the liquid package itself, and the sub-package types that are used in that top-level package, are guaranteed stable. For example, `render.Context` is documented as the parameter type for tag definitions; it therefore won't change incompatibly, if ever, until at least version 2 (at which point `gopkg.in/osteele/liquid.v1` will continue to pin to the v1 implementation).
-
-## Install
+## Installation
 
 `go get gopkg.in/osteele/liquid.v1` # latest snapshot
 
@@ -73,6 +53,8 @@ fmt.Println(out)
 // Output: <h1>Introduction</h1>
 ```
 
+See the [API documentation][godoc-url] for additional examples.
+
 ### Command-Line tool
 
 `go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line `liquid` executable.
@@ -85,7 +67,25 @@ $ echo '{{ "Hello World" | downcase | split: " " | first | append: "!"}}' | liqu
 hello!
 ```
 
-## Values
+## Documentation
+
+### Status
+
+These features of Shopify Liquid aren't implemented:
+
+- Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
+- Non-strict filters. An undefined filter is currently an error.
+- Strict variables. An undefined variable is not an error.
+
+### Drops
+
+Drops have a different design from the Shopify (Ruby) implementation.
+A Ruby drop sets `liquid_attributes` to a list of attributes that are exposed to Liquid.
+A Go drop implements `ToLiquid() interface{}`, that returns a proxy object.
+Conventionally, the proxy is a `map` or `struct` that defines the exposed properties.
+See <http://godoc.org/github.com/osteele/liquid#Drop> for additional information.
+
+### Value Types
 
 `Render` and friends take a `Bindings` parameter. This is a map of `string` to `interface{}`, that associates template variable names with Go values.
 
@@ -120,22 +120,34 @@ Any Go value can be used as a variable value. These values have special meaning:
   - Note that despite being array- and map-like, structs do not have a special `value.size` property.
 - `[]byte`
   - A value of type `[]byte` is rendered as the corresponding string, and presented as a string to filters that expect one. A `[]byte` is not (currently) equivalent to a `string` for all uses; for example, `a < b`, `a contains b`, `hash[b]` will not behave as expected where `a` or `b` is a `[]byte`.
-- MapSlice
+- `MapSlice`
   - An instance of `yaml.MapSlice` acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
 
-## Contributing
-
-Bug reports, test cases, and code contributions are more than welcome.
-Please refer to the [contribution guidelines](./CONTRIBUTING.md).
-
-## References
+### References
 
 * [Shopify.github.io/liquid](https://shopify.github.io/liquid)
 * [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers)
 * [Liquid for Programmers](https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers)
 * [Help.shopify.com](https://help.shopify.com/themes/liquid) goes into more detail, but includes features that aren't present in core Liquid as used by Jekyll.
 
-## Attribution
+## Contributing
+
+Bug reports, test cases, and code contributions are more than welcome.
+Please refer to the [contribution guidelines](./CONTRIBUTING.md).
+
+### Contributors
+
+Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore -->
+| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
+| :---: | :---: | :---: |
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
+
+### Attribution
 
 | Package                                             | Author          | Description          | License            |
 |-----------------------------------------------------|-----------------|----------------------|--------------------|
@@ -157,18 +169,6 @@ The [original Liquid engine](https://shopify.github.io/liquid), of course, for t
 ### Other Languages
 
  See Shopify's [ports of Liquid to other environments](https://github.com/Shopify/liquid/wiki/Ports-of-Liquid-to-other-environments).
-
-## Contributors
-
-Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore -->
-| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
-| :---: | :---: | :---: |
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
 
 ## License
 
