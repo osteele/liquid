@@ -6,6 +6,8 @@ Contributors:
 
 ### Bug Fixes and Compatibility
 
+* Returning proper error type causes less panics during expression eval. ([c32908a](https://github.com/osteele/liquid/commit/c32908a))
+* Properly handle implicit conversion to integer types. ([4354d48](https://github.com/osteele/liquid/commit/4354d48))
 * Properly handle variadic functions. ([1a2066b](https://github.com/osteele/liquid/commit/1a2066b))
 * map[unhashable] returns nil instead of panic ([b6c65ff](https://github.com/osteele/liquid/commit/b6c65ff))
 * join filter: default sep is space; omit nil entries ([cb6efbf](https://github.com/osteele/liquid/commit/cb6efbf))
