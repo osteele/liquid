@@ -31,6 +31,36 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
 }
 
+func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
+	switch value := value.(type) {
+	case bool:
+		if value {
+			return 1, nil
+		}
+		return 0, nil
+	case string:
+		v, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return 0, conversionError("", value, typ)
+		}
+		return v, nil
+	}
+	return 0, conversionError("", value, typ)
+}
+
+func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
+	switch value := value.(type) {
+	// case int is handled by rv.Convert(typ) in Convert function
+	case string:
+		v, err := strconv.ParseFloat(value, 64)
+		if err != nil {
+			return 0, conversionError("", value, typ)
+		}
+		return v, nil
+	}
+	return 0, conversionError("", value, typ)
+}
+
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
@@ -51,22 +81,42 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 	switch typ.Kind() {
 	case reflect.Bool:
 		return !(value == nil || value == false), nil
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		switch value := value.(type) {
-		case bool:
-			if value {
-				return 1, nil
-			}
-			return 0, nil
-		case string:
-			return strconv.Atoi(value)
-		}
-	case reflect.Float32, reflect.Float64:
-		switch value := value.(type) {
-		// case int is handled by r.Convert(type) above
-		case string:
-			return strconv.ParseFloat(value, 64)
-		}
+	case reflect.Uint:
+		v, err := convertValueToInt(value, typ)
+		return uint(v), err
+	case reflect.Uint8:
+		v, err := convertValueToInt(value, typ)
+		return uint8(v), err
+	case reflect.Uint16:
+		v, err := convertValueToInt(value, typ)
+		return uint16(v), err
+	case reflect.Uint32:
+		v, err := convertValueToInt(value, typ)
+		return uint32(v), err
+	case reflect.Uint64:
+		v, err := convertValueToInt(value, typ)
+		return uint64(v), err
+	case reflect.Int:
+		v, err := convertValueToInt(value, typ)
+		return int(v), err
+	case reflect.Int8:
+		v, err := convertValueToInt(value, typ)
+		return int8(v), err
+	case reflect.Int16:
+		v, err := convertValueToInt(value, typ)
+		return int16(v), err
+	case reflect.Int32:
+		v, err := convertValueToInt(value, typ)
+		return int32(v), err
+	case reflect.Int64:
+		v, err := convertValueToInt(value, typ)
+		return v, err
+	case reflect.Float32:
+		v, err := convertValueToFloat(value, typ)
+		return float32(v), err
+	case reflect.Float64:
+		v, err := convertValueToFloat(value, typ)
+		return v, err
 	case reflect.Map:
 		et := typ.Elem()
 		result := reflect.MakeMap(typ)

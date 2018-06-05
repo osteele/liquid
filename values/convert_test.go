@@ -23,7 +23,27 @@ var convertTests = []struct {
 }{
 	{nil, false},
 	{false, 0},
+	{false, int(0)},
+	{false, int8(0)},
+	{false, int16(0)},
+	{false, int32(0)},
+	{false, int64(0)},
+	{false, uint(0)},
+	{false, uint8(0)},
+	{false, uint16(0)},
+	{false, uint32(0)},
+	{false, uint64(0)},
 	{true, 1},
+	{true, int(1)},
+	{true, int8(1)},
+	{true, int16(1)},
+	{true, int32(1)},
+	{true, int64(1)},
+	{true, uint(1)},
+	{true, uint8(1)},
+	{true, uint16(1)},
+	{true, uint32(1)},
+	{true, uint64(1)},
 	{false, false},
 	{true, true},
 	{true, "true"},
@@ -33,10 +53,22 @@ var convertTests = []struct {
 	{2, "2"},
 	{2, 2.0},
 	{"", true},
+	{"2", int(2)},
+	{"2", int8(2)},
+	{"2", int16(2)},
+	{"2", int32(2)},
+	{"2", int64(2)},
+	{"2", uint(2)},
+	{"2", uint8(2)},
+	{"2", uint16(2)},
+	{"2", uint32(2)},
+	{"2", uint64(2)},
 	{"2", 2},
 	{"2", 2.0},
 	{"2.0", 2.0},
 	{"2.1", 2.1},
+	{"2.1", float32(2.1)},
+	{"2.1", float64(2.1)},
 	{"string", "string"},
 	{[]interface{}{1, 2}, []interface{}{1, 2}},
 	{[]int{1, 2}, []int{1, 2}},
@@ -57,11 +89,15 @@ var convertTests = []struct {
 }
 
 var convertErrorTests = []struct {
-	value, proto, expected interface{}
+	value, proto interface{}
+	expected     []string
 }{
-	{map[string]bool{"k": true}, map[int]bool{}, "map key"},
-	{map[string]string{"k": "v"}, map[string]int{}, "map element"},
-	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, "map element"},
+	{map[string]bool{"k": true}, map[int]bool{}, []string{"map key"}},
+	{map[string]string{"k": "v"}, map[string]int{}, []string{"map element"}},
+	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, []string{"map element"}},
+	{"notanumber", int(0), []string{"can't convert string", "to type int"}},
+	{"notanumber", uint(0), []string{"can't convert string", "to type uint"}},
+	{"notanumber", float64(0), []string{"can't convert string", "to type float64"}},
 }
 
 func TestConvert(t *testing.T) {
@@ -83,7 +119,9 @@ func TestConvert_errors(t *testing.T) {
 			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
 			_, err := Convert(test.value, typ)
 			require.Errorf(t, err, name)
-			require.Containsf(t, err.Error(), test.expected, name)
+			for _, expected := range test.expected {
+				require.Containsf(t, err.Error(), expected, name)
+			}
 		})
 	}
 }
