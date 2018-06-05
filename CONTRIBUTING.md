@@ -26,6 +26,12 @@ Install package dependencies and development tools:
 ### Test and Lint
 
 ```bash
+make pre-commit
+```
+
+You can also do these individually:
+
+```bash
 go test ./...
 make lint
 ```

@@ -6,21 +6,28 @@ PACKAGE = github.com/osteele/liquid
 LDFLAGS=
 
 .DEFAULT_GOAL: ci
-.PHONY: clean ci deps setup install lint test help
-
-ci: setup test #lint
+.PHONY: ci clean coverage deps generate imports install lint pre-commit setup test help
 
 clean: ## remove binary files
 	rm -f ${LIB} ${CMD}
 
+coverage: ## test the package, with coverage
+	go test -cov ./...
+
 deps: ## list dependencies
 	@go list -f '{{join .Deps "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
+
+generate: ## re-generate lexers and parser
+	go generate ./...
 
 imports: ## list imports
 	@go list -f '{{join .Imports "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
 
-generate:
-	go generate ./...
+lint: ## lint the package
+	gometalinter ./... --tests --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
+	@echo lint passed
+
+pre-commit: lint test ## lint and test the package
 
 setup: ## install dependencies and development tools
 	go get golang.org/x/tools/cmd/stringer
@@ -28,10 +35,6 @@ setup: ## install dependencies and development tools
 	go get -t ./...
 	go get github.com/alecthomas/gometalinter
 	gometalinter --install
-
-lint: ## lint the package
-	gometalinter ./... --tests --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
-	@echo lint passed
 
 test: ## test the package
 	go test ./...

@@ -9,8 +9,8 @@ install:
   - make setup
 
 script:
-  - $HOME/gopath/bin/goveralls -service=travis-ci
   - make lint
+  - $HOME/gopath/bin/goveralls -service=travis-ci
 
 notifications:
   email:
