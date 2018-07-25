@@ -75,8 +75,12 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 
 	// number filters
 	fd.AddFilter("abs", math.Abs)
-	fd.AddFilter("ceil", math.Ceil)
-	fd.AddFilter("floor", math.Floor)
+	fd.AddFilter("ceil", func(a float64) int {
+		return int(math.Ceil(a))
+	})
+	fd.AddFilter("floor", func(a float64) int {
+		return int(math.Floor(a))
+	})
 	fd.AddFilter("modulo", math.Mod)
 	fd.AddFilter("minus", func(a, b float64) float64 {
 		return a - b
