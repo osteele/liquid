@@ -2,11 +2,11 @@
 
 Here's some ways to help:
 
-* Select an item from the [issues list](https://github.com/osteele/liquid/issues)
+* Select an item from the [issues list](https://github.com/urbn8/liquid/issues)
 * Search the sources for FIXME and TODO comments.
 * Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master).
 
-Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
+Review the [pull request template](https://github.com/urbn8/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
 
 A note on lint: `nolint: gocyclo` has been used to disable cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions. IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity checks or lint in general.
 
@@ -40,7 +40,7 @@ make lint
 
 ```bash
 godoc -http=:6060
-open http://localhost:6060/pkg/github.com/osteele/liquid/
+open http://localhost:6060/pkg/github.com/urbn8/liquid/
 ```
 
 ### Work on the Expression Parser and Lexer

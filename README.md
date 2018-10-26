@@ -8,7 +8,7 @@
  [![][license-svg]][license-url]
 
 `liquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid).
-It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site generator.
+It was developed for use in the [Gojekyll](https://github.com/urbn8/gojekyll) port of the Jekyll static site generator.
 
 <!-- TOC -->
 
@@ -35,7 +35,7 @@ It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) 
 
 `go get gopkg.in/osteele/liquid.v1` # latest snapshot
 
-`go get -u github.com/osteele/liquid` # development version
+`go get -u github.com/urbn8/liquid` # development version
 
 ## Usage
 
@@ -83,7 +83,7 @@ Drops have a different design from the Shopify (Ruby) implementation.
 A Ruby drop sets `liquid_attributes` to a list of attributes that are exposed to Liquid.
 A Go drop implements `ToLiquid() interface{}`, that returns a proxy object.
 Conventionally, the proxy is a `map` or `struct` that defines the exposed properties.
-See <http://godoc.org/github.com/osteele/liquid#Drop> for additional information.
+See <http://godoc.org/github.com/urbn8/liquid#Drop> for additional information.
 
 ### Value Types
 
@@ -141,7 +141,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore -->
-| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
+| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/urbn8/liquid/commits?author=osteele "Code") [📖](https://github.com/urbn8/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/urbn8/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/urbn8/liquid/commits?author=thessem "Code") [📖](https://github.com/urbn8/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/urbn8/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/urbn8/liquid/commits?author=nsf "Code") [⚠️](https://github.com/urbn8/liquid/commits?author=nsf "Tests") |
 | :---: | :---: | :---: |
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
@@ -177,14 +177,14 @@ MIT License
 [coveralls-url]: https://coveralls.io/r/osteele/liquid?branch=master
 [coveralls-svg]: https://img.shields.io/coveralls/osteele/liquid.svg?branch=master
 
-[godoc-url]: https://godoc.org/github.com/osteele/liquid
-[godoc-svg]: https://godoc.org/github.com/osteele/liquid?status.svg
+[godoc-url]: https://godoc.org/github.com/urbn8/liquid
+[godoc-svg]: https://godoc.org/github.com/urbn8/liquid?status.svg
 
-[license-url]: https://github.com/osteele/liquid/blob/master/LICENSE
+[license-url]: https://github.com/urbn8/liquid/blob/master/LICENSE
 [license-svg]: https://img.shields.io/badge/license-MIT-blue.svg
 
-[go-report-card-url]: https://goreportcard.com/report/github.com/osteele/liquid
-[go-report-card-svg]: https://goreportcard.com/badge/github.com/osteele/liquid
+[go-report-card-url]: https://goreportcard.com/report/github.com/urbn8/liquid
+[go-report-card-svg]: https://goreportcard.com/badge/github.com/urbn8/liquid
 
 [travis-url]: https://travis-ci.org/osteele/liquid
 [travis-svg]: https://img.shields.io/travis/osteele/liquid.svg?branch=master

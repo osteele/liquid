@@ -3,9 +3,9 @@ package liquid
 import (
 	"io"
 
-	"github.com/osteele/liquid/filters"
-	"github.com/osteele/liquid/render"
-	"github.com/osteele/liquid/tags"
+	"github.com/urbn8/liquid/filters"
+	"github.com/urbn8/liquid/render"
+	"github.com/urbn8/liquid/tags"
 )
 
 // An Engine parses template source into renderable text.
@@ -40,9 +40,9 @@ func (e *Engine) RegisterBlock(name string, td Renderer) {
 //
 // Examples:
 //
-// * https://github.com/osteele/liquid/blob/master/filters/filters.go
+// * https://github.com/urbn8/liquid/blob/master/filters/filters.go
 //
-// * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
+// * https://github.com/urbn8/gojekyll/blob/master/filters/filters.go
 //
 func (e *Engine) RegisterFilter(name string, fn interface{}) {
 	e.cfg.AddFilter(name, fn)
@@ -50,7 +50,7 @@ func (e *Engine) RegisterFilter(name string, fn interface{}) {
 
 // RegisterTag defines a tag e.g. {% tag %}.
 //
-// Further examples are in https://github.com/osteele/gojekyll/blob/master/tags/tags.go
+// Further examples are in https://github.com/urbn8/gojekyll/blob/master/tags/tags.go
 func (e *Engine) RegisterTag(name string, td Renderer) {
 	// For simplicity, don't expose the two stage parsing/rendering process to clients.
 	// Client tags do everything at runtime.

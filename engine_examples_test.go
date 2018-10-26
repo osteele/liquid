@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/osteele/liquid/render"
+	"github.com/urbn8/liquid/render"
 )
 
 func Example() {

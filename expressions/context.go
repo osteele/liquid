@@ -1,6 +1,6 @@
 package expressions
 
-import "github.com/osteele/liquid/values"
+import "github.com/urbn8/liquid/values"
 
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {

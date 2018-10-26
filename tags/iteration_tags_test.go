@@ -10,8 +10,8 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/osteele/liquid/parser"
-	"github.com/osteele/liquid/render"
+	"github.com/urbn8/liquid/parser"
+	"github.com/urbn8/liquid/render"
 	"github.com/stretchr/testify/require"
 )
 
