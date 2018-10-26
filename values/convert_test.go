@@ -98,6 +98,14 @@ var convertTests = []struct {
 		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0700")
 		return t
 	}()},
+	{"1540918800", func() time.Time {
+		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0700")
+		return t
+	}()},
+	{"2018-10-31 00:00:00 +0000", func() time.Time {
+		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0000")
+		return t
+	}()},
 }
 
 var convertErrorTests = []struct {

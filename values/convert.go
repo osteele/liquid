@@ -233,6 +233,13 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 			case float64:
 				r := time.Unix(int64(value), 0)
 				return r, nil
+			case string:
+				t, err := ParseDate(value)
+				if err != nil {
+					return nil, err
+				}
+
+				return t, nil
 			}
 		}
 	}

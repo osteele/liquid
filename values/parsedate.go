@@ -3,6 +3,8 @@ package values
 import (
 	"reflect"
 	"time"
+
+	"github.com/araddon/dateparse"
 )
 
 var zeroTime time.Time
@@ -55,5 +57,11 @@ func ParseDate(s string) (time.Time, error) {
 			return t, nil
 		}
 	}
+
+	t, err := dateparse.ParseLocal(s)
+	if err == nil {
+		return t, nil
+	}
+
 	return zeroTime, conversionError("", s, reflect.TypeOf(zeroTime))
 }
