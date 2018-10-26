@@ -220,7 +220,23 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 		default:
 			return fmt.Sprint(value), nil
 		}
+	case reflect.Struct:
+		switch typ.String() {
+		case "time.Time":
+			switch value := value.(type) {
+			case int32:
+				r := time.Unix(int64(value), 0)
+				return r, nil
+			case int64:
+				r := time.Unix(int64(value), 0)
+				return r, nil
+			case float64:
+				r := time.Unix(int64(value), 0)
+				return r, nil
+			}
+		}
 	}
+
 	return nil, conversionError("", value, typ)
 }
 

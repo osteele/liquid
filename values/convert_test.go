@@ -86,6 +86,18 @@ var convertTests = []struct {
 	{yaml.MapSlice{{Key: nil, Value: 1}}, map[interface{}]string{nil: "1"}},
 	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
 	{redConvertible{}, "red"},
+	{int32(1540918800), func() time.Time {
+		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0700")
+		return t
+	}()},
+	{int64(1540918800), func() time.Time {
+		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0700")
+		return t
+	}()},
+	{float64(1540918800), func() time.Time {
+		t, _ := time.Parse("2006-01-02 15:04:05 -0700", "2018-10-31 00:00:00 +0700")
+		return t
+	}()},
 }
 
 var convertErrorTests = []struct {
