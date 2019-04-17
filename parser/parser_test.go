@@ -43,7 +43,6 @@ var parserTests = []struct{ in string }{
 	{`{% unless test %}{% endunless %}`},
 	{`{% for item in list %}{% if test %}{% else %}{% endif %}{% endfor %}`},
 	{`{% if true %}{% raw %}{% endraw %}{% endif %}`},
-
 	{`{% comment %}{% if true %}{% endcomment %}`},
 	{`{% raw %}{% if true %}{% endraw %}`},
 }
@@ -65,6 +64,39 @@ func TestParser(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			_, err := cfg.Parse(test.in, SourceLoc{})
 			require.NoError(t, err, test.in)
+		})
+	}
+}
+
+var parseWhitespaceTests = []struct {
+	in       string
+	expected int
+}{
+	// expected counts include object tokens
+	{"{{ obj -}} \t\n\t {{ obj }}", 3},
+	{"{{ obj }} \t\n\t {{- obj }}", 4},
+	{"{{ obj -}} \t\n\t {{- obj }}", 2},
+	{"{{ obj -}} \t\n\t\n\t {{- obj }}", 4}, // preseves mid whitespace
+
+	// expected counts for whitespace in clause do not include if tags
+	{"{% if test -%} \t\n\t {% endif %}", 1},
+	{"{% if test %} \t\n\t {%- endif %}", 2},
+	{"{% if test -%} \t\n\t {%- endif %}", 0},
+	{"{% if test -%}  \t\n\t\n\t {%- endif %}", 2},
+}
+
+func TestParseWhitespace(t *testing.T) {
+	cfg := Config{Grammar: grammarFake{}}
+	for i, test := range parseWhitespaceTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			ast, _ := cfg.Parse(test.in, SourceLoc{})
+			children := ast.(*ASTSeq).Children
+			switch children[0].(type) {
+			case *ASTSeq:
+				require.Equal(t, len(children), test.expected)
+			case *ASTBlock:
+				require.Equal(t, len(children[0].(*ASTBlock).Body), test.expected)
+			}
 		})
 	}
 }

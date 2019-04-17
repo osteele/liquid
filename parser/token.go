@@ -15,7 +15,7 @@ type Token struct {
 // TokenType is the type of a Chunk
 type TokenType int
 
-////go:generate stringer -type=TokenType
+//go:generate stringer -type=TokenType
 
 const (
 	// TextTokenType is the type of a text Chunk
@@ -24,6 +24,8 @@ const (
 	TagTokenType
 	// ObjTokenType is the type of an object Chunk "{{…}}"
 	ObjTokenType
+	// WhitespaceTokenType represents whitespace
+	WhitespaceTokenType
 )
 
 // SourceLoc contains a Token's source location.
@@ -48,9 +50,11 @@ func (c Token) String() string {
 	case TextTokenType:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
 	case TagTokenType:
-		return fmt.Sprintf("%v{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
+		return fmt.Sprintf("%v{Tag:%#v, Args:%#v, l: %#v, r: %#v}", c.Type, c.Name, c.Args, c.TrimLeft, c.TrimRight)
 	case ObjTokenType:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Args)
+	case WhitespaceTokenType:
+		return fmt.Sprintf("%v{%#v}", c.Type, c.Name)
 	default:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
 	}

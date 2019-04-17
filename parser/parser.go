@@ -22,6 +22,10 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 		node   *ASTBlock
 		ap     *[]ASTNode
 	}
+	type WhitespaceControl struct {
+		stack     []ASTNode // stack to buffer ws for trimming
+		trimRight bool
+	}
 	var (
 		g         = c.Grammar
 		root      = &ASTSeq{}      // root of AST; will be returned
@@ -32,8 +36,18 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 		rawTag    *ASTRaw          // current raw tag
 		inComment = false
 		inRaw     = false
+		wsc       = &WhitespaceControl{}
 	)
 	for _, tok := range tokens {
+		// check the current tag for trim left in the current tag if true
+		// then drop any stacked whitespace.
+		if tok.Type != WhitespaceTokenType {
+			if !tok.TrimLeft {
+				*ap = append(*ap, wsc.stack...)
+			}
+			wsc.stack = wsc.stack[:0]
+			wsc.trimRight = tok.TrimRight
+		}
 		switch {
 		// The parser needs to know about comment and raw, because tags inside
 		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
@@ -56,6 +70,19 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 			*ap = append(*ap, &ASTObject{tok, expr})
 		case tok.Type == TextTokenType:
 			*ap = append(*ap, &ASTText{Token: tok})
+		case tok.Type == WhitespaceTokenType:
+			// append to the ws stack unless the previous node requested
+			// ws should be trimmed
+			if !wsc.trimRight {
+				wsc.stack = append(wsc.stack, &ASTText{Token: tok})
+			}
+			if tok.Name == "New Line" {
+				// trimming should only occur up to the first newline
+				// so it is safe to append the stack now
+				*ap = append(*ap, wsc.stack...)
+				wsc.stack = wsc.stack[:0]
+				wsc.trimRight = false
+			}
 		case tok.Type == TagTokenType:
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
@@ -101,5 +128,8 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 	if bn != nil {
 		return nil, Errorf(bn, "unterminated %q block", bn.Name)
 	}
+
+	// append any whitespace still queued
+	*ap = append(*ap, wsc.stack...)
 	return root, nil
 }

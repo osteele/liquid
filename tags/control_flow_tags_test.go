@@ -58,10 +58,60 @@ var cfTagErrorTests = []struct{ in, expected string }{
 	{`{% case a | undefined_filter %}{% when 1 %}{% endcase %}`, "undefined filter"},
 }
 
+var cfTagWhitespaceTests = []struct{ in, expected string }{
+	{`  {%- if true %}	trims outside	{% endif -%}  `, "	trims outside	"},
+	{`  ({% if true -%}	trims inside	{%- endif %})  `, "  (trims inside)  "},
+	{`(  {%- if true -%}	trims both	{%- endif -%}  )`, "(trims both)"},
+	{`removes
+{%- if true -%}
+block
+{%- endif -%}
+lines`,
+		`removes
+block
+lines`},
+	{`removes
+{%- if true -%}
+block
+{%- else -%}
+not rendered
+{%- endif -%}
+lines`,
+		`removes
+block
+lines`},
+	{`removes
+{%- case 1 -%}
+{%- when 1 -%}
+block
+{%- when 2 -%}
+not rendered
+{%- endcase -%}
+lines`,
+		`removes
+block
+lines`},
+}
+
 func TestControlFlowTags(t *testing.T) {
 	cfg := render.NewConfig()
 	AddStandardTags(cfg)
 	for i, test := range cfTagTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, tagTestBindings, cfg)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
+}
+
+func TestControlFlowTagsWithWhitespace(t *testing.T) {
+	cfg := render.NewConfig()
+	AddStandardTags(cfg)
+	for i, test := range cfTagWhitespaceTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)

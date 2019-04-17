@@ -34,6 +34,13 @@ var tagTests = []struct{ in, expected string }{
 	{`pre{% raw %}{% if false %}anyway-{% endraw %}post`, "pre{% if false %}anyway-post"},
 }
 
+var tagWhitespaceTests = []struct{ in, expected string }{
+	// variable tags
+	{" {%- assign av = 1 -%}\n({{- av -}} )", "(1)"},
+	{"( {%- capture x -%}  \t\ncaptured\t {%- endcapture %}{{ x -}} )", "(captured)"},
+	{"( {%- comment %}\n{{ a }}\n{% undefined_tag %}{% endcomment -%}  )", "()"},
+}
+
 var tagErrorTests = []struct{ in, expected string }{
 	{`{% assign av = x | undefined_filter %}`, "undefined filter"},
 }
@@ -82,6 +89,21 @@ func TestStandardTags(t *testing.T) {
 	config := render.NewConfig()
 	AddStandardTags(config)
 	for i, test := range tagTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, tagTestBindings, config)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
+}
+
+func TestStandardTagsWithWhitespace(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(config)
+	for i, test := range tagWhitespaceTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)

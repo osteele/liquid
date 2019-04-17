@@ -2,15 +2,15 @@
 
 package parser
 
-import "fmt"
+import "strconv"
 
-const _TokenType_name = "TextTokenTypeTagTokenTypeObjTokenType"
+const _TokenType_name = "TextTokenTypeTagTokenTypeObjTokenTypeWhitespaceTokenType"
 
-var _TokenType_index = [...]uint8{0, 13, 25, 37}
+var _TokenType_index = [...]uint8{0, 13, 25, 37, 56}
 
 func (i TokenType) String() string {
 	if i < 0 || i >= TokenType(len(_TokenType_index)-1) {
-		return fmt.Sprintf("TokenType(%d)", i)
+		return "TokenType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
 	return _TokenType_name[_TokenType_index[i]:_TokenType_index[i+1]]
 }

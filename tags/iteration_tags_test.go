@@ -92,7 +92,40 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% tablerow product in products cols:2 %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
-	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
+		   <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
+
+	{`before
+{% for a in array %}{{ a }}
+{%- endfor -%}
+after`, `before
+first
+second
+third
+after`},
+
+	{`before
+{% for a in array %}
+{{ a }}
+{% endfor %}
+after`, `before
+
+first
+
+second
+
+third
+
+after`},
+
+	{`before
+{%- for a in array -%}
+{{ a }}
+{%- endfor -%}
+after`, `before
+first
+second
+third
+after`},
 }
 
 var iterationSyntaxErrorTests = []struct{ in, expected string }{
