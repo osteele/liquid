@@ -4,7 +4,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/osteele/liquid/parser"
+	"github.com/autopilot3/liquid/parser"
 )
 
 // BlockCompiler builds a renderer for the tag instance.

@@ -16,7 +16,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/osteele/liquid"
+	"github.com/autopilot3/liquid"
 )
 
 // for testing
