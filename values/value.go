@@ -107,6 +107,7 @@ func (v wrapperValue) Int() int {
 }
 
 // interned values
+var NilValue = wrapperValue{nil}
 var nilValue = wrapperValue{nil}
 var falseValue = wrapperValue{false}
 var trueValue = wrapperValue{true}

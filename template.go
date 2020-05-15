@@ -42,3 +42,7 @@ func (t *Template) RenderString(b Bindings) (string, SourceError) {
 	}
 	return string(bs), nil
 }
+
+func (t *Template) FindVariables() (map[string]interface{}, SourceError) {
+	return render.FindVariables(t.root, *t.cfg)
+}
