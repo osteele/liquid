@@ -46,7 +46,8 @@ func (c *context) Set(name string, value interface{}) {
 
 type varsContext struct {
 	Config
-	variables map[string]interface{}
+	variables   map[string]interface{}
+	currentVars []string
 }
 
 // NewContext makes a new expression evaluation context.
@@ -57,70 +58,26 @@ func NewVariablesContext(vars map[string]interface{}, cfg Config) Context {
 	}
 }
 
+func (c *varsContext) BuildVar(name string) {
+	c.currentVars = append(c.currentVars, name)
+}
+
 func (c *varsContext) Clone() Context {
 	return c
 }
 
-type traceValue struct {
-	name      string
-	variables map[string]interface{}
-}
-
-// just to validate interface complience
-var valInterface values.Value = &traceValue{}
-
-func (t *traceValue) Interface() interface{} {
-	return values.NilValue
-}
-
-func (t *traceValue) Int() int {
-	return 0
-}
-
-// Comparison
-func (t *traceValue) Equal(values.Value) bool {
-	return false
-}
-
-func (t *traceValue) Less(values.Value) bool {
-	return false
-}
-
-func (t *traceValue) Contains(values.Value) bool {
-	return false
-}
-func (t *traceValue) IndexValue(values.Value) values.Value {
-	return values.NilValue
-}
-
-func (t *traceValue) PropertyValue(v values.Value) values.Value {
-	key, ok := v.Interface().(string)
-	if ok {
-		m, ok := t.variables[t.name]
-		if !ok || m == nil {
-			m = make(map[string]interface{}, 1)
-			t.variables[t.name] = m
-		}
-		si := m.(map[string]interface{})
-		si[key] = nil
-	}
-	return values.NilValue
-}
-
-func (t *traceValue) Test() bool {
-	return true
-}
-
 // Get looks up a variable value in the expression context.
 func (c *varsContext) Get(name string) interface{} {
-	_, ok := c.variables[name]
-	if !ok {
-		c.variables[name] = nil
+	if len(c.currentVars) == 0 {
+		c.variables[name] = struct{}{}
+	} else {
+		for idx := len(c.currentVars) - 1; idx >= 0; idx-- {
+			name += "." + c.currentVars[idx]
+		}
+		c.variables[name] = struct{}{}
+		c.currentVars = c.currentVars[:0]
 	}
-	return &traceValue{
-		name:      name,
-		variables: c.variables,
-	}
+	return values.ValueOf(nil)
 }
 
 // Set sets a variable value in the expression context.
