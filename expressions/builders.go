@@ -40,6 +40,10 @@ func makeIndexExpr(sequenceFn, indexFn func(Context) values.Value) func(Context)
 func makeObjectPropertyExpr(objFn func(Context) values.Value, name string) func(Context) values.Value {
 	index := values.ValueOf(name)
 	return func(ctx Context) values.Value {
+		k, ok := ctx.(*varsContext)
+		if ok {
+			k.BuildVar(name)
+		}
 		return objFn(ctx).PropertyValue(index)
 	}
 }
