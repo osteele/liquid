@@ -22,9 +22,12 @@ func NewEngine() *Engine {
 	engine := &Engine{render.NewConfig()}
 	filters.AddStandardFilters(&engine.cfg)
 	tags.AddStandardTags(engine.cfg)
-	engine.RegisterFilter("hideCountryCode", func(s string) string {
+	engine.RegisterFilter("hideCountryCodeAndDefault", func(s string, hide bool, defaultValue string) string {
+		if s == "" {
+			return defaultValue
+		}
 		splits := strings.Split(s, " ")
-		if len(splits) == 2 {
+		if len(splits) == 2 && hide {
 			return splits[1]
 		}
 		return s
@@ -32,11 +35,7 @@ func NewEngine() *Engine {
 
 	engine.RegisterFilter("dateTimeFormatOrDefault", func(s time.Time, format string, defaultValue string) string {
 		if s.IsZero() {
-			if defaultValue != "" {
-				return defaultValue
-			}
-
-			return ""
+			return defaultValue
 		}
 
 		switch format {
@@ -55,10 +54,7 @@ func NewEngine() *Engine {
 
 	engine.RegisterFilter("dateFormatOrDefault", func(s date.Date, format string, defaultValue string) string {
 		if s == 0 {
-			if defaultValue != "" {
-				return defaultValue
-			}
-			return ""
+			return defaultValue
 		}
 
 		switch format {
