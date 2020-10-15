@@ -1,8 +1,12 @@
 package liquid
 
 import (
+	"fmt"
 	"io"
+	"strings"
+	"time"
 
+	"github.com/autopilot3/ap3-types-go/types/date"
 	"github.com/autopilot3/liquid/filters"
 	"github.com/autopilot3/liquid/render"
 	"github.com/autopilot3/liquid/tags"
@@ -15,10 +19,98 @@ type Engine struct{ cfg render.Config }
 
 // NewEngine returns a new Engine.
 func NewEngine() *Engine {
-	e := Engine{render.NewConfig()}
-	filters.AddStandardFilters(&e.cfg)
-	tags.AddStandardTags(e.cfg)
-	return &e
+	engine := &Engine{render.NewConfig()}
+	filters.AddStandardFilters(&engine.cfg)
+	tags.AddStandardTags(engine.cfg)
+	engine.RegisterFilter("hideCountryCode", func(s string) string {
+		splits := strings.Split(s, " ")
+		if len(splits) == 2 {
+			return splits[1]
+		}
+		return s
+	})
+
+	engine.RegisterFilter("dateTimeFormatOrDefault", func(s time.Time, format string, defaultValue string) string {
+		if s.IsZero() {
+			if defaultValue != "" {
+				return defaultValue
+			}
+
+			return ""
+		}
+
+		switch format {
+		case "mdy12":
+			return s.Format("Jan 02 2006 3:04 PM")
+		case "mdy24":
+			return s.Format("Jan 02 2006 15:04")
+		case "dmy12":
+			return s.Format("02 Jan 2006 3:04 PM")
+		case "dmy24":
+			return s.Format("02 Jan 2006 15:04")
+		default:
+			return s.String()
+		}
+	})
+
+	engine.RegisterFilter("dateFormatOrDefault", func(s date.Date, format string, defaultValue string) string {
+		if s == 0 {
+			if defaultValue != "" {
+				return defaultValue
+			}
+			return ""
+		}
+
+		switch format {
+		case "mdy":
+			return fmt.Sprintf("%d/%d/%d", s.Month(), s.Day(), s.Year())
+		case "dmy":
+			return fmt.Sprintf("%d/%d/%d", s.Day(), s.Month(), s.Year())
+		default:
+			return s.String()
+		}
+	})
+
+	engine.RegisterFilter("decimal", func(s int64, format string, currency string) string {
+		var formatTemplate string
+		switch format {
+		case "whole":
+			formatTemplate = "%.0f"
+		case "one":
+			formatTemplate = "%.1f"
+		case "two":
+			formatTemplate = "%.2f"
+		default:
+			formatTemplate = "%.2f"
+		}
+
+		value := fmt.Sprintf(formatTemplate, float64(s)/100)
+		if currency != "" {
+			return currency + value
+		}
+
+		return value
+	})
+
+	engine.RegisterFilter("booleanFormat", func(s bool, format string) string {
+		if format == "yesNo" {
+			if s {
+				return "Yes"
+			}
+			return "No"
+		}
+		if format == "onOff" {
+			if s {
+				return "On"
+			}
+			return "Off"
+		}
+		if s {
+			return "True"
+		}
+		return "False"
+	})
+	return engine
 }
 
 // RegisterBlock defines a block e.g. {% tag %}…{% endtag %}.
