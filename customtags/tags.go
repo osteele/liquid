@@ -2,6 +2,16 @@ package customtags
 
 import "fmt"
 
+const (
+	TagDisplayTypeDate      string = "date"
+	TagDisplayTypeTime      string = "time"
+	TagDisplayTypeBool      string = "bool"
+	TagDisplayTypeCurrency  string = "currency"
+	TagDisplayTypeDecimal   string = "decimal"
+	TagDisplayTypeAggregate string = "aggregate"
+	TagDisplayTypePhone     string = "phone"
+)
+
 type TagType string
 
 const (
@@ -37,15 +47,15 @@ func (t *Tag) GetLiquidString() (string, error) {
 	}
 	if t.Type == TagTypeMergeTag {
 		switch t.DisplayType {
-		case "date":
+		case TagDisplayTypeDate:
 			return fmt.Sprintf(`{{ %s | dateFormatOrDefault: "%s", "%s" }}`, t.LiquidName, t.FormatOption, t.DefaultValue), nil
-		case "time":
+		case TagDisplayTypeTime:
 			return fmt.Sprintf(`{{ %s | dateTimeFormatOrDefault: "%s", "%s" }}`, t.LiquidName, t.FormatOption, t.DefaultValue), nil
-		case "bool":
+		case TagDisplayTypeBool:
 			return fmt.Sprintf(`{{ %s | booleanFormat: "%s" }}`, t.LiquidName, t.FormatOption), nil
-		case "currency", "decimal", "aggregate":
+		case TagDisplayTypeCurrency, TagDisplayTypeDecimal, TagDisplayTypeAggregate:
 			return fmt.Sprintf(`{{ %s | decimal: "%s", "%s" }}`, t.LiquidName, t.FormatOption, t.DefaultValue), nil
-		case "phone":
+		case TagDisplayTypePhone:
 			willHide := false
 			if t.FormatOption == "hide" {
 				willHide = true
