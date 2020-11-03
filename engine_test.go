@@ -92,3 +92,19 @@ func BenchmarkEngine_Parse(b *testing.B) {
 		engine.ParseTemplate(s)
 	}
 }
+
+func TestEngine_ParseTemplateAndCache(t *testing.T) {
+	// Given two templates...
+	templateA := []byte("Foo")
+	templateB := []byte(`{% include "template_a.html" %}, Bar`)
+
+	// Cache the first
+	eng := NewEngine()
+	_, err := eng.ParseTemplateAndCache(templateA, "template_a.html", 1)
+	require.NoError(t, err)
+
+	// ...and execute the second.
+	result, err := eng.ParseAndRender(templateB, Bindings{})
+	require.NoError(t, err)
+	require.Equal(t, string(result), "Foo, Bar")
+}

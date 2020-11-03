@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/osteele/liquid/expressions"
@@ -111,7 +112,14 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 
 func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
 	source, err := ioutil.ReadFile(filename)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
+		// Is it cached?
+		if cval, ok := c.ctx.config.Cache[filename]; ok {
+			source = cval
+		} else {
+			return "", err
+		}
+	} else if err != nil {
 		return "", err
 	}
 	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
