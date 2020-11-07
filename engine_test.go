@@ -2,6 +2,7 @@ package liquid
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"testing"
@@ -42,13 +43,14 @@ func TestEngine_ParseAndRenderString_ptr_to_hash(t *testing.T) {
 	params := map[string]interface{}{
 		"message": &map[string]interface{}{
 			"Text": "hello",
+			"jsonNumber" : json.Number("123"),
 		},
 	}
 	engine := NewEngine()
-	template := "{{ message.Text }}"
+	template := "{{ message.Text }} {{message.jsonNumber}}"
 	str, err := engine.ParseAndRenderString(template, params)
 	require.NoError(t, err)
-	require.Equal(t, "hello", str)
+	require.Equal(t, "hello 123", str)
 }
 
 type testStruct struct{ Text string }
