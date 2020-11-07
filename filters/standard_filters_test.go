@@ -143,8 +143,8 @@ var filterTests = []struct {
 	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
 
 	// number filters
-	{`-17 | abs`, 17},
-	{`4 | abs`, 4},
+	{`-17 | abs`, 17.0},
+	{`4 | abs`, 4.0},
 	{`"-19.86" | abs`, 19.86},
 
 	{`1.2 | ceil`, 2},
@@ -156,19 +156,19 @@ var filterTests = []struct {
 	{`2.0 | floor`, 2},
 	{`183.357 | floor`, 183},
 
-	{`4 | plus: 2`, 6},
+	{`4 | plus: 2`, 6.0},
 	{`183.357 | plus: 12`, 195.357},
 
-	{`4 | minus: 2`, 2},
-	{`16 | minus: 4`, 12},
+	{`4 | minus: 2`, 2.0},
+	{`16 | minus: 4`, 12.0},
 	{`183.357 | minus: 12`, 171.357},
 
-	{`3 | times: 2`, 6},
-	{`24 | times: 7`, 168},
+	{`3 | times: 2`, 6.0},
+	{`24 | times: 7`, 168.0},
 	{`183.357 | times: 12`, 2200.284},
 
-	{`3 | modulo: 2`, 1},
-	{`24 | modulo: 7`, 3},
+	{`3 | modulo: 2`, 1.0},
+	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
 	{`16 | divided_by: 4`, 4},
@@ -177,8 +177,8 @@ var filterTests = []struct {
 	{`20 | divided_by: 7.0`, 2.857142857142857},
 	{`20 | divided_by: 's'`, nil},
 
-	{`1.2 | round`, 1},
-	{`2.7 | round`, 3},
+	{`1.2 | round`, 1.0},
+	{`2.7 | round`, 3.0},
 	{`183.357 | round: 2`, 183.36},
 
 	// Jekyll extensions; added here for convenient testing
@@ -256,16 +256,7 @@ func TestFilters(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			actual, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
-			expected := test.expected
-			switch v := actual.(type) {
-			case int:
-				actual = float64(v)
-			}
-			switch ex := expected.(type) {
-			case int:
-				expected = float64(ex)
-			}
-			require.Equalf(t, expected, actual, test.in)
+			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}
 }
