@@ -33,6 +33,7 @@ type Tag struct {
 	DefaultValue string           `json:"default_value" bson:"default_value"`
 	FormatOption string           `json:"format_option" bson:"format_option"`
 	FieldID      crmtypes.FieldID `json:"field_id" bson:"field_id"`
+	ActivityID   crmtypes.FieldID `json:"activity_id" bson:"activity_id"`
 }
 
 func (t *Tag) GetPreviewString() (string, error) {
