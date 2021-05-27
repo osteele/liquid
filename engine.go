@@ -80,7 +80,7 @@ func NewEngine() *Engine {
 			formatTemplate = "%.2f"
 		}
 
-		value := fmt.Sprintf(formatTemplate, float64(s)/100)
+		value := fmt.Sprintf(formatTemplate, float64(s)/1000)
 		if currency != "" {
 			return currency + value
 		}
