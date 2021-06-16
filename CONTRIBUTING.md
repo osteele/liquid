@@ -21,7 +21,9 @@ Fork and clone the repo.
 Install package dependencies and development tools:
 
 * `make setup`
-* `go get -t ./...`
+
+[Install golangci-lint](https://golangci-lint.run/usage/install/#local-installation).
+On macOS: `brew install golangci-lint`
 
 ### Test and Lint
 

@@ -83,14 +83,19 @@ func BenchmarkEngine_Parse(b *testing.B) {
 	engine := NewEngine()
 	buf := new(bytes.Buffer)
 	for i := 0; i < 1000; i++ {
-		io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
-		io.WriteString(buf, `loop{% for item in array %}loop{% break %}{% endfor %}`)
-		io.WriteString(buf, `case{% case value %}{% when a %}{% when b %{% endcase %}`)
-		io.WriteString(buf, `expr{{ a and b }}{{ a add: b }}`)
+		_, err := io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
+		require.NoError(b, err)
+		_, err = io.WriteString(buf, `loop{% for item in array %}loop{% break %}{% endfor %}`)
+		require.NoError(b, err)
+		_, err = io.WriteString(buf, `case{% case value %}{% when a %}{% when b %{% endcase %}`)
+		require.NoError(b, err)
+		_, err = io.WriteString(buf, `expr{{ a and b }}{{ a add: b }}`)
+		require.NoError(b, err)
 	}
 	s := buf.Bytes()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		engine.ParseTemplate(s)
+		_, err := engine.ParseTemplate(s)
+		require.NoError(b, err)
 	}
 }

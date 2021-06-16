@@ -105,6 +105,7 @@ func BenchmarkTemplate_Render(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tpl.Render(bindings)
+		_, err := tpl.Render(bindings)
+		require.NoError(b, err)
 	}
 }

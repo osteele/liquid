@@ -9,7 +9,7 @@ import (
 func init() {
 	// This allows adding and removing references to fmt in the rules below,
 	// without having to comment and un-comment the import statement above.
-	_ = fmt.Sprint("")
+	_ = ""
 }
 
 %}

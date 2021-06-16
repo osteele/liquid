@@ -56,6 +56,7 @@ func BenchmarkDrop_Resolve_3(b *testing.B) {
 			values <- d.Int()
 		}
 		for i := cap(values); i > 0; i-- {
+			//lint:ignore S1005 TODO look up how else to read the values
 			_ = <-values
 		}
 	}
