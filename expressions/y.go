@@ -664,7 +664,7 @@ yydefault:
 		yyDollar = yyS[yypt-0 : yypt+1]
 //line expressions.y:105
 		{
-			yyVAL.loopmods = loopModifiers{Cols: math.MaxUint32}
+			yyVAL.loopmods = loopModifiers{Cols: math.MaxInt32}
 		}
 	case 21:
 		yyDollar = yyS[yypt-2 : yypt+1]
