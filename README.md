@@ -2,7 +2,6 @@
 
 [![go badge][go-svg]][go-url]
 [![Golangci-lint badge][golangci-lint-svg]][golangci-lint-url]
-[![][appveyor-svg]][appveyor-url]
 [![][go-report-card-svg]][go-report-card-url]
 [![][godoc-svg]][godoc-url]
 [![][license-svg]][license-url]
@@ -191,9 +190,3 @@ MIT License
 
 [go-report-card-url]: https://goreportcard.com/report/github.com/osteele/liquid
 [go-report-card-svg]: https://goreportcard.com/badge/github.com/osteele/liquid
-
-[travis-url]: https://travis-ci.org/osteele/liquid
-[travis-svg]: https://img.shields.io/travis/osteele/liquid.svg?branch=master
-
-[appveyor-url]: https://ci.appveyor.com/project/osteele/liquid
-[appveyor-svg]: https://ci.appveyor.com/api/projects/status/76tnj36879n671jx?svg=true
