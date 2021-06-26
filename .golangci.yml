@@ -7,3 +7,6 @@ issues:
     # go generate introduces these
     - path: expressions/scanner.go
       linters: [deadcode, unused, varcheck]
+linters:
+  enable:
+    - gofmt

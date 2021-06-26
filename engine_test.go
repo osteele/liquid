@@ -42,8 +42,8 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 func TestEngine_ParseAndRenderString_ptr_to_hash(t *testing.T) {
 	params := map[string]interface{}{
 		"message": &map[string]interface{}{
-			"Text": "hello",
-			"jsonNumber" : json.Number("123"),
+			"Text":       "hello",
+			"jsonNumber": json.Number("123"),
 		},
 	}
 	engine := NewEngine()
