@@ -1,11 +1,11 @@
 # Liquid Template Parser
 
- [![][travis-svg]][travis-url]
- [![][appveyor-svg]][appveyor-url]
- [![][coveralls-svg]][coveralls-url]
- [![][go-report-card-svg]][go-report-card-url]
- [![][godoc-svg]][godoc-url]
- [![][license-svg]][license-url]
+[![go badge][go-svg]][go-url]
+[![Golangci-lint badge][golangci-lint-svg]][golangci-lint-url]
+[![][appveyor-svg]][appveyor-url]
+[![][go-report-card-svg]][go-report-card-url]
+[![][godoc-svg]][godoc-url]
+[![][license-svg]][license-url]
 
 `liquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid).
 It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site generator.
@@ -176,6 +176,12 @@ MIT License
 
 [coveralls-url]: https://coveralls.io/r/osteele/liquid?branch=master
 [coveralls-svg]: https://img.shields.io/coveralls/osteele/liquid.svg?branch=master
+
+[go-url]: https://github.com/osteele/gojekyll/actions?query=workflow%3Ago
+[go-svg]: https://github.com/osteele/gojekyll/actions/workflows/go.yml/badge.svg
+
+[golangci-lint-url]: https://github.com/osteele/gojekyll/actions?query=workflow%3Agolangci-lint
+[golangci-lint-svg]: https://github.com/osteele/gojekyll/actions/workflows/golangci-lint.yml/badge.svg
 
 [godoc-url]: https://godoc.org/github.com/osteele/liquid
 [godoc-svg]: https://godoc.org/github.com/osteele/liquid?status.svg
