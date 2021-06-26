@@ -9,7 +9,6 @@ install:
   - make setup
 
 script:
-  - make lint
   - $HOME/gopath/bin/goveralls -service=travis-ci
 
 notifications:
