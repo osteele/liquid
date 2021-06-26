@@ -2,12 +2,14 @@
 
 [![go badge][go-svg]][go-url]
 [![Golangci-lint badge][golangci-lint-svg]][golangci-lint-url]
-[![][go-report-card-svg]][go-report-card-url]
-[![][godoc-svg]][godoc-url]
-[![][license-svg]][license-url]
+[![Go Report Card badge][go-report-card-svg]][go-report-card-url]
+[![Go Doc][godoc-svg]][godoc-url]
+[![MIT License][license-svg]][license-url]
 
-`liquid` is a pure Go implementation of [Shopify Liquid templates](https://shopify.github.io/liquid).
-It was developed for use in the [Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site generator.
+`liquid` is a pure Go implementation of [Shopify Liquid
+templates](https://shopify.github.io/liquid). It was developed for use in the
+[Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site
+generator.
 
 <!-- TOC -->
 
@@ -56,8 +58,9 @@ See the [API documentation][godoc-url] for additional examples.
 
 ### Command-Line tool
 
-`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line `liquid` executable.
-This is intended to make it easier to create test cases for bug reports.
+`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line
+`liquid` executable. This is intended to make it easier to create test cases for
+bug reports.
 
 ```bash
 $ liquid --help
@@ -78,56 +81,84 @@ These features of Shopify Liquid aren't implemented:
 
 ### Drops
 
-Drops have a different design from the Shopify (Ruby) implementation.
-A Ruby drop sets `liquid_attributes` to a list of attributes that are exposed to Liquid.
-A Go drop implements `ToLiquid() interface{}`, that returns a proxy object.
-Conventionally, the proxy is a `map` or `struct` that defines the exposed properties.
-See <http://godoc.org/github.com/osteele/liquid#Drop> for additional information.
+Drops have a different design from the Shopify (Ruby) implementation. A Ruby
+drop sets `liquid_attributes` to a list of attributes that are exposed to
+Liquid. A Go drop implements `ToLiquid() interface{}`, that returns a proxy
+object. Conventionally, the proxy is a `map` or `struct` that defines the
+exposed properties. See <http://godoc.org/github.com/osteele/liquid#Drop> for
+additional information.
 
 ### Value Types
 
-`Render` and friends take a `Bindings` parameter. This is a map of `string` to `interface{}`, that associates template variable names with Go values.
+`Render` and friends take a `Bindings` parameter. This is a map of `string` to
+`interface{}`, that associates template variable names with Go values.
 
 Any Go value can be used as a variable value. These values have special meaning:
 
 - `false` and `nil`
-  - These, and no other values, are recognized as false by `and`, `or`, `{% if %}`, `{% elsif %}`, and `{% case %}`.
+  - These, and no other values, are recognized as false by `and`, `or`, `{% if
+    %}`, `{% elsif %}`, and `{% case %}`.
 - Integers
-  - (Only) integers can be used as array indices: `array[1]`; `array[n]`, where `array` has an array value and `n` has an integer value.
-  - (Only) integers can be used as the endpoints of a range: `{% for item in (1..5) %}`, `{% for item in (start..end) %}` where `start` and `end` have integer values.
+  - (Only) integers can be used as array indices: `array[1]`; `array[n]`, where
+    `array` has an array value and `n` has an integer value.
+  - (Only) integers can be used as the endpoints of a range: `{% for item in
+    (1..5) %}`, `{% for item in (start..end) %}` where `start` and `end` have
+    integer values.
 - Integers and floats
-  - Integers and floats are converted to their join type for comparison: `1 == 1.0` evaluates to `true`.  Similarly, `int8(1)`, `int16(1)`, `uint8(1)` etc. are all `==`.
+  - Integers and floats are converted to their join type for comparison: `1 ==
+    1.0` evaluates to `true`.  Similarly, `int8(1)`, `int16(1)`, `uint8(1)` etc.
+    are all `==`.
   - [There is currently no special treatment of complex numbers.]
 - Integers, floats, and strings
-  - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`, `>=`. Integers and floats can be usefully compared with each other. Strings can be usefully compared with each other, but not with other values. Any other comparison, e.g. `1 < "one"`, `1 > "one"`, is always false.
+  - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`,
+    `>=`. Integers and floats can be usefully compared with each other. Strings
+    can be usefully compared with each other, but not with other values. Any
+    other comparison, e.g. `1 < "one"`, `1 > "one"`, is always false.
 - Arrays (and slices)
-  - An array can be indexed by integer value: `array[1]`; `array[n]` where `n` has an integer value.
-  - Arrays have `first`, `last`, and `size` properties: `array.first == array[0]`, `array[array.size-1] == array.last` (where `array.size > 0`)
+  - An array can be indexed by integer value: `array[1]`; `array[n]` where `n`
+    has an integer value.
+  - Arrays have `first`, `last`, and `size` properties: `array.first ==
+    array[0]`, `array[array.size-1] == array.last` (where `array.size > 0`)
 - Maps
-  - A map can be indexed by a string: `hash["key"]`; `hash[s]` where `s` has a string value
+  - A map can be indexed by a string: `hash["key"]`; `hash[s]` where `s` has a
+    string value
   - A map can be accessed using property syntax `hash.key`
   - Maps have a special `size` property, that returns the size of the map.
 - Drops
-  - A value `value` of a type that implements the `Drop` interface acts as the value `value.ToLiquid()`. There is no guarantee about how many times `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which both uses a different interface for drops, and makes stronger guarantees.]
+  - A value `value` of a type that implements the `Drop` interface acts as the
+    value `value.ToLiquid()`. There is no guarantee about how many times
+    `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which
+    both uses a different interface for drops, and makes stronger guarantees.]
 - Structs
   - A public field of a struct can be accessed by its name: `value.FieldName`, `value["fieldName"]`.
     - A field tagged e.g. `liquid:”name”` is accessed as `value.name` instead.
-    - If the value of the field is a function that takes no arguments and returns either one or two arguments, accessing it invokes the function, and the value of the property is its first return value.
+    - If the value of the field is a function that takes no arguments and
+      returns either one or two arguments, accessing it invokes the function,
+      and the value of the property is its first return value.
     - If the second return value is non-nil, accessing the field panics instead.
-  - A function defined on a struct can be accessed by function name e.g. `value.Func`, `value["Func"]`.
+  - A function defined on a struct can be accessed by function name e.g.
+    `value.Func`, `value["Func"]`.
     - The same rules apply as to accessing a func-valued public field.
-  - Note that despite being array- and map-like, structs do not have a special `value.size` property.
+  - Note that despite being array- and map-like, structs do not have a special
+    `value.size` property.
 - `[]byte`
-  - A value of type `[]byte` is rendered as the corresponding string, and presented as a string to filters that expect one. A `[]byte` is not (currently) equivalent to a `string` for all uses; for example, `a < b`, `a contains b`, `hash[b]` will not behave as expected where `a` or `b` is a `[]byte`.
+  - A value of type `[]byte` is rendered as the corresponding string, and
+    presented as a string to filters that expect one. A `[]byte` is not
+    (currently) equivalent to a `string` for all uses; for example, `a < b`, `a
+    contains b`, `hash[b]` will not behave as expected where `a` or `b` is a
+    `[]byte`.
 - `MapSlice`
-  - An instance of `yaml.MapSlice` acts as a map. It implements `m.key`, `m[key]`, and `m.size`.
+  - An instance of `yaml.MapSlice` acts as a map. It implements `m.key`,
+    `m[key]`, and `m.size`.
 
 ### References
 
-* [Shopify.github.io/liquid](https://shopify.github.io/liquid)
-* [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers)
-* [Liquid for Programmers](https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers)
-* [Help.shopify.com](https://help.shopify.com/themes/liquid) goes into more detail, but includes features that aren't present in core Liquid as used by Jekyll.
+- [Shopify.github.io/liquid](https://shopify.github.io/liquid)
+- [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers)
+- [Liquid for Programmers](https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers)
+- [Help.shopify.com](https://help.shopify.com/themes/liquid) goes into more
+  detail, but includes features that aren't present in core Liquid as used by
+  Jekyll.
 
 ## Contributing
 
@@ -144,7 +175,9 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
 | :---: | :---: | :---: |
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
-This project follows the [all-contributors](https://github.com/kentcdodds/all-contributors) specification. Contributions of any kind welcome!
+This project follows the
+[all-contributors](https://github.com/kentcdodds/all-contributors)
+specification. Contributions of any kind welcome!
 
 ### Attribution
 
@@ -153,17 +186,23 @@ This project follows the [all-contributors](https://github.com/kentcdodds/all-co
 | [Ragel](http://www.colm.net/open-source/ragel/)     | Adrian Thurston | scanning expressions | MIT                |
 | [gopkg.in/yaml.v2](https://github.com/go-yaml/yaml) | Canonical       | MapSlice             | Apache License 2.0 |
 
-Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f) was essential to understanding `go yacc`.
+Michael Hamrah's [Lexing with Ragel and Parsing with Yacc using
+Go](https://medium.com/@mhamrah/lexing-with-ragel-and-parsing-with-yacc-using-go-81e50475f88f)
+was essential to understanding `go yacc`.
 
-The [original Liquid engine](https://shopify.github.io/liquid), of course, for the design and documentation of the Liquid template language. Many of the tag and filter test cases are taken directly from the Liquid documentation.
+The [original Liquid engine](https://shopify.github.io/liquid), of course, for
+the design and documentation of the Liquid template language. Many of the tag
+and filter test cases are taken directly from the Liquid documentation.
 
 ## Other Implementations
 
 ### Go
 
-* [karlseguin/liquid](https://github.com/karlseguin/liquid) is a dormant implementation that inspired a lot of forks.
-* [acstech/liquid](https://github.com/acstech/liquid) is a more active fork of Karl Seguin's implementation.
-* [hownowstephen/go-liquid](https://github.com/hownowstephen/go-liquid)
+- [karlseguin/liquid](https://github.com/karlseguin/liquid) is a dormant
+  implementation that inspired a lot of forks.
+- [acstech/liquid](https://github.com/acstech/liquid) is a more active fork of
+  Karl Seguin's implementation.
+- [hownowstephen/go-liquid](https://github.com/hownowstephen/go-liquid)
 
 ### Other Languages
 
