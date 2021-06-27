@@ -170,9 +170,20 @@ Please refer to the [contribution guidelines](./CONTRIBUTING.md).
 Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore -->
-| [<img src="https://avatars2.githubusercontent.com/u/674?v=4" width="100px;"/><br /><sub><b>Oliver Steele</b></sub>](https://osteele.com/)<br />[💻](https://github.com/osteele/liquid/commits?author=osteele "Code") [📖](https://github.com/osteele/liquid/commits?author=osteele "Documentation") [🤔](#ideas-osteele "Ideas, Planning, & Feedback") [🚇](#infra-osteele "Infrastructure (Hosting, Build-Tools, etc)") [👀](#review-osteele "Reviewed Pull Requests") [⚠️](https://github.com/osteele/liquid/commits?author=osteele "Tests") | [<img src="https://avatars0.githubusercontent.com/u/973593?v=4" width="100px;"/><br /><sub><b>James Littlejohn</b></sub>](https://github.com/thessem)<br />[💻](https://github.com/osteele/liquid/commits?author=thessem "Code") [📖](https://github.com/osteele/liquid/commits?author=thessem "Documentation") [⚠️](https://github.com/osteele/liquid/commits?author=thessem "Tests") | [<img src="https://avatars2.githubusercontent.com/u/12567?v=4" width="100px;"/><br /><sub><b>nsf</b></sub>](http://nosmileface.ru)<br />[💻](https://github.com/osteele/liquid/commits?author=nsf "Code") [⚠️](https://github.com/osteele/liquid/commits?author=nsf "Tests") |
-| :---: | :---: | :---: |
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tr>
+    <td align="center"><a href="https://osteele.com/"><img src="https://avatars2.githubusercontent.com/u/674?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Oliver Steele</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=osteele" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=osteele" title="Documentation">📖</a> <a href="#ideas-osteele" title="Ideas, Planning, & Feedback">🤔</a> <a href="#infra-osteele" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/osteele/liquid/pulls?q=is%3Apr+reviewed-by%3Aosteele" title="Reviewed Pull Requests">👀</a> <a href="https://github.com/osteele/liquid/commits?author=osteele" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/thessem"><img src="https://avatars0.githubusercontent.com/u/973593?v=4?s=100" width="100px;" alt=""/><br /><sub><b>James Littlejohn</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=thessem" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=thessem" title="Documentation">📖</a> <a href="https://github.com/osteele/liquid/commits?author=thessem" title="Tests">⚠️</a></td>
+    <td align="center"><a href="http://nosmileface.ru"><img src="https://avatars2.githubusercontent.com/u/12567?v=4?s=100" width="100px;" alt=""/><br /><sub><b>nsf</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=nsf" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=nsf" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://tobias.salzmann.berlin/"><img src="https://avatars.githubusercontent.com/u/796084?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tobias Salzmann</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=Eun" title="Code">💻</a></td>
+  </tr>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
 <!-- ALL-CONTRIBUTORS-LIST:END -->
 
 This project follows the
