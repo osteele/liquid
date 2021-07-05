@@ -102,7 +102,7 @@ int_or_var:
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 ;
 
-loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxUint32} }
+loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxInt32} }
 | loop_modifiers IDENTIFIER {
 	switch $2 {
 	case "reversed":
