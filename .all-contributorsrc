@@ -52,6 +52,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "bendoerr",
+      "name": "Ben Doerr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/253068?v=4",
+      "profile": "https://github.com/bendoerr",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitConvention": "none"
