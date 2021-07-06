@@ -230,7 +230,7 @@ MIT License
 [go-url]: https://github.com/osteele/liquid/actions?query=workflow%3A%22Build+Status%22
 [go-svg]: https://github.com/osteele/liquid/actions/workflows/go.yml/badge.svg
 
-[golangci-lint-url]: https://github.com/osteele/liquid/actions?query=workflow%3Agolangci-lint
+[golangci-lint-url]: https://github.com/osteele/liquid/actions?query=workflow%3Lint
 [golangci-lint-svg]: https://github.com/osteele/liquid/actions/workflows/golangci-lint.yml/badge.svg
 
 [godoc-url]: https://godoc.org/github.com/osteele/liquid
