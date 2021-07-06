@@ -227,7 +227,7 @@ MIT License
 [coveralls-url]: https://coveralls.io/r/osteele/liquid?branch=master
 [coveralls-svg]: https://img.shields.io/coveralls/osteele/liquid.svg?branch=master
 
-[go-url]: https://github.com/osteele/liquid/actions?query=workflow%3A%22Build+and+Test%22
+[go-url]: https://github.com/osteele/liquid/actions?query=workflow%3A%22Build+Status%22
 [go-svg]: https://github.com/osteele/liquid/actions/workflows/go.yml/badge.svg
 
 [golangci-lint-url]: https://github.com/osteele/liquid/actions?query=workflow%3Agolangci-lint
