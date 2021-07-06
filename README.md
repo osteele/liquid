@@ -75,6 +75,8 @@ hello!
 
 These features of Shopify Liquid aren't implemented:
 
+- Filter keyword parameters, for example `{{ image | img_url: '580x', scale: 2
+  }}`. [[Issue #42](https://github.com/osteele/liquid/issues/42)]
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
 - Non-strict filters. An undefined filter is currently an error.
 - Strict variables. An undefined variable is not an error.
@@ -156,9 +158,7 @@ Any Go value can be used as a variable value. These values have special meaning:
 - [Shopify.github.io/liquid](https://shopify.github.io/liquid)
 - [Liquid for Designers](https://github.com/Shopify/liquid/wiki/Liquid-for-Designers)
 - [Liquid for Programmers](https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers)
-- [Help.shopify.com](https://help.shopify.com/themes/liquid) goes into more
-  detail, but includes features that aren't present in core Liquid as used by
-  Jekyll.
+- [Help.shopify.com](https://help.shopify.com/themes/liquid)
 
 ## Contributing
 
