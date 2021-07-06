@@ -8,6 +8,7 @@ import (
 type Config struct {
 	parser.Config
 	grammar
+	Cache map[string][]byte
 }
 
 type grammar struct {
@@ -21,5 +22,5 @@ func NewConfig() Config {
 		tags:      map[string]TagCompiler{},
 		blockDefs: map[string]*blockSyntax{},
 	}
-	return Config{parser.NewConfig(g), g}
+	return Config{Config: parser.NewConfig(g), grammar: g, Cache: map[string][]byte{}}
 }
