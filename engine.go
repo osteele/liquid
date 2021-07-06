@@ -1,11 +1,14 @@
 package liquid
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/autopilot3/ap3-helpers-go/logger"
 	"github.com/autopilot3/ap3-types-go/types/date"
 	"github.com/autopilot3/liquid/filters"
 	"github.com/autopilot3/liquid/render"
@@ -67,7 +70,15 @@ func NewEngine() *Engine {
 		}
 	})
 
-	engine.RegisterFilter("decimal", func(s int64, format string, currency string) string {
+	engine.RegisterFilter("decimal", func(s string, format string, currency string) string {
+		if s == "" {
+			return s
+		}
+		num, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			logger.Warnw(context.Background(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
+			return s
+		}
 		var formatTemplate string
 		switch format {
 		case "whole":
@@ -80,7 +91,7 @@ func NewEngine() *Engine {
 			formatTemplate = "%.2f"
 		}
 
-		value := fmt.Sprintf(formatTemplate, float64(s)/1000)
+		value := fmt.Sprintf(formatTemplate, float64(num)/1000)
 		if currency != "" {
 			return currency + value
 		}
