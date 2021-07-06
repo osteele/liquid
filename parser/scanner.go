@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // Scan breaks a string into a sequence of Tokens.
@@ -20,12 +21,18 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 	p, pe := 0, len(data)
 	for _, m := range tokenMatcher.FindAllStringSubmatchIndex(data, -1) {
 		ts, te := m[0], m[1]
+		source := data[ts:te]
 		if p < ts {
 			tokens = append(tokens, Token{Type: TextTokenType, SourceLoc: loc, Source: data[p:ts]})
-			loc.LineNo += strings.Count(data[p:ts], "\n")
 		}
-		source := data[ts:te]
 		switch {
+		case rune(data[ts]) == '\n':
+			tok := Token{Type: WhitespaceTokenType, Name: "New Line", SourceLoc: loc, Source: source}
+			loc.LineNo++
+			tokens = append(tokens, tok)
+		case unicode.IsSpace(rune(data[ts])):
+			tok := Token{Type: WhitespaceTokenType, Name: "Whitespace", SourceLoc: loc, Source: source}
+			tokens = append(tokens, tok)
 		case data[ts:ts+len(delims[0])] == delims[0]:
 			tok := Token{
 				Type:      ObjTokenType,
@@ -41,16 +48,15 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 				Type:      TagTokenType,
 				SourceLoc: loc,
 				Source:    source,
-				Name:      data[m[4]:m[5]],
+				Name:      data[m[8]:m[9]],
 				TrimLeft:  source[2] == '-',
 				TrimRight: source[len(source)-3] == '-',
 			}
-			if m[6] > 0 {
-				tok.Args = data[m[6]:m[7]]
+			if m[10] > 0 {
+				tok.Args = data[m[10]:m[11]]
 			}
 			tokens = append(tokens, tok)
 		}
-		loc.LineNo += strings.Count(source, "\n")
 		p = te
 	}
 	if p < pe {
@@ -73,13 +79,12 @@ func formTokenMatcher(delims []string) *regexp.Regexp {
 		}
 	}
 
-	tokenMatcher := regexp.MustCompile(
-		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
-			// QuoteMeta will escape any of these that are regex commands
-			regexp.QuoteMeta(delims[0]), regexp.QuoteMeta(delims[1]),
-			regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),
-		),
+	p := fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|([ \t]+)|(\n)|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
+		// QuoteMeta will escape any of these that are regex commands
+		regexp.QuoteMeta(delims[0]), regexp.QuoteMeta(delims[1]),
+		regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),
 	)
+	tokenMatcher := regexp.MustCompile(p)
 
 	return tokenMatcher
 }
