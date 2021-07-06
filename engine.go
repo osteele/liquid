@@ -3,6 +3,7 @@ package liquid
 import (
 	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"time"
 
@@ -67,7 +68,14 @@ func NewEngine() *Engine {
 		}
 	})
 
-	engine.RegisterFilter("decimal", func(s int64, format string, currency string) string {
+	engine.RegisterFilter("decimal", func(s string, format string, currency string) string {
+		if s == "" {
+			return s
+		}
+		num, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			return s
+		}
 		var formatTemplate string
 		switch format {
 		case "whole":
@@ -80,7 +88,7 @@ func NewEngine() *Engine {
 			formatTemplate = "%.2f"
 		}
 
-		value := fmt.Sprintf(formatTemplate, float64(s)/1000)
+		value := fmt.Sprintf(formatTemplate, float64(num)/1000)
 		if currency != "" {
 			return currency + value
 		}
