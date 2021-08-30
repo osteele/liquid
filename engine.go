@@ -62,9 +62,9 @@ func NewEngine() *Engine {
 
 		switch format {
 		case "mdy":
-			return fmt.Sprintf("%d/%d/%d", s.Month(), s.Day(), s.Year())
+			return fmt.Sprintf("%02d/%02d/%d", s.Month(), s.Day(), s.Year())
 		case "dmy":
-			return fmt.Sprintf("%d/%d/%d", s.Day(), s.Month(), s.Year())
+			return fmt.Sprintf("%02d/%02d/%d", s.Day(), s.Month(), s.Year())
 		default:
 			return s.String()
 		}
@@ -99,20 +99,27 @@ func NewEngine() *Engine {
 		return value
 	})
 
-	engine.RegisterFilter("booleanFormat", func(s bool, format string) string {
+	engine.RegisterFilter("booleanFormat", func(s string, format string) string {
+		if s == "" {
+			return ""
+		}
+		var b bool
+		if s == "true" {
+			b = true
+		}
 		if format == "yesNo" {
-			if s {
+			if b {
 				return "Yes"
 			}
 			return "No"
 		}
 		if format == "onOff" {
-			if s {
+			if b {
 				return "On"
 			}
 			return "Off"
 		}
-		if s {
+		if b {
 			return "True"
 		}
 		return "False"
