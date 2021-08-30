@@ -99,23 +99,27 @@ func NewEngine() *Engine {
 		return value
 	})
 
-	engine.RegisterFilter("booleanFormat", func(s *bool, format string) string {
-		if s == nil {
+	engine.RegisterFilter("booleanFormat", func(s string, format string) string {
+		if s == "" {
 			return ""
 		}
+		var b bool
+		if s == "true" {
+			b = true
+		}
 		if format == "yesNo" {
-			if *s {
+			if b {
 				return "Yes"
 			}
 			return "No"
 		}
 		if format == "onOff" {
-			if *s {
+			if b {
 				return "On"
 			}
 			return "Off"
 		}
-		if *s {
+		if b {
 			return "True"
 		}
 		return "False"
