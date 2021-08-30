@@ -1,0 +1,10 @@
+---
+env:
+  DEPENDENCY_NAME: github.com/autopilot3/liquid
+  VERSION: ${VERSION:-master}
+
+steps:
+  - label: ":buildkite: Generate Build Steps"
+    command: bksg -c golang-module-update -v "$VERSION"
+    retry:
+      automatic: true
