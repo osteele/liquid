@@ -13,6 +13,9 @@ import (
 	"github.com/autopilot3/liquid/filters"
 	"github.com/autopilot3/liquid/render"
 	"github.com/autopilot3/liquid/tags"
+
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 )
 
 // An Engine parses template source into renderable text.
@@ -91,7 +94,8 @@ func NewEngine() *Engine {
 			formatTemplate = "%.2f"
 		}
 
-		value := fmt.Sprintf(formatTemplate, float64(num)/1000)
+		p := message.NewPrinter(language.English)
+		value := p.Sprintf(formatTemplate, float64(num)/1000)
 		if currency != "" {
 			return currency + value
 		}
