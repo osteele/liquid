@@ -36,7 +36,7 @@ func TestIncludeTag(t *testing.T) {
 	buf = new(bytes.Buffer)
 	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)
-	require.Equal(t, "value", strings.TrimSpace(buf.String()))
+	require.Equal(t, "test value", strings.TrimSpace(buf.String()))
 
 	// errors
 	root, err = config.Compile(`{% include 10 %}`, loc)
