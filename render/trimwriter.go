@@ -25,6 +25,9 @@ func (tw *trimWriter) Write(b []byte) (int, error) {
 	n := len(b)
 	if tw.trimRight {
 		b = bytes.TrimLeftFunc(b, unicode.IsSpace)
+		if n != 0 {
+			tw.trimRight = false
+		}
 	} else if tw.buf.Len() > 0 {
 		if err := tw.Flush(); err != nil {
 			return 0, err
