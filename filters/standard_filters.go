@@ -42,6 +42,10 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return
 	})
+	fd.AddFilter("concat", func(a, b []interface{}) (result []interface{}) {
+		result = make([]interface{}, 0, len(a)+len(b))
+		return append(append(result, a...), b...)
+	})
 	fd.AddFilter("join", joinFilter)
 	fd.AddFilter("map", func(a []map[string]interface{}, key string) (result []interface{}) {
 		for _, obj := range a {

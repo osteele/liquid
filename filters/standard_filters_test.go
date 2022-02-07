@@ -32,6 +32,7 @@ var filterTests = []struct {
 	// array filters
 	{`pages | map: 'category' | join`, "business celebrities lifestyle sports technology"},
 	{`pages | map: 'category' | compact | join`, "business celebrities lifestyle sports technology"},
+	{`"mangos bananas persimmons" | split: " " | concat: fruits | join: ", "`, "mangos, bananas, persimmons, apples, oranges, peaches, plums"},
 	{`"John, Paul, George, Ringo" | split: ", " | join: " and "`, "John and Paul and George and Ringo"},
 	{`",John, Paul, George, Ringo" | split: ", " | join: " and "`, ",John and Paul and George and Ringo"},
 	{`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo,"},
