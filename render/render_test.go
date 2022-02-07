@@ -29,7 +29,7 @@ var renderTests = []struct{ in, out string }{
 	{`{{ array[1] }}`, "second"},
 
 	// whitespace control
-	{` {{ 1 }} `, " 1 "},
+	{`	{{ 1 }}	`, "	1	"},
 	{` {{- 1 }} `, "1 "},
 	{` {{ 1 -}} `, " 1"},
 	{` {{- 1 -}} `, "1"},
@@ -92,7 +92,7 @@ func TestRender(t *testing.T) {
 			buf := new(bytes.Buffer)
 			err = Render(root, buf, renderTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.out, buf.String(), test.in)
+			require.Equalf(t, test.out, buf.String(), "[%v]", test.in)
 		})
 	}
 }
