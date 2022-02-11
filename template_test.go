@@ -9,6 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestTemplate_GetRoot(t *testing.T) {
+	root := &render.SeqNode{}
+	tmpl := Template{root: root}
+	require.Same(t, root, tmpl.GetRoot())
+}
+
 func TestTemplate_RenderString(t *testing.T) {
 	engine := NewEngine()
 	tpl, err := engine.ParseTemplate([]byte(`{{ "hello world" | capitalize }}`))

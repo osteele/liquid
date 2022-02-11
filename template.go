@@ -24,6 +24,12 @@ func newTemplate(cfg *render.Config, source []byte, path string, line int) (*Tem
 	return &Template{root, cfg}, nil
 }
 
+// GetRoot returns the root node of the abstract syntax tree (AST) representing
+// the parsed template.
+func (t *Template) GetRoot() render.Node {
+	return t.root
+}
+
 // Render executes the template with the specified variable bindings.
 func (t *Template) Render(vars Bindings) ([]byte, SourceError) {
 	buf := new(bytes.Buffer)
