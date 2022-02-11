@@ -110,3 +110,19 @@ func (e *Engine) Delims(objectLeft, objectRight, tagLeft, tagRight string) *Engi
 	e.cfg.Delims = []string{objectLeft, objectRight, tagLeft, tagRight}
 	return e
 }
+
+// ParseTemplateAndCache is the same as ParseTemplateLocation, except that the
+// source location is used for error reporting and for the {% include %} tag.
+// If parsing is successful, provided source is then cached, and can be retrieved
+// by {% include %} tags, as long as there is not a real file in the provided path.
+//
+// The path and line number are used for error reporting.
+// The path is also the reference for relative pathnames in the {% include %} tag.
+func (e *Engine) ParseTemplateAndCache(source []byte, path string, line int) (*Template, SourceError) {
+	t, err := e.ParseTemplateLocation(source, path, line)
+	if err != nil {
+		return t, err
+	}
+	e.cfg.Cache[path] = source
+	return t, err
+}
