@@ -33,7 +33,7 @@ lint: ## lint the package
 pre-commit: lint test ## lint and test the package
 
 setup: ## install dependencies and development tools
-	go get golang.org/x/tools/cmd/stringer
+	go install golang.org/x/tools/cmd/stringer
 	go install golang.org/x/tools/cmd/goyacc
 	go get -t ./...
 
