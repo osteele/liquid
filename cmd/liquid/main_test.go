@@ -83,7 +83,8 @@ func TestMain(t *testing.T) {
 	os.Args = []string{"liquid", "testdata/missing_file"}
 	main()
 	require.Equal(t, 1, exitCode)
-	require.Contains(t, buf.String(), "no such")
+	// Darwin/Linux, and Windows, have different error messages
+	require.Regexp(t, "no such file|cannot find the file", buf.String())
 
 	exitCalled = false
 	// --help

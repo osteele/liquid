@@ -111,8 +111,9 @@ func TestContext_errors(t *testing.T) {
 }
 
 func TestContext_file_not_found_error(t *testing.T) {
-	// Test the cause instead of looking for a string, since the error message is different
-	// between Darwin and Linux ("no such file") and Windows ("The system cannot find the file specified"), at least.
+	// Test the cause instead of looking for a string, since the error message is
+	// different between Darwin and Linux ("no such file") and Windows ("The
+	// system cannot find the file specified"), at least.
 	//
 	// Also see TestIncludeTag_file_not_found_error.
 	cfg := NewConfig()
