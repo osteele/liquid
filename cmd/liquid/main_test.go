@@ -63,7 +63,7 @@ func TestMain(t *testing.T) {
 	stdin = os.Stdin
 	buf = &bytes.Buffer{}
 	stdout = buf
-	os.Args = []string{"liquid", "testdata/source.txt"}
+	os.Args = []string{"liquid", "testdata/source.liquid"}
 	main()
 	require.Contains(t, buf.String(), "file system")
 
@@ -72,7 +72,7 @@ func TestMain(t *testing.T) {
 	exitCode := 0
 	exit = func(n int) { exitCalled = true; exitCode = n }
 
-	os.Args = []string{"liquid", "testdata/source.txt"}
+	os.Args = []string{"liquid", "testdata/source.liquid"}
 	main()
 	require.Equal(t, 0, exitCode)
 
@@ -104,7 +104,7 @@ func TestMain(t *testing.T) {
 	require.Contains(t, buf.String(), "defined")
 
 	// multiple args
-	os.Args = []string{"liquid", "testdata/source.txt", "file2"}
+	os.Args = []string{"liquid", "testdata/source.liquid", "file2"}
 	buf = &bytes.Buffer{}
 	stderr = buf
 	main()
