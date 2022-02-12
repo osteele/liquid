@@ -61,6 +61,42 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "danog",
+      "name": "Daniil Gentili",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7339644?v=4",
+      "profile": "https://daniil.it/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "carolynvs",
+      "name": "Carolyn Van Slyck",
+      "avatar_url": "https://avatars.githubusercontent.com/u/1368985?v=4",
+      "profile": "https://github.com/carolynvs",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "kke",
+      "name": "Kimmo Lehto",
+      "avatar_url": "https://avatars.githubusercontent.com/u/224971?v=4",
+      "profile": "https://github.com/kke",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "heyvito",
+      "name": "Victor \"Vito\" Gama",
+      "avatar_url": "https://avatars.githubusercontent.com/u/77198?v=4",
+      "profile": "https://vito.io/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "commitConvention": "none"
