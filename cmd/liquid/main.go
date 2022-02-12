@@ -9,10 +9,10 @@
 package main
 
 import (
-	"bytes"
+	"errors"
+	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -21,59 +21,79 @@ import (
 
 // for testing
 var (
-	stderr           = os.Stderr
-	stdout io.Writer = os.Stdout
-	stdin  io.Reader = os.Stdin
-	exit             = os.Exit
+	stderr   io.Writer              = os.Stderr
+	stdout   io.Writer              = os.Stdout
+	stdin    io.Reader              = os.Stdin
+	exit     func(int)              = os.Exit
+	env      func() []string        = os.Environ
+	bindings map[string]interface{} = map[string]interface{}{}
 )
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(stderr, err) // nolint: gas
-		os.Exit(1)
-	}
-}
+	var err error
 
-func run(args []string) error {
-	switch {
-	case len(args) == 0:
-		buf := new(bytes.Buffer)
-		if _, err := io.Copy(buf, stdin); err != nil {
-			return err
+	cmdLine := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	cmdLine.Usage = func() {
+		fmt.Fprintf(stderr, "usage: %s [OPTIONS] [FILE]\n", cmdLine.Name())
+		fmt.Fprint(stderr, "\nOPTIONS\n")
+		cmdLine.PrintDefaults()
+	}
+
+	var bindEnvs bool
+	cmdLine.BoolVar(&bindEnvs, "env", false, "bind environment variables")
+
+	err = cmdLine.Parse(os.Args[1:])
+	if err != nil {
+		if err == flag.ErrHelp {
+			exit(0)
+			return
 		}
-		return render(buf.Bytes(), "")
-	case args[0] == "-h" || args[0] == "--help":
-		usage()
-	case strings.HasPrefix(args[0], "-"):
-		// undefined flag
-		usage()
+		fmt.Fprintln(stderr, err)
 		exit(1)
-	case len(args) == 1:
-		s, err := ioutil.ReadFile(args[0])
-		if err != nil {
-			return err
+		return
+	}
+
+	if bindEnvs {
+		for _, e := range env() {
+			pair := strings.SplitN(e, "=", 2)
+			bindings[pair[0]] = pair[1]
 		}
-		return render(s, args[0])
+	}
+
+	args := cmdLine.Args()
+	switch len(args) {
+	case 0:
+		// use stdin
+	case 1:
+		stdin, err = os.Open(args[0])
 	default:
-		usage()
+		err = errors.New("too many arguments")
+	}
+
+	if err == nil {
+		err = render()
+	}
+
+	if err != nil {
+		fmt.Fprintln(stderr, err)
 		exit(1)
 	}
-	return nil
 }
 
-func render(b []byte, filename string) (err error) {
-	tpl, err := liquid.NewEngine().ParseTemplate(b)
+func render() error {
+	buf, err := io.ReadAll(stdin)
 	if err != nil {
 		return err
 	}
-	out, err := tpl.Render(map[string]interface{}{})
+
+	tpl, err := liquid.NewEngine().ParseTemplate(buf)
+	if err != nil {
+		return err
+	}
+	out, err := tpl.Render(bindings)
 	if err != nil {
 		return err
 	}
 	_, err = stdout.Write(out)
 	return err
-}
-
-func usage() {
-	fmt.Fprintf(stdout, "usage: %s [FILE]\n", os.Args[0]) // nolint: gas
 }
