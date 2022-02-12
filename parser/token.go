@@ -26,7 +26,9 @@ const (
 	ObjTokenType
 )
 
-// SourceLoc contains a Token's source location.
+// SourceLoc contains a Token's source location. Pathname is in the local file
+// system; for example "dir/file.html" on Linux and macOS; "dir\file.html" on
+// Windows.
 type SourceLoc struct {
 	Pathname string
 	LineNo   int

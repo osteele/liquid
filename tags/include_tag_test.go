@@ -61,15 +61,16 @@ func TestIncludeTag_file_not_found_error(t *testing.T) {
 
 func TestIncludeTag_cached_value_handling(t *testing.T) {
 	config := render.NewConfig()
-	// foo.html does not exist on testdata.
-	config.Cache["testdata/foo.html"] = []byte("bar")
+	// missing-file.html does not exist in the testdata directory.
+	config.Cache["testdata/missing-file.html"] = []byte("include-content")
+	config.Cache["testdata\\missing-file.html"] = []byte("include-content")
 	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
 	AddStandardTags(config)
 
-	root, err := config.Compile(`{% include "foo.html" %}`, loc)
+	root, err := config.Compile(`{% include "missing-file.html" %}`, loc)
 	require.NoError(t, err)
 	buf := new(bytes.Buffer)
 	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)
-	require.Equal(t, "bar", strings.TrimSpace(buf.String()))
+	require.Equal(t, "include-content", strings.TrimSpace(buf.String()))
 }
