@@ -1,7 +1,7 @@
 # Release Notes
 <!-- markdownlint-disable MD024 -->
 
-## 1.3 (unreleased)
+## 1.3.0 (2020-02-13)
 
 Contributions:
 
