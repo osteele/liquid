@@ -16,11 +16,11 @@ Contributions:
 * [@kke (Kimmo Lehto)](https://github.com/kke): Add --env for binding
   environment in the CLI tool [PR
   #54](https://github.com/osteele/liquid/pull/54)
-* [@danong (Daniil Gentili)](https://github.com/danog): Add concat filter [PR
+* [@danog (Daniil Gentili)](https://github.com/danog): Add concat filter [PR
   #55](https://github.com/osteele/liquid/pull/55)
-* [@danong (Daniil Gentili)](https://github.com/danog): Stop trimming ASAP [PR
+* [@danog (Daniil Gentili)](https://github.com/danog): Stop trimming ASAP [PR
   #57](https://github.com/osteele/liquid/pull/57)
-* [@danong (Daniil Gentili)](https://github.com/danog): Add concat filter [PR
+* [@danog (Daniil Gentili)](https://github.com/danog): Add concat filter [PR
   #58](https://github.com/osteele/liquid/pull/58)
 * [@carolynvs (Carolyn Van Slyck)](https://github.com/carolynvs): Expose the
   template ast [PR #59](https://github.com/osteele/liquid/pull/59)
