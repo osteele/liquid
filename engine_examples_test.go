@@ -3,6 +3,7 @@ package liquid
 import (
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 
 	"github.com/osteele/liquid/render"
@@ -22,6 +23,43 @@ func Example() {
 	}
 	fmt.Println(out)
 	// Output: <h1>Introduction</h1>
+}
+
+// List the variable names used in a template
+func Example_listTemplateVariables() {
+	engine := NewEngine()
+	tmpl, err := engine.ParseString(`Name: {{Name}}<br/>Age: {{Age}}`)
+	if err != nil {
+		panic(err)
+	}
+
+	// Find variable names
+	vars := map[string]struct{}{}
+	var findVariables func(curNode render.Node)
+	findVariables = func(curNode render.Node) {
+		switch v := curNode.(type) {
+		case *render.SeqNode:
+			for _, childNode := range v.Children {
+				findVariables(childNode)
+			}
+		case *render.ObjectNode:
+			vars[v.Args] = struct{}{}
+		}
+	}
+
+	findVariables(tmpl.GetRoot())
+
+	// Sort variable names
+	varNames := make([]string, 0, len(vars))
+	for name := range vars {
+		varNames = append(varNames, name)
+	}
+	sort.Strings(varNames)
+
+	// Print list of used variables
+	fmt.Printf("The template uses the following variables: %s\n", strings.Join(varNames, ", "))
+
+	// Output: The template uses the following variables: Age, Name
 }
 
 func ExampleEngine_ParseAndRenderString() {
