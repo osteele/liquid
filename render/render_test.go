@@ -22,11 +22,13 @@ var renderTests = []struct{ in, out string }{
 	{`{{ date }}`, "2015-07-17 15:04:05 +0000"},
 	{`{{ "string" }}`, "string"},
 	{`{{ array }}`, "first, second, third"},
+	{`{{ array_bool }}`, "true, false, true"},
 
 	// variables and properties
 	{`{{ int }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ array[1] }}`, "second"},
+	{`{{ array_bool[1] }}`, "false"},
 
 	// whitespace control
 	{` {{ 1 }} `, " 1 "},

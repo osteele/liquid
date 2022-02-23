@@ -1,6 +1,8 @@
 package parser
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // An Error is a syntax error during template parsing.
 type Error interface {

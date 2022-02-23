@@ -126,7 +126,7 @@ func writeObject(w io.Writer, value interface{}) error {
 		for i := 0; i < rt.Len(); i++ {
 			item := rt.Index(i)
 			if item.IsValid() {
-				if err := writeObject(w, item.Interface()); err != nil {
+				if err := writeArray(w, item.Interface(), i); err != nil {
 					return err
 				}
 			}
@@ -135,6 +135,60 @@ func writeObject(w io.Writer, value interface{}) error {
 	case reflect.Ptr:
 		return writeObject(w, reflect.ValueOf(value).Elem())
 	default:
+		_, err := io.WriteString(w, fmt.Sprint(value))
+		return err
+	}
+}
+
+func writeArray(w io.Writer, value interface{}, idx int) error {
+	value = values.ToLiquid(value)
+	if value == nil {
+		return nil
+	}
+	writeJoin := func() error {
+		if idx > 0 {
+			_, err := io.WriteString(w, ", ")
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	switch value := value.(type) {
+	case time.Time:
+		if err := writeJoin(); err != nil {
+			return err
+		}
+		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
+		return err
+	case []byte:
+		if err := writeJoin(); err != nil {
+			return err
+		}
+		_, err := w.Write(value)
+		return err
+		// there used be a case on fmt.Stringer here, but fmt.Sprint produces better results than obj.Write
+		// for instances of error and *string
+	}
+	rt := reflect.ValueOf(value)
+	switch rt.Kind() {
+	case reflect.Array, reflect.Slice:
+		for i := 0; i < rt.Len(); i++ {
+			item := rt.Index(i)
+			if item.IsValid() {
+				if err := writeArray(w, item.Interface(), i); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	case reflect.Ptr:
+		return writeObject(w, reflect.ValueOf(value).Elem())
+	default:
+		if err := writeJoin(); err != nil {
+			return err
+		}
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
 	}

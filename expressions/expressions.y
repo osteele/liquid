@@ -3,7 +3,6 @@ package expressions
 import (
 	"fmt"
 	"math"
-	"strings"
 	"github.com/autopilot3/liquid/values"
 )
 
@@ -44,17 +43,7 @@ func init() {
 %left '<' '>'
 %%
 start:
-  cond ';' {
-	  yylex.(*lexer).val =  func(ctx Context) values.Value { 
-		retVal := $1(ctx)
-		switch retVal.(type) {
-			case values.ArrayValue:
-				return values.ValueOf(strings.Join(retVal.Interface().([]string), ", "))
-			default:
-				return retVal
-		}
-	}
-}
+  cond ';' { yylex.(*lexer).val = $1 }
 | ASSIGN IDENTIFIER '=' filtered ';' {
 	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
