@@ -61,7 +61,7 @@ func ValueOf(value interface{}) Value { // nolint: gocyclo
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
 	case reflect.Array, reflect.Slice:
-		return ArrayValue{wrapperValue{value}}
+		return arrayValue{wrapperValue{value}}
 	case reflect.Map:
 		return mapValue{wrapperValue{value}}
 	case reflect.Struct:
@@ -115,11 +115,11 @@ var zeroValue = wrapperValue{0}
 var oneValue = wrapperValue{1}
 
 // container values
-type ArrayValue struct{ wrapperValue }
+type arrayValue struct{ wrapperValue }
 type mapValue struct{ wrapperValue }
 type stringValue struct{ wrapperValue }
 
-func (av ArrayValue) Contains(ev Value) bool {
+func (av arrayValue) Contains(ev Value) bool {
 	ar := reflect.ValueOf(av.value)
 	e := ev.Interface()
 	for i, len := 0, ar.Len(); i < len; i++ {
@@ -130,7 +130,7 @@ func (av ArrayValue) Contains(ev Value) bool {
 	return false
 }
 
-func (av ArrayValue) IndexValue(iv Value) Value {
+func (av arrayValue) IndexValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
 	var n int
 	switch ix := iv.Interface().(type) {
@@ -153,7 +153,7 @@ func (av ArrayValue) IndexValue(iv Value) Value {
 	return nilValue
 }
 
-func (av ArrayValue) PropertyValue(iv Value) Value {
+func (av arrayValue) PropertyValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
 	switch iv.Interface() {
 	case firstKey:
