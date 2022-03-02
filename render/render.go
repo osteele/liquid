@@ -141,6 +141,9 @@ func writeObject(w io.Writer, value interface{}) error {
 }
 
 func writeArray(w io.Writer, value interface{}, idx int) error {
+	if value == nil {
+		return nil
+	}
 	value = values.ToLiquid(value)
 	if value == nil {
 		return nil
