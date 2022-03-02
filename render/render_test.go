@@ -21,12 +21,14 @@ var renderTests = []struct{ in, out string }{
 	{`{{ 12.3 }}`, "12.3"},
 	{`{{ date }}`, "2015-07-17 15:04:05 +0000"},
 	{`{{ "string" }}`, "string"},
-	{`{{ array }}`, "firstsecondthird"},
+	{`{{ array }}`, "first, second, third"},
+	{`{{ array_bool }}`, "true, false, true"},
 
 	// variables and properties
 	{`{{ int }}`, "123"},
 	{`{{ page.title }}`, "Introduction"},
 	{`{{ array[1] }}`, "second"},
+	{`{{ array_bool[1] }}`, "false"},
 
 	// whitespace control
 	{` {{ 1 }} `, " 1 "},
@@ -57,9 +59,10 @@ var renderErrorTests = []struct{ in, out string }{
 }
 
 var renderTestBindings = map[string]interface{}{
-	"array": []string{"first", "second", "third"},
-	"date":  time.Date(2015, 7, 17, 15, 4, 5, 123456789, time.UTC),
-	"int":   123,
+	"array":      []string{"first", "second", "third"},
+	"array_bool": []bool{true, false, true},
+	"date":       time.Date(2015, 7, 17, 15, 4, 5, 123456789, time.UTC),
+	"int":        123,
 	"sort_prop": []map[string]interface{}{
 		{"weight": 1},
 		{"weight": 5},

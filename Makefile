@@ -24,17 +24,15 @@ imports: ## list imports
 	@go list -f '{{join .Imports "\n"}}' ./... | grep -v `go list -f '{{.ImportPath}}'` | grep '\.' | sort | uniq
 
 lint: ## lint the package
-	gometalinter ./... --tests --deadline=5m --include=gofmt --exclude expressions/scanner.go --exclude y.go --exclude '.*_string.go' --disable=gotype --disable=interfacer
+	golangci-lint run
 	@echo lint passed
 
 pre-commit: lint test ## lint and test the package
 
 setup: ## install dependencies and development tools
-	go get golang.org/x/tools/cmd/stringer
+	go install golang.org/x/tools/cmd/stringer
 	go install golang.org/x/tools/cmd/goyacc
 	go get -t ./...
-	go get github.com/alecthomas/gometalinter
-	gometalinter --install
 
 test: ## test the package
 	go test ./...

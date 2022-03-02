@@ -23,6 +23,8 @@ var evaluatorTests = []struct {
 
 	// Variables
 	{`n`, 123},
+	{`array`, []string{"first", "second", "third"}},
+	{`array.first`, "first"},
 
 	// Attributes
 	{`hash.a`, "first"},
@@ -43,9 +45,11 @@ var evaluatorTests = []struct {
 	{`array[100]`, nil},
 	{`hash[1]`, nil},
 	{`hash.c[0]`, "r"},
+	{`hash.c`, []string{"r", "g", "b"}},
 
 	// Expressions
 	{`(n)`, 123},
+	{`(array)`, []string{"first", "second", "third"}},
 
 	// Operators
 	{`1 == 1`, true},
@@ -106,6 +110,7 @@ var evaluatorTests = []struct {
 
 var evaluatorTestBindings = (map[string]interface{}{
 	"n":               123,
+	"str_array":       "first, second, third",
 	"array":           []string{"first", "second", "third"},
 	"interface_array": []interface{}{"first", "second", "third"},
 	"empty_list":      []interface{}{},
