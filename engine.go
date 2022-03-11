@@ -162,7 +162,6 @@ func NewEngine() *Engine {
 
 	// a set [a,b,c] contains at least one of matches, [a,d] will return true in this case
 	engine.RegisterFilter("setContains", func(s string, matches ...string) bool {
-		var contains bool
 		splits := strings.Split(s, ",")
 		for _, match := range matches {
 			for _, s := range splits {
@@ -171,7 +170,7 @@ func NewEngine() *Engine {
 				}
 			}
 		}
-		return contains
+		return false
 	})
 
 	// a set [a,b,c] contains all matches, [a,d] will return false in this case, [a,c] will return true
