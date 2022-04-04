@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -161,34 +162,75 @@ func NewEngine() *Engine {
 	})
 
 	// a set [a,b,c] contains at least one of matches, [a,d] will return true in this case
-	engine.RegisterFilter("setContains", func(s string, matches ...string) bool {
-		splits := strings.Split(s, ",")
-		for _, match := range matches {
-			for _, s := range splits {
-				if s == match {
-					return true
+	engine.RegisterFilter("setContains", func(s interface{}, matches ...interface{}) bool {
+		if s == nil {
+			return false
+		}
+		switch k := reflect.TypeOf(s).Kind(); k {
+		case reflect.String:
+			str := s.(string)
+			splits := strings.Split(str, ",")
+			for _, match := range matches {
+				for _, s := range splits {
+					if s == match {
+						return true
+					}
 				}
 			}
+			return false
+		case reflect.Slice:
+			slice := s.([]interface{})
+			for _, match := range matches {
+				for _, s := range slice {
+					if reflect.DeepEqual(s, match) {
+						return true
+					}
+				}
+			}
+			return false
 		}
 		return false
 	})
 
 	// a set [a,b,c] contains all matches, [a,d] will return false in this case, [a,c] will return true
-	engine.RegisterFilter("setContainsAll", func(s string, matches ...string) bool {
-		splits := strings.Split(s, ",")
-		for _, match := range matches {
-			containMatch := false
-			for _, s := range splits {
-				if s == match {
-					containMatch = true
-					break
+	engine.RegisterFilter("setContainsAll", func(s interface{}, matches ...interface{}) bool {
+		if s == nil {
+			return false
+		}
+		switch k := reflect.TypeOf(s).Kind(); k {
+		case reflect.String:
+			str := s.(string)
+			splits := strings.Split(str, ",")
+			for _, match := range matches {
+				containMatch := false
+				for _, s := range splits {
+					if s == match {
+						containMatch = true
+						break
+					}
+				}
+				if !containMatch {
+					return false
 				}
 			}
-			if !containMatch {
-				return false
+			return true
+		case reflect.Slice:
+			slice := s.([]interface{})
+			for _, match := range matches {
+				containMatch := false
+				for _, s := range slice {
+					if reflect.DeepEqual(s, match) {
+						containMatch = true
+						break
+					}
+				}
+				if !containMatch {
+					return false
+				}
 			}
+			return true
 		}
-		return true
+		return false
 	})
 	return engine
 }
