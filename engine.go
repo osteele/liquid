@@ -11,6 +11,7 @@ import (
 
 	"github.com/autopilot3/ap3-helpers-go/logger"
 	"github.com/autopilot3/ap3-types-go/types/date"
+	"github.com/autopilot3/ap3-types-go/types/phone"
 	"github.com/autopilot3/liquid/filters"
 	"github.com/autopilot3/liquid/render"
 	"github.com/autopilot3/liquid/tags"
@@ -29,15 +30,17 @@ func NewEngine() *Engine {
 	engine := &Engine{render.NewConfig()}
 	filters.AddStandardFilters(&engine.cfg)
 	tags.AddStandardTags(engine.cfg)
-	engine.RegisterFilter("hideCountryCodeAndDefault", func(s string, hide bool, defaultValue string) string {
-		if s == "" {
+	engine.RegisterFilter("hideCountryCodeAndDefault", func(s phone.International, hide bool, defaultValue string) string {
+		if s.Number.IsZero() && s.CountryCode.IsZero() {
 			return defaultValue
 		}
-		splits := strings.Split(s, " ")
-		if len(splits) == 2 && hide {
-			return splits[1]
+		if hide {
+			return s.Number.String()
 		}
-		return s
+		return s.String()
+	})
+	engine.RegisterFilter("rawPhone", func(s phone.International) string {
+		return s.CountryCode.String() + s.Number.String()
 	})
 
 	engine.RegisterFilter("dateTimeFormatOrDefault", func(s time.Time, format string, defaultValue string) string {
