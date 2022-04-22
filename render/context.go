@@ -12,6 +12,8 @@ import (
 
 // Context provides the rendering context for a tag renderer.
 type Context interface {
+	// Bindings returns the current lexical environment.
+	Bindings() map[string]interface{}
 	// Get retrieves the value of a variable from the current lexical environment.
 	Get(name string) interface{}
 	// Errorf creates a SourceError, that includes the source location.
@@ -73,6 +75,11 @@ func (c rendererContext) Evaluate(expr expressions.Expression) (out interface{},
 // EvaluateString evaluates an expression within the template context.
 func (c rendererContext) EvaluateString(source string) (out interface{}, err error) {
 	return expressions.EvaluateString(source, expressions.NewContext(c.ctx.bindings, c.ctx.config.Config.Config))
+}
+
+// Bindings returns the current lexical environment.
+func (c rendererContext) Bindings() map[string]interface{} {
+	return c.ctx.bindings
 }
 
 // Get gets a variable value within an evaluation context.
