@@ -25,7 +25,7 @@ func init() {
    loopmods loopModifiers
    filter_params []valueFn
 }
-%type <f> expr rel filtered cond int_or_var loop_expr
+%type <f> expr rel filtered cond literal_or_var loop_expr
 %type<filter_params> filter_params
 %type<exprs> exprs expr2
 %type<cycle> cycle
@@ -89,14 +89,14 @@ loop: IDENTIFIER IN loop_expr loop_modifiers {
 }
 ;
 
-loop_expr : '(' int_or_var DOTDOT int_or_var ')' {
+loop_expr : '(' literal_or_var DOTDOT literal_or_var ')' {
   $$ = makeRangeExpr($2, $4)
 }
 | filtered
 ;
 
 // TODO DRY w/ expr
-int_or_var:
+literal_or_var:
   LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 ;
@@ -111,7 +111,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 	}
 	$$ = $1
 }
-| loop_modifiers KEYWORD int_or_var {
+| loop_modifiers KEYWORD literal_or_var {
     switch $2 {
 	case "cols":
 		$1.Cols = &expression{$3}
