@@ -2,7 +2,6 @@
 package expressions
 import (
 	"fmt"
-	"math"
 	"github.com/osteele/liquid/values"
 )
 
@@ -102,7 +101,7 @@ int_or_var:
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 ;
 
-loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxInt32} }
+loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 | loop_modifiers IDENTIFIER {
 	switch $2 {
 	case "reversed":
@@ -112,26 +111,14 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxInt32} }
 	}
 	$$ = $1
 }
-| loop_modifiers KEYWORD LITERAL { // TODO can this be a variable?
-	switch $2 {
+| loop_modifiers KEYWORD int_or_var {
+    switch $2 {
 	case "cols":
-		cols, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop cols must an integer")))
-		}
-		$1.Cols = cols
+		$1.Cols = &expression{$3}
 	case "limit":
-		limit, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop limit must an integer")))
-		}
-		$1.Limit = &limit
+		$1.Limit = &expression{$3}
 	case "offset":
-		offset, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop offset must an integer")))
-		}
-		$1.Offset = offset
+		$1.Offset = &expression{$3}
 	default:
 		panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}

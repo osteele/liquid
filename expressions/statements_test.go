@@ -10,6 +10,7 @@ func TestParseStatement(t *testing.T) {
 	stmt, err := ParseStatement(AssignStatementSelector, "a = b")
 	require.NoError(t, err)
 	require.Equal(t, "a", stmt.Assignment.Variable)
+	require.Implements(t, (*Expression)(nil), stmt.Assignment.ValueFn)
 
 	stmt, err = ParseStatement(CycleStatementSelector, "'a', 'b'")
 	require.NoError(t, err)
@@ -27,9 +28,12 @@ func TestParseStatement(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "x", stmt.Loop.Variable)
 	require.True(t, stmt.Loop.Reversed)
-	require.Equal(t, 2, stmt.Loop.Offset)
+
+	require.Nil(t, stmt.Loop.Cols)
 	require.NotNil(t, stmt.Loop.Limit)
-	require.Equal(t, 3, *stmt.Loop.Limit)
+	require.Implements(t, (*Expression)(nil), stmt.Loop.Limit)
+	require.NotNil(t, stmt.Loop.Offset)
+	require.Implements(t, (*Expression)(nil), stmt.Loop.Offset)
 
 	stmt, err = ParseStatement(WhenStatementSelector, "a, b")
 	require.NoError(t, err)

@@ -3,6 +3,7 @@ package tags
 import (
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"sort"
 
@@ -66,17 +67,16 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	if err != nil {
 		return nil, err
 	}
-	loop := stmt.Loop
-	dec := makeLoopDecorator(node.Name, loop)
-	return loopRenderer{loop, dec}.render, nil
+	return loopRenderer{stmt.Loop, node.Name}.render, nil
 }
 
 type loopRenderer struct {
 	expressions.Loop
-	loopDecorator
+	tagName string
 }
 
 func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
+	// loop modifiers
 	val, err := ctx.Evaluate(loop.Expr)
 	if err != nil {
 		return err
@@ -85,7 +85,17 @@ func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
 	if iter == nil {
 		return nil
 	}
-	iter = applyLoopModifiers(loop.Loop, iter)
+	iter, err = applyLoopModifiers(loop.Loop, ctx, iter)
+	if err != nil {
+		return err
+	}
+
+	// loop decorator
+	decorator, err := makeLoopDecorator(loop, ctx)
+	if err != nil {
+		return err
+	}
+
 	// shallow-bind the loop variables; restore on exit
 	defer func(index, forloop interface{}) {
 		ctx.Set(forloopVarName, index)
@@ -105,9 +115,9 @@ loop:
 			"length":  len,
 			".cycles": cycleMap,
 		})
-		loop.before(w, i)
+		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
-		loop.after(w, i, len)
+		decorator.after(w, i, len)
 		switch {
 		case err == nil:
 		// fall through
@@ -122,11 +132,24 @@ loop:
 	return nil
 }
 
-func makeLoopDecorator(tagName string, loop expressions.Loop) loopDecorator {
-	if tagName == "tablerow" {
-		return tableRowDecorator(loop.Cols)
+func makeLoopDecorator(loop loopRenderer, ctx render.Context) (loopDecorator, error) {
+	if loop.tagName == "tablerow" {
+		if loop.Cols != nil {
+			val, err := ctx.Evaluate(loop.Cols)
+			if err != nil {
+				return nil, err
+			}
+			cols, ok := val.(int)
+			if !ok {
+				return nil, ctx.Errorf("loop cols must be an integer")
+			}
+			if cols > 0 {
+				return tableRowDecorator(cols), nil
+			}
+		}
+		return tableRowDecorator(math.MaxInt32), nil
 	}
-	return forLoopDecorator{}
+	return forLoopDecorator{}, nil
 }
 
 type loopDecorator interface {
@@ -166,17 +189,40 @@ func (c tableRowDecorator) after(w io.Writer, i, len int) {
 	}
 }
 
-func applyLoopModifiers(loop expressions.Loop, iter iterable) iterable {
+func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable) (iterable, error) {
 	if loop.Reversed {
 		iter = reverseWrapper{iter}
 	}
-	if loop.Offset > 0 {
-		iter = offsetWrapper{iter, loop.Offset}
+
+	if loop.Offset != nil {
+		val, err := ctx.Evaluate(loop.Offset)
+		if err != nil {
+			return nil, err
+		}
+		offset, ok := val.(int)
+		if !ok {
+			return nil, ctx.Errorf("loop offset must be an integer")
+		}
+		if offset > 0 {
+			iter = offsetWrapper{iter, offset}
+		}
 	}
+
 	if loop.Limit != nil {
-		iter = limitWrapper{iter, *loop.Limit}
+		val, err := ctx.Evaluate(loop.Limit)
+		if err != nil {
+			return nil, err
+		}
+		limit, ok := val.(int)
+		if !ok {
+			return nil, ctx.Errorf("loop limit must be an integer")
+		}
+		if limit >= 0 {
+			iter = limitWrapper{iter, limit}
+		}
 	}
-	return iter
+
+	return iter, nil
 }
 
 func makeIterator(value interface{}) iterable {
