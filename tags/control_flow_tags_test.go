@@ -43,6 +43,7 @@ var cfTagTests = []struct{ in, expected string }{
 	// unless
 	{`{% unless true %}false{% endunless %}`, ""},
 	{`{% unless false %}true{% endunless %}`, "true"},
+	{`{% unless true %}true{% else %}false{% endunless %}`, "false"},
 }
 
 var cfTagCompilationErrorTests = []struct{ in, expected string }{
