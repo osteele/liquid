@@ -29,8 +29,12 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array reversed %}{{ a }}.{% endfor %}`, "third.second.first."},
 	{`{% for a in array limit: 2 %}{{ a }}.{% endfor %}`, "first.second."},
 	{`{% for a in array limit: limit %}{{ a }}.{% endfor %}`, "first.second."},
+	{`{% for a in array limit: loopmods.limit %}{{ a }}.{% endfor %}`, "first.second."},
+	{`{% for a in array limit: loopmods["limit"] %}{{ a }}.{% endfor %}`, "first.second."},
 	{`{% for a in array offset: 1 %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array offset: offset %}{{ a }}.{% endfor %}`, "second.third."},
+	{`{% for a in array offset: loopmods.offset %}{{ a }}.{% endfor %}`, "second.third."},
+	{`{% for a in array offset: loopmods["offset"] %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
 	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
@@ -99,6 +103,14 @@ var iterationTests = []struct{ in, expected string }{
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
 	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
+	{`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
+		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
+		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
+		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
+	{`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
+		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
+		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
+		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
 }
 
 var iterationSyntaxErrorTests = []struct{ in, expected string }{
@@ -124,9 +136,10 @@ var iterationTestBindings = map[string]interface{}{
 	"products": []string{
 		"Cool Shirt", "Alien Poster", "Batman Poster", "Bullseye Shirt", "Another Classic Vinyl", "Awesome Jeans",
 	},
-	"offset": 1,
-	"limit":  2,
-	"cols":   2,
+	"offset":   1,
+	"limit":    2,
+	"cols":     2,
+	"loopmods": map[string]interface{}{"limit": 2, "offset": 1, "cols": 2},
 }
 
 func TestIterationTags(t *testing.T) {

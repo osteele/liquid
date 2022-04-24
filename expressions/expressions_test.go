@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/osteele/liquid/values"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,6 +28,7 @@ var evaluatorTests = []struct {
 	// Attributes
 	{`hash.a`, "first"},
 	{`hash.b.c`, "d"},
+	{`hash["b"].c`, "d"},
 	{`hash.x`, nil},
 	{`fruits.first`, "apples"},
 	{`fruits.last`, "plums"},
@@ -44,7 +46,14 @@ var evaluatorTests = []struct {
 	{`hash[1]`, nil},
 	{`hash.c[0]`, "r"},
 
+	// Range
+	{`(1..5)`, values.NewRange(1, 5)},
+	{`(1..range.end)`, values.NewRange(1, 5)},
+	{`(1..range["end"])`, values.NewRange(1, 5)},
+	{`(range.begin..range.end)`, values.NewRange(1, 5)},
+
 	// Expressions
+	{`(1)`, 1},
 	{`(n)`, 123},
 
 	// Operators
@@ -116,6 +125,10 @@ var evaluatorTestBindings = (map[string]interface{}{
 		"c": []string{"r", "g", "b"},
 	},
 	"hash_with_size_key": map[string]interface{}{"size": "key_value"},
+	"range": map[string]interface{}{
+		"begin": 1,
+		"end":   5,
+	},
 })
 
 func TestEvaluateString(t *testing.T) {
