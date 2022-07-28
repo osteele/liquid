@@ -222,3 +222,9 @@ func (sv stringValue) PropertyValue(iv Value) Value {
 	}
 	return nilValue
 }
+
+// SafeValue is a wrapped interface{} to mark it as being safe so that auto-escape is not applied.
+// It is used by the 'safe' filter which is added when (*Engine).SetAutoEscapeReplacer() is called.
+type SafeValue struct {
+	Value interface{}
+}

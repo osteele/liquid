@@ -126,3 +126,11 @@ func (e *Engine) ParseTemplateAndCache(source []byte, path string, line int) (*T
 	e.cfg.Cache[path] = source
 	return t, err
 }
+
+// SetAutoEscapeReplacer enables auto-escape functionality where the output of expression blocks ({{ ... }}) is
+// passed though a render.Replacer during rendering, unless it's been marked as safe by applying the 'safe' filter.
+// This filter is automatically registered when this method is called. The filter must be applied last.
+// A replacer is provided for escaping HTML (see render.HtmlEscaper).
+func (e *Engine) SetAutoEscapeReplacer(replacer render.Replacer) {
+	e.cfg.SetAutoEscapeReplacer(replacer)
+}
