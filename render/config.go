@@ -9,6 +9,8 @@ type Config struct {
 	parser.Config
 	grammar
 	Cache map[string][]byte
+
+	escapeReplacer Replacer
 }
 
 type grammar struct {
@@ -23,4 +25,9 @@ func NewConfig() Config {
 		blockDefs: map[string]*blockSyntax{},
 	}
 	return Config{Config: parser.NewConfig(g), grammar: g, Cache: map[string][]byte{}}
+}
+
+func (c *Config) SetAutoEscapeReplacer(replacer Replacer) {
+	c.escapeReplacer = replacer
+	c.AddSafeFilter()
 }
