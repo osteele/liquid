@@ -85,6 +85,7 @@ var filterTests = []struct {
 	{`"/my/fancy/url" | append: ".html"`, "/my/fancy/url.html"},
 	{`"website.com" | append: "/index.html"`, "website.com/index.html"},
 	{`"title" | capitalize`, "Title"},
+	{`"Élio Silva" | capitalize`, "Élio Silva"},
 	{`"my great title" | capitalize`, "My great title"},
 	{`"" | capitalize`, ""},
 	{`"Parker Moore" | downcase`, "parker moore"},
@@ -100,6 +101,7 @@ var filterTests = []struct {
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+	{`"Привет" | slice: -3, 2`, "ве"},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
 	{`"a/b/" | split: '/' | join: '-'`, "a-b"},
