@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/autopilot3/liquid/values"
 	"github.com/osteele/tuesday"
@@ -114,7 +113,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		if len(s) == 0 {
 			return s
 		}
-		return strings.ToUpper(s[:1]) + s[1:]
+		runes := []rune(s)
+		runes[0] = unicode.ToUpper(runes[0])
+		return string(runes)
 	})
 	fd.AddFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
@@ -145,12 +146,23 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
 		// runes aren't bytes; don't use slice
 		n := length(1)
+		runes := []rune(s)
 		if start < 0 {
-			start = utf8.RuneCountInString(s) + start
+			start = len(runes) + start
 		}
-		p := regexp.MustCompile(fmt.Sprintf(`^.{%d}(.{0,%d}).*$`, start, n))
-		return p.ReplaceAllString(s, "$1")
+		if start < 0 {
+			return s
+		}
+		if start >= len(runes) {
+			return ""
+		}
+		end := start + n
+		if end > len(runes) {
+			end = len(runes)
+		}
+		return string(runes[start:end])
 	})
+
 	fd.AddFilter("split", splitFilter)
 	fd.AddFilter("strip_html", func(s string) string {
 		// TODO this probably isn't sufficient
