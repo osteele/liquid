@@ -210,7 +210,7 @@ cond:
 | cond AND rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		if _, ok := ctx.(*varsContext); ok {
+        if _, ok := ctx.(*varsContext); ok {
             a := fa(ctx).Test()
             b := fb(ctx).Test()
             return values.ValueOf(a && b)
