@@ -210,13 +210,23 @@ cond:
 | cond AND rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
+		if _, ok := ctx.(*varsContext); ok {
+            a := fa(ctx).Test()
+            b := fb(ctx).Test()
+            return values.ValueOf(a && b)
+        }
+        return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
 	}
 }
 | cond OR rel {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
+        if _, ok := ctx.(*varsContext); ok {
+            a := fa(ctx).Test()
+            b := fb(ctx).Test()
+            return values.ValueOf(a || b)
+        }
+        return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
 	}
 }
 ;
