@@ -25,6 +25,11 @@ import (
 // An engine can be configured with additional filters and tags.
 type Engine struct{ cfg render.Config }
 
+func (e *Engine) SetAllowedTags(allowedTags map[string]struct{}) *Engine {
+	e.cfg.AllowedTags = allowedTags
+	return e
+}
+
 // NewEngine returns a new Engine.
 func NewEngine() *Engine {
 	engine := &Engine{render.NewConfig()}
@@ -260,7 +265,6 @@ func (e *Engine) RegisterBlock(name string, td Renderer) {
 // * https://github.com/autopilot3/liquid/blob/master/filters/filters.go
 //
 // * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
-//
 func (e *Engine) RegisterFilter(name string, fn interface{}) {
 	e.cfg.AddFilter(name, fn)
 }

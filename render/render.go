@@ -71,15 +71,37 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 }
 
 func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
-	w.TrimLeft(n.TrimLeft)
-	value, err := ctx.Evaluate(n.expr)
-	if err != nil {
-		return wrapRenderError(err, n)
+	var (
+		value interface{}
+		err   error
+	)
+	if len(ctx.config.AllowedTags) != 0 {
+		if _, ok := ctx.config.AllowedTags[n.Source]; ok {
+			w.TrimLeft(n.TrimLeft)
+			value, err = ctx.Evaluate(n.expr)
+			if err != nil {
+				return wrapRenderError(err, n)
+			}
+			if err := wrapRenderError(writeObject(w, value), n); err != nil {
+				return err
+			}
+			w.TrimRight(n.TrimRight)
+		} else {
+			w.TrimLeft(n.TrimLeft)
+			writeObject(w, n.Source)
+			w.TrimRight(n.TrimRight)
+		}
+	} else {
+		w.TrimLeft(n.TrimLeft)
+		value, err = ctx.Evaluate(n.expr)
+		if err != nil {
+			return wrapRenderError(err, n)
+		}
+		if err := wrapRenderError(writeObject(w, value), n); err != nil {
+			return err
+		}
+		w.TrimRight(n.TrimRight)
 	}
-	if err := wrapRenderError(writeObject(w, value), n); err != nil {
-		return err
-	}
-	w.TrimRight(n.TrimRight)
 	return nil
 }
 
