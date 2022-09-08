@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/autopilot3/liquid"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,4 +46,44 @@ func TestMain(t *testing.T) {
 	exit = func(n int) { exitCode = n }
 	require.NoError(t, run([]string{"file1", "file2"}))
 	require.Equal(t, 1, exitCode)
+}
+
+func TestRenderAllowedTags(t *testing.T) {
+
+	bindings := map[string]interface{}{
+		"people": map[string]interface{}{
+			"name":  "bob",
+			"email": "bob@example.com",
+		},
+	}
+	engine := liquid.NewEngine()
+	engine.SetAllowedTags(map[string]struct{}{
+		"{{ people.name }}": {},
+	})
+	tests := []struct {
+		name     string
+		src      string
+		expected string
+	}{
+		{
+			"Allow name only",
+			"Hello {{ people.name }}, your email is {{ people.email }}!",
+			"Hello bob, your email is {{ people.email }}!",
+		},
+	}
+	for _, tt := range tests {
+		tmpl, err := engine.ParseString(tt.src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			out, err := tmpl.RenderString(bindings)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out != tt.expected {
+				t.Errorf("TestRenderAllowedTags() = %v, want %v", out, tt.expected)
+			}
+		})
+	}
 }
