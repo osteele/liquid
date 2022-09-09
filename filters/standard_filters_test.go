@@ -8,8 +8,9 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/autopilot3/liquid/expressions"
 	"github.com/stretchr/testify/require"
+
+	"github.com/autopilot3/liquid/expressions"
 )
 
 var filterTests = []struct {
@@ -188,6 +189,22 @@ var filterTests = []struct {
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+
+	// Hash filters
+
+	{`"Take my protein pills and put my helmet on" | md5`, "505a1a407670a93d9ef2cf34960002f9"},
+	{`"" | md5`, "d41d8cd98f00b204e9800998ecf8427e"},
+	{`100 | md5`, "f899139df5e1059396431415e770c6dd"},
+	{`100.01 | md5`, "e74f9831767648ecdd211c3f8cd85b86"},
+	{`true | md5`, "b326b5062b2f0e69046810717534cb09"},
+	{`false | md5`, "68934a3e9455fa72420237eb05902327"},
+
+	{`"Take my protein pills and put my helmet on" | sha1`, "07f3b4973325af9109399ead74f2180bcaefa4c0"},
+	{`"" | sha1`, "da39a3ee5e6b4b0d3255bfef95601890afd80709"},
+	{`100 | sha1`, "310b86e0b62b828562fc91c7be5380a992b2786a"},
+	{`100.01 | sha1`, "2cf9b40e62dd0bff2c57d179bfc99674d25f3c33"},
+	{`true | sha1`, "5ffe533b830f08a0326348a9160afafc8ada44db"},
+	{`false | sha1`, "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"},
 }
 
 var filterTestBindings = map[string]interface{}{

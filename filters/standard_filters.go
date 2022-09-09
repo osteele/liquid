@@ -2,8 +2,11 @@
 package filters
 
 import (
+	"crypto/md5" // #nosec G501
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"html"
 	"math"
 	"net/url"
@@ -13,8 +16,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/autopilot3/liquid/values"
 	"github.com/osteele/tuesday"
+
+	"github.com/autopilot3/liquid/values"
 )
 
 // A FilterDictionary holds filters.
@@ -213,6 +217,42 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("type", func(value interface{}) string {
 		return fmt.Sprintf("%T", value)
 	})
+
+	// Hash filters
+
+	// #nosec G401
+	fd.AddFilter("md5", hashFilter(md5.New()))
+	fd.AddFilter("sha1", hashFilter(sha1.New()))
+}
+
+func hashFilter(h hash.Hash) func(value interface{}) string {
+	return func(value interface{}) string {
+		var vBytes []byte
+		switch v := value.(type) {
+		case string:
+			vBytes = []byte(v)
+		case int, int8, int16, int32, int64, float32, float64, bool:
+			vBytes = []byte(fmt.Sprint(v))
+		default:
+			return ""
+		}
+		h.Reset()
+		if _, err := h.Write(vBytes); err == nil {
+			return fmt.Sprintf("%x", h.Sum(nil))
+		}
+		return ""
+	}
+}
+
+func toBytes(value interface{}) []byte {
+	switch v := value.(type) {
+	case string:
+		return []byte(v)
+	case int, int8, int16, int32, int64, float32, float64, bool:
+		return []byte(fmt.Sprint(v))
+	default:
+		return nil
+	}
 }
 
 func joinFilter(a []interface{}, sep func(string) string) interface{} {
