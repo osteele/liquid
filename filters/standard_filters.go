@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -107,6 +108,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		exp := math.Pow10(pl)
 		return math.Floor(n*exp+0.5) / exp
 	})
+
+	fd.AddFilter("at_least", floatFilter(math.Max))
+	fd.AddFilter("at_most", floatFilter(math.Min))
 
 	// sequence filters
 	fd.AddFilter("size", values.Length)
@@ -262,6 +266,47 @@ func hmacFilter(hashFn func() hash.Hash) func(value, key interface{}) string {
 			return fmt.Sprintf("%x", hm.Sum(nil))
 		}
 		return ""
+	}
+}
+
+func floatFilter(fn func(v1, v2 float64) float64) func(lhs, rhs interface{}) interface{} {
+	return func(lhs, rhs interface{}) interface{} {
+		lhsValue, ok := parseAsFloat64(lhs)
+		if !ok {
+			return ""
+		}
+		rhsValue, ok := parseAsFloat64(rhs)
+		if !ok {
+			return ""
+		}
+		return fn(lhsValue, rhsValue)
+	}
+}
+
+func parseAsFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case string:
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return 0, false
+		}
+		return parsed, true
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case float32:
+		return float64(v), true
+	case float64:
+		return v, true
+	default:
+		return 0, false
 	}
 }
 
