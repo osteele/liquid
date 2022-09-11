@@ -206,6 +206,21 @@ var filterTests = []struct {
 	{`"" | sha256`, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
 	{`100 | sha256`, "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306"},
 	{`100.01 | sha256`, "4b46711a09b65af6dcbbc4caab38ab58e06d08eb75fbeb8e367fdd1ccc289fba"},
+
+	{`"Take my protein pills and put my helmet on" | hmac: "key"`, "5b74077685d98d1e1d03cd289e2c2bfc"},
+	{`"Take my protein pills and put my helmet on" | hmac: ""`, ""},
+	{`"" | hmac: "key"`, "63530468a04e386459855da0063b6596"},
+	{`"" | hmac: 100`, "3dca4879a1503e097da2f46c70e53a44"},
+	{`"" | hmac: 100.01`, "50a40e5d258d5337b8f23d5f790f5419"},
+	{`"Take my protein pills and put my helmet on" | hmac: 100`, "3494f6a7895d9e8084343e1020984ba6"},
+	{`"Take my protein pills and put my helmet on" | hmac: 100.01`, "c1ef31ab6b3630ffb2e6842a600bf572"},
+	{`"Only numeric and string keys are supported" | hmac: true`, ""},
+	{`100 | hmac: "key"`, "f69388563202c10d4e0dc44646a3b937"},
+	{`100 | hmac: 100`, "e459c4d00f32981388e5d0e797c8ac68"},
+	{`100 | hmac: 100.01`, "f88e6d1df733b884b9748bbab83b3e68"},
+	{`100.01 | hmac: "key"`, "41e66d9c6ca6e0b7b0470d9c03fef001"},
+	{`100.01 | hmac: 100`, "7ac1da15168b6bf50c2975fa3198e84e"},
+	{`100.01 | hmac: 100.01`, "bcd8551b5dbc26ed858752b9046dc654"},
 }
 
 var filterTestBindings = map[string]interface{}{

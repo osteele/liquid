@@ -2,6 +2,7 @@
 package filters
 
 import (
+	"crypto/hmac"
 	"crypto/md5" // #nosec G501
 	"crypto/sha1"
 	"crypto/sha256"
@@ -222,20 +223,17 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	// Hash filters
 
 	// #nosec G401
-	fd.AddFilter("md5", hashFilter(func() hash.Hash { return md5.New() }))
-	fd.AddFilter("sha1", hashFilter(func() hash.Hash { return sha1.New() }))
-	fd.AddFilter("sha256", hashFilter(func() hash.Hash { return sha256.New() }))
+	fd.AddFilter("md5", hashFilter(md5.New))
+	fd.AddFilter("sha1", hashFilter(sha1.New))
+	fd.AddFilter("sha256", hashFilter(sha256.New))
+	// #nosec G401
+	fd.AddFilter("hmac", hmacFilter(md5.New))
 }
 
 func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 	return func(value interface{}) string {
-		var vBytes []byte
-		switch v := value.(type) {
-		case string:
-			vBytes = []byte(v)
-		case int, int8, int16, int32, int64, float32, float64:
-			vBytes = []byte(fmt.Sprint(v))
-		default:
+		vBytes := toBytes(value)
+		if vBytes == nil {
 			return ""
 		}
 		h := hashFn()
@@ -246,11 +244,29 @@ func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 	}
 }
 
+func hmacFilter(hashFn func() hash.Hash) func(value, key interface{}) string {
+	return func(value, key interface{}) string {
+		vBytes := toBytes(value)
+		if vBytes == nil {
+			return ""
+		}
+		kBytes := toBytes(key)
+		if len(kBytes) == 0 {
+			return ""
+		}
+		hm := hmac.New(hashFn, kBytes)
+		if _, err := hm.Write(vBytes); err == nil {
+			return fmt.Sprintf("%x", hm.Sum(nil))
+		}
+		return ""
+	}
+}
+
 func toBytes(value interface{}) []byte {
 	switch v := value.(type) {
 	case string:
 		return []byte(v)
-	case int, int8, int16, int32, int64, float32, float64, bool:
+	case int, int8, int16, int32, int64, float32, float64:
 		return []byte(fmt.Sprint(v))
 	default:
 		return nil
