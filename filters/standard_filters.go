@@ -4,6 +4,7 @@ package filters
 import (
 	"crypto/md5" // #nosec G501
 	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"hash"
@@ -221,22 +222,23 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	// Hash filters
 
 	// #nosec G401
-	fd.AddFilter("md5", hashFilter(md5.New()))
-	fd.AddFilter("sha1", hashFilter(sha1.New()))
+	fd.AddFilter("md5", hashFilter(func() hash.Hash { return md5.New() }))
+	fd.AddFilter("sha1", hashFilter(func() hash.Hash { return sha1.New() }))
+	fd.AddFilter("sha256", hashFilter(func() hash.Hash { return sha256.New() }))
 }
 
-func hashFilter(h hash.Hash) func(value interface{}) string {
+func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 	return func(value interface{}) string {
 		var vBytes []byte
 		switch v := value.(type) {
 		case string:
 			vBytes = []byte(v)
-		case int, int8, int16, int32, int64, float32, float64, bool:
+		case int, int8, int16, int32, int64, float32, float64:
 			vBytes = []byte(fmt.Sprint(v))
 		default:
 			return ""
 		}
-		h.Reset()
+		h := hashFn()
 		if _, err := h.Write(vBytes); err == nil {
 			return fmt.Sprintf("%x", h.Sum(nil))
 		}

@@ -196,15 +196,16 @@ var filterTests = []struct {
 	{`"" | md5`, "d41d8cd98f00b204e9800998ecf8427e"},
 	{`100 | md5`, "f899139df5e1059396431415e770c6dd"},
 	{`100.01 | md5`, "e74f9831767648ecdd211c3f8cd85b86"},
-	{`true | md5`, "b326b5062b2f0e69046810717534cb09"},
-	{`false | md5`, "68934a3e9455fa72420237eb05902327"},
 
 	{`"Take my protein pills and put my helmet on" | sha1`, "07f3b4973325af9109399ead74f2180bcaefa4c0"},
 	{`"" | sha1`, "da39a3ee5e6b4b0d3255bfef95601890afd80709"},
 	{`100 | sha1`, "310b86e0b62b828562fc91c7be5380a992b2786a"},
 	{`100.01 | sha1`, "2cf9b40e62dd0bff2c57d179bfc99674d25f3c33"},
-	{`true | sha1`, "5ffe533b830f08a0326348a9160afafc8ada44db"},
-	{`false | sha1`, "7cb6efb98ba5972a9b5090dc2e517fe14d12cb04"},
+
+	{`"Take my protein pills and put my helmet on" | sha256`, "b19c3d04c1b80ae9acd15227c0dde0cb6f5755995afa3c846a3473ac42de6f63"},
+	{`"" | sha256`, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+	{`100 | sha256`, "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306"},
+	{`100.01 | sha256`, "4b46711a09b65af6dcbbc4caab38ab58e06d08eb75fbeb8e367fdd1ccc289fba"},
 }
 
 var filterTestBindings = map[string]interface{}{
