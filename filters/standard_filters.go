@@ -228,6 +228,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("sha256", hashFilter(sha256.New))
 	// #nosec G401
 	fd.AddFilter("hmac", hmacFilter(md5.New))
+	fd.AddFilter("hmac_sha1", hmacFilter(sha1.New))
+	fd.AddFilter("hmac_sha256", hmacFilter(sha256.New))
 }
 
 func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
@@ -245,6 +247,7 @@ func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 }
 
 func hmacFilter(hashFn func() hash.Hash) func(value, key interface{}) string {
+
 	return func(value, key interface{}) string {
 		vBytes := toBytes(value)
 		if vBytes == nil {
