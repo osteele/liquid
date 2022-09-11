@@ -234,12 +234,12 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 
 func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 	return func(value interface{}) string {
-		vBytes := toBytes(value)
-		if vBytes == nil {
+		valueBytes := toBytes(value)
+		if len(valueBytes) == 0 {
 			return ""
 		}
 		h := hashFn()
-		if _, err := h.Write(vBytes); err == nil {
+		if _, err := h.Write(valueBytes); err == nil {
 			return fmt.Sprintf("%x", h.Sum(nil))
 		}
 		return ""
@@ -249,16 +249,16 @@ func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
 func hmacFilter(hashFn func() hash.Hash) func(value, key interface{}) string {
 
 	return func(value, key interface{}) string {
-		vBytes := toBytes(value)
-		if vBytes == nil {
+		valueBytes := toBytes(value)
+		if len(valueBytes) == 0 {
 			return ""
 		}
-		kBytes := toBytes(key)
-		if len(kBytes) == 0 {
+		keyBytes := toBytes(key)
+		if len(keyBytes) == 0 {
 			return ""
 		}
-		hm := hmac.New(hashFn, kBytes)
-		if _, err := hm.Write(vBytes); err == nil {
+		hm := hmac.New(hashFn, keyBytes)
+		if _, err := hm.Write(valueBytes); err == nil {
 			return fmt.Sprintf("%x", hm.Sum(nil))
 		}
 		return ""
