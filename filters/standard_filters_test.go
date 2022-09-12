@@ -8,8 +8,9 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"github.com/autopilot3/liquid/expressions"
 	"github.com/stretchr/testify/require"
+
+	"github.com/autopilot3/liquid/expressions"
 )
 
 var filterTests = []struct {
@@ -188,6 +189,153 @@ var filterTests = []struct {
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+
+	// Hash filters
+
+	{`"Take my protein pills and put my helmet on" | md5`, "505a1a407670a93d9ef2cf34960002f9"},
+	{`100 | md5`, "f899139df5e1059396431415e770c6dd"},
+	{`100.01 | md5`, "e74f9831767648ecdd211c3f8cd85b86"},
+
+	{`"Take my protein pills and put my helmet on" | sha1`, "07f3b4973325af9109399ead74f2180bcaefa4c0"},
+	{`"" | sha1`, ""},
+	{`100 | sha1`, "310b86e0b62b828562fc91c7be5380a992b2786a"},
+	{`100.01 | sha1`, "2cf9b40e62dd0bff2c57d179bfc99674d25f3c33"},
+
+	{`"Take my protein pills and put my helmet on" | sha256`, "b19c3d04c1b80ae9acd15227c0dde0cb6f5755995afa3c846a3473ac42de6f63"},
+	{`"" | sha256`, ""},
+	{`100 | sha256`, "ad57366865126e55649ecb23ae1d48887544976efea46a48eb5d85a6eeb4d306"},
+	{`100.01 | sha256`, "4b46711a09b65af6dcbbc4caab38ab58e06d08eb75fbeb8e367fdd1ccc289fba"},
+
+	{`"Take my protein pills and put my helmet on" | hmac: "key"`, "5b74077685d98d1e1d03cd289e2c2bfc"},
+	{`"Take my protein pills and put my helmet on" | hmac: ""`, ""},
+	{`"" | hmac: "key"`, ""},
+	{`"" | hmac: 100`, ""},
+	{`"" | hmac: 100.01`, ""},
+	{`"Take my protein pills and put my helmet on" | hmac: 100`, "3494f6a7895d9e8084343e1020984ba6"},
+	{`"Take my protein pills and put my helmet on" | hmac: 100.01`, "c1ef31ab6b3630ffb2e6842a600bf572"},
+	{`"Only numeric and string keys are supported" | hmac: true`, ""},
+	{`100 | hmac: "key"`, "f69388563202c10d4e0dc44646a3b937"},
+	{`100 | hmac: 100`, "e459c4d00f32981388e5d0e797c8ac68"},
+	{`100 | hmac: 100.01`, "f88e6d1df733b884b9748bbab83b3e68"},
+	{`100.01 | hmac: "key"`, "41e66d9c6ca6e0b7b0470d9c03fef001"},
+	{`100.01 | hmac: 100`, "7ac1da15168b6bf50c2975fa3198e84e"},
+	{`100.01 | hmac: 100.01`, "bcd8551b5dbc26ed858752b9046dc654"},
+
+	{`"Take my protein pills and put my helmet on" | hmac_sha1: "key"`, "fca4135e0bc4d4bcdccfd0bd98edc30d3d7ac629"},
+	{`"Take my protein pills and put my helmet on" | hmac_sha1: ""`, ""},
+	{`"" | hmac_sha1: "key"`, ""},
+	{`"" | hmac_sha1: 100`, ""},
+	{`"" | hmac_sha1: 100.01`, ""},
+	{`"Take my protein pills and put my helmet on" | hmac_sha1: 100`, "595095014fab1b061a47cc1b7856b78bd78ad998"},
+	{`"Take my protein pills and put my helmet on" | hmac_sha1: 100.01`, "3922875669b50f66373f1a21d91fd113f456b66c"},
+	{`"Only numeric and string keys are supported" | hmac_sha1: true`, ""},
+	{`100 | hmac_sha1: "key"`, "30385a0b6d754aee6a69093edd9d16accd57e26d"},
+	{`100 | hmac_sha1: 100`, "56ba1ffa433eef7d9ebe9ef9fc464bdf2d68d7ed"},
+	{`100 | hmac_sha1: 100.01`, "f962759dc0683e9aed4728d10cad6ade3c0f03ac"},
+	{`100.01 | hmac_sha1: "key"`, "a3812ff53e8080fd42193b75d2245fe7ecb08df5"},
+	{`100.01 | hmac_sha1: 100`, "877bfb3895f60525f123edec278d7dd915c6b2a6"},
+	{`100.01 | hmac_sha1: 100.01`, "0efc1381dd2a001a0ba3db56f6e9456f3f4d73a8"},
+
+	{`"Take my protein pills and put my helmet on" | hmac_sha256: "key"`, "111fce4b586c1c54804196bbc014e45005958fcaf5462fa206ad5856811686f5"},
+	{`"Take my protein pills and put my helmet on" | hmac_sha256: ""`, ""},
+	{`"" | hmac_sha256: "key"`, ""},
+	{`"" | hmac_sha256: 100`, ""},
+	{`"" | hmac_sha256: 100.01`, ""},
+	{`"Take my protein pills and put my helmet on" | hmac_sha256: 100`, "c23af083390e2408faed6cf7d23f914425e9cab268050d5dc674f023bc8a8d6a"},
+	{`"Take my protein pills and put my helmet on" | hmac_sha256: 100.01`, "9a19b23c1e55a2f570aad746844cb36f928d20ff4c837dca8fef0c2ef453cf63"},
+	{`"Only numeric and string keys are supported" | hmac_sha256: true`, ""},
+	{`100 | hmac_sha256: "key"`, "71d0fcbb40b55250039eb1f8bf363e280431f868af075355e6c9e44574f915d8"},
+	{`100 | hmac_sha256: 100`, "f74a692209268d93c5a6ec227edfe17f7a70b28e049648f80238695798ffd407"},
+	{`100 | hmac_sha256: 100.01`, "571751c3df688bc29af6e730c0c0d02ed4f1261fdfc9de2bf51a274106a5c6d4"},
+	{`100.01 | hmac_sha256: "key"`, "b6c9391539ba7d250c9cbea6fb8aaaf278a5f858ad9206ae7ba6063ae17f2eb6"},
+	{`100.01 | hmac_sha256: 100`, "7a48e1789185ab575a94579302ff9c4b57e58c70e40609f7a2a76469c9381d01"},
+	{`100.01 | hmac_sha256: 100.01`, "bad95722cd8088216306962a575751a3a7251234f61504b33be224f9a9c2971c"},
+
+	// at_least
+	{`"10" | at_least: "20"`, 20},
+	{`"10.5" | at_least: "20"`, 20},
+	{`"10.5" | at_least: "20.5"`, 20.5},
+	{`10 | at_least: 20`, 20},
+	{`10.5 | at_least: 20`, 20},
+	{`10.5 | at_least: 20.5`, 20.5},
+	{`10 | at_least: "20"`, 20},
+	{`10.5 | at_least: "20"`, 20},
+	{`10.5 | at_least: "20.5"`, 20.5},
+	{`"10" | at_least: 20`, 20},
+	{`"10.5" | at_least: 20`, 20},
+	{`"10.5" | at_least: 20.5`, 20.5},
+
+	{`"20" | at_least: "10"`, 20},
+	{`"20.5" | at_least: "10"`, 20.5},
+	{`"20.5" | at_least: "10.5"`, 20.5},
+	{`20 | at_least: 10`, 20},
+	{`20.5 | at_least: 10`, 20.5},
+	{`20.5 | at_least: 10.5`, 20.5},
+	{`20 | at_least: "10"`, 20},
+	{`20.5 | at_least: "10"`, 20.5},
+	{`20.5 | at_least: "10.5"`, 20.5},
+	{`"20" | at_least: 10`, 20},
+	{`"20.5" | at_least: 10`, 20.5},
+	{`"20.5" | at_least: 10.5`, 20.5},
+
+	{`"0" | at_least: "0"`, 0},
+	{`0 | at_least: "0"`, 0},
+	{`"0" | at_least: 0`, 0},
+	{`"0.0" | at_least: "0.0"`, 0},
+	{`0.0 | at_least: "0.0"`, 0},
+	{`"0.0" | at_least: 0.0`, 0},
+
+	{`"" | at_least: 20`, ""},
+	{`"" | at_least: "20"`, ""},
+	{`"" | at_least: 20.5`, ""},
+	{`"" | at_least: "20.5"`, ""},
+	{`10 | at_least: ""`, ""},
+	{`"10" | at_least: ""`, ""},
+	{`"10.2" | at_least: ""`, ""},
+	{`"10.2" | at_least: ""`, ""},
+
+	// at_most
+	{`"10" | at_most: "20"`, 10},
+	{`"10.5" | at_most: "20"`, 10.5},
+	{`"10.5" | at_most: "20.5"`, 10.5},
+	{`10 | at_most: 20`, 10},
+	{`10.5 | at_most: 20`, 10.5},
+	{`10.5 | at_most: 20.5`, 10.5},
+	{`10 | at_most: "20"`, 10},
+	{`10.5 | at_most: "20"`, 10.5},
+	{`10.5 | at_most: "20.5"`, 10.5},
+	{`"10" | at_most: 20`, 10},
+	{`"10.5" | at_most: 20`, 10.5},
+	{`"10.5" | at_most: 20.5`, 10.5},
+
+	{`"20" | at_most: "10"`, 10},
+	{`"20.5" | at_most: "10"`, 10},
+	{`"20.5" | at_most: "10.5"`, 10.5},
+	{`20 | at_most: 10`, 10},
+	{`20.5 | at_most: 10`, 10},
+	{`20.5 | at_most: 10.5`, 10.5},
+	{`20 | at_most: "10"`, 10},
+	{`20.5 | at_most: "10"`, 10},
+	{`20.5 | at_most: "10.5"`, 10.5},
+	{`"20" | at_most: 10`, 10},
+	{`"20.5" | at_most: 10`, 10},
+	{`"20.5" | at_most: 10.5`, 10.5},
+
+	{`"0" | at_most: "0"`, 0},
+	{`0 | at_most: "0"`, 0},
+	{`"0" | at_most: 0`, 0},
+	{`"0.0" | at_most: "0.0"`, 0},
+	{`0.0 | at_most: "0.0"`, 0},
+	{`"0.0" | at_most: 0.0`, 0},
+
+	{`"" | at_most: 20`, ""},
+	{`"" | at_most: "20"`, ""},
+	{`"" | at_most: 20.5`, ""},
+	{`"" | at_most: "20.5"`, ""},
+	{`10 | at_most: ""`, ""},
+	{`"10" | at_most: ""`, ""},
+	{`"10.2" | at_most: ""`, ""},
+	{`"10.2" | at_most: ""`, ""},
 }
 
 var filterTestBindings = map[string]interface{}{

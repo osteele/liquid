@@ -2,19 +2,26 @@
 package filters
 
 import (
+	"crypto/hmac"
+	"crypto/md5" // #nosec G501
+	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"hash"
 	"html"
 	"math"
 	"net/url"
 	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
 
-	"github.com/autopilot3/liquid/values"
 	"github.com/osteele/tuesday"
+
+	"github.com/autopilot3/liquid/values"
 )
 
 // A FilterDictionary holds filters.
@@ -101,6 +108,9 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		exp := math.Pow10(pl)
 		return math.Floor(n*exp+0.5) / exp
 	})
+
+	fd.AddFilter("at_least", floatFilter(math.Max))
+	fd.AddFilter("at_most", floatFilter(math.Min))
 
 	// sequence filters
 	fd.AddFilter("size", values.Length)
@@ -213,6 +223,102 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("type", func(value interface{}) string {
 		return fmt.Sprintf("%T", value)
 	})
+
+	// Hash filters
+
+	// #nosec G401
+	fd.AddFilter("md5", hashFilter(md5.New))
+	fd.AddFilter("sha1", hashFilter(sha1.New))
+	fd.AddFilter("sha256", hashFilter(sha256.New))
+	// #nosec G401
+	fd.AddFilter("hmac", hmacFilter(md5.New))
+	fd.AddFilter("hmac_sha1", hmacFilter(sha1.New))
+	fd.AddFilter("hmac_sha256", hmacFilter(sha256.New))
+}
+
+func hashFilter(hashFn func() hash.Hash) func(value interface{}) string {
+	return func(value interface{}) string {
+		valueBytes := toBytes(value)
+		if len(valueBytes) == 0 {
+			return ""
+		}
+		h := hashFn()
+		if _, err := h.Write(valueBytes); err == nil {
+			return fmt.Sprintf("%x", h.Sum(nil))
+		}
+		return ""
+	}
+}
+
+func hmacFilter(hashFn func() hash.Hash) func(value, key interface{}) string {
+
+	return func(value, key interface{}) string {
+		valueBytes := toBytes(value)
+		if len(valueBytes) == 0 {
+			return ""
+		}
+		keyBytes := toBytes(key)
+		if len(keyBytes) == 0 {
+			return ""
+		}
+		hm := hmac.New(hashFn, keyBytes)
+		if _, err := hm.Write(valueBytes); err == nil {
+			return fmt.Sprintf("%x", hm.Sum(nil))
+		}
+		return ""
+	}
+}
+
+func floatFilter(fn func(v1, v2 float64) float64) func(lhs, rhs interface{}) interface{} {
+	return func(lhs, rhs interface{}) interface{} {
+		lhsValue, ok := parseAsFloat64(lhs)
+		if !ok {
+			return ""
+		}
+		rhsValue, ok := parseAsFloat64(rhs)
+		if !ok {
+			return ""
+		}
+		return fn(lhsValue, rhsValue)
+	}
+}
+
+func parseAsFloat64(value interface{}) (float64, bool) {
+	switch v := value.(type) {
+	case string:
+		parsed, err := strconv.ParseFloat(v, 64)
+		if err != nil {
+			return 0, false
+		}
+		return parsed, true
+	case int:
+		return float64(v), true
+	case int8:
+		return float64(v), true
+	case int16:
+		return float64(v), true
+	case int32:
+		return float64(v), true
+	case int64:
+		return float64(v), true
+	case float32:
+		return float64(v), true
+	case float64:
+		return v, true
+	default:
+		return 0, false
+	}
+}
+
+func toBytes(value interface{}) []byte {
+	switch v := value.(type) {
+	case string:
+		return []byte(v)
+	case int, int8, int16, int32, int64, float32, float64:
+		return []byte(fmt.Sprint(v))
+	default:
+		return nil
+	}
 }
 
 func joinFilter(a []interface{}, sep func(string) string) interface{} {
