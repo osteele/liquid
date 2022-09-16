@@ -47,9 +47,11 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return append(append(result, a...), b...)
 	})
 	fd.AddFilter("join", joinFilter)
-	fd.AddFilter("map", func(a []map[string]interface{}, key string) (result []interface{}) {
+	fd.AddFilter("map", func(a []interface{}, key string) (result []interface{}) {
+		keyValue := values.ValueOf(key)
 		for _, obj := range a {
-			result = append(result, obj[key])
+			value := values.ValueOf(obj)
+			result = append(result, value.PropertyValue(keyValue).Interface())
 		}
 		return result
 	})

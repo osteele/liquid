@@ -60,6 +60,8 @@ var filterTests = []struct {
 	{`map_slice_dup | join`, `a a b`},
 	{`map_slice_dup | uniq | join`, `a b`},
 
+	{`struct_slice | map: "str" | join`, `a b c`},
+
 	// date filters
 	{`article.published_at | date`, "Fri, Jul 17, 15"},
 	{`article.published_at | date: "%a, %b %d, %y"`, "Fri, Jul 17, 15"},
@@ -236,6 +238,13 @@ var filterTestBindings = map[string]interface{}{
 		{"name": "page 5", "category": "sports"},
 		{"name": "page 6"},
 		{"name": "page 7", "category": "technology"},
+	},
+	"struct_slice": []struct {
+		Str string `liquid:"str"`
+	}{
+		{Str: "a"},
+		{Str: "b"},
+		{Str: "c"},
 	},
 }
 
