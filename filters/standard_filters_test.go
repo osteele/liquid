@@ -3,6 +3,7 @@ package filters
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,11 +102,20 @@ var filterTests = []struct {
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+	{`"Liquid" | slice: 2, 100`, "quid"},
+	{`"Liquid" | slice: 100`, ""},
+	{`"Liquid" | slice: 100, 200`, ""},
+	{`"Liquid" | slice: -100`, "L"},
+	{`"Liquid" | slice: -100, 200`, "Liquid"},
 	{`"白鵬翔" | slice: 0`, "白"},
 	{`"白鵬翔" | slice: 1`, "鵬"},
 	{`"白鵬翔" | slice: 2`, "翔"},
 	{`"白鵬翔" | slice: 0, 2`, "白鵬"},
 	{`"白鵬翔" | slice: 1, 2`, "鵬翔"},
+	{`"白鵬翔" | slice: 100, 200`, ""},
+	{`"白鵬翔" | slice: -100`, "白"},
+	{`"白鵬翔" | slice: -100, 200`, "白鵬翔"},
+	{`">` + strings.Repeat(".", 10000) + `<" | slice: 1, 10000`, strings.Repeat(".", 10000)},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
 	{`"a/b/" | split: '/' | join: '-'`, "a-b"},

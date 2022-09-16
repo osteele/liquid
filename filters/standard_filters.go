@@ -4,6 +4,8 @@ package filters
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/osteele/liquid/values"
+	"github.com/osteele/tuesday"
 	"html"
 	"math"
 	"net/url"
@@ -12,10 +14,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
-
-	"github.com/osteele/liquid/values"
-	"github.com/osteele/tuesday"
 )
 
 // A FilterDictionary holds filters.
@@ -151,13 +149,23 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
-		// runes aren't bytes; don't use slice
+		// Work on runes, not chars
+		runes := []rune(s)
 		n := length(1)
 		if start < 0 {
-			start = utf8.RuneCountInString(s) + start
+			start = len(runes) + start
+			if start < 0 {
+				start = 0
+			}
 		}
-		p := regexp.MustCompile(fmt.Sprintf(`^.{%d}(.{0,%d}).*$`, start, n))
-		return p.ReplaceAllString(s, "$1")
+		if start > len(runes) {
+			start = len(runes)
+		}
+		end := start + n
+		if end > len(runes) {
+			end = len(runes)
+		}
+		return string(runes[start:end])
 	})
 	fd.AddFilter("split", splitFilter)
 	fd.AddFilter("strip_html", func(s string) string {
