@@ -101,6 +101,11 @@ var filterTests = []struct {
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+	{`"白鵬翔" | slice: 0`, "白"},
+	{`"白鵬翔" | slice: 1`, "鵬"},
+	{`"白鵬翔" | slice: 2`, "翔"},
+	{`"白鵬翔" | slice: 0, 2`, "白鵬"},
+	{`"白鵬翔" | slice: 1, 2`, "鵬翔"},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
 	{`"a/b/" | split: '/' | join: '-'`, "a-b"},
