@@ -116,6 +116,10 @@ var filterTests = []struct {
 	{`"白鵬翔" | slice: -100`, "白"},
 	{`"白鵬翔" | slice: -100, 200`, "白鵬翔"},
 	{`">` + strings.Repeat(".", 10000) + `<" | slice: 1, 10000`, strings.Repeat(".", 10000)},
+	{`"a,b,c" | split: "," | slice: -1 | join`, "c"},
+	{`"a,b,c" | split: "," | slice: 1, 1 | join`, "b"},
+	{`"a,b,c" | split: "," | slice: 0, 2 | join`, "a b"},
+	{`"a,b,c" | split: "," | slice: 1, 2 | join`, "b c"},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
 	{`"a/b/" | split: '/' | join: '-'`, "a-b"},
