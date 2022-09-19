@@ -10,6 +10,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/autopilot3/ap3-types-go/types/date"
 	"github.com/autopilot3/liquid/expressions"
 )
 
@@ -75,6 +76,7 @@ var filterTests = []struct {
 	{`"2017-07-09" | date: "%d/%m"`, "09/07"},
 	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
 	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
+	{`ortto.example_date | date`, "Fri, Jul 17, 15"},
 
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
@@ -373,6 +375,9 @@ var filterTestBindings = map[string]interface{}{
 	"fruits":  []string{"apples", "oranges", "peaches", "plums"},
 	"article": map[string]interface{}{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
+	},
+	"ortto": map[string]interface{}{
+		"example_date": date.MustNewFromTime(timeMustParse("2015-07-17T15:04:05Z")),
 	},
 	"page": map[string]interface{}{
 		"title": "Introduction",
