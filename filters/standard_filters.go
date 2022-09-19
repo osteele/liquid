@@ -21,6 +21,7 @@ import (
 
 	"github.com/osteele/tuesday"
 
+	"github.com/autopilot3/ap3-types-go/types/date"
 	"github.com/autopilot3/liquid/values"
 )
 
@@ -74,9 +75,28 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("uniq", uniqFilter)
 
 	// date filters
-	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
+	fd.AddFilter("date", func(t interface{}, format func(string) string) (string, error) {
 		f := format("%a, %b %d, %y")
-		return tuesday.Strftime(f, t)
+		switch tp := t.(type) {
+		case date.Date:
+			d := t.(date.Date)
+			tme, err := d.Time()
+			if err != nil {
+				return "", err
+			}
+			return tuesday.Strftime(f, tme)
+		case string:
+			tme, err := values.ParseDate(t.(string))
+			if err != nil {
+				return "", err
+			}
+			return tuesday.Strftime(f, tme)
+		case time.Time:
+			tme := t.(time.Time)
+			return tuesday.Strftime(f, tme)
+		default:
+			return "", fmt.Errorf("date filter: unsupported type %T", tp)
+		}
 	})
 
 	// number filters
