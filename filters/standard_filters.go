@@ -94,6 +94,8 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		case time.Time:
 			tme := t.(time.Time)
 			return tuesday.Strftime(f, tme)
+		case nil:
+			return "", nil
 		default:
 			return "", fmt.Errorf("date filter: unsupported type %T", tp)
 		}
