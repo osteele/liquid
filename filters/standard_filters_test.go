@@ -77,6 +77,7 @@ var filterTests = []struct {
 	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
 	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
 	{`ortto.example_date | date`, "Fri, Jul 17, 15"},
+	{`ortto.not_existing_date | date`, ""},
 
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
