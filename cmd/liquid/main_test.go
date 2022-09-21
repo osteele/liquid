@@ -58,7 +58,7 @@ func TestRenderAllowedTags(t *testing.T) {
 	}
 	engine := liquid.NewEngine()
 	engine.SetAllowedTags(map[string]struct{}{
-		"{{ people.name }}": {},
+		"people.name": {},
 	})
 	tests := []struct {
 		name     string
@@ -67,8 +67,13 @@ func TestRenderAllowedTags(t *testing.T) {
 	}{
 		{
 			"Allow name only",
-			"Hello {{ people.name }}, your email is {{ people.email }}!",
+			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email }}!",
 			"Hello bob, your email is {{ people.email }}!",
+		},
+		{
+			"Allow name only",
+			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email | default: 'unknown' }}!",
+			"Hello bob, your email is {{ people.email | default: 'unknown' }}!",
 		},
 	}
 	for _, tt := range tests {

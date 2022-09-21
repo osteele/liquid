@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/autopilot3/liquid/values"
@@ -76,7 +77,14 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 		err   error
 	)
 	if len(ctx.config.AllowedTags) != 0 {
-		if _, ok := ctx.config.AllowedTags[n.Source]; ok {
+		allowed := false
+		for tag := range ctx.config.AllowedTags {
+			if strings.Contains(n.Source, tag) {
+				allowed = true
+				break
+			}
+		}
+		if allowed {
 			w.TrimLeft(n.TrimLeft)
 			value, err = ctx.Evaluate(n.expr)
 			if err != nil {
