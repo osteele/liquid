@@ -8,7 +8,8 @@ import (
 type Config struct {
 	parser.Config
 	grammar
-	Cache map[string][]byte
+	Cache           map[string][]byte
+	StrictVariables bool
 }
 
 type grammar struct {

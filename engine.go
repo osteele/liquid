@@ -66,6 +66,11 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 	})
 }
 
+// StrictVariables causes the renderer to error when the template contains an undefined variable.
+func (e *Engine) StrictVariables() {
+	e.cfg.StrictVariables = true
+}
+
 // ParseTemplate creates a new Template using the engine configuration.
 func (e *Engine) ParseTemplate(source []byte) (*Template, SourceError) {
 	return newTemplate(&e.cfg, source, "", 0)
