@@ -78,10 +78,8 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	)
 	if len(ctx.config.AllowedTags) != 0 {
 		allowed := false
-		if strings.Contains(n.Source, "default:") {
-			if ctx.config.AllowTagsWithDefault {
-				allowed = true
-			}
+		if ctx.config.AllowTagsWithDefault && strings.Contains(n.Source, "default:") {
+			allowed = true
 		}
 		if !allowed {
 			for tag := range ctx.config.AllowedTags {
