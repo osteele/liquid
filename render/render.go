@@ -83,10 +83,12 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 				allowed = true
 			}
 		}
-		for tag := range ctx.config.AllowedTags {
-			if strings.Contains(n.Source, tag) {
-				allowed = true
-				break
+		if !allowed {
+			for tag := range ctx.config.AllowedTags {
+				if strings.Contains(n.Source, tag) {
+					allowed = true
+					break
+				}
 			}
 		}
 		if allowed {
