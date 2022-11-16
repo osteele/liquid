@@ -62,6 +62,12 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 		if err != nil {
 			return err
 		}
+
+		cfg := ctx.GetConfig()
+		if len(cfg.AllowedTags) > 0 && len(cases) > 0 {
+			return ctx.RenderBlock(w, cases[0].body())
+		}
+
 		for _, clause := range cases {
 			b, err := clause.test(sel, ctx)
 			if err != nil {
@@ -106,6 +112,10 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 			branches = append(branches, branchRec{test, c})
 		}
 		return func(w io.Writer, ctx render.Context) error {
+			cfg := ctx.GetConfig()
+			if len(cfg.AllowedTags) > 0 && len(branches) > 0 {
+				return ctx.RenderBlock(w, branches[0].body)
+			}
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
 				if err != nil {
