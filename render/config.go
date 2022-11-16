@@ -8,7 +8,8 @@ import (
 type Config struct {
 	parser.Config
 	grammar
-	AllowedTags map[string]struct{}
+	AllowedTags          map[string]struct{}
+	AllowTagsWithDefault bool
 }
 
 type grammar struct {
@@ -26,5 +27,6 @@ func NewConfig() Config {
 		parser.NewConfig(g),
 		g,
 		nil,
+		false,
 	}
 }

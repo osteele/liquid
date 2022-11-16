@@ -49,6 +49,8 @@ type Context interface {
 	TagName() string
 	// WrapError creates a new error that records the source location from the current context.
 	WrapError(err error) Error
+
+	GetConfig() *Config
 }
 
 type rendererContext struct {
@@ -170,4 +172,8 @@ func (c rendererContext) TagName() string {
 	default:
 		return ""
 	}
+}
+
+func (c rendererContext) GetConfig() *Config {
+	return &c.ctx.config
 }

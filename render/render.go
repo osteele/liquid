@@ -58,6 +58,13 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 		panic(fmt.Errorf("unset renderer for %v", n))
 	}
 	err := renderer(w, rendererContext{ctx, nil, n})
+
+	if len(ctx.config.AllowedTags) > 0 {
+		end, ok := ctx.config.findBlockDef("end" + n.Name)
+		if ok {
+			w.Write([]byte("{% " + end.TagName() + " %}"))
+		}
+	}
 	return wrapRenderError(err, n)
 }
 
@@ -78,10 +85,15 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	)
 	if len(ctx.config.AllowedTags) != 0 {
 		allowed := false
-		for tag := range ctx.config.AllowedTags {
-			if strings.Contains(n.Source, tag) {
-				allowed = true
-				break
+		if ctx.config.AllowTagsWithDefault && strings.Contains(n.Source, "default:") {
+			allowed = true
+		}
+		if !allowed {
+			for tag := range ctx.config.AllowedTags {
+				if strings.Contains(n.Source, tag) {
+					allowed = true
+					break
+				}
 			}
 		}
 		if allowed {

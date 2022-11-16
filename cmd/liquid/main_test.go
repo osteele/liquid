@@ -52,31 +52,48 @@ func TestRenderAllowedTags(t *testing.T) {
 
 	bindings := map[string]interface{}{
 		"people": map[string]interface{}{
-			"name":  "bob",
-			"email": "bob@example.com",
+			"name": "bob",
 		},
 	}
-	engine := liquid.NewEngine()
-	engine.SetAllowedTags(map[string]struct{}{
-		"people.name": {},
-	})
 	tests := []struct {
-		name     string
-		src      string
-		expected string
+		name                 string
+		allowTagsWithDefault bool
+		src                  string
+		expected             string
 	}{
 		{
 			"Allow name only",
-			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email }}!",
-			"Hello bob, your email is {{ people.email }}!",
+			false,
+			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email }}! {% if people.random == '123' %} you can't see me {% endif %}",
+			"Hello bob, your email is {{ people.email }}! {% if people.random == '123' %} you can't see me {% endif %}",
 		},
 		{
-			"Allow name only",
+			"Allow name only, others have default",
+			false,
 			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email | default: 'unknown' }}!",
 			"Hello bob, your email is {{ people.email | default: 'unknown' }}!",
 		},
+		{
+			"Allow name and default",
+			true,
+			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email | default: 'unknown' }}!",
+			"Hello bob, your email is unknown!",
+		},
+		{
+			"Allow name and default",
+			true,
+			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email | default: 'unknown' }}!{% if people.random == '123' %} you can't see me.{% endif %}",
+			"Hello bob, your email is unknown!{% if people.random == '123' %} you can't see me.{% endif %}",
+		},
 	}
 	for _, tt := range tests {
+		engine := liquid.NewEngine()
+		engine.SetAllowedTags(map[string]struct{}{
+			"people.name": {},
+		})
+		if tt.allowTagsWithDefault {
+			engine.AllowedTagsWithDefault()
+		}
 		tmpl, err := engine.ParseString(tt.src)
 		if err != nil {
 			t.Fatal(err)

@@ -29,6 +29,10 @@ func (e *Engine) SetAllowedTags(allowedTags map[string]struct{}) *Engine {
 	e.cfg.AllowedTags = allowedTags
 	return e
 }
+func (e *Engine) AllowedTagsWithDefault() *Engine {
+	e.cfg.AllowTagsWithDefault = true
+	return e
+}
 
 // NewEngine returns a new Engine.
 func NewEngine() *Engine {
