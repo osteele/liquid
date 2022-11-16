@@ -58,6 +58,13 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 		panic(fmt.Errorf("unset renderer for %v", n))
 	}
 	err := renderer(w, rendererContext{ctx, nil, n})
+
+	if len(ctx.config.AllowedTags) > 0 {
+		end, ok := ctx.config.findBlockDef("end" + n.Name)
+		if ok {
+			w.Write([]byte("{% " + end.TagName() + " %}"))
+		}
+	}
 	return wrapRenderError(err, n)
 }
 

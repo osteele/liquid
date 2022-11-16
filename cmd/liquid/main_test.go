@@ -65,7 +65,7 @@ func TestRenderAllowedTags(t *testing.T) {
 			"Allow name only",
 			false,
 			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email }}! {% if people.random == '123' %} you can't see me {% endif %}",
-			"Hello bob, your email is {{ people.email }}!  you can't see me ",
+			"Hello bob, your email is {{ people.email }}! {% if people.random == '123' %} you can't see me {% endif %}",
 		},
 		{
 			"Allow name only, others have default",
@@ -83,7 +83,7 @@ func TestRenderAllowedTags(t *testing.T) {
 			"Allow name and default",
 			true,
 			"Hello {{ people.name | default: 'there' }}, your email is {{ people.email | default: 'unknown' }}!{% if people.random == '123' %} you can't see me.{% endif %}",
-			"Hello bob, your email is unknown! you can't see me.",
+			"Hello bob, your email is unknown!{% if people.random == '123' %} you can't see me.{% endif %}",
 		},
 	}
 	for _, tt := range tests {

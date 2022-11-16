@@ -114,7 +114,11 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 		return func(w io.Writer, ctx render.Context) error {
 			cfg := ctx.GetConfig()
 			if len(cfg.AllowedTags) > 0 && len(branches) > 0 {
-				return ctx.RenderBlock(w, branches[0].body)
+				for _, b := range branches {
+					w.Write([]byte(b.body.SourceText()))
+					ctx.RenderBlock(w, b.body)
+				}
+				return nil
 			}
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
