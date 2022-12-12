@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -93,4 +94,23 @@ func BenchmarkEngine_Parse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		engine.ParseTemplate(s)
 	}
+}
+
+func TestCustomFilter(t *testing.T) {
+	// GMT	Sun Dec 11 2022 14:02:03 GMT+0000
+	// Your Time Zone Mon Dec 12 2022 01:02:03 GMT+1100 (Australian Eastern Daylight Time)
+	params := map[string]interface{}{
+		"message": &map[string]interface{}{
+			"created_at": time.Unix(1670767323, 0),
+		},
+	}
+	engine := NewEngine()
+	template := "{{ message.created_at | timeInTimezone: 'Australia/Sydney', 'mdy12' }}"
+	str, err := engine.ParseAndRenderString(template, params)
+	require.NoError(t, err)
+	require.Equal(t, "Dec 12 2022 1:02 AM", str)
+	template = "{{ message.created_at | timeInTimezone: 'Asia/Shanghai', 'mdy12' }}"
+	str, err = engine.ParseAndRenderString(template, params)
+	require.NoError(t, err)
+	require.Equal(t, "Dec 11 2022 10:02 PM", str)
 }

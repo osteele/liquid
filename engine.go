@@ -48,6 +48,26 @@ func NewEngine() *Engine {
 		}
 		return s.String()
 	})
+
+	engine.RegisterFilter("timeInTimezone", func(s time.Time, timezone string, format string) string {
+		tz, err := time.LoadLocation(timezone)
+		if err != nil {
+			return ""
+		}
+		switch format {
+		case "mdy12":
+			return s.In(tz).Format("Jan 02 2006 3:04 PM")
+		case "mdy24":
+			return s.In(tz).Format("Jan 02 2006 15:04")
+		case "dmy12":
+			return s.In(tz).Format("02 Jan 2006 3:04 PM")
+		case "dmy24":
+			return s.In(tz).Format("02 Jan 2006 15:04")
+		default:
+			return s.String()
+		}
+	})
+
 	engine.RegisterFilter("rawPhone", func(s phone.International) string {
 		return s.CountryCode.String() + s.Number.String()
 	})
