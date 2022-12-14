@@ -94,6 +94,14 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		case time.Time:
 			tme := t.(time.Time)
 			return tuesday.Strftime(f, tme)
+		case int64:
+			unixTime := t.(int64)
+			tme := time.Unix(unixTime, 0)
+			return tuesday.Strftime(f, tme)
+		case float64:
+			unixTime := t.(float64)
+			tme := time.Unix(int64(unixTime), 0)
+			return tuesday.Strftime(f, tme)
 		case nil:
 			return "", nil
 		default:

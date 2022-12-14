@@ -114,3 +114,14 @@ func TestCustomFilter(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "Dec 11 2022 10:02 PM", str)
 }
+
+func TestDateFilter(t *testing.T) {
+	engine := NewEngine()
+	template := `{% assign vardays = 30 | times: 24 | times: 60 | times: 60 %}{{ 'now' | date: "%s" | plus: vardays | date: "%d/%m/%Y" }}`
+	str, err := engine.ParseAndRenderString(template, nil)
+	require.NoError(t, err)
+	t.Log(str)
+	if len(str) == 0 {
+		t.Error("date filter error")
+	}
+}
