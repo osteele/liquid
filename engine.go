@@ -63,6 +63,14 @@ func NewEngine() *Engine {
 			return s.In(tz).Format("02 Jan 2006 3:04 PM")
 		case "dmy24":
 			return s.In(tz).Format("02 Jan 2006 15:04")
+		case "ymd12":
+			return s.Format("2006 Jan 02 3:04 PM")
+		case "ymd24":
+			return s.Format("2006 Jan 02 15:04")
+		case "ydm12":
+			return s.Format("2006 02 Jan 3:04 PM")
+		case "ydm24":
+			return s.Format("2006 02 Jan 15:04")
 		default:
 			return s.String()
 		}
@@ -86,6 +94,14 @@ func NewEngine() *Engine {
 			return s.Format("02 Jan 2006 3:04 PM")
 		case "dmy24":
 			return s.Format("02 Jan 2006 15:04")
+		case "ymd12":
+			return s.Format("2006 Jan 02 3:04 PM")
+		case "ymd24":
+			return s.Format("2006 Jan 02 15:04")
+		case "ydm12":
+			return s.Format("2006 02 Jan 3:04 PM")
+		case "ydm24":
+			return s.Format("2006 02 Jan 15:04")
 		default:
 			return s.String()
 		}
@@ -101,6 +117,10 @@ func NewEngine() *Engine {
 			return fmt.Sprintf("%02d/%02d/%d", s.Month(), s.Day(), s.Year())
 		case "dmy":
 			return fmt.Sprintf("%02d/%02d/%d", s.Day(), s.Month(), s.Year())
+		case "ymd":
+			return fmt.Sprintf("%d/%02d/%02d", s.Year(), s.Month(), s.Day())
+		case "ydm":
+			return fmt.Sprintf("%d/%02d/%02d", s.Year(), s.Day(), s.Month())
 		default:
 			return s.String()
 		}
