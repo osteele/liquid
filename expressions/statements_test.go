@@ -11,6 +11,10 @@ func TestParseStatement(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "a", stmt.Assignment.Variable)
 
+	stmt, err = ParseStatement(AssignStatementSelector, "a = 1 == 1")
+	require.NoError(t, err)
+	require.Equal(t, "a", stmt.Assignment.Variable)
+
 	stmt, err = ParseStatement(CycleStatementSelector, "'a', 'b'")
 	require.NoError(t, err)
 	require.Equal(t, "", stmt.Cycle.Group)
