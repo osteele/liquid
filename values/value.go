@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	yaml "gopkg.in/yaml.v2"
+
+	"github.com/autopilot3/ap3-helpers-go/language"
 )
 
 // A Value is a Liquid runtime value.
@@ -214,7 +216,12 @@ func (sv stringValue) Contains(substr Value) bool {
 	if !ok {
 		s = fmt.Sprint(substr.Interface())
 	}
-	return strings.Contains(sv.value.(string), s)
+	switch sv.value.(type) {
+	case language.LanguageCode:
+		return strings.Contains(string(sv.value.(language.LanguageCode)), s)
+	default:
+		return strings.Contains(sv.value.(string), s)
+	}
 }
 
 func (sv stringValue) PropertyValue(iv Value) Value {
