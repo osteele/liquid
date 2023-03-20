@@ -46,7 +46,9 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 	if renderer == nil {
 		panic(fmt.Errorf("unset renderer for %v", n))
 	}
+	w.TrimLeft(n.TrimLeft)
 	err := renderer(w, rendererContext{ctx, nil, n})
+	w.TrimRight(n.TrimRight)
 	return wrapRenderError(err, n)
 }
 
