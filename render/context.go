@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"github.com/osteele/liquid/parser"
 	"io"
 	"io/ioutil"
 	"os"
@@ -58,12 +59,39 @@ type rendererContext struct {
 	cn   *BlockNode
 }
 
+type invalidLocation struct{}
+
+func (i invalidLocation) SourceLocation() parser.SourceLoc {
+	return parser.SourceLoc{}
+}
+
+func (i invalidLocation) SourceText() string {
+	return ""
+}
+
+var _ parser.Locatable = invalidLocation{}
+
 func (c rendererContext) Errorf(format string, a ...interface{}) Error {
-	return renderErrorf(c.node, format, a...)
+	switch {
+	case c.node != nil:
+		return renderErrorf(c.node, format, a...)
+	case c.cn != nil:
+		return renderErrorf(c.cn, format, a...)
+	default:
+		return renderErrorf(invalidLocation{}, format, a...)
+	}
+
 }
 
 func (c rendererContext) WrapError(err error) Error {
-	return wrapRenderError(err, c.node)
+	switch {
+	case c.node != nil:
+		return wrapRenderError(err, c.node)
+	case c.cn != nil:
+		return wrapRenderError(err, c.cn)
+	default:
+		return wrapRenderError(err, invalidLocation{})
+	}
 }
 
 func (c rendererContext) Evaluate(expr expressions.Expression) (out interface{}, err error) {
@@ -155,7 +183,14 @@ func (c rendererContext) Set(name string, value interface{}) {
 }
 
 func (c rendererContext) SourceFile() string {
-	return c.node.SourceLoc.Pathname
+	switch {
+	case c.node != nil:
+		return c.node.SourceLoc.Pathname
+	case c.cn != nil:
+		return c.cn.SourceLoc.Pathname
+	default:
+		return ""
+	}
 }
 
 func (c rendererContext) TagArgs() string {
