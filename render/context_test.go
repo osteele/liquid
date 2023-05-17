@@ -68,6 +68,11 @@ func addContextTestTags(s Config) {
 			return c.WrapError(errors.New("giftwrapped"))
 		}, nil
 	})
+	s.AddBlock("test_block_errorf").Compiler(func(c BlockNode) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			return c.Errorf("giftwrapped")
+		}, nil
+	})
 }
 
 var contextTests = []struct{ in, out string }{
@@ -88,6 +93,7 @@ var contextErrorTests = []struct{ in, expect string }{
 	{`{% test_render_file testdata/render_file_syntax_error.txt %}`, "syntax error"},
 	{`{% test_render_file testdata/render_file_runtime_error.txt %}`, "undefined tag"},
 	{`{% test_block_wraperror %}{% endtest_block_wraperror %}`, "giftwrapped"},
+	{`{% test_block_errorf %}{% endtest_block_errorf %}`, "giftwrapped"},
 }
 
 var contextTestBindings = map[string]interface{}{
