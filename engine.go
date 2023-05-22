@@ -156,6 +156,40 @@ func NewEngine() *Engine {
 		return value
 	})
 
+	engine.RegisterFilter("decimalWithDelimiter", func(s string, format string, currency string, loc string) string {
+		if s == "" {
+			return s
+		}
+		num, err := strconv.ParseFloat(s, 64)
+		if err != nil {
+			logger.Warnw(context.Background(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
+			return s
+		}
+		var formatTemplate string
+		switch format {
+		case "whole":
+			formatTemplate = "%.0f"
+		case "one":
+			formatTemplate = "%.1f"
+		case "two":
+			formatTemplate = "%.2f"
+		default:
+			formatTemplate = "%.2f"
+		}
+
+		tag, err := language.Parse(loc)
+		if err != nil {
+			tag = language.English
+		}
+		p := message.NewPrinter(tag)
+		value := p.Sprintf(formatTemplate, float64(num)/1000)
+		if currency != "" {
+			return currency + value
+		}
+
+		return value
+	})
+
 	engine.RegisterFilter("numberWithDelimiter", func(s string, loc string, format string) string {
 		if s == "" {
 			return s
