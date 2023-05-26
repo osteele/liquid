@@ -3,7 +3,6 @@ Package liquid is a pure Go implementation of Shopify Liquid templates, develope
 
 See the project README https://github.com/osteele/liquid for additional information and implementation status.
 
-
 The liquid package itself is versioned in gopkg.in. Subpackages have no compatibility guarantees. Except where specifically documented, the “public” entities of subpackages are intended only for use by the liquid package and its subpackages.
 */
 package liquid

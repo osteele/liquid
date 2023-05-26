@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-	"unicode/utf8"
 
 	"github.com/osteele/liquid/values"
 	"github.com/osteele/tuesday"
@@ -147,13 +146,16 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
-		// runes aren't bytes; don't use slice
+		ss := []rune(s)
 		n := length(1)
 		if start < 0 {
-			start = utf8.RuneCountInString(s) + start
+			start = len(ss) + start
 		}
-		p := regexp.MustCompile(fmt.Sprintf(`^.{%d}(.{0,%d}).*$`, start, n))
-		return p.ReplaceAllString(s, "$1")
+		end := start + n
+		if end > len(ss) {
+			end = len(ss)
+		}
+		return string(ss[start:end])
 	})
 	fd.AddFilter("split", splitFilter)
 	fd.AddFilter("strip_html", func(s string) string {

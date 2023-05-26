@@ -43,7 +43,6 @@ func (e *Engine) RegisterBlock(name string, td Renderer) {
 // * https://github.com/osteele/liquid/blob/master/filters/filters.go
 //
 // * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
-//
 func (e *Engine) RegisterFilter(name string, fn interface{}) {
 	e.cfg.AddFilter(name, fn)
 }
