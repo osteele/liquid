@@ -2,8 +2,7 @@ package customtags
 
 import (
 	"fmt"
-
-	crmtypes "github.com/autopilot3/ap3-crm-api-go/services/types"
+	// crmtypes "github.com/autopilot3/ap3-crm-api-go/services/types"
 )
 
 const (
@@ -24,16 +23,16 @@ const (
 )
 
 type Tag struct {
-	ID           string           `json:"id" bson:"id"`
-	Type         TagType          `json:"type" bson:"type"`
-	Icon         string           `json:"icon" bson:"icon"`
-	Title        string           `json:"title" bson:"title"`
-	DisplayType  string           `json:"display_type" bson:"display_type"`
-	LiquidName   string           `json:"liquid_name" bson:"liquid_name"`
-	DefaultValue string           `json:"default_value" bson:"default_value"`
-	FormatOption string           `json:"format_option" bson:"format_option"`
-	FieldID      crmtypes.FieldID `json:"field_id" bson:"field_id"`
-	ActivityID   crmtypes.FieldID `json:"activity_id" bson:"activity_id"`
+	ID           string  `json:"id" bson:"id"`
+	Type         TagType `json:"type" bson:"type"`
+	Icon         string  `json:"icon" bson:"icon"`
+	Title        string  `json:"title" bson:"title"`
+	DisplayType  string  `json:"display_type" bson:"display_type"`
+	LiquidName   string  `json:"liquid_name" bson:"liquid_name"`
+	DefaultValue string  `json:"default_value" bson:"default_value"`
+	FormatOption string  `json:"format_option" bson:"format_option"`
+	// FieldID      crmtypes.FieldID `json:"field_id" bson:"field_id"`
+	// ActivityID   crmtypes.FieldID `json:"activity_id" bson:"activity_id"`
 }
 
 func (t *Tag) GetPreviewString() (string, error) {
