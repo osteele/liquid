@@ -28,6 +28,9 @@ var filterTests = []struct {
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
 	{`fruits | default: 2.99 | join`, "apples oranges peaches plums"},
+	{`"string" | json`, "\"string\""},
+	{`true | json`, "true"},
+	{`1 | json`, "1"},
 
 	// array filters
 	{`pages | map: 'category' | join`, "business celebrities lifestyle sports technology"},

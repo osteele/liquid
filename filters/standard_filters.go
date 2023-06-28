@@ -32,6 +32,10 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return value
 	})
+	fd.AddFilter("json", func(a interface{}) interface{} {
+		result, _ := json.Marshal(a)
+		return result
+	})
 
 	// array filters
 	fd.AddFilter("compact", func(a []interface{}) (result []interface{}) {
