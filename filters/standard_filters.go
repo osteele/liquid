@@ -3,8 +3,8 @@ package filters
 
 import (
 	"crypto/hmac"
-	"crypto/md5" // #nosec G501
-	"crypto/sha1"
+	"crypto/md5"  // #nosec G501
+	"crypto/sha1" // #nosec G505
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
