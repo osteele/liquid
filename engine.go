@@ -284,6 +284,11 @@ func NewEngine() *Engine {
 		}
 		return false
 	})
+
+	// trackURL here is a dummy filter, it is used to avoid error when parsing liquid template. Services support this filter will replace it with real filter
+	engine.RegisterFilter("trackURL", func(s string) string {
+		return "$$TRACK_ME:" + s + "$$"
+	})
 	return engine
 }
 
