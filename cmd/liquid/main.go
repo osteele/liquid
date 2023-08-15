@@ -4,8 +4,8 @@
 //
 // Examples:
 //
-// 	echo '{{ "Hello " | append: "World" }}' | liquid
-// 	liquid source.tpl
+//	echo '{{ "Hello " | append: "World" }}' | liquid
+//	liquid source.tpl
 package main
 
 import (

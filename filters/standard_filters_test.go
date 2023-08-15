@@ -98,8 +98,12 @@ var filterTests = []struct {
 	{`"I strained to see the train through the rain" | remove_first: "rain"`, "I sted to see the train through the rain"},
 
 	{`"Liquid" | slice: 0`, "L"},
+	{`"Liquid
+Liquid" | slice: 0`, "L"},
 	{`"Liquid" | slice: 2`, "q"},
 	{`"Liquid" | slice: 2, 5`, "quid"},
+	{`"Liquid
+Liquid" | slice: 2, 4`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
