@@ -2,11 +2,12 @@ package render
 
 import (
 	"bytes"
-	"github.com/osteele/liquid/parser"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/osteele/liquid/parser"
 
 	"github.com/osteele/liquid/expressions"
 )
@@ -69,7 +70,7 @@ func (i invalidLocation) SourceText() string {
 	return ""
 }
 
-var _ parser.Locatable = invalidLocation{}
+var invalidLoc parser.Locatable = invalidLocation{}
 
 func (c rendererContext) Errorf(format string, a ...interface{}) Error {
 	switch {
@@ -78,7 +79,7 @@ func (c rendererContext) Errorf(format string, a ...interface{}) Error {
 	case c.cn != nil:
 		return renderErrorf(c.cn, format, a...)
 	default:
-		return renderErrorf(invalidLocation{}, format, a...)
+		return renderErrorf(invalidLoc, format, a...)
 	}
 
 }
@@ -90,7 +91,7 @@ func (c rendererContext) WrapError(err error) Error {
 	case c.cn != nil:
 		return wrapRenderError(err, c.cn)
 	default:
-		return wrapRenderError(err, invalidLocation{})
+		return wrapRenderError(err, invalidLoc)
 	}
 }
 
