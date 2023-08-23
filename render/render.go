@@ -2,6 +2,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -65,6 +66,9 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	value, err := ctx.Evaluate(n.expr)
 	if err != nil {
 		return wrapRenderError(err, n)
+	}
+	if value == nil && ctx.config.StrictVariables {
+		return wrapRenderError(errors.New("undefined variable"), n)
 	}
 	if err := wrapRenderError(writeObject(w, value), n); err != nil {
 		return err

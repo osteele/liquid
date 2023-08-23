@@ -52,6 +52,23 @@ var renderTests = []struct{ in, out string }{
 	{`x {%- y -%} z`, "xyz"},
 }
 
+var renderStrictTests = []struct{ in, out string }{
+	// literal representations
+	{`{{ true }}`, "true"},
+	{`{{ false }}`, "false"},
+	{`{{ 12 }}`, "12"},
+	{`{{ 12.3 }}`, "12.3"},
+	{`{{ date }}`, "2015-07-17 15:04:05 +0000"},
+	{`{{ "string" }}`, "string"},
+	{`{{ array }}`, "firstsecondthird"},
+
+	// variables and properties
+	{`{{ int }}`, "123"},
+	{`{{ page.title }}`, "Introduction"},
+	{`{{ array[1] }}`, "second"},
+	{`{{ invalid }}`, ""},
+}
+
 var renderErrorTests = []struct{ in, out string }{
 	{`{% errblock %}{% enderrblock %}`, "errblock error"},
 }
@@ -107,6 +124,26 @@ func TestRenderErrors(t *testing.T) {
 			err = Render(root, ioutil.Discard, renderTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.out, test.in)
+		})
+	}
+}
+
+func TestRenderStrictVariables(t *testing.T) {
+	cfg := NewConfig()
+	cfg.StrictVariables = true
+	addRenderTestTags(cfg)
+	for i, test := range renderStrictTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := cfg.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+			buf := new(bytes.Buffer)
+			err = Render(root, buf, renderTestBindings, cfg)
+			if test.in == `{{ invalid }}` {
+				require.Errorf(t, err, test.in)
+			} else {
+				require.NoErrorf(t, err, test.in)
+			}
+			require.Equalf(t, test.out, buf.String(), test.in)
 		})
 	}
 }

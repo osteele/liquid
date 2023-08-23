@@ -58,6 +58,7 @@ func TestMain(t *testing.T) {
 	main()
 	require.True(t, envCalled)
 	require.Equal(t, "Hello, World!", buf.String())
+	bindings = make(map[string]interface{})
 
 	// filename
 	stdin = os.Stdin
@@ -72,6 +73,17 @@ func TestMain(t *testing.T) {
 	exitCode := 0
 	exit = func(n int) { exitCalled = true; exitCode = n }
 
+	// strict variables
+	stdin = bytes.NewBufferString(src)
+	buf = &bytes.Buffer{}
+	stderr = buf
+	os.Args = []string{"liquid", "--strict"}
+	main()
+	require.True(t, exitCalled)
+	require.Equal(t, 1, exitCode)
+	require.Equal(t, "Liquid error: undefined variable in {{ TARGET }}\n", buf.String())
+
+	exitCode = 0
 	os.Args = []string{"liquid", "testdata/source.liquid"}
 	main()
 	require.Equal(t, 0, exitCode)

@@ -79,7 +79,6 @@ These features of Shopify Liquid aren't implemented:
   }}`. [[Issue #42](https://github.com/osteele/liquid/issues/42)]
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
 - Non-strict filters. An undefined filter is currently an error.
-- Strict variables. An undefined variable is not an error.
 
 ### Drops
 

@@ -21,12 +21,13 @@ import (
 
 // for testing
 var (
-	stderr   io.Writer              = os.Stderr
-	stdout   io.Writer              = os.Stdout
-	stdin    io.Reader              = os.Stdin
-	exit     func(int)              = os.Exit
-	env      func() []string        = os.Environ
-	bindings map[string]interface{} = map[string]interface{}{}
+	stderr     io.Writer              = os.Stderr
+	stdout     io.Writer              = os.Stdout
+	stdin      io.Reader              = os.Stdin
+	exit       func(int)              = os.Exit
+	env        func() []string        = os.Environ
+	bindings   map[string]interface{} = map[string]interface{}{}
+	strictVars bool
 )
 
 func main() {
@@ -41,6 +42,7 @@ func main() {
 
 	var bindEnvs bool
 	cmdLine.BoolVar(&bindEnvs, "env", false, "bind environment variables")
+	cmdLine.BoolVar(&strictVars, "strict", false, "enable strict variable mode in templates")
 
 	err = cmdLine.Parse(os.Args[1:])
 	if err != nil {
@@ -86,7 +88,11 @@ func render() error {
 		return err
 	}
 
-	tpl, err := liquid.NewEngine().ParseTemplate(buf)
+	e := liquid.NewEngine()
+	if strictVars {
+		e.StrictVariables()
+	}
+	tpl, err := e.ParseTemplate(buf)
 	if err != nil {
 		return err
 	}
