@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -56,6 +57,22 @@ func addContextTestTags(s Config) {
 			return err
 		}, nil
 	})
+	s.AddBlock("test_block_sourcefile").Compiler(func(c BlockNode) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			_, err := io.WriteString(w, c.SourceFile())
+			return err
+		}, nil
+	})
+	s.AddBlock("test_block_wraperror").Compiler(func(c BlockNode) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			return c.WrapError(errors.New("giftwrapped"))
+		}, nil
+	})
+	s.AddBlock("test_block_errorf").Compiler(func(c BlockNode) (func(w io.Writer, c Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			return c.Errorf("giftwrapped")
+		}, nil
+	})
 }
 
 var contextTests = []struct{ in, out string }{
@@ -66,6 +83,7 @@ var contextTests = []struct{ in, out string }{
 	{`{% test_tag_name %}`, "test_tag_name"},
 	{`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
 		"rendered shadowed=2; unshadowed=1"},
+	{`{% test_block_sourcefile %}x{% endtest_block_sourcefile %}`, ``},
 }
 
 var contextErrorTests = []struct{ in, expect string }{
@@ -74,6 +92,8 @@ var contextErrorTests = []struct{ in, expect string }{
 	{`{% test_expand_tag_arg {{ x | undefined_filter }} %}`, "undefined filter"},
 	{`{% test_render_file testdata/render_file_syntax_error.txt %}`, "syntax error"},
 	{`{% test_render_file testdata/render_file_runtime_error.txt %}`, "undefined tag"},
+	{`{% test_block_wraperror %}{% endtest_block_wraperror %}`, "giftwrapped"},
+	{`{% test_block_errorf %}{% endtest_block_errorf %}`, "giftwrapped"},
 }
 
 var contextTestBindings = map[string]interface{}{
