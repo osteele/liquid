@@ -2,7 +2,6 @@
 package expressions
 import (
 	"fmt"
-	"math"
 	"github.com/osteele/liquid/values"
 )
 
@@ -26,7 +25,7 @@ func init() {
    loopmods loopModifiers
    filter_params []valueFn
 }
-%type <f> expr rel filtered cond int_or_var loop_expr
+%type<f> expr rel filtered cond
 %type<filter_params> filter_params
 %type<exprs> exprs expr2
 %type<cycle> cycle
@@ -84,25 +83,13 @@ string: LITERAL {
 	$$ = s
 };
 
-loop: IDENTIFIER IN loop_expr loop_modifiers {
+loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4
 	$$ = Loop{name, &expression{expr}, mods}
 }
 ;
 
-loop_expr : '(' int_or_var DOTDOT int_or_var ')' {
-  $$ = makeRangeExpr($2, $4)
-}
-| filtered
-;
-
-// TODO DRY w/ expr
-int_or_var:
-  LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
-| IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
-;
-
-loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxInt32} }
+loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 | loop_modifiers IDENTIFIER {
 	switch $2 {
 	case "reversed":
@@ -112,26 +99,14 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{Cols: math.MaxInt32} }
 	}
 	$$ = $1
 }
-| loop_modifiers KEYWORD LITERAL { // TODO can this be a variable?
-	switch $2 {
+| loop_modifiers KEYWORD expr {
+    switch $2 {
 	case "cols":
-		cols, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop cols must an integer")))
-		}
-		$1.Cols = cols
+		$1.Cols = &expression{$3}
 	case "limit":
-		limit, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop limit must an integer")))
-		}
-		$1.Limit = &limit
+		$1.Limit = &expression{$3}
 	case "offset":
-		offset, ok := $3.(int)
-		if !ok {
-			panic(SyntaxError(fmt.Sprintf("loop offset must an integer")))
-		}
-		$1.Offset = offset
+		$1.Offset = &expression{$3}
 	default:
 		panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
@@ -144,6 +119,7 @@ expr:
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
+| '(' expr DOTDOT expr ')' { $$ = makeRangeExpr($2, $4) }
 | '(' cond ')' { $$ = $2 }
 ;
 
