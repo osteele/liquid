@@ -85,6 +85,7 @@ var iterationTests = []struct{ in, expected string }{
 	// range
 	{`{% for i in (3 .. 5) %}{{i}}.{% endfor %}`, "3.4.5."},
 	{`{% for i in (3..5) %}{{i}}.{% endfor %}`, "3.4.5."},
+	{`{% assign l = (3..5) %}{% for i in l %}{{i}}.{% endfor %}`, "3.4.5."},
 
 	// tablerow
 	{`{% tablerow product in products %}{{ product }}{% endtablerow %}`,

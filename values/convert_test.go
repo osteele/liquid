@@ -84,6 +84,8 @@ var convertTests = []struct {
 	{yaml.MapSlice{{Key: "a", Value: 1}}, map[string]string{"a": "1"}},
 	{yaml.MapSlice{{Key: "a", Value: nil}}, map[string]interface{}{"a": nil}},
 	{yaml.MapSlice{{Key: nil, Value: 1}}, map[interface{}]string{nil: "1"}},
+	{Range{1, 5}, []interface{}{1, 2, 3, 4, 5}},
+	{Range{0, 0}, []interface{}{0}},
 	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
 	{redConvertible{}, "red"},
 }
