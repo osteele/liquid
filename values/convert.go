@@ -202,6 +202,8 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 				result = reflect.Append(result, ev.Convert(et))
 			}
 			return result.Interface(), nil
+		} else if r, ok := value.(Range); ok {
+			return r.AsArray(), nil
 		}
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:

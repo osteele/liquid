@@ -15,3 +15,12 @@ func (r Range) Len() int { return r.e + 1 - r.b }
 
 // Index is in the iteration interface
 func (r Range) Index(i int) interface{} { return r.b + i }
+
+// AsArray converts the range into an array.
+func (r Range) AsArray() []interface{} {
+	a := make([]interface{}, 0, r.Len())
+	for i := r.b; i <= r.e; i++ {
+		a = append(a, i)
+	}
+	return a
+}
