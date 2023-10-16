@@ -125,3 +125,25 @@ func TestDateFilter(t *testing.T) {
 		t.Error("date filter error")
 	}
 }
+
+func TestDecimalFilter(t *testing.T) {
+	engine := NewEngine()
+	template := `{{ 12345 | decimal: 'one', '$' }}`
+	str, err := engine.ParseAndRenderString(template, nil)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "$12.3" {
+		t.Error("decimal filter error")
+	}
+}
+
+func TestDecimalWithDelimiterFilter(t *testing.T) {
+	engine := NewEngine()
+	template := `{{ 12345 | decimalWithDelimiter: 'one', '€', 'de' }}`
+	str, err := engine.ParseAndRenderString(template, nil)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "€12,3" {
+		t.Error("decimal with delimiter filter error")
+	}
+}
