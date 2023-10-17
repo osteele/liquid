@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/autopilot3/liquid/parser"
@@ -93,7 +92,7 @@ func TestControlFlowTags_errors(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = render.Render(root, ioutil.Discard, tagTestBindings, cfg)
+			err = render.Render(root, io.Discard, tagTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Contains(t, err.Error(), test.expected, test.in)
 		})

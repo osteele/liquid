@@ -4,7 +4,6 @@ package render
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"reflect"
 	"strings"
 	"time"
@@ -25,7 +24,7 @@ func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) Error
 }
 
 func FindVariables(node Node, c Config) (map[string]interface{}, Error) {
-	tw := trimWriter{w: ioutil.Discard}
+	tw := trimWriter{w: io.Discard}
 	ctx := newFindVariablesNodeContext(c)
 	if err := node.render(&tw, ctx); err != nil {
 		return nil, err
