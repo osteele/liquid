@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -103,7 +102,7 @@ func TestContext_errors(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = Render(root, ioutil.Discard, contextTestBindings, cfg)
+			err = Render(root, io.Discard, contextTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expect, test.in)
 		})
@@ -119,7 +118,7 @@ func TestContext_file_not_found_error(t *testing.T) {
 	addContextTestTags(cfg)
 	root, err := cfg.Compile(`{% test_render_file testdata/missing_file %}`, parser.SourceLoc{})
 	require.NoError(t, err)
-	err = Render(root, ioutil.Discard, contextTestBindings, cfg)
+	err = Render(root, io.Discard, contextTestBindings, cfg)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err.Cause()))
 }

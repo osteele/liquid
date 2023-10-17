@@ -4,15 +4,14 @@
 //
 // Examples:
 //
-// 	echo '{{ "Hello " | append: "World" }}' | liquid
-// 	liquid source.tpl
+//	echo '{{ "Hello " | append: "World" }}' | liquid
+//	liquid source.tpl
 package main
 
 import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -49,7 +48,7 @@ func run(args []string) error {
 		usage()
 		exit(1)
 	case len(args) == 1:
-		s, err := ioutil.ReadFile(args[0])
+		s, err := os.ReadFile(args[0])
 		if err != nil {
 			return err
 		}
