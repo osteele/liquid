@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"testing"
+	"time"
 
+	"github.com/autopilot3/ap3-types-go/types/date"
 	"github.com/autopilot3/liquid"
 	"github.com/stretchr/testify/require"
 )
@@ -94,6 +96,51 @@ func TestRenderAllowedTags(t *testing.T) {
 		if tt.allowTagsWithDefault {
 			engine.AllowedTagsWithDefault()
 		}
+		tmpl, err := engine.ParseString(tt.src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Run(tt.name, func(t *testing.T) {
+			out, err := tmpl.RenderString(bindings)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if out != tt.expected {
+				t.Errorf("TestRenderAllowedTags() = %v, want %v", out, tt.expected)
+			}
+		})
+	}
+}
+
+func TestDateFormat(t *testing.T) {
+
+	bDate, _ := date.New(1994, 4, 28, "UTC")
+	bindings := map[string]interface{}{
+		"people": map[string]interface{}{
+			"birthday": bDate,
+		},
+	}
+	tests := []struct {
+		name     string
+		v        interface{}
+		src      string
+		expected string
+	}{
+		{
+			"date",
+			bDate,
+			"{{ people.birthday | dateFormatOrDefault: 'dmy' | default: '0001-01-01' }}",
+			"28/04/1994",
+		},
+		{
+			"time",
+			time.Date(1994, time.April, 28, 0, 0, 0, 0, time.UTC),
+			"{{ people.birthday | dateFormatOrDefault: 'dmy' | default: '0001-01-01' }}",
+			"28/04/1994",
+		},
+	}
+	for _, tt := range tests {
+		engine := liquid.NewEngine()
 		tmpl, err := engine.ParseString(tt.src)
 		if err != nil {
 			t.Fatal(err)
