@@ -108,22 +108,35 @@ func NewEngine() *Engine {
 		}
 	})
 
-	engine.RegisterFilter("dateFormatOrDefault", func(s date.Date, format string, defaultValue string) string {
-		if s == 0 {
+	engine.RegisterFilter("dateFormatOrDefault", func(s interface{}, format string, defaultValue string) string {
+		var (
+			d   date.Date
+			err error
+		)
+		switch s := s.(type) {
+		case date.Date:
+			d = s
+		case time.Time:
+			d, err = date.NewFromTime(s)
+			if err != nil {
+				return defaultValue
+			}
+		}
+		if d.IsZero() {
 			return defaultValue
 		}
 
 		switch format {
 		case "mdy":
-			return fmt.Sprintf("%02d/%02d/%d", s.Month(), s.Day(), s.Year())
+			return fmt.Sprintf("%02d/%02d/%d", d.Month(), d.Day(), d.Year())
 		case "dmy":
-			return fmt.Sprintf("%02d/%02d/%d", s.Day(), s.Month(), s.Year())
+			return fmt.Sprintf("%02d/%02d/%d", d.Day(), d.Month(), d.Year())
 		case "ymd":
-			return fmt.Sprintf("%d/%02d/%02d", s.Year(), s.Month(), s.Day())
+			return fmt.Sprintf("%d/%02d/%02d", d.Year(), d.Month(), d.Day())
 		case "ydm":
-			return fmt.Sprintf("%d/%02d/%02d", s.Year(), s.Day(), s.Month())
+			return fmt.Sprintf("%d/%02d/%02d", d.Year(), d.Day(), d.Month())
 		default:
-			return s.String()
+			return d.String()
 		}
 	})
 
