@@ -51,12 +51,18 @@ type Context interface {
 	WrapError(err error) Error
 
 	GetConfig() *Config
+
+	IsFindVars() bool
 }
 
 type rendererContext struct {
 	ctx  nodeContext
 	node *TagNode
 	cn   *BlockNode
+}
+
+func (c rendererContext) IsFindVars() bool {
+	return c.ctx.findVariablesOnly
 }
 
 func (c rendererContext) Errorf(format string, a ...interface{}) Error {
