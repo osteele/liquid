@@ -125,7 +125,11 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 				if err != nil {
 					return err
 				}
-				if value != nil && value != false {
+				if ctx.IsFindVars() {
+					if err := ctx.RenderBlock(w, b.body); err != nil {
+						return err
+					}
+				} else if value != nil && value != false {
 					return ctx.RenderBlock(w, b.body)
 				}
 			}
