@@ -73,7 +73,11 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			if err != nil {
 				return err
 			}
-			if b {
+			if ctx.IsFindVars() {
+				if err := ctx.RenderBlock(w, clause.body()); err != nil {
+					return err
+				}
+			} else if b {
 				return ctx.RenderBlock(w, clause.body())
 			}
 		}
