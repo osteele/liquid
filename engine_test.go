@@ -2,6 +2,7 @@ package liquid
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"testing"
@@ -145,5 +146,56 @@ func TestDecimalWithDelimiterFilter(t *testing.T) {
 	t.Log(str)
 	if str != "€12,3" {
 		t.Error("decimal with delimiter filter error")
+	}
+}
+
+func TestFindVariables(t *testing.T) {
+	engine := NewEngine()
+
+	tests := []struct {
+		name         string
+		liquid       string
+		expectedVars string
+	}{
+		{
+			name: "2 levels loop",
+			liquid: `{% for company in people.companies %}
+		{% for instance in people.instances %}
+			{{ company.name }}
+			{{ instance.name }}
+		{% endfor %}
+	{% endfor %}`,
+			expectedVars: `{"people.companies":{"Loop":true,"Attributes":{"name":{"Loop":false,"Attributes":null}}},"people.instances":{"Loop":true,"Attributes":{"name":{"Loop":false,"Attributes":null}}}}`,
+		},
+		{
+			name: "2 levels loop which uses var of top loop",
+			liquid: `{% for company in people.companies %}
+		{% for instance in company.instances %}
+			{{ company.name }}
+			{{ instance.name }}
+		{% endfor %}
+	{% endfor %}`,
+			expectedVars: `{"people.companies":{"Loop":true,"Attributes":{"instances":{"Loop":true,"Attributes":{"name":{"Loop":false,"Attributes":null}}},"name":{"Loop":false,"Attributes":null}}}}`,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tmpl, err := engine.ParseString(test.liquid)
+			if err != nil {
+				t.Fatalf("Expected no err: but got %s", err)
+			}
+			vars, err := tmpl.FindVariables()
+			if err != nil {
+				t.Fatalf("Expected no FindVariables err: but got %s", err)
+			}
+			varsJSON, jerr := json.Marshal(vars)
+			if jerr != nil {
+				t.Fatalf("Expected no Marshal err: but got %s", jerr)
+			}
+
+			if string(varsJSON) != test.expectedVars {
+				t.Errorf("Expected:\n%s\nbut got:\n%s", test.expectedVars, string(varsJSON))
+			}
+		})
 	}
 }

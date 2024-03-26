@@ -53,6 +53,9 @@ type Context interface {
 	GetConfig() *Config
 
 	IsFindVars() bool
+
+	SetLoopVar(name string, sourceName string) int
+	RemoveLoopVar(key int)
 }
 
 type rendererContext struct {
@@ -63,6 +66,22 @@ type rendererContext struct {
 
 func (c rendererContext) IsFindVars() bool {
 	return c.ctx.findVariablesOnly
+}
+
+func (c rendererContext) SetLoopVar(name string, sourceName string) int {
+	loopVars, ok := c.ctx.bindings[expressions.LoopVarsKey]
+	if !ok {
+		loopVars = expressions.NewLoopVars()
+		c.ctx.bindings[expressions.LoopVarsKey] = loopVars
+	}
+	return loopVars.(*expressions.LoopVarsStack).Set(name, sourceName)
+}
+
+func (c rendererContext) RemoveLoopVar(key int) {
+	loopVars, ok := c.ctx.bindings[expressions.LoopVarsKey]
+	if ok {
+		loopVars.(*expressions.LoopVarsStack).Remove(key)
+	}
 }
 
 func (c rendererContext) Errorf(format string, a ...interface{}) Error {

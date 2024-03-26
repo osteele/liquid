@@ -2,6 +2,7 @@ package expressions
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/autopilot3/liquid/values"
 )
@@ -66,17 +67,97 @@ func (c *varsContext) Clone() Context {
 	return c
 }
 
+const LatestVarNameKey = "$LATEST$"
+const LoopVarsKey = "$LOOP_VARS$"
+
+type VariableBind struct {
+	Loop       bool
+	Attributes map[string]*VariableBind
+}
+
+type LoopVar struct {
+	Name   string
+	Source string
+}
+
+type LoopVarsStack struct {
+	LastKey int
+	Vars    map[int]LoopVar
+}
+
+func (l *LoopVarsStack) Set(name string, source string) int {
+	key := l.LastKey
+	l.Vars[key] = LoopVar{
+		Name:   name + ".",
+		Source: source,
+	}
+	l.LastKey++
+	return key
+}
+
+func (l *LoopVarsStack) Remove(key int) {
+	delete(l.Vars, key)
+}
+
+func NewLoopVars() *LoopVarsStack {
+	return &LoopVarsStack{
+		Vars: make(map[int]LoopVar),
+	}
+}
+
 // Get looks up a variable value in the expression context.
 func (c *varsContext) Get(name string) interface{} {
-	if len(c.currentVars) == 0 {
-		c.variables[name] = struct{}{}
-	} else {
+	if len(c.currentVars) > 0 {
 		for idx := len(c.currentVars) - 1; idx >= 0; idx-- {
 			name += "." + c.currentVars[idx]
 		}
-		c.variables[name] = struct{}{}
 		c.currentVars = c.currentVars[:0]
 	}
+	if loopVars, ok := c.variables[LoopVarsKey]; ok {
+		loopVars := loopVars.(*LoopVarsStack)
+		for _, loopVar := range loopVars.Vars {
+			if strings.HasPrefix(name, loopVar.Name) {
+				var bind *VariableBind
+				attributeName := strings.TrimPrefix(name, loopVar.Name)
+				// only 2 levels of array is allowed
+				objArrays := strings.SplitN(loopVar.Source, "[]", 2)
+				if len(objArrays) > 1 {
+					if val, ok := c.variables[objArrays[0]]; ok {
+						bind = val.(*VariableBind)
+						attr, ok := bind.Attributes[strings.TrimPrefix(objArrays[1], ".")]
+						if ok {
+							if attr.Attributes == nil {
+								attr.Attributes = make(map[string]*VariableBind)
+							}
+							attr.Loop = true
+							attr.Attributes[attributeName] = &VariableBind{}
+						}
+					}
+				} else {
+					if val, ok := c.variables[loopVar.Source]; !ok {
+						bind = &VariableBind{
+							Loop:       true,
+							Attributes: make(map[string]*VariableBind),
+						}
+						c.variables[loopVar.Source] = bind
+					} else {
+						bind = val.(*VariableBind)
+						bind.Loop = true
+						if bind.Attributes == nil {
+							bind.Attributes = make(map[string]*VariableBind)
+						}
+					}
+					bind.Attributes[attributeName] = &VariableBind{}
+				}
+				c.variables[LatestVarNameKey] = loopVar.Source + "[]." + attributeName
+				return values.ValueOf(nil)
+			}
+		}
+	}
+	if _, ok := c.variables[name]; !ok {
+		c.variables[name] = &VariableBind{}
+	}
+	c.variables[LatestVarNameKey] = name
 	return values.ValueOf(nil)
 }
 

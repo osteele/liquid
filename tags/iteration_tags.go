@@ -81,15 +81,25 @@ func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
 	if err != nil {
 		return err
 	}
+	var loopVarIdx int
+	if ctx.IsFindVars() {
+		loopSourceVarName := ctx.Get(expressions.LatestVarNameKey).(string)
+		val = []map[string]interface{}{
+			{}, // empty object
+		}
+		loopVarIdx = ctx.SetLoopVar(loop.Variable, loopSourceVarName)
+	}
 	iter := makeIterator(val)
 	if iter == nil {
 		return nil
 	}
 	iter = applyLoopModifiers(loop.Loop, iter)
+
 	// shallow-bind the loop variables; restore on exit
 	defer func(index, forloop interface{}) {
 		ctx.Set(forloopVarName, index)
 		ctx.Set(loop.Variable, forloop)
+		ctx.RemoveLoopVar(loopVarIdx)
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
 	cycleMap := map[string]int{}
 loop:
