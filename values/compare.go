@@ -3,6 +3,8 @@ package values
 import (
 	"reflect"
 	"time"
+
+	"github.com/autopilot3/ap3-types-go/types/date"
 )
 
 var (
@@ -67,18 +69,54 @@ func Less(a, b interface{}) bool {
 		return false
 	}
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
-	if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(time.Time{}) {
-		// we have a time comparison, try to convert b to time.time
-		// there should be only two cases: b is a user input string or a time.Time which is our variabeles from crm
+	// time comparison
+	if ra.Kind() == reflect.Struct {
+		if ra.Type() == reflect.TypeOf(time.Time{}) {
+			// we have a time comparison, try to convert b to time.time
+			// there should be only two cases: b is a user input string or a time.Time which is our variabeles from crm
+			if rb.Kind() == reflect.String {
+				db, err := ParseDate(rb.String())
+				if err == nil {
+					return ra.Interface().(time.Time).Before(db)
+				}
+			} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(time.Time{}) {
+				return ra.Interface().(time.Time).Before(rb.Interface().(time.Time))
+			}
+		}
+	} else if rb.Kind() == reflect.Struct {
+		if rb.Type() == reflect.TypeOf(time.Time{}) {
+			// we have a time comparison, try to convert a to time.time
+			// there should be only two cases: a is a user input string or a time.Time which is our variabeles from crm
+			if ra.Kind() == reflect.String {
+				da, err := ParseDate(ra.String())
+				if err == nil {
+					return da.Before(rb.Interface().(time.Time))
+				}
+			} else if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(time.Time{}) {
+				return ra.Interface().(time.Time).Before(rb.Interface().(time.Time))
+			}
+		}
+	}
+	// date comparison only for date.Date vs string case, since date.Date is of kind int so naturally two date.Date can be compared
+	dVar := date.Date(1)
+	if reflect.TypeOf(a) == reflect.TypeOf(dVar) {
 		if rb.Kind() == reflect.String {
 			db, err := ParseDate(rb.String())
 			if err == nil {
-				return ra.Interface().(time.Time).Before(db)
+				d := date.NewFromUTCTime(db)
+				return a.(date.Date) < d
 			}
-		} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(time.Time{}) {
-			return ra.Interface().(time.Time).Before(rb.Interface().(time.Time))
+		}
+	} else if reflect.TypeOf(b) == reflect.TypeOf(dVar) {
+		if ra.Kind() == reflect.String {
+			da, err := ParseDate(ra.String())
+			if err == nil {
+				d := date.NewFromUTCTime(da)
+				return d < b.(date.Date)
+			}
 		}
 	}
+
 	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Bool:
 		return !ra.Bool() && rb.Bool()
