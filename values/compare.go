@@ -2,6 +2,7 @@ package values
 
 import (
 	"reflect"
+	"time"
 )
 
 var (
@@ -16,6 +17,20 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 		return a == b
 	}
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
+	if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(time.Time{}) {
+		// we have a time comparison, try to convert b to time.Time
+		// there should be only two cases: b is a user input string or a time.Time which is our variabeles from crm
+		if rb.Kind() == reflect.String {
+			db, err := ParseDate(rb.String())
+			if err == nil {
+				return ra.Interface().(time.Time).Equal(db)
+			} else {
+				return false
+			}
+		} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(time.Time{}) {
+			return ra.Interface().(time.Time).Equal(rb.Interface().(time.Time))
+		}
+	}
 	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Array, reflect.Slice:
 		if ra.Len() != rb.Len() {
@@ -52,6 +67,18 @@ func Less(a, b interface{}) bool {
 		return false
 	}
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
+	if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(time.Time{}) {
+		// we have a time comparison, try to convert b to time.time
+		// there should be only two cases: b is a user input string or a time.Time which is our variabeles from crm
+		if rb.Kind() == reflect.String {
+			db, err := ParseDate(rb.String())
+			if err == nil {
+				return ra.Interface().(time.Time).Before(db)
+			}
+		} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(time.Time{}) {
+			return ra.Interface().(time.Time).Before(rb.Interface().(time.Time))
+		}
+	}
 	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Bool:
 		return !ra.Bool() && rb.Bool()
