@@ -3,6 +3,7 @@ package values
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -37,6 +38,9 @@ var eqTests = []struct {
 	{[]string{"a", "b"}, []string{"a", "c"}, false},
 	{[]interface{}{1.0, 2}, []interface{}{1, 2.0}, true},
 	{eqTestObj, eqTestObj, true},
+	{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), true},
+	{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), "2023-01-01", false},
+	{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), "2021-01-01 00:00:00 UTC", true},
 }
 
 func TestEqual(t *testing.T) {
