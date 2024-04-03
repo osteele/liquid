@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/autopilot3/liquid/expressions"
 	"github.com/autopilot3/liquid/values"
 )
 
@@ -29,6 +30,13 @@ func FindVariables(node Node, c Config) (map[string]interface{}, Error) {
 	if err := node.render(&tw, ctx); err != nil {
 		return nil, err
 	}
+	for k, v := range ctx.bindings {
+		if v == nil {
+			delete(ctx.bindings, k)
+		}
+	}
+	delete(ctx.bindings, expressions.LatestVarNameKey)
+	delete(ctx.bindings, expressions.LoopVarsKey)
 	return ctx.bindings, nil
 }
 
