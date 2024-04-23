@@ -5,9 +5,9 @@ go 1.22
 require (
 	github.com/autopilot3/ap3-crm-api-go v0.0.0-20230721090944-c8612d9147a5
 	github.com/autopilot3/ap3-helpers-go v0.0.0-20230707124652-58220337fd68
-	github.com/autopilot3/ap3-types-go v0.0.0-20230623012359-9fe0e1118da0
+	github.com/autopilot3/ap3-types-go v0.0.0-20240402075403-5f570036dd86
 	github.com/osteele/tuesday v1.0.3
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v2 v2.4.0
 )
@@ -39,7 +39,7 @@ require (
 	github.com/nats-io/nats.go v1.26.0 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/nyaruka/phonenumbers v1.1.7 // indirect
+	github.com/nyaruka/phonenumbers v1.3.3 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.15.1 // indirect
@@ -53,7 +53,7 @@ require (
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a // indirect
-	go.mongodb.org/mongo-driver v1.12.0 // indirect
+	go.mongodb.org/mongo-driver v1.13.1 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
