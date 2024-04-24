@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/autopilot3/ap3-types-go/types/date"
+	"github.com/autopilot3/ap3-types-go/types/phone"
 )
 
 var (
@@ -19,6 +20,7 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 		return a == b
 	}
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
+	// time comparison
 	if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(time.Time{}) {
 		// we have a time comparison, try to convert b to time.Time
 		// there should be only two cases: b is a user input string or a time.Time which is our variabeles from crm
@@ -31,6 +33,14 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 			}
 		} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(time.Time{}) {
 			return ra.Interface().(time.Time).Equal(rb.Interface().(time.Time))
+		}
+	}
+	// phone comparison
+	if ra.Kind() == reflect.Struct && ra.Type() == reflect.TypeOf(phone.International{}) {
+		if rb.Kind() == reflect.String {
+			return ra.Interface().(phone.International).String() == rb.String()
+		} else if rb.Kind() == reflect.Struct && rb.Type() == reflect.TypeOf(phone.International{}) {
+			return ra.Interface().(phone.International).Equal(rb.Interface().(phone.International))
 		}
 	}
 	switch joinKind(ra.Kind(), rb.Kind()) {
