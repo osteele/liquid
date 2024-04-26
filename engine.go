@@ -98,6 +98,15 @@ func (e *Engine) ParseAndRender(source []byte, b Bindings) ([]byte, SourceError)
 	return tpl.Render(b)
 }
 
+// ParseAndFRender parses and then renders the template into w.
+func (e *Engine) ParseAndFRender(w io.Writer, source []byte, b Bindings) SourceError {
+	tpl, err := e.ParseTemplate(source)
+	if err != nil {
+		return err
+	}
+	return tpl.FRender(w, b)
+}
+
 // ParseAndRenderString is a convenience wrapper for ParseAndRender, that takes string input and returns a string.
 func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, SourceError) {
 	bs, err := e.ParseAndRender([]byte(source), b)
