@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -35,6 +36,26 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, testBindings)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, out, test.in)
+		})
+	}
+}
+
+type capWriter struct {
+	bytes.Buffer
+}
+
+func (c *capWriter) Write(bs []byte) (int, error) {
+	return c.Buffer.Write([]byte(strings.ToUpper(string(bs))))
+}
+
+func TestEngine_ParseAndFRender(t *testing.T) {
+	engine := NewEngine()
+	for i, test := range liquidTests {
+		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
+			wr := capWriter{}
+			err := engine.ParseAndFRender(&wr, []byte(test.in), testBindings)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, strings.ToUpper(test.expected), wr.String(), test.in)
 		})
 	}
 }

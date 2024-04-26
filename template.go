@@ -2,6 +2,7 @@ package liquid
 
 import (
 	"bytes"
+	"io"
 
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
@@ -38,6 +39,15 @@ func (t *Template) Render(vars Bindings) ([]byte, SourceError) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+}
+
+// FRender executes the template with the specified variable bindings and renders it into w.
+func (t *Template) FRender(w io.Writer, vars Bindings) SourceError {
+	err := render.Render(t.root, w, vars, *t.cfg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // RenderString is a convenience wrapper for Render, that has string input and output.
