@@ -158,7 +158,7 @@ Contributors: @osteele, @thessem
   ([08cf333](https://github.com/osteele/liquid/commit/08cf333))
 * Consolidate {expressions,values}/drops.go
   ([516182a](https://github.com/osteele/liquid/commit/516182a))
-* Document values, includng new struct behavior
+* Document values, including new struct behavior
   ([1bc9726](https://github.com/osteele/liquid/commit/1bc9726))
 * Fix struct PropertyValue attempting to use an invalid pointer
   ([b2f5f1f](https://github.com/osteele/liquid/commit/b2f5f1f))
