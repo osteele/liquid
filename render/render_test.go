@@ -3,6 +3,7 @@ package render
 import (
 	"bytes"
 	"fmt"
+	e "github.com/osteele/liquid/expressions"
 	"io"
 	"io/ioutil"
 	"testing"
@@ -50,6 +51,14 @@ var renderTests = []struct{ in, out string }{
 	{`x {%- y %} z`, "xy z"},
 	{`x {% y -%} z`, "x yz"},
 	{`x {%- y -%} z`, "xyz"},
+	{"x\n{% y %}\nz", "x\ny\nz"},
+	{"x\n{%- y %}\nz", "xy\nz"},
+	{"x\n{% y -%}\nz", "x\nyz"},
+	{"x\n{% if true %}\ny\n{% endif %}\nz", "x\n\ny\n\nz"},
+	{"x\n{%- if true %}\ny\n{% endif %}\nz", "x\ny\n\nz"},
+	{"x\n{%- if true -%}\ny\n{% endif %}\nz", "xy\n\nz"},
+	{"x\n{%- if true -%}\ny\n{%- endif %}\nz", "xy\nz"},
+	{"x\n{%- if true -%}\ny\n{%- endif -%}\nz", "xyz"},
 }
 
 var renderStrictTests = []struct{ in, out string }{
@@ -163,4 +172,51 @@ func addRenderTestTags(cfg Config) {
 			return fmt.Errorf("errblock error")
 		}, nil
 	})
+	cfg.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagCompiler(true))
+}
+
+// this is copied from standard tags.
+func ifTagCompiler(polarity bool) func(BlockNode) (func(io.Writer, Context) error, error) { // nolint: gocyclo
+	return func(node BlockNode) (func(io.Writer, Context) error, error) {
+		type branchRec struct {
+			test e.Expression
+			body *BlockNode
+		}
+		expr, err := e.Parse(node.Args)
+		if err != nil {
+			return nil, err
+		}
+		if !polarity {
+			expr = e.Not(expr)
+		}
+		branches := []branchRec{
+			{expr, &node},
+		}
+		for _, c := range node.Clauses {
+			test := e.Constant(true)
+			switch c.Name {
+			case "else":
+			// TODO syntax error if this isn't the last branch
+			case "elsif":
+				t, err := e.Parse(c.Args)
+				if err != nil {
+					return nil, err
+				}
+				test = t
+			}
+			branches = append(branches, branchRec{test, c})
+		}
+		return func(w io.Writer, ctx Context) error {
+			for _, b := range branches {
+				value, err := ctx.Evaluate(b.test)
+				if err != nil {
+					return err
+				}
+				if value != nil && value != false {
+					return ctx.RenderBlock(w, b.body)
+				}
+			}
+			return nil
+		}, nil
+	}
 }

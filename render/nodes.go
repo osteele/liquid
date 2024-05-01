@@ -51,6 +51,12 @@ type SeqNode struct {
 	sourcelessNode
 }
 
+// TrimNode is a trim object.
+type TrimNode struct {
+	sourcelessNode
+	parser.TrimDirection
+}
+
 // FIXME requiring this is a bad design
 type sourcelessNode struct{}
 
