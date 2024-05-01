@@ -72,29 +72,84 @@ func TestScan_ws(t *testing.T) {
 	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
 
 	wsTests := []struct {
-		in, expect  string
-		left, right bool
+		in  string
+		exp []Token
 	}{
-		{`{{ expr }}`, "expr", false, false},
-		{`{{- expr }}`, "expr", true, false},
-		{`{{ expr -}}`, "expr", false, true},
-		{`{% tag arg %}`, "tag", false, false},
-		{`{%- tag arg %}`, "tag", true, false},
-		{`{% tag arg -%}`, "tag", false, true},
+		{`{{ expr }}`, []Token{
+			{
+				Type:   ObjTokenType,
+				Args:   "expr",
+				Source: "{{ expr }}",
+			},
+		}},
+		{`{{- expr }}`, []Token{
+			{
+				Type: TrimLeftTokenType,
+			},
+			{
+				Type:   ObjTokenType,
+				Args:   "expr",
+				Source: "{{- expr }}",
+			},
+		}},
+		{`{{ expr -}}`, []Token{
+			{
+				Type:   ObjTokenType,
+				Args:   "expr",
+				Source: "{{ expr -}}",
+			},
+			{
+				Type: TrimRightTokenType,
+			},
+		}},
+		{`{{- expr -}}`, []Token{
+			{
+				Type: TrimLeftTokenType,
+			},
+			{
+				Type:   ObjTokenType,
+				Args:   "expr",
+				Source: "{{- expr -}}",
+			},
+			{
+				Type: TrimRightTokenType,
+			},
+		}},
+		{`{% tag arg %}`, []Token{
+			{
+				Type:   TagTokenType,
+				Name:   "tag",
+				Args:   "arg",
+				Source: "{% tag arg %}",
+			},
+		}},
+		{`{%- tag arg %}`, []Token{
+			{
+				Type: TrimLeftTokenType,
+			},
+			{
+				Type:   TagTokenType,
+				Name:   "tag",
+				Args:   "arg",
+				Source: "{%- tag arg %}",
+			},
+		}},
+		{`{% tag arg -%}`, []Token{
+			{
+				Type:   TagTokenType,
+				Name:   "tag",
+				Args:   "arg",
+				Source: "{% tag arg -%}",
+			},
+			{
+				Type: TrimRightTokenType,
+			},
+		}},
 	}
 	for i, test := range wsTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
 			tokens := scan(test.in)
-			require.Len(t, tokens, 1)
-			tok := tokens[0]
-			if test.expect == "tag" {
-				require.Equalf(t, "tag", tok.Name, test.in)
-				require.Equalf(t, "arg", tok.Args, test.in)
-			} else {
-				require.Equalf(t, "expr", tok.Args, test.in)
-			}
-			require.Equalf(t, test.left, tok.TrimLeft, test.in)
-			require.Equalf(t, test.right, tok.TrimRight, test.in)
+			require.Equalf(t, test.exp, tokens, test.in)
 		})
 	}
 }

@@ -46,6 +46,20 @@ type ASTSeq struct {
 	sourcelessNode
 }
 
+// TrimDirection determines the trim direction of an ASTTrim object.
+type TrimDirection int
+
+const (
+	Left TrimDirection = iota
+	Right
+)
+
+// ASTTrim is a trim object.
+type ASTTrim struct {
+	sourcelessNode
+	TrimDirection
+}
+
 // It shouldn't be possible to get an error from one of these node types.
 // If it is, this needs to be re-thought to figure out where the source
 // location comes from.

@@ -66,6 +66,8 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:
 		return &ObjectNode{n.Token, n.Expr}, nil
+	case *parser.ASTTrim:
+		return &TrimNode{TrimDirection: n.TrimDirection}, nil
 	default:
 		panic(fmt.Errorf("un-compilable node type %T", n))
 	}

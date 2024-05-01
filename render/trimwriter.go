@@ -10,56 +10,48 @@ import (
 // The caller should call TrimLeft(bool) and TrimRight(bool) respectively
 // before and after processing a tag or expression, and Flush() at completion.
 type trimWriter struct {
-	w         io.Writer
-	buf       bytes.Buffer
-	trimRight bool
+	w    io.Writer
+	buf  bytes.Buffer
+	trim bool
 }
 
-// This violates the letter of the protocol by returning the count of the
-// bytes, rather than the actual number of bytes written. We can't know the
-// number of bytes written until later, and it won't in general be the same
-// as the argument length (that's the whole point of trimming), but speaking
-// truthfully here would cause some callers to return io.ErrShortWrite, ruining
-// this as an io.Writer.
-func (tw *trimWriter) Write(b []byte) (int, error) {
-	n := len(b)
-	if tw.trimRight {
+// Write writes b to the current buffer. If the trim flag is set,
+// a prefix whitespace trim on b is performed before writing it to
+// the buffer and the trim flag is unset. If the trim flag was not
+// set, the current buffer is flushed before b is written.
+// Write only returns the bytes written to w during a flush.
+func (tw *trimWriter) Write(b []byte) (n int, err error) {
+	if tw.trim {
 		b = bytes.TrimLeftFunc(b, unicode.IsSpace)
-		if n != 0 {
-			tw.trimRight = false
-		}
-	} else if tw.buf.Len() > 0 {
-		if err := tw.Flush(); err != nil {
-			return 0, err
-		}
+		tw.trim = false
+	} else if n, err = tw.Flush(); err != nil {
+		return n, err
 	}
-	nonWS := bytes.TrimRightFunc(b, unicode.IsSpace)
-	if len(nonWS) < len(b) {
-		if _, err := tw.buf.Write(b[len(nonWS):]); err != nil {
-			return 0, err
-		}
-	}
-	_, err := tw.w.Write(nonWS)
-	return n, err
-}
-func (tw *trimWriter) Flush() (err error) {
-	if tw.buf.Len() > 0 {
-		_, err = tw.buf.WriteTo(tw.w)
-		tw.buf.Reset()
-	}
+	_, err = tw.buf.Write(b)
 	return
 }
 
-func (tw *trimWriter) TrimLeft(f bool) {
-	if !f && tw.buf.Len() > 0 {
-		if err := tw.Flush(); err != nil {
-			panic(err)
-		}
-	}
+// TrimLeft trims all whitespaces before the trim node, i.e. the whitespace
+// suffix of the current buffer. It then writes the current buffer to w and
+// resets the buffer.
+func (tw *trimWriter) TrimLeft() error {
+	_, err := tw.w.Write(bytes.TrimRightFunc(tw.buf.Bytes(), unicode.IsSpace))
 	tw.buf.Reset()
-	tw.trimRight = false
+	return err
 }
 
-func (tw *trimWriter) TrimRight(f bool) {
-	tw.trimRight = f
+// TrimRight sets the trim flag on the trimWriter. This will cause a prefix
+// whitespace trim on any subsequent write.
+func (tw *trimWriter) TrimRight() {
+	tw.trim = true
+}
+
+// Flush flushes the current buffer into w.
+func (tw *trimWriter) Flush() (int, error) {
+	if tw.buf.Len() > 0 {
+		n, err := tw.buf.WriteTo(tw.w)
+		tw.buf.Reset()
+		return int(n), err
+	}
+	return 0, nil
 }

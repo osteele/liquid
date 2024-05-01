@@ -4,12 +4,11 @@ import "fmt"
 
 // A Token is an object {{ a.b }}, a tag {% if a>b %}, or a text chunk (anything outside of {{}} and {%%}.)
 type Token struct {
-	Type                TokenType
-	SourceLoc           SourceLoc
-	Name                string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
-	Args                string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
-	Source              string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
-	TrimLeft, TrimRight bool   // Trim whitespace left or right of this token; from {{- tag -}} and {%- expr -%}
+	Type      TokenType
+	SourceLoc SourceLoc
+	Name      string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
+	Args      string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
+	Source    string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
 }
 
 // TokenType is the type of a Chunk
@@ -24,6 +23,10 @@ const (
 	TagTokenType
 	// ObjTokenType is the type of an object Chunk "{{…}}"
 	ObjTokenType
+	// TrimLeftTokenType is the type of a left trim tag "-"
+	TrimLeftTokenType
+	// TrimRightTokenType is the type of a right trim tag "-"
+	TrimRightTokenType
 )
 
 // SourceLoc contains a Token's source location. Pathname is in the local file
@@ -53,6 +56,8 @@ func (c Token) String() string {
 		return fmt.Sprintf("%v{Tag:%#v, Args:%#v}", c.Type, c.Name, c.Args)
 	case ObjTokenType:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Args)
+	case TrimLeftTokenType, TrimRightTokenType:
+		return "-"
 	default:
 		return fmt.Sprintf("%v{%#v}", c.Type, c.Source)
 	}
