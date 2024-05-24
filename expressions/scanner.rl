@@ -70,14 +70,14 @@ func (lex *lexer) Lex(out *yySymType) int {
 			tok = LITERAL
 			// unescape double quoted string
 			if lex.data[lex.ts] == '"' {
-                qs := string(lex.data[lex.ts:lex.te])
-                s, err := strconv.Unquote(qs)
-                if err != nil {
-                    panic(SyntaxError(fmt.Sprintf("%s to unescape %s", err, qs)))
-                }
-                out.val = s
+				qs := string(lex.data[lex.ts:lex.te])
+				s, err := strconv.Unquote(qs)
+				if err != nil {
+					panic(SyntaxError(fmt.Sprintf("%s to unescape %s", err, qs)))
+				}
+				out.val = s
 			} else {
-                out.val = string(lex.data[lex.ts+1:lex.te-1])
+				out.val = string(lex.data[lex.ts+1:lex.te-1])
 			}
 			fbreak;
 		}
