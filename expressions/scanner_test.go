@@ -92,4 +92,16 @@ func TestLex(t *testing.T) {
 
 	// ts, _ = scanExpression(`%loop i in (3..5)`)
 	// require.Len(t, ts, 9)
+
+	// string unescape
+	ts, _ = scanExpression(`"abc" 'abc' "ab\nc" 'ab\tc'`)
+	require.Len(t, ts, 4)
+	require.Equal(t, LITERAL, ts[0].tok)
+	require.Equal(t, LITERAL, ts[1].tok)
+	require.Equal(t, LITERAL, ts[2].tok)
+	require.Equal(t, LITERAL, ts[3].tok)
+	require.Equal(t, "abc", ts[0].typ.val)
+	require.Equal(t, "abc", ts[1].typ.val)
+	require.Equal(t, "ab\nc", ts[2].typ.val)
+	require.Equal(t, "ab\\tc", ts[3].typ.val)
 }

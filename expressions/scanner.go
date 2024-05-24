@@ -1,9 +1,12 @@
 //line scanner.rl:1
 package expressions
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+)
 
-//line scanner.go:9
+//line scanner.go:12
 var _expression_actions []byte = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 10,
 	1, 11, 1, 12, 1, 13, 1, 14,
@@ -209,7 +212,7 @@ const expression_error int = -1
 
 const expression_en_main int = 23
 
-//line scanner.rl:11
+//line scanner.rl:14
 
 type lexer struct {
 	parseValue
@@ -228,7 +231,7 @@ func newLexer(data []byte) *lexer {
 		pe:   len(data),
 	}
 
-//line scanner.go:236
+//line scanner.go:239
 	{
 		lex.cs = expression_start
 		lex.ts = 0
@@ -236,7 +239,7 @@ func newLexer(data []byte) *lexer {
 		lex.act = 0
 	}
 
-//line scanner.rl:30
+//line scanner.rl:33
 	return lex
 }
 
@@ -244,7 +247,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 	eof := lex.pe
 	tok := 0
 
-//line scanner.go:253
+//line scanner.go:256
 	{
 		var _klen int
 		var _trans int
@@ -265,7 +268,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = (lex.p)
 
-//line scanner.go:273
+//line scanner.go:276
 			}
 		}
 
@@ -341,28 +344,28 @@ func (lex *lexer) Lex(out *yySymType) int {
 				lex.te = (lex.p) + 1
 
 			case 3:
-//line scanner.rl:38
+//line scanner.rl:41
 				lex.act = 8
 			case 4:
-//line scanner.rl:95
+//line scanner.rl:107
 				lex.act = 9
 			case 5:
-//line scanner.rl:102
+//line scanner.rl:114
 				lex.act = 14
 			case 6:
-//line scanner.rl:103
+//line scanner.rl:115
 				lex.act = 15
 			case 7:
-//line scanner.rl:104
+//line scanner.rl:116
 				lex.act = 16
 			case 8:
-//line scanner.rl:107
+//line scanner.rl:119
 				lex.act = 17
 			case 9:
-//line scanner.rl:43
+//line scanner.rl:46
 				lex.act = 20
 			case 10:
-//line scanner.rl:83
+//line scanner.rl:95
 				lex.te = (lex.p) + 1
 				{
 					tok = ASSIGN
@@ -370,7 +373,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 11:
-//line scanner.rl:84
+//line scanner.rl:96
 				lex.te = (lex.p) + 1
 				{
 					tok = CYCLE
@@ -378,7 +381,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 12:
-//line scanner.rl:85
+//line scanner.rl:97
 				lex.te = (lex.p) + 1
 				{
 					tok = LOOP
@@ -386,7 +389,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 13:
-//line scanner.rl:86
+//line scanner.rl:98
 				lex.te = (lex.p) + 1
 				{
 					tok = WHEN
@@ -394,18 +397,27 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 14:
-//line scanner.rl:66
+//line scanner.rl:69
 				lex.te = (lex.p) + 1
 				{
 					tok = LITERAL
-					// TODO unescape \x
-					out.val = string(lex.data[lex.ts+1 : lex.te-1])
+					// unescape double quoted string
+					if lex.data[lex.ts] == '"' {
+						qs := string(lex.data[lex.ts:lex.te])
+						s, err := strconv.Unquote(qs)
+						if err != nil {
+							panic(SyntaxError(fmt.Sprintf("%s to unescape %s", err, qs)))
+						}
+						out.val = s
+					} else {
+						out.val = string(lex.data[lex.ts+1 : lex.te-1])
+					}
 					(lex.p)++
 					goto _out
 
 				}
 			case 15:
-//line scanner.rl:98
+//line scanner.rl:110
 				lex.te = (lex.p) + 1
 				{
 					tok = EQ
@@ -413,7 +425,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 16:
-//line scanner.rl:99
+//line scanner.rl:111
 				lex.te = (lex.p) + 1
 				{
 					tok = NEQ
@@ -421,7 +433,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 17:
-//line scanner.rl:100
+//line scanner.rl:112
 				lex.te = (lex.p) + 1
 				{
 					tok = GE
@@ -429,7 +441,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 18:
-//line scanner.rl:101
+//line scanner.rl:113
 				lex.te = (lex.p) + 1
 				{
 					tok = LE
@@ -437,7 +449,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 19:
-//line scanner.rl:108
+//line scanner.rl:120
 				lex.te = (lex.p) + 1
 				{
 					tok = DOTDOT
@@ -445,7 +457,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 20:
-//line scanner.rl:110
+//line scanner.rl:122
 				lex.te = (lex.p) + 1
 				{
 					tok = KEYWORD
@@ -454,7 +466,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 21:
-//line scanner.rl:112
+//line scanner.rl:124
 				lex.te = (lex.p) + 1
 				{
 					tok = PROPERTY
@@ -463,7 +475,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 22:
-//line scanner.rl:115
+//line scanner.rl:127
 				lex.te = (lex.p) + 1
 				{
 					tok = int(lex.data[lex.ts])
@@ -471,7 +483,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 23:
-//line scanner.rl:48
+//line scanner.rl:51
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -486,7 +498,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 24:
-//line scanner.rl:57
+//line scanner.rl:60
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -501,7 +513,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 25:
-//line scanner.rl:43
+//line scanner.rl:46
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -512,7 +524,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 26:
-//line scanner.rl:112
+//line scanner.rl:124
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -522,12 +534,12 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 27:
-//line scanner.rl:114
+//line scanner.rl:126
 				lex.te = (lex.p)
 				(lex.p)--
 
 			case 28:
-//line scanner.rl:115
+//line scanner.rl:127
 				lex.te = (lex.p)
 				(lex.p)--
 				{
@@ -536,7 +548,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					goto _out
 				}
 			case 29:
-//line scanner.rl:48
+//line scanner.rl:51
 				(lex.p) = (lex.te) - 1
 				{
 					tok = LITERAL
@@ -550,7 +562,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 				}
 			case 30:
-//line scanner.rl:115
+//line scanner.rl:127
 				(lex.p) = (lex.te) - 1
 				{
 					tok = int(lex.data[lex.ts])
@@ -618,7 +630,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					}
 				}
 
-//line scanner.go:552
+//line scanner.go:564
 			}
 		}
 
@@ -633,7 +645,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = 0
 
-//line scanner.go:566
+//line scanner.go:578
 			}
 		}
 
@@ -656,7 +668,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 	}
 
-//line scanner.rl:119
+//line scanner.rl:131
 
 	return tok
 }

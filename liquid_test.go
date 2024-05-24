@@ -41,3 +41,27 @@ func ExampleIterationKeyedMap() {
 	// Output: a=1.
 	// a=1.
 }
+
+func TestStringUnescape(t *testing.T) {
+	vars := map[string]interface{}{}
+	engine := NewEngine()
+
+	out, err := engine.ParseAndRenderString(`{{ 'ab\nc' }}`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "ab\\nc", out)
+
+	out, err = engine.ParseAndRenderString(`{{ "ab\nc" }}`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "ab\nc", out)
+
+	out, err = engine.ParseAndRenderString(`{{ "ab\tc" }}`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "ab\tc", out)
+
+	_, err = engine.ParseAndRenderString(`{{ "ab\xc" }}`, vars)
+	require.Error(t, err)
+
+	out, err = engine.ParseAndRenderString(`{{ 'ab\xc' }}`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "ab\\xc", out)
+}
