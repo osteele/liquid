@@ -4,6 +4,7 @@ package parser
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/osteele/liquid/expressions"
 )
@@ -33,7 +34,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 		inComment = false
 		inRaw     = false
 	)
-	for _, tok := range tokens {
+	for i, tok := range tokens {
 		switch {
 		// The parser needs to know about comment and raw, because tags inside
 		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
@@ -55,7 +56,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 			}
 			*ap = append(*ap, &ASTObject{tok, expr})
 		case tok.Type == TextTokenType:
-			*ap = append(*ap, &ASTText{Token: tok})
+			*ap = append(*ap, trimAndNewTextNode(tokens, i))
 		case tok.Type == TagTokenType:
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
@@ -102,4 +103,15 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocycl
 		return nil, Errorf(bn, "unterminated %q block", bn.Name)
 	}
 	return root, nil
+}
+
+func trimAndNewTextNode(tokens []Token, i int) *ASTText {
+	ast := &ASTText{Token: tokens[i]}
+	if i > 0 && tokens[i-1].TrimRight {
+		ast.Source = strings.TrimLeftFunc(ast.Source, unicode.IsSpace)
+	}
+	if i+1 < len(tokens) && tokens[i+1].TrimLeft {
+		ast.Source = strings.TrimRightFunc(ast.Source, unicode.IsSpace)
+	}
+	return ast
 }

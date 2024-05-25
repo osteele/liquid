@@ -55,7 +55,7 @@ func TestEngine_ParseAndFRender(t *testing.T) {
 			wr := capWriter{}
 			err := engine.ParseAndFRender(&wr, []byte(test.in), testBindings)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, strings.ToUpper(test.expected), wr.String(), test.in)
+			require.Equalf(t, test.expected, wr.String(), test.in)
 		})
 	}
 }
