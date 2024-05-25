@@ -65,3 +65,20 @@ func TestStringUnescape(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "ab\\xc", out)
 }
+
+func TestWhitespaceControl(t *testing.T) {
+	vars := map[string]interface{}{}
+	engine := NewEngine()
+
+	out, err := engine.ParseAndRenderString(`t1 {%- if true -%} t2 {%- endif -%} t3`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "t1t2t3", out)
+
+	out, err = engine.ParseAndRenderString(`t1
+		{%- if true -%}
+			t2
+		{%- endif -%}
+		t3`, vars)
+	require.NoError(t, err)
+	require.Equal(t, "t1t2t3", out)
+}

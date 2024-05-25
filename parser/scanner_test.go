@@ -23,7 +23,9 @@ var scannerCountTests = []struct {
 }
 
 func TestScan(t *testing.T) {
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
+	delims := []string{"{{", "}}", "{%", "%}"}
+	tokenMatcher := formTokenMatcher(delims)
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, delims, tokenMatcher) }
 	tokens := scan("12")
 	require.NotNil(t, tokens)
 	require.Len(t, tokens, 1)
@@ -68,8 +70,10 @@ func TestScan(t *testing.T) {
 }
 
 func TestScan_ws(t *testing.T) {
+	delims := []string{"{{", "}}", "{%", "%}"}
+	tokenMatcher := formTokenMatcher(delims)
 	// whitespace control
-	scan := func(src string) []Token { return Scan(src, SourceLoc{}, nil) }
+	scan := func(src string) []Token { return Scan(src, SourceLoc{}, delims, tokenMatcher) }
 
 	wsTests := []struct {
 		in, expect  string
@@ -115,8 +119,10 @@ var scannerCountTestsDelims = []struct {
 }
 
 func TestScan_delims(t *testing.T) {
+	delims := []string{"OBJECT@LEFT", "OBJECT#RIGHT", "TAG*LEFT", "TAG!RIGHT"}
+	tokenMatcher := formTokenMatcher(delims)
 	scan := func(src string) []Token {
-		return Scan(src, SourceLoc{}, []string{"OBJECT@LEFT", "OBJECT#RIGHT", "TAG*LEFT", "TAG!RIGHT"})
+		return Scan(src, SourceLoc{}, delims, tokenMatcher)
 	}
 	tokens := scan("12")
 	require.NotNil(t, tokens)
