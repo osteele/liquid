@@ -15,8 +15,8 @@ import (
 // Bindings is a map of variable names to values.
 //
 // Clients need not use this type. It is used solely for documentation. Callers can use instances
-// of map[string]interface{} itself as argument values to functions declared with this parameter type.
-type Bindings map[string]interface{}
+// of map[string]any itself as argument values to functions declared with this parameter type.
+type Bindings map[string]any
 
 // A Renderer returns the rendered string for a block. This is the type of a tag definition.
 //
@@ -35,6 +35,6 @@ type SourceError interface {
 
 // IterationKeyedMap returns a map whose {% for %} tag iteration values are its keys, instead of [key, value] pairs.
 // Use this to create a Go map with the semantics of a Ruby struct drop.
-func IterationKeyedMap(m map[string]interface{}) tags.IterationKeyedMap {
+func IterationKeyedMap(m map[string]any) tags.IterationKeyedMap {
 	return m
 }

@@ -15,13 +15,13 @@ type TypeError string
 
 func (e TypeError) Error() string { return string(e) }
 
-func typeErrorf(format string, a ...interface{}) TypeError {
+func typeErrorf(format string, a ...any) TypeError {
 	return TypeError(fmt.Sprintf(format, a...))
 }
 
 var timeType = reflect.TypeOf(time.Now())
 
-func conversionError(modifier string, value interface{}, typ reflect.Type) error {
+func conversionError(modifier string, value any, typ reflect.Type) error {
 	if modifier != "" {
 		modifier += " "
 	}
@@ -32,7 +32,7 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
 }
 
-func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
+func convertValueToInt(value any, typ reflect.Type) (int64, error) {
 	switch value := value.(type) {
 	case bool:
 		if value {
@@ -51,12 +51,11 @@ func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
 			return 0, conversionError("", value, typ)
 		}
 		return v, nil
-
 	}
 	return 0, conversionError("", value, typ)
 }
 
-func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
+func convertValueToFloat(value any, typ reflect.Type) (float64, error) {
 	switch value := value.(type) {
 	// case int is handled by rv.Convert(typ) in Convert function
 	case string:
@@ -78,7 +77,7 @@ func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
+func Convert(value any, typ reflect.Type) (any, error) { // nolint: gocyclo
 	value = ToLiquid(value)
 	rv := reflect.ValueOf(value)
 	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
@@ -241,7 +240,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 }
 
 // MustConvert is like Convert, but panics if conversion fails.
-func MustConvert(value interface{}, t reflect.Type) interface{} {
+func MustConvert(value any, t reflect.Type) any {
 	out, err := Convert(value, t)
 	if err != nil {
 		panic(err)
@@ -251,10 +250,61 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 
 // MustConvertItem converts item to conform to the type array's element, else panics.
 // Unlike MustConvert, the second argument is a value not a type.
-func MustConvertItem(item interface{}, array interface{}) interface{} {
+func MustConvertItem(item any, array any) any {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
 		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
 	}
 	return item
+}
+
+func ToInt64(a any) (int64, bool) {
+	switch ia := a.(type) {
+	case int:
+		return int64(ia), true
+	case int64:
+		return ia, true
+	case int8:
+		return int64(ia), true
+	case int16:
+		return int64(ia), true
+	case int32:
+		return int64(ia), true
+	case uint:
+		return int64(ia), true
+	case uint64:
+		return int64(ia), true
+	case uint8:
+		return int64(ia), true
+	case uint16:
+		return int64(ia), true
+	case uint32:
+		return int64(ia), true
+	}
+	if a == nil {
+		return 0, true
+	}
+	if s, ok := a.(string); ok {
+		if s == "" {
+			return 0, true
+		}
+	}
+	return 0, false
+}
+
+func ToFloat64(a any) (float64, bool) {
+	switch v := a.(type) {
+	case float64:
+		return v, true
+	case float32:
+		return float64(v), true
+	}
+	if v, ok := ToInt64(a); ok {
+		return float64(v), true
+	}
+	out, err := Convert(a, float64Type)
+	if err != nil {
+		return 0, false
+	}
+	return out.(float64), true
 }

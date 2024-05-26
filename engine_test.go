@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var emptyBindings = map[string]interface{}{}
+var emptyBindings = map[string]any{}
 
 // There's a lot more tests in the filters and tags sub-packages.
 // This collects a minimal set for testing end-to-end.
@@ -21,10 +21,10 @@ var liquidTests = []struct{ in, expected string }{
 	{`{{ "upper" | upcase }}`, "UPPER"},
 }
 
-var testBindings = map[string]interface{}{
+var testBindings = map[string]any{
 	"x":  123,
 	"ar": []string{"first", "second", "third"},
-	"page": map[string]interface{}{
+	"page": map[string]any{
 		"title": "Introduction",
 	},
 }
@@ -61,8 +61,8 @@ func TestEngine_ParseAndFRender(t *testing.T) {
 }
 
 func TestEngine_ParseAndRenderString_ptr_to_hash(t *testing.T) {
-	params := map[string]interface{}{
-		"message": &map[string]interface{}{
+	params := map[string]any{
+		"message": &map[string]any{
 			"Text":       "hello",
 			"jsonNumber": json.Number("123"),
 		},
@@ -77,7 +77,7 @@ func TestEngine_ParseAndRenderString_ptr_to_hash(t *testing.T) {
 type testStruct struct{ Text string }
 
 func TestEngine_ParseAndRenderString_struct(t *testing.T) {
-	params := map[string]interface{}{
+	params := map[string]any{
 		"message": testStruct{
 			Text: "hello",
 		},

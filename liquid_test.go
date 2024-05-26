@@ -9,8 +9,8 @@ import (
 )
 
 func TestIterationKeyedMap(t *testing.T) {
-	vars := map[string]interface{}{
-		"keyed_map": IterationKeyedMap(map[string]interface{}{"a": 1, "b": 2}),
+	vars := map[string]any{
+		"keyed_map": IterationKeyedMap(map[string]any{"a": 1, "b": 2}),
 	}
 	engine := NewEngine()
 	tpl, err := engine.ParseTemplate([]byte(`{% for k in keyed_map %}{{ k }}={{ keyed_map[k] }}.{% endfor %}`))
@@ -21,9 +21,9 @@ func TestIterationKeyedMap(t *testing.T) {
 }
 
 func ExampleIterationKeyedMap() {
-	vars := map[string]interface{}{
-		"map":       map[string]interface{}{"a": 1},
-		"keyed_map": IterationKeyedMap(map[string]interface{}{"a": 1}),
+	vars := map[string]any{
+		"map":       map[string]any{"a": 1},
+		"keyed_map": IterationKeyedMap(map[string]any{"a": 1}),
 	}
 	engine := NewEngine()
 	out, err := engine.ParseAndRenderString(
@@ -43,7 +43,7 @@ func ExampleIterationKeyedMap() {
 }
 
 func TestStringUnescape(t *testing.T) {
-	vars := map[string]interface{}{}
+	vars := map[string]any{}
 	engine := NewEngine()
 
 	out, err := engine.ParseAndRenderString(`{{ 'ab\nc' }}`, vars)
@@ -67,7 +67,7 @@ func TestStringUnescape(t *testing.T) {
 }
 
 func TestWhitespaceControl(t *testing.T) {
-	vars := map[string]interface{}{}
+	vars := map[string]any{}
 	engine := NewEngine()
 
 	out, err := engine.ParseAndRenderString(`t1 {%- if true -%} t2 {%- endif -%} t3`, vars)

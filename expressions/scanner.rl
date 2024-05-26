@@ -54,7 +54,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			if err != nil {
 				panic(err)
 			}
-			out.val = int(n)
+			out.val = n
 			fbreak;
 		}
 		action Float {

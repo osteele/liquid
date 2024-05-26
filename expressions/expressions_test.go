@@ -15,7 +15,7 @@ var evaluatorTests = []struct {
 	expected interface{}
 }{
 	// Literals
-	{`12`, 12},
+	{`12`, int64(12)},
 	{`12.3`, 12.3},
 	{`true`, true},
 	{`false`, false},
@@ -53,7 +53,7 @@ var evaluatorTests = []struct {
 	{`(range.begin..range.end)`, values.NewRange(1, 5)},
 
 	// Expressions
-	{`(1)`, 1},
+	{`(1)`, int64(1)},
 	{`(n)`, 123},
 
 	// Operators

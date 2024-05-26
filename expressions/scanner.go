@@ -492,7 +492,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					if err != nil {
 						panic(err)
 					}
-					out.val = int(n)
+					out.val = n
 					(lex.p)++
 					goto _out
 
@@ -556,7 +556,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 					if err != nil {
 						panic(err)
 					}
-					out.val = int(n)
+					out.val = n
 					(lex.p)++
 					goto _out
 

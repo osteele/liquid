@@ -2,6 +2,7 @@ package filters
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"testing"
 	"time"
@@ -151,39 +152,39 @@ var filterTests = []struct {
 	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
 
 	// number filters
-	{`-17 | abs`, 17.0},
-	{`4 | abs`, 4.0},
+	{`-17 | abs`, int64(17)},
+	{`4 | abs`, int64(4)},
 	{`"-19.86" | abs`, 19.86},
 
-	{`1.2 | ceil`, 2},
-	{`2.0 | ceil`, 2},
-	{`183.357 | ceil`, 184},
-	{`"3.5" | ceil`, 4},
+	{`1.2 | ceil`, int64(2)},
+	{`2.0 | ceil`, int64(2)},
+	{`183.357 | ceil`, int64(184)},
+	{`"3.5" | ceil`, int64(4)},
 
-	{`1.2 | floor`, 1},
-	{`2.0 | floor`, 2},
-	{`183.357 | floor`, 183},
+	{`1.2 | floor`, int64(1)},
+	{`2.0 | floor`, int64(2)},
+	{`183.357 | floor`, int64(183)},
 
-	{`4 | plus: 2`, 6.0},
+	{`4 | plus: 2`, int64(6)},
 	{`183.357 | plus: 12`, 195.357},
 
-	{`4 | minus: 2`, 2.0},
-	{`16 | minus: 4`, 12.0},
+	{`4 | minus: 2`, int64(2)},
+	{`16 | minus: 4`, int64(12)},
 	{`183.357 | minus: 12`, 171.357},
 
-	{`3 | times: 2`, 6.0},
-	{`24 | times: 7`, 168.0},
+	{`3 | times: 2`, int64(6)},
+	{`24 | times: 7`, int64(168)},
 	{`183.357 | times: 12`, 2200.284},
 
 	{`3 | modulo: 2`, 1.0},
 	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
-	{`16 | divided_by: 4`, 4},
-	{`5 | divided_by: 3`, 1},
-	{`20 | divided_by: 7`, 2},
+	{`16 | divided_by: 4`, int64(4)},
+	{`5 | divided_by: 3`, int64(1)},
+	{`20 | divided_by: 7`, int64(2)},
 	{`20 | divided_by: 7.0`, 2.857142857142857},
-	{`20 | divided_by: 's'`, nil},
+	{`20 | divided_by: 's'`, math.NaN()},
 
 	{`1.2 | round`, 1.0},
 	{`2.7 | round`, 3.0},
@@ -192,7 +193,7 @@ var filterTests = []struct {
 	// Jekyll extensions; added here for convenient testing
 	// TODO add this just to the test environment
 	{`map | inspect`, `{"a":1}`},
-	{`1 | type`, `int`},
+	{`1 | type`, `int64`},
 	{`"1" | type`, `string`},
 }
 
@@ -271,7 +272,9 @@ func TestFilters(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			actual, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.expected, actual, test.in)
+			if !bothNaN(test.expected, actual) {
+				require.Equalf(t, test.expected, actual, test.in)
+			}
 		})
 	}
 }
@@ -282,4 +285,13 @@ func timeMustParse(s string) time.Time {
 		panic(err)
 	}
 	return t
+}
+
+func bothNaN(a, b any) bool {
+	if fa, ok := a.(float64); ok {
+		if fb, ok := b.(float64); ok {
+			return math.IsNaN(fa) && math.IsNaN(fb)
+		}
+	}
+	return false
 }

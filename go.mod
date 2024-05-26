@@ -1,6 +1,6 @@
 module github.com/osteele/liquid
 
-go 1.17
+go 1.18
 
 require (
 	github.com/osteele/tuesday v1.0.3
@@ -11,5 +11,5 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

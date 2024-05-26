@@ -7,16 +7,17 @@ import (
 	"reflect"
 	"sort"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
+	"github.com/osteele/liquid/values"
 )
 
 // An IterationKeyedMap is a map that yields its keys, instead of (key, value) pairs, when iterated.
 type IterationKeyedMap map[string]interface{}
 
-const forloopVarName = "forloop"
+const forLoopVarName = "forloop"
 
 var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
 var errLoopBreak = fmt.Errorf("break outside a loop")
@@ -45,7 +46,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	}
 	cycle := stmt.Cycle
 	return func(w io.Writer, ctx render.Context) error {
-		loopVar := ctx.Get(forloopVarName)
+		loopVar := ctx.Get(forLoopVarName)
 		if loopVar == nil {
 			return ctx.Errorf("cycle must be within a forloop")
 		}
@@ -98,14 +99,14 @@ func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
 
 	// shallow-bind the loop variables; restore on exit
 	defer func(index, forloop interface{}) {
-		ctx.Set(forloopVarName, index)
+		ctx.Set(forLoopVarName, index)
 		ctx.Set(loop.Variable, forloop)
-	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
+	}(ctx.Get(forLoopVarName), ctx.Get(loop.Variable))
 	cycleMap := map[string]int{}
 loop:
 	for i, len := 0, iter.Len(); i < len; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
-		ctx.Set(forloopVarName, map[string]interface{}{
+		ctx.Set(forLoopVarName, map[string]interface{}{
 			"first":   i == 0,
 			"last":    i == len-1,
 			"index":   i + 1,
@@ -139,7 +140,7 @@ func makeLoopDecorator(loop loopRenderer, ctx render.Context) (loopDecorator, er
 			if err != nil {
 				return nil, err
 			}
-			cols, ok := val.(int)
+			cols, ok := values.ToInt64(val)
 			if !ok {
 				return nil, ctx.Errorf("loop cols must be an integer")
 			}
@@ -199,12 +200,12 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 		if err != nil {
 			return nil, err
 		}
-		offset, ok := val.(int)
+		offset, ok := values.ToInt64(val)
 		if !ok {
 			return nil, ctx.Errorf("loop offset must be an integer")
 		}
 		if offset > 0 {
-			iter = offsetWrapper{iter, offset}
+			iter = offsetWrapper{iter, int(offset)}
 		}
 	}
 
@@ -213,12 +214,12 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 		if err != nil {
 			return nil, err
 		}
-		limit, ok := val.(int)
+		limit, ok := values.ToInt64(val)
 		if !ok {
 			return nil, ctx.Errorf("loop limit must be an integer")
 		}
 		if limit >= 0 {
-			iter = limitWrapper{iter, limit}
+			iter = limitWrapper{iter, int(limit)}
 		}
 	}
 

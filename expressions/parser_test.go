@@ -14,7 +14,7 @@ var parseTests = []struct {
 	{`true`, true},
 	{`false`, false},
 	{`nil`, nil},
-	{`2`, 2},
+	{`2`, int64(2)},
 	{`"s"`, "s"},
 	{`a`, 1},
 	{`obj.prop`, 2},
