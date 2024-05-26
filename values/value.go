@@ -100,8 +100,27 @@ func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
 func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
 
 func (v wrapperValue) Int() int {
-	if n, ok := v.value.(int); ok {
-		return n
+	switch ia := v.value.(type) {
+	case int:
+		return ia
+	case int64:
+		return int(ia)
+	case int8:
+		return int(ia)
+	case int16:
+		return int(ia)
+	case int32:
+		return int(ia)
+	case uint:
+		return int(ia)
+	case uint64:
+		return int(ia)
+	case uint8:
+		return int(ia)
+	case uint16:
+		return int(ia)
+	case uint32:
+		return int(ia)
 	}
 	panic(conversionError("", v.value, reflect.TypeOf(1)))
 }
@@ -135,6 +154,24 @@ func (av arrayValue) IndexValue(iv Value) Value {
 	switch ix := iv.Interface().(type) {
 	case int:
 		n = ix
+	case int64:
+		n = int(ix)
+	case int8:
+		n = int(ix)
+	case int16:
+		n = int(ix)
+	case int32:
+		n = int(ix)
+	case uint:
+		n = int(ix)
+	case uint64:
+		n = int(ix)
+	case uint8:
+		n = int(ix)
+	case uint16:
+		n = int(ix)
+	case uint32:
+		n = int(ix)
 	case float32:
 		// Ruby array indexing truncates floats
 		n = int(ix)
