@@ -40,7 +40,12 @@ func NewEngine() *Engine {
 	engine := &Engine{render.NewConfig()}
 	filters.AddStandardFilters(&engine.cfg)
 	tags.AddStandardTags(engine.cfg)
-	engine.RegisterFilter("hideCountryCodeAndDefault", func(s phone.International, hide bool, defaultValue string) string {
+	engine.RegisterFilter("hideCountryCodeAndDefault", func(v interface{}, hide bool, defaultValue string) string {
+		s, ok := v.(phone.International)
+		if !ok {
+			logger.Infow(context.Background(), fmt.Sprintf("failed to cast field value %+v to phone.International", v), "lqiuid", "filter")
+			return defaultValue
+		}
 		if s.Number.IsZero() && s.CountryCode.IsZero() {
 			return defaultValue
 		}
