@@ -22,7 +22,7 @@ func AddStandardTags(c render.Config) {
 	c.AddBlock("capture").Compiler(captureTagCompiler)
 	c.AddBlock("case").Clause("when").Clause("else").Compiler(caseTagCompiler)
 	c.AddBlock("comment")
-	c.AddBlock("for").Compiler(loopTagCompiler)
+	c.AddBlock("for").Clause("else").Compiler(loopTagCompiler)
 	c.AddBlock("if").Clause("else").Clause("elsif").Compiler(ifTagCompiler(true))
 	c.AddBlock("raw")
 	c.AddBlock("tablerow").Compiler(loopTagCompiler)
