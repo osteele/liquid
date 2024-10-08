@@ -54,6 +54,9 @@ func ValueOf(value interface{}) Value { // nolint: gocyclo
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Ptr:
 		rv := reflect.ValueOf(value)
+		if rv.IsNil() {
+			return nilValue
+		}
 		if rv.Type().Elem().Kind() == reflect.Struct {
 			return structValue{wrapperValue{value}}
 		}
