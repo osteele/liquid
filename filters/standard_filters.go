@@ -23,7 +23,7 @@ type FilterDictionary interface {
 }
 
 // AddStandardFilters defines the standard Liquid filters.
-func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
+func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	// value filters
 	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
 		if value == nil || value == false || values.IsEmpty(value) {

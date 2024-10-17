@@ -18,8 +18,8 @@ func TestToLiquid(t *testing.T) {
 func TestValue_drop(t *testing.T) {
 	dv := ValueOf(testDrop{"seafood"})
 	require.Equal(t, "seafood", dv.Interface())
-	require.Equal(t, true, dv.Contains(ValueOf("foo")))
-	require.Equal(t, true, dv.Contains(ValueOf(testDrop{"foo"})))
+	require.True(t, dv.Contains(ValueOf("foo")))
+	require.True(t, dv.Contains(ValueOf(testDrop{"foo"})))
 	require.Equal(t, 7, dv.PropertyValue(ValueOf("size")).Interface())
 }
 

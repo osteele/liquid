@@ -4,7 +4,7 @@ package expressions
 import "strconv"
 
 //line scanner.go:9
-var _expression_actions []byte = []byte{
+var _expression_actions = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 10,
 	1, 11, 1, 12, 1, 13, 1, 14,
 	1, 15, 1, 16, 1, 17, 1, 18,
@@ -16,7 +16,7 @@ var _expression_actions []byte = []byte{
 	7, 2, 2, 8, 2, 2, 9,
 }
 
-var _expression_key_offsets []int16 = []int16{
+var _expression_key_offsets = []int16{
 	0, 1, 2, 3, 4, 5, 6, 7,
 	8, 9, 10, 11, 12, 14, 16, 17,
 	18, 19, 20, 21, 22, 23, 24, 25,
@@ -27,7 +27,7 @@ var _expression_key_offsets []int16 = []int16{
 	283, 294, 305,
 }
 
-var _expression_trans_keys []byte = []byte{
+var _expression_trans_keys = []byte{
 	34, 115, 115, 105, 103, 110, 32, 111,
 	111, 112, 32, 39, 48, 57, 99, 119,
 	121, 99, 108, 101, 32, 104, 101, 110,
@@ -69,7 +69,7 @@ var _expression_trans_keys []byte = []byte{
 	122, 37,
 }
 
-var _expression_single_lengths []byte = []byte{
+var _expression_single_lengths = []byte{
 	1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 0, 2, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 19,
@@ -80,7 +80,7 @@ var _expression_single_lengths []byte = []byte{
 	5, 5, 1,
 }
 
-var _expression_range_lengths []byte = []byte{
+var _expression_range_lengths = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 1, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 4,
@@ -91,7 +91,7 @@ var _expression_range_lengths []byte = []byte{
 	3, 3, 0,
 }
 
-var _expression_index_offsets []int16 = []int16{
+var _expression_index_offsets = []int16{
 	0, 2, 4, 6, 8, 10, 12, 14,
 	16, 18, 20, 22, 24, 26, 29, 31,
 	33, 35, 37, 39, 41, 43, 45, 47,
@@ -102,7 +102,7 @@ var _expression_index_offsets []int16 = []int16{
 	271, 280, 289,
 }
 
-var _expression_indicies []byte = []byte{
+var _expression_indicies = []byte{
 	2, 1, 3, 0, 4, 0, 5, 0,
 	6, 0, 7, 0, 8, 0, 9, 0,
 	10, 0, 11, 0, 12, 0, 2, 13,
@@ -142,7 +142,7 @@ var _expression_indicies []byte = []byte{
 	66, 85, 49,
 }
 
-var _expression_trans_targs []byte = []byte{
+var _expression_trans_targs = []byte{
 	23, 0, 23, 2, 3, 4, 5, 6,
 	23, 8, 9, 10, 23, 11, 23, 31,
 	14, 19, 15, 16, 17, 18, 23, 20,
@@ -156,7 +156,7 @@ var _expression_trans_targs []byte = []byte{
 	37, 54, 37, 37, 57, 13,
 }
 
-var _expression_trans_actions []byte = []byte{
+var _expression_trans_actions = []byte{
 	47, 0, 15, 0, 0, 0, 0, 0,
 	7, 0, 0, 0, 11, 0, 45, 0,
 	0, 0, 0, 0, 0, 0, 9, 0,
@@ -170,7 +170,7 @@ var _expression_trans_actions []byte = []byte{
 	66, 0, 54, 60, 0, 0,
 }
 
-var _expression_to_state_actions []byte = []byte{
+var _expression_to_state_actions = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 1,
@@ -181,7 +181,7 @@ var _expression_to_state_actions []byte = []byte{
 	0, 0, 0,
 }
 
-var _expression_from_state_actions []byte = []byte{
+var _expression_from_state_actions = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 3,
@@ -192,7 +192,7 @@ var _expression_from_state_actions []byte = []byte{
 	0, 0, 0,
 }
 
-var _expression_eof_trans []int16 = []int16{
+var _expression_eof_trans = []int16{
 	1, 1, 1, 1, 1, 1, 1, 1,
 	1, 1, 1, 1, 15, 1, 1, 1,
 	1, 1, 1, 1, 1, 1, 1, 0,

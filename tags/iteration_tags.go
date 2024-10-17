@@ -190,12 +190,12 @@ func (c tableRowDecorator) before(w io.Writer, i int) {
 	}
 }
 
-func (c tableRowDecorator) after(w io.Writer, i, len int) {
+func (c tableRowDecorator) after(w io.Writer, i, l int) {
 	cols := int(c)
 	if _, err := io.WriteString(w, `</td>`); err != nil {
 		panic(err)
 	}
-	if (i+1)%cols == 0 || i+1 == len {
+	if (i+1)%cols == 0 || i+1 == l {
 		if _, err := io.WriteString(w, `</tr>`); err != nil {
 			panic(err)
 		}

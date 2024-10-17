@@ -75,7 +75,7 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	}, nil
 }
 
-func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { //nolint: gocyclo
 	return func(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
 			test e.Expression

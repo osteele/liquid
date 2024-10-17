@@ -15,7 +15,7 @@ func (c Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Error
 	return c.compileNode(root)
 }
 
-// nolint: gocyclo
+//nolint: gocyclo
 func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 	switch n := n.(type) {
 	case *parser.ASTBlock:

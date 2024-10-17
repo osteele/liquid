@@ -69,7 +69,7 @@ type blockDefBuilder struct {
 }
 
 // AddBlock defines a control tag and its matching end tag.
-func (g grammar) AddBlock(name string) blockDefBuilder { // nolint: golint
+func (g grammar) AddBlock(name string) blockDefBuilder { //nolint: golint
 	ct := &blockSyntax{name: name}
 	g.addBlockDef(ct)
 	g.addBlockDef(&blockSyntax{name: "end" + name, isEndTag: true, startName: name})

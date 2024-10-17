@@ -28,7 +28,7 @@ type Value interface {
 
 // ValueOf returns a Value that wraps its argument.
 // If the argument is already a Value, it returns this.
-func ValueOf(value interface{}) Value { // nolint: gocyclo
+func ValueOf(value interface{}) Value { //nolint: gocyclo
 	// interned values
 	switch value {
 	case nil:

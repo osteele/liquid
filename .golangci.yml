@@ -8,5 +8,26 @@ issues:
     - path: expressions/scanner.go
       linters: [deadcode, unused, varcheck]
 linters:
-  enable:
-    - gofmt
+  enable-all: true
+  disable:
+    - depguard
+    - exhaustruct
+    - varnamelen
+    - godox
+    - wsl
+    - wrapcheck
+    - gomnd
+    - gochecknoglobals
+    - exhaustive
+    - testpackage
+    - ireturn
+    - godot
+    - mnd
+    - nonamedreturns
+    - funlen
+    - gci
+    - nlreturn
+    - inamedparam
+    - lll
+    - paralleltest
+  fix: true

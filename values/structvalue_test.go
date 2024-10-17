@@ -43,14 +43,14 @@ func TestValue_struct(t *testing.T) {
 
 	// Nesting
 	require.Equal(t, -2, s.PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("F")).Interface())
-	require.Equal(t, nil, s.PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("F")).Interface())
+	require.Nil(t, s.PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("Nest")).PropertyValue(ValueOf("F")).Interface())
 
 	// field tags
 	require.False(t, s.Contains(ValueOf("Renamed")))
 	require.False(t, s.Contains(ValueOf("Omitted")))
 	require.True(t, s.Contains(ValueOf("name")))
-	require.Equal(t, nil, s.PropertyValue(ValueOf("Renamed")).Interface())
-	require.Equal(t, nil, s.PropertyValue(ValueOf("Omitted")).Interface())
+	require.Nil(t, s.PropertyValue(ValueOf("Renamed")).Interface())
+	require.Nil(t, s.PropertyValue(ValueOf("Omitted")).Interface())
 	require.Equal(t, 100, s.PropertyValue(ValueOf("name")).Interface())
 
 	// func fields

@@ -15,7 +15,7 @@ func (c Config) Parse(source string, loc SourceLoc) (ASTNode, Error) {
 }
 
 // Parse creates an AST from a sequence of tokens.
-func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { // nolint: gocyclo
+func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocyclo
 	// a stack of control tag state, for matching nested {%if}{%endif%} etc.
 	type frame struct {
 		syntax BlockSyntax

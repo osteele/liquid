@@ -78,7 +78,7 @@ func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
+func Convert(value interface{}, typ reflect.Type) (interface{}, error) { //nolint: gocyclo
 	value = ToLiquid(value)
 	rv := reflect.ValueOf(value)
 	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
