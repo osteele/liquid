@@ -99,6 +99,10 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocyclo
 			} else {
 				*ap = append(*ap, &ASTTag{tok})
 			}
+		case tok.Type == TrimLeftTokenType:
+			*ap = append(*ap, &ASTTrim{TrimDirection: Left})
+		case tok.Type == TrimRightTokenType:
+			*ap = append(*ap, &ASTTrim{TrimDirection: Right})
 		}
 	}
 	if bn != nil {
