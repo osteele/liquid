@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -14,16 +15,18 @@ import (
 )
 
 // An IterationKeyedMap is a map that yields its keys, instead of (key, value) pairs, when iterated.
-type IterationKeyedMap map[string]interface{}
+type IterationKeyedMap map[string]any
 
 const forloopVarName = "forloop"
 
-var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
-var errLoopBreak = fmt.Errorf("break outside a loop")
+var (
+	errLoopContinueLoop = errors.New("continue outside a loop")
+	errLoopBreak        = errors.New("break outside a loop")
+)
 
 type iterable interface {
 	Len() int
-	Index(int) interface{}
+	Index(int) any
 }
 
 func breakTag(string) (func(io.Writer, render.Context) error, error) {
@@ -51,7 +54,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		}
 		// The next few lines could panic if the user spoofs us by creating their own loop object.
 		// “C++ protects against accident, not against fraud.” – Bjarne Stroustrup
-		loopRec := loopVar.(map[string]interface{})
+		loopRec := loopVar.(map[string]any)
 		cycleMap := loopRec[".cycles"].(map[string]int)
 		group, values := cycle.Group, cycle.Values
 		n := cycleMap[group]
@@ -86,7 +89,7 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 		}
 
 		if len(node.Clauses) > 1 {
-			return fmt.Errorf("for loops accept at most one else clause")
+			return errors.New("for loops accept at most one else clause")
 		}
 
 		if iter.Len() == 0 && len(node.Clauses) == 1 && node.Clauses[0].Name == "else" {
@@ -110,27 +113,27 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 	}
 
 	// shallow-bind the loop variables; restore on exit
-	defer func(index, forloop interface{}) {
+	defer func(index, forloop any) {
 		ctx.Set(forloopVarName, index)
 		ctx.Set(loop.Variable, forloop)
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
 	cycleMap := map[string]int{}
 loop:
-	for i, len := 0, iter.Len(); i < len; i++ {
+	for i, l := 0, iter.Len(); i < l; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
-		ctx.Set(forloopVarName, map[string]interface{}{
+		ctx.Set(forloopVarName, map[string]any{
 			"first":   i == 0,
-			"last":    i == len-1,
+			"last":    i == l-1,
 			"index":   i + 1,
 			"index0":  i,
-			"rindex":  len - i,
-			"rindex0": len - i - 1,
-			"length":  len,
+			"rindex":  l - i,
+			"rindex0": l - i - 1,
+			"length":  l,
 			".cycles": cycleMap,
 		})
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
-		decorator.after(w, i, len)
+		decorator.after(w, i, l)
 		switch {
 		case err == nil:
 		// fall through
@@ -190,12 +193,12 @@ func (c tableRowDecorator) before(w io.Writer, i int) {
 	}
 }
 
-func (c tableRowDecorator) after(w io.Writer, i, len int) {
+func (c tableRowDecorator) after(w io.Writer, i, l int) {
 	cols := int(c)
 	if _, err := io.WriteString(w, `</td>`); err != nil {
 		panic(err)
 	}
-	if (i+1)%cols == 0 || i+1 == len {
+	if (i+1)%cols == 0 || i+1 == l {
 		if _, err := io.WriteString(w, `</tr>`); err != nil {
 			panic(err)
 		}
@@ -238,7 +241,7 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 	return iter, nil
 }
 
-func makeIterator(value interface{}) iterable {
+func makeIterator(value any) iterable {
 	if iter, ok := value.(iterable); ok {
 		return iter
 	}
@@ -256,10 +259,10 @@ func makeIterator(value interface{}) iterable {
 		return sliceWrapper(reflect.ValueOf(value))
 	case reflect.Map:
 		rv := reflect.ValueOf(value)
-		array := make([][]interface{}, rv.Len())
+		array := make([][]any, rv.Len())
 		for i, k := range rv.MapKeys() {
 			v := rv.MapIndex(k)
-			array[i] = []interface{}{k.Interface(), v.Interface()}
+			array[i] = []any{k.Interface(), v.Interface()}
 		}
 		return sliceWrapper(reflect.ValueOf(array))
 	default:
@@ -267,7 +270,7 @@ func makeIterator(value interface{}) iterable {
 	}
 }
 
-func makeIterationKeyedMap(m map[string]interface{}) iterable {
+func makeIterationKeyedMap(m map[string]any) iterable {
 	// Iteration chooses a random start, so we need a copy of the keys to iterate through them.
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -280,15 +283,15 @@ func makeIterationKeyedMap(m map[string]interface{}) iterable {
 
 type sliceWrapper reflect.Value
 
-func (w sliceWrapper) Len() int                { return reflect.Value(w).Len() }
-func (w sliceWrapper) Index(i int) interface{} { return reflect.Value(w).Index(i).Interface() }
+func (w sliceWrapper) Len() int        { return reflect.Value(w).Len() }
+func (w sliceWrapper) Index(i int) any { return reflect.Value(w).Index(i).Interface() }
 
 type mapSliceWrapper struct{ ms yaml.MapSlice }
 
 func (w mapSliceWrapper) Len() int { return len(w.ms) }
-func (w mapSliceWrapper) Index(i int) interface{} {
+func (w mapSliceWrapper) Index(i int) any {
 	item := w.ms[i]
-	return []interface{}{item.Key, item.Value}
+	return []any{item.Key, item.Value}
 }
 
 type limitWrapper struct {
@@ -296,23 +299,23 @@ type limitWrapper struct {
 	n int
 }
 
-func (w limitWrapper) Len() int                { return intMin(w.n, w.i.Len()) }
-func (w limitWrapper) Index(i int) interface{} { return w.i.Index(i) }
+func (w limitWrapper) Len() int        { return intMin(w.n, w.i.Len()) }
+func (w limitWrapper) Index(i int) any { return w.i.Index(i) }
 
 type offsetWrapper struct {
 	i iterable
 	n int
 }
 
-func (w offsetWrapper) Len() int                { return intMax(0, w.i.Len()-w.n) }
-func (w offsetWrapper) Index(i int) interface{} { return w.i.Index(i + w.n) }
+func (w offsetWrapper) Len() int        { return intMax(0, w.i.Len()-w.n) }
+func (w offsetWrapper) Index(i int) any { return w.i.Index(i + w.n) }
 
 type reverseWrapper struct {
 	i iterable
 }
 
-func (w reverseWrapper) Len() int                { return w.i.Len() }
-func (w reverseWrapper) Index(i int) interface{} { return w.i.Index(w.i.Len() - 1 - i) }
+func (w reverseWrapper) Len() int        { return w.i.Len() }
+func (w reverseWrapper) Index(i int) any { return w.i.Index(w.i.Len() - 1 - i) }
 
 func intMax(a, b int) int {
 	if a > b {

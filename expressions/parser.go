@@ -56,7 +56,7 @@ func parse(source string) (p *parseValue, err error) {
 }
 
 // EvaluateString is a wrapper for Parse and Evaluate.
-func EvaluateString(source string, ctx Context) (interface{}, error) {
+func EvaluateString(source string, ctx Context) (any, error) {
 	expr, err := Parse(source)
 	if err != nil {
 		return nil, err

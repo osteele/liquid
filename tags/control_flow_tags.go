@@ -10,7 +10,7 @@ import (
 
 type caseInterpreter interface {
 	body() *render.BlockNode
-	test(interface{}, render.Context) (bool, error)
+	test(any, render.Context) (bool, error)
 }
 type exprCase struct {
 	e.When
@@ -19,7 +19,7 @@ type exprCase struct {
 
 func (c exprCase) body() *render.BlockNode { return c.b }
 
-func (c exprCase) test(caseValue interface{}, ctx render.Context) (bool, error) {
+func (c exprCase) test(caseValue any, ctx render.Context) (bool, error) {
 	for _, expr := range c.Exprs {
 		whenValue, err := ctx.Evaluate(expr)
 		if err != nil {
@@ -36,7 +36,7 @@ type elseCase struct{ b *render.BlockNode }
 
 func (c elseCase) body() *render.BlockNode { return c.b }
 
-func (c elseCase) test(interface{}, render.Context) (bool, error) { return true, nil }
+func (c elseCase) test(any, render.Context) (bool, error) { return true, nil }
 
 func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	// TODO syntax error on non-empty node.Body
@@ -75,7 +75,7 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	}, nil
 }
 
-func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { // nolint: gocyclo
+func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render.Context) error, error) { //nolint: gocyclo
 	return func(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 		type branchRec struct {
 			test e.Expression

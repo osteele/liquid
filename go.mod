@@ -1,6 +1,6 @@
 module github.com/osteele/liquid
 
-go 1.17
+go 1.23
 
 require (
 	github.com/osteele/tuesday v1.0.3

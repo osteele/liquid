@@ -21,12 +21,12 @@ import (
 
 // for testing
 var (
-	stderr     io.Writer              = os.Stderr
-	stdout     io.Writer              = os.Stdout
-	stdin      io.Reader              = os.Stdin
-	exit       func(int)              = os.Exit
-	env        func() []string        = os.Environ
-	bindings   map[string]interface{} = map[string]interface{}{}
+	stderr     io.Writer       = os.Stderr
+	stdout     io.Writer       = os.Stdout
+	stdin      io.Reader       = os.Stdin
+	exit       func(int)       = os.Exit
+	env        func() []string = os.Environ
+	bindings   map[string]any  = map[string]any{}
 	strictVars bool
 )
 

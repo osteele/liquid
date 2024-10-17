@@ -15,7 +15,7 @@ import (
 // An Expression is a compiled expression.
 type Expression interface {
 	// Evaluate evaluates an expression in a context.
-	Evaluate(ctx Context) (interface{}, error)
+	Evaluate(ctx Context) (any, error)
 }
 
 // A Closure is an expression within a lexical environment.
@@ -23,8 +23,8 @@ type Expression interface {
 // environment. (Therefore it's not a technically a closure.)
 type Closure interface {
 	// Bind creates a new closure with a new binding.
-	Bind(name string, value interface{}) Closure
-	Evaluate() (interface{}, error)
+	Bind(name string, value any) Closure
+	Evaluate() (any, error)
 }
 
 type closure struct {
@@ -32,13 +32,13 @@ type closure struct {
 	context Context
 }
 
-func (c closure) Bind(name string, value interface{}) Closure {
+func (c closure) Bind(name string, value any) Closure {
 	ctx := c.context.Clone()
 	ctx.Set(name, value)
 	return closure{c.expr, ctx}
 }
 
-func (c closure) Evaluate() (interface{}, error) {
+func (c closure) Evaluate() (any, error) {
 	return c.expr.Evaluate(c.context)
 }
 
@@ -46,7 +46,7 @@ type expression struct {
 	evaluator func(Context) values.Value
 }
 
-func (e expression) Evaluate(ctx Context) (out interface{}, err error) {
+func (e expression) Evaluate(ctx Context) (out any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {

@@ -2,7 +2,7 @@ package tags
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var includeTestBindings = map[string]interface{}{
+var includeTestBindings = map[string]any{
 	"test": true,
 	"var":  "value",
 }
@@ -41,7 +41,7 @@ func TestIncludeTag(t *testing.T) {
 	// errors
 	root, err = config.Compile(`{% include 10 %}`, loc)
 	require.NoError(t, err)
-	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
+	err = render.Render(root, io.Discard, includeTestBindings, config)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "requires a string")
 }
@@ -54,7 +54,7 @@ func TestIncludeTag_file_not_found_error(t *testing.T) {
 	// See the comment in TestIncludeTag_file_not_found_error.
 	root, err := config.Compile(`{% include "missing_file.html" %}`, loc)
 	require.NoError(t, err)
-	err = render.Render(root, ioutil.Discard, includeTestBindings, config)
+	err = render.Render(root, io.Discard, includeTestBindings, config)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err.Cause()))
 }

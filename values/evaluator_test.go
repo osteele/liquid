@@ -8,7 +8,7 @@ import (
 )
 
 var lessTests = []struct {
-	a, b     interface{}
+	a, b     any
 	expected bool
 }{
 	{nil, nil, false},
@@ -43,21 +43,21 @@ func TestLength(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	array := []interface{}{2, 1}
+	array := []any{2, 1}
 	Sort(array)
-	require.Equal(t, []interface{}{1, 2}, array)
+	require.Equal(t, []any{1, 2}, array)
 
-	array = []interface{}{"b", "a"}
+	array = []any{"b", "a"}
 	Sort(array)
-	require.Equal(t, []interface{}{"a", "b"}, array)
+	require.Equal(t, []any{"a", "b"}, array)
 
-	array = []interface{}{
-		map[string]interface{}{"key": 20},
-		map[string]interface{}{"key": 10},
-		map[string]interface{}{},
+	array = []any{
+		map[string]any{"key": 20},
+		map[string]any{"key": 10},
+		map[string]any{},
 	}
 	SortByProperty(array, "key", true)
-	require.Equal(t, nil, array[0].(map[string]interface{})["key"])
-	require.Equal(t, 10, array[1].(map[string]interface{})["key"])
-	require.Equal(t, 20, array[2].(map[string]interface{})["key"])
+	require.Nil(t, array[0].(map[string]any)["key"])
+	require.Equal(t, 10, array[1].(map[string]any)["key"])
+	require.Equal(t, 20, array[2].(map[string]any)["key"])
 }

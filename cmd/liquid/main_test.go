@@ -18,7 +18,7 @@ func TestMain(t *testing.T) {
 		stdin = os.Stdin
 		exit = os.Exit
 		env = os.Environ
-		bindings = map[string]interface{}{}
+		bindings = map[string]any{}
 	}()
 
 	exit = func(n int) {
@@ -58,7 +58,7 @@ func TestMain(t *testing.T) {
 	main()
 	require.True(t, envCalled)
 	require.Equal(t, "Hello, World!", buf.String())
-	bindings = make(map[string]interface{})
+	bindings = make(map[string]any)
 
 	// filename
 	stdin = os.Stdin

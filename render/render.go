@@ -4,16 +4,17 @@ package render
 import (
 	"errors"
 	"fmt"
-	"github.com/osteele/liquid/parser"
 	"io"
 	"reflect"
 	"time"
+
+	"github.com/osteele/liquid/parser"
 
 	"github.com/osteele/liquid/values"
 )
 
 // Render renders the render tree.
-func Render(node Node, w io.Writer, vars map[string]interface{}, c Config) Error {
+func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
 	tw := trimWriter{w: w}
 	if err := node.render(&tw, newNodeContext(vars, c)); err != nil {
 		return err
@@ -108,7 +109,7 @@ func (n *TrimNode) render(w *trimWriter, _ nodeContext) Error {
 }
 
 // writeObject writes a value used in an object node
-func writeObject(w io.Writer, value interface{}) error {
+func writeObject(w io.Writer, value any) error {
 	value = values.ToLiquid(value)
 	if value == nil {
 		return nil
@@ -126,7 +127,7 @@ func writeObject(w io.Writer, value interface{}) error {
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
 	case reflect.Array, reflect.Slice:
-		for i := 0; i < rt.Len(); i++ {
+		for i := range rt.Len() {
 			item := rt.Index(i)
 			if item.IsValid() {
 				if err := writeObject(w, item.Interface()); err != nil {

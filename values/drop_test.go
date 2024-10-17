@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testDrop struct{ proxy interface{} }
+type testDrop struct{ proxy any }
 
-func (d testDrop) ToLiquid() interface{} { return d.proxy }
+func (d testDrop) ToLiquid() any { return d.proxy }
 
 func TestToLiquid(t *testing.T) {
 	require.Equal(t, 2, ToLiquid(2))
@@ -18,18 +18,18 @@ func TestToLiquid(t *testing.T) {
 func TestValue_drop(t *testing.T) {
 	dv := ValueOf(testDrop{"seafood"})
 	require.Equal(t, "seafood", dv.Interface())
-	require.Equal(t, true, dv.Contains(ValueOf("foo")))
-	require.Equal(t, true, dv.Contains(ValueOf(testDrop{"foo"})))
+	require.True(t, dv.Contains(ValueOf("foo")))
+	require.True(t, dv.Contains(ValueOf(testDrop{"foo"})))
 	require.Equal(t, 7, dv.PropertyValue(ValueOf("size")).Interface())
 }
 
 func TestDrop_Resolve_race(t *testing.T) {
 	d := ValueOf(testDrop{1})
 	values := make(chan int, 2)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		go func() { values <- d.Int() }()
 	}
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		require.Equal(t, 1, <-values)
 	}
 }

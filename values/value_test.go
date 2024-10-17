@@ -63,20 +63,20 @@ func TestValue_IndexValue(t *testing.T) {
 	require.Nil(t, lv.IndexValue(ValueOf(nil)).Interface())
 
 	// string map
-	hv := ValueOf(map[string]interface{}{"key": "value"})
+	hv := ValueOf(map[string]any{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf("missing_key")).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf(nil)).Interface())
 
 	// interface map
-	hv = ValueOf(map[interface{}]interface{}{"key": "value"})
+	hv = ValueOf(map[any]any{"key": "value"})
 	require.Equal(t, "value", hv.IndexValue(ValueOf("key")).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf(nil)).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf([]string{})).Interface())
 	require.Nil(t, hv.IndexValue(ValueOf(struct{}{})).Interface())
 
 	// ptr to map
-	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
+	hashPtr := ValueOf(&map[string]any{"key": "value"})
 	require.Equal(t, "value", hashPtr.IndexValue(ValueOf("key")).Interface())
 	require.Nil(t, hashPtr.IndexValue(ValueOf("missing_key")).Interface())
 	require.Nil(t, hashPtr.IndexValue(ValueOf(nil)).Interface())
@@ -101,17 +101,17 @@ func TestValue_PropertyValue(t *testing.T) {
 	require.Nil(t, lv.PropertyValue(ValueOf(nil)).Interface())
 
 	// string map
-	hv := ValueOf(map[string]interface{}{"key": "value"})
+	hv := ValueOf(map[string]any{"key": "value"})
 	require.Equal(t, "value", hv.PropertyValue(ValueOf("key")).Interface())
 	require.Nil(t, hv.PropertyValue(ValueOf("missing_key")).Interface())
 	require.Nil(t, hv.PropertyValue(ValueOf(nil)).Interface())
 
 	// interface map
-	hv = ValueOf(map[interface{}]interface{}{"key": "value"})
+	hv = ValueOf(map[any]any{"key": "value"})
 	require.Equal(t, "value", hv.PropertyValue(ValueOf("key")).Interface())
 
 	// ptr to map
-	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
+	hashPtr := ValueOf(&map[string]any{"key": "value"})
 	require.Equal(t, "value", hashPtr.PropertyValue(ValueOf("key")).Interface())
 	require.Nil(t, hashPtr.PropertyValue(ValueOf("missing_key")).Interface())
 
@@ -132,7 +132,7 @@ func TestValue_Contains(t *testing.T) {
 	require.False(t, av.Contains(ValueOf("missing")))
 	require.False(t, av.Contains(ValueOf(nil)))
 
-	require.True(t, ValueOf([]interface{}{nil}).Contains(ValueOf(nil)))
+	require.True(t, ValueOf([]any{nil}).Contains(ValueOf(nil)))
 
 	// string
 	sv := ValueOf("seafood")
@@ -144,7 +144,7 @@ func TestValue_Contains(t *testing.T) {
 	require.True(t, ValueOf("seaf00d").Contains(ValueOf(0)))
 
 	// map
-	hv := ValueOf(map[string]interface{}{"key": "value"})
+	hv := ValueOf(map[string]any{"key": "value"})
 	require.True(t, hv.Contains(ValueOf("key")))
 	require.False(t, hv.Contains(ValueOf("missing_key")))
 	require.False(t, hv.Contains(ValueOf(nil)))
@@ -173,15 +173,15 @@ func TestValue_PropertyValue_size(t *testing.T) {
 	require.Equal(t, 3, av.PropertyValue(ValueOf("size")).Interface())
 
 	// hash
-	hv := ValueOf(map[string]interface{}{"key": "value"})
+	hv := ValueOf(map[string]any{"key": "value"})
 	require.Equal(t, 1, hv.PropertyValue(ValueOf("size")).Interface())
 
 	// hash with "size" key
-	withSizeKey := ValueOf(map[string]interface{}{"size": "value"})
+	withSizeKey := ValueOf(map[string]any{"size": "value"})
 	require.Equal(t, "value", withSizeKey.IndexValue(ValueOf("size")).Interface())
 
 	// hash pointer
-	hashPtr := ValueOf(&map[string]interface{}{"key": "value"})
+	hashPtr := ValueOf(&map[string]any{"key": "value"})
 	require.Equal(t, 1, hashPtr.PropertyValue(ValueOf("size")).Interface())
 
 	// MapSlice

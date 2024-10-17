@@ -19,25 +19,25 @@ import (
 
 // A FilterDictionary holds filters.
 type FilterDictionary interface {
-	AddFilter(string, interface{})
+	AddFilter(string, any)
 }
 
 // AddStandardFilters defines the standard Liquid filters.
-func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
+func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	// value filters
-	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
+	fd.AddFilter("default", func(value, defaultValue any) any {
 		if value == nil || value == false || values.IsEmpty(value) {
 			value = defaultValue
 		}
 		return value
 	})
-	fd.AddFilter("json", func(a interface{}) interface{} {
+	fd.AddFilter("json", func(a any) any {
 		result, _ := json.Marshal(a)
 		return result
 	})
 
 	// array filters
-	fd.AddFilter("compact", func(a []interface{}) (result []interface{}) {
+	fd.AddFilter("compact", func(a []any) (result []any) {
 		for _, item := range a {
 			if item != nil {
 				result = append(result, item)
@@ -45,12 +45,12 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return
 	})
-	fd.AddFilter("concat", func(a, b []interface{}) (result []interface{}) {
-		result = make([]interface{}, 0, len(a)+len(b))
+	fd.AddFilter("concat", func(a, b []any) (result []any) {
+		result = make([]any, 0, len(a)+len(b))
 		return append(append(result, a...), b...)
 	})
 	fd.AddFilter("join", joinFilter)
-	fd.AddFilter("map", func(a []interface{}, key string) (result []interface{}) {
+	fd.AddFilter("map", func(a []any, key string) (result []any) {
 		keyValue := values.ValueOf(key)
 		for _, obj := range a {
 			value := values.ValueOf(obj)
@@ -62,13 +62,13 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	fd.AddFilter("first", func(a []interface{}) interface{} {
+	fd.AddFilter("first", func(a []any) any {
 		if len(a) == 0 {
 			return nil
 		}
 		return a[0]
 	})
-	fd.AddFilter("last", func(a []interface{}) interface{} {
+	fd.AddFilter("last", func(a []any) any {
 		if len(a) == 0 {
 			return nil
 		}
@@ -100,7 +100,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("times", func(a, b float64) float64 {
 		return a * b
 	})
-	fd.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
+	fd.AddFilter("divided_by", func(a float64, b any) any {
 		switch q := b.(type) {
 		case int, int16, int32, int64:
 			return int(a) / q.(int)
@@ -137,22 +137,20 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return html.EscapeString(html.UnescapeString(s))
 	})
 	fd.AddFilter("newline_to_br", func(s string) string {
-		return strings.Replace(s, "\n", "<br />", -1)
+		return strings.ReplaceAll(s, "\n", "<br />")
 	})
 	fd.AddFilter("prepend", func(s, prefix string) string {
 		return prefix + s
 	})
 	fd.AddFilter("remove", func(s, old string) string {
-		return strings.Replace(s, old, "", -1)
+		return strings.ReplaceAll(s, old, "")
 	})
 	fd.AddFilter("remove_first", func(s, old string) string {
 		return strings.Replace(s, old, "", 1)
 	})
-	fd.AddFilter("replace", func(s, old, new string) string {
-		return strings.Replace(s, old, new, -1)
-	})
-	fd.AddFilter("replace_first", func(s, old, new string) string {
-		return strings.Replace(s, old, new, 1)
+	fd.AddFilter("replace", strings.ReplaceAll)
+	fd.AddFilter("replace_first", func(s, old, n string) string {
+		return strings.Replace(s, old, n, 1)
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
@@ -173,7 +171,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
 	})
 	fd.AddFilter("strip_newlines", func(s string) string {
-		return strings.Replace(s, "\n", "", -1)
+		return strings.ReplaceAll(s, "\n", "")
 	})
 	fd.AddFilter("strip", strings.TrimSpace)
 	fd.AddFilter("lstrip", func(s string) string {
@@ -207,19 +205,19 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 
 	// debugging filters
 	// inspect is from Jekyll
-	fd.AddFilter("inspect", func(value interface{}) string {
+	fd.AddFilter("inspect", func(value any) string {
 		s, err := json.Marshal(value)
 		if err != nil {
 			return fmt.Sprintf("%#v", value)
 		}
 		return string(s)
 	})
-	fd.AddFilter("type", func(value interface{}) string {
+	fd.AddFilter("type", func(value any) string {
 		return fmt.Sprintf("%T", value)
 	})
 }
 
-func joinFilter(a []interface{}, sep func(string) string) interface{} {
+func joinFilter(a []any, sep func(string) string) any {
 	ss := make([]string, 0, len(a))
 	s := sep(" ")
 	for _, v := range a {
@@ -230,8 +228,8 @@ func joinFilter(a []interface{}, sep func(string) string) interface{} {
 	return strings.Join(ss, s)
 }
 
-func reverseFilter(a []interface{}) interface{} {
-	result := make([]interface{}, len(a))
+func reverseFilter(a []any) any {
+	result := make([]any, len(a))
 	for i, x := range a {
 		result[len(result)-1-i] = x
 	}
@@ -240,7 +238,7 @@ func reverseFilter(a []interface{}) interface{} {
 
 var wsre = regexp.MustCompile(`[[:space:]]+`)
 
-func splitFilter(s, sep string) interface{} {
+func splitFilter(s, sep string) any {
 	result := strings.Split(s, sep)
 	if sep == " " {
 		// Special case for Ruby, therefore Liquid
@@ -253,9 +251,9 @@ func splitFilter(s, sep string) interface{} {
 	return result
 }
 
-func uniqFilter(a []interface{}) (result []interface{}) {
-	seenMap := map[interface{}]bool{}
-	seen := func(item interface{}) bool {
+func uniqFilter(a []any) (result []any) {
+	seenMap := map[any]bool{}
+	seen := func(item any) bool {
 		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
 			if seenMap[item] {
 				return true
@@ -279,7 +277,7 @@ func uniqFilter(a []interface{}) (result []interface{}) {
 	return
 }
 
-func eqItems(a, b interface{}) bool {
+func eqItems(a, b any) bool {
 	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
 		return a == b
 	}

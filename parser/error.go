@@ -17,7 +17,7 @@ type Locatable interface {
 }
 
 // Errorf creates a parser.Error.
-func Errorf(loc Locatable, format string, a ...interface{}) *sourceLocError { // nolint: golint
+func Errorf(loc Locatable, format string, a ...any) *sourceLocError { //nolint: golint
 	return &sourceLocError{loc.SourceLocation(), loc.SourceText(), fmt.Sprintf(format, a...), nil}
 }
 

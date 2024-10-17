@@ -7,11 +7,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var eqTestObj = struct{ a, b int }{1, 2}
-var eqArrayTestObj = [2]int{1, 2}
+var (
+	eqTestObj      = struct{ a, b int }{1, 2}
+	eqArrayTestObj = [2]int{1, 2}
+)
 
 var eqTests = []struct {
-	a, b     interface{}
+	a, b     any
 	expected bool
 }{
 	{nil, nil, true},
@@ -35,7 +37,7 @@ var eqTests = []struct {
 	{[]string{"a", "b"}, []string{"a"}, false},
 	{[]string{"a", "b"}, []string{"a", "b"}, true},
 	{[]string{"a", "b"}, []string{"a", "c"}, false},
-	{[]interface{}{1.0, 2}, []interface{}{1, 2.0}, true},
+	{[]any{1.0, 2}, []any{1, 2.0}, true},
 	{eqTestObj, eqTestObj, true},
 }
 

@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -16,7 +17,7 @@ func addCompilerTestTags(s Config) {
 		}, nil
 	})
 	s.AddBlock("error_block").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
-		return nil, fmt.Errorf("block compiler error")
+		return nil, errors.New("block compiler error")
 	})
 }
 

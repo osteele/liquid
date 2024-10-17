@@ -2,9 +2,9 @@ package tags
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 
 	"github.com/osteele/liquid/parser"
@@ -79,7 +79,7 @@ func TestControlFlowTags_errors(t *testing.T) {
 	AddStandardTags(cfg)
 	cfg.AddTag("error", func(string) (func(io.Writer, render.Context) error, error) {
 		return func(io.Writer, render.Context) error {
-			return fmt.Errorf("tag render error")
+			return errors.New("tag render error")
 		}, nil
 	})
 
@@ -94,7 +94,7 @@ func TestControlFlowTags_errors(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = render.Render(root, ioutil.Discard, tagTestBindings, cfg)
+			err = render.Render(root, io.Discard, tagTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Contains(t, err.Error(), test.expected, test.in)
 		})

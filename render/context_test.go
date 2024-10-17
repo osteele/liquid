@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -49,7 +48,7 @@ func addContextTestTags(s Config) {
 	})
 	s.AddTag("test_render_file", func(filename string) (func(w io.Writer, c Context) error, error) {
 		return func(w io.Writer, c Context) error {
-			s, err := c.RenderFile(filename, map[string]interface{}{"shadowed": 2})
+			s, err := c.RenderFile(filename, map[string]any{"shadowed": 2})
 			if err != nil {
 				return err
 			}
@@ -81,8 +80,10 @@ var contextTests = []struct{ in, out string }{
 	{`{% test_expand_tag_arg x %}`, "x"},
 	{`{% test_expand_tag_arg {{x}} %}`, "123"},
 	{`{% test_tag_name %}`, "test_tag_name"},
-	{`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
-		"rendered shadowed=2; unshadowed=1"},
+	{
+		`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
+		"rendered shadowed=2; unshadowed=1",
+	},
 	{`{% test_block_sourcefile %}x{% endtest_block_sourcefile %}`, ``},
 }
 
@@ -96,7 +97,7 @@ var contextErrorTests = []struct{ in, expect string }{
 	{`{% test_block_errorf %}{% endtest_block_errorf %}`, "giftwrapped"},
 }
 
-var contextTestBindings = map[string]interface{}{
+var contextTestBindings = map[string]any{
 	"x":        123,
 	"shadowed": 1,
 }
@@ -123,7 +124,7 @@ func TestContext_errors(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
-			err = Render(root, ioutil.Discard, contextTestBindings, cfg)
+			err = Render(root, io.Discard, contextTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expect, test.in)
 		})
@@ -140,7 +141,7 @@ func TestContext_file_not_found_error(t *testing.T) {
 	addContextTestTags(cfg)
 	root, err := cfg.Compile(`{% test_render_file testdata/missing_file %}`, parser.SourceLoc{})
 	require.NoError(t, err)
-	err = Render(root, ioutil.Discard, contextTestBindings, cfg)
+	err = Render(root, io.Discard, contextTestBindings, cfg)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err.Cause()))
 }

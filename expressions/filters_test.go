@@ -15,13 +15,14 @@ func TestContext_AddFilter(t *testing.T) {
 	require.Panics(t, func() { cfg.AddFilter("f", func() int { return 0 }) })
 	require.Panics(t, func() { cfg.AddFilter("f", func(int) {}) })
 	// require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, b int) { return }) })
+	//nolint:stylecheck
 	require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, e error, b int) { return }) })
 	require.Panics(t, func() { cfg.AddFilter("f", 10) })
 }
 
 func TestContext_runFilter(t *testing.T) {
 	cfg := NewConfig()
-	constant := func(value interface{}) valueFn {
+	constant := func(value any) valueFn {
 		return func(Context) values.Value { return values.ValueOf(value) }
 	}
 	receiver := constant("self")
@@ -30,7 +31,7 @@ func TestContext_runFilter(t *testing.T) {
 	cfg.AddFilter("f1", func(s string) string {
 		return "<" + s + ">"
 	})
-	ctx := NewContext(map[string]interface{}{"x": 10}, cfg)
+	ctx := NewContext(map[string]any{"x": 10}, cfg)
 	out, err := ctx.ApplyFilter("f1", receiver, []valueFn{})
 	require.NoError(t, err)
 	require.Equal(t, "<self>", out)
@@ -39,7 +40,7 @@ func TestContext_runFilter(t *testing.T) {
 	cfg.AddFilter("with_arg", func(a, b string) string {
 		return fmt.Sprintf("(%s, %s)", a, b)
 	})
-	ctx = NewContext(map[string]interface{}{"x": 10}, cfg)
+	ctx = NewContext(map[string]any{"x": 10}, cfg)
 	out, err = ctx.ApplyFilter("with_arg", receiver, []valueFn{constant("arg")})
 	require.NoError(t, err)
 	require.Equal(t, "(self, arg)", out)
@@ -65,7 +66,7 @@ func TestContext_runFilter(t *testing.T) {
 		}
 		return fmt.Sprintf("(%v, %v)", a, value), nil
 	})
-	ctx = NewContext(map[string]interface{}{"x": 10}, cfg)
+	ctx = NewContext(map[string]any{"x": 10}, cfg)
 	out, err = ctx.ApplyFilter("closure", receiver, []valueFn{constant("x |add: y")})
 	require.NoError(t, err)
 	require.Equal(t, "(self, 11)", out)

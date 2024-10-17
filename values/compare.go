@@ -10,7 +10,7 @@ var (
 )
 
 // Equal returns a bool indicating whether a == b after conversion.
-func Equal(a, b interface{}) bool { // nolint: gocyclo
+func Equal(a, b any) bool { //nolint: gocyclo
 	a, b = ToLiquid(a), ToLiquid(b)
 	if a == nil || b == nil {
 		return a == b
@@ -21,7 +21,7 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 		if ra.Len() != rb.Len() {
 			return false
 		}
-		for i := 0; i < ra.Len(); i++ {
+		for i := range ra.Len() {
 			if !Equal(ra.Index(i).Interface(), rb.Index(i).Interface()) {
 				return false
 			}
@@ -46,7 +46,7 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 }
 
 // Less returns a bool indicating whether a < b.
-func Less(a, b interface{}) bool {
+func Less(a, b any) bool {
 	a, b = ToLiquid(a), ToLiquid(b)
 	if a == nil || b == nil {
 		return false
@@ -66,7 +66,7 @@ func Less(a, b interface{}) bool {
 	}
 }
 
-func joinKind(a, b reflect.Kind) reflect.Kind { // nolint: gocyclo
+func joinKind(a, b reflect.Kind) reflect.Kind { //nolint: gocyclo
 	if a == b {
 		return a
 	}

@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type grammarFake struct{}
-type blockSyntaxFake string
+type (
+	grammarFake     struct{}
+	blockSyntaxFake string
+)
 
 func (g grammarFake) BlockSyntax(w string) (BlockSyntax, bool) {
 	return blockSyntaxFake(w), true

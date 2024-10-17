@@ -14,7 +14,7 @@ func init() {
 %}
 %union {
    name     string
-   val      interface{}
+   val      any
    f        func(Context) values.Value
    s        string
    ss       []string
@@ -43,7 +43,7 @@ func init() {
 %%
 start:
   cond ';' { yylex.(*lexer).val = $1 }
-| ASSIGN IDENTIFIER '=' filtered ';' {
+| ASSIGN IDENTIFIER '=' cond ';' {
 	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
 }
 | CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }

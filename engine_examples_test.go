@@ -3,6 +3,7 @@ package liquid
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/osteele/liquid/render"
@@ -11,7 +12,7 @@ import (
 func Example() {
 	engine := NewEngine()
 	source := `<h1>{{ page.title }}</h1>`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"page": map[string]string{
 			"title": "Introduction",
 		},
@@ -27,7 +28,7 @@ func Example() {
 func ExampleEngine_ParseAndRenderString() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
-	bindings := map[string]interface{}{"hello": "hola"}
+	bindings := map[string]any{"hello": "hola"}
 	out, err := engine.ParseAndRenderString(source, bindings)
 	if err != nil {
 		log.Fatalln(err)
@@ -35,10 +36,11 @@ func ExampleEngine_ParseAndRenderString() {
 	fmt.Println(out)
 	// Output: Hola Mundo
 }
+
 func ExampleEngine_ParseTemplate() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
-	bindings := map[string]interface{}{"hello": "hola"}
+	bindings := map[string]any{"hello": "hola"}
 	tpl, err := engine.ParseString(source)
 	if err != nil {
 		log.Fatalln(err)
@@ -50,11 +52,12 @@ func ExampleEngine_ParseTemplate() {
 	fmt.Println(out)
 	// Output: Hola Mundo
 }
+
 func ExampleEngine_RegisterFilter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
 	template := `{{ title | has_prefix: "Intro" }}`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"title": "Introduction",
 	}
 	out, err := engine.ParseAndRenderString(template, bindings)
@@ -64,6 +67,7 @@ func ExampleEngine_RegisterFilter() {
 	fmt.Println(out)
 	// Output: true
 }
+
 func ExampleEngine_RegisterFilter_optional_argument() {
 	engine := NewEngine()
 	// func(a, b int) int) would default the second argument to zero.
@@ -74,7 +78,7 @@ func ExampleEngine_RegisterFilter_optional_argument() {
 		return a + b(1)
 	})
 	template := `10 + 1 = {{ m | inc }}; 20 + 5 = {{ n | inc: 5 }}`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"m": 10,
 		"n": "20",
 	}
@@ -108,7 +112,7 @@ func ExampleEngine_RegisterBlock() {
 			return "", err
 		}
 		n := len(s)
-		return fmt.Sprint(n), nil
+		return strconv.Itoa(n), nil
 	})
 
 	template := `{% length %}abc{% endlength %}`

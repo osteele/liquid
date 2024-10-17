@@ -15,24 +15,23 @@ type TypeError string
 
 func (e TypeError) Error() string { return string(e) }
 
-func typeErrorf(format string, a ...interface{}) TypeError {
+func typeErrorf(format string, a ...any) TypeError {
 	return TypeError(fmt.Sprintf(format, a...))
 }
 
 var timeType = reflect.TypeOf(time.Now())
 
-func conversionError(modifier string, value interface{}, typ reflect.Type) error {
+func conversionError(modifier string, value any, typ reflect.Type) error {
 	if modifier != "" {
 		modifier += " "
 	}
-	switch ref := value.(type) {
-	case reflect.Value:
+	if ref, ok := value.(reflect.Value); ok {
 		value = ref.Interface()
 	}
 	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
 }
 
-func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
+func convertValueToInt(value any, typ reflect.Type) (int64, error) {
 	switch value := value.(type) {
 	case bool:
 		if value {
@@ -56,7 +55,7 @@ func convertValueToInt(value interface{}, typ reflect.Type) (int64, error) {
 	return 0, conversionError("", value, typ)
 }
 
-func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
+func convertValueToFloat(value any, typ reflect.Type) (float64, error) {
 	switch value := value.(type) {
 	// case int is handled by rv.Convert(typ) in Convert function
 	case string:
@@ -78,7 +77,8 @@ func convertValueToFloat(value interface{}, typ reflect.Type) (float64, error) {
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
-func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // nolint: gocyclo
+// #nosec G115
+func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	value = ToLiquid(value)
 	rv := reflect.ValueOf(value)
 	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
@@ -208,7 +208,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			result := reflect.MakeSlice(typ, 0, rv.Len())
-			for i := 0; i < rv.Len(); i++ {
+			for i := range rv.Len() {
 				item, err := Convert(rv.Index(i).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err
@@ -241,7 +241,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 }
 
 // MustConvert is like Convert, but panics if conversion fails.
-func MustConvert(value interface{}, t reflect.Type) interface{} {
+func MustConvert(value any, t reflect.Type) any {
 	out, err := Convert(value, t)
 	if err != nil {
 		panic(err)
@@ -251,7 +251,7 @@ func MustConvert(value interface{}, t reflect.Type) interface{} {
 
 // MustConvertItem converts item to conform to the type array's element, else panics.
 // Unlike MustConvert, the second argument is a value not a type.
-func MustConvertItem(item interface{}, array interface{}) interface{} {
+func MustConvertItem(item any, array any) any {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
 		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))

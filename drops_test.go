@@ -10,7 +10,7 @@ import (
 
 type dropTest struct{}
 
-func (d dropTest) ToLiquid() interface{} { return "drop" }
+func (d dropTest) ToLiquid() any { return "drop" }
 
 func TestDrops(t *testing.T) {
 	require.Equal(t, "drop", FromDrop(dropTest{}))
@@ -20,8 +20,8 @@ func TestDrops(t *testing.T) {
 
 type redConvertible struct{}
 
-func (c redConvertible) ToLiquid() interface{} {
-	return map[string]interface{}{
+func (c redConvertible) ToLiquid() any {
+	return map[string]any{
 		"color": "red",
 	}
 }
@@ -29,13 +29,13 @@ func (c redConvertible) ToLiquid() interface{} {
 func ExampleDrop_map() {
 	// type redConvertible struct{}
 	//
-	// func (c redConvertible) ToLiquid() interface{} {
-	// 	return map[string]interface{}{
+	// func (c redConvertible) ToLiquid() any {
+	// 	return map[string]any{
 	// 		"color": "red",
 	// 	}
 	// }
 	engine := NewEngine()
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"car": redConvertible{},
 	}
 	template := `{{ car.color }}`
@@ -49,7 +49,7 @@ func ExampleDrop_map() {
 
 type car struct{ color, model string }
 
-func (c car) ToLiquid() interface{} {
+func (c car) ToLiquid() any {
 	return carDrop{c.model, c.color}
 }
 
@@ -65,7 +65,7 @@ func (c carDrop) Drive() string {
 func ExampleDrop_struct() {
 	// type car struct{ color, model string }
 	//
-	// func (c car) ToLiquid() interface{} {
+	// func (c car) ToLiquid() any {
 	// 	return carDrop{c.model, c.color}
 	// }
 	//
@@ -79,7 +79,7 @@ func ExampleDrop_struct() {
 	// }
 
 	engine := NewEngine()
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"car": car{"blue", "S85"},
 	}
 	template := `{{ car.color }} {{ car.Drive }} Model {{ car.Model }}`

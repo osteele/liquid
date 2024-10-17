@@ -10,7 +10,7 @@ type mapSliceValue struct {
 }
 
 // func (v mapSliceValue) Equal(o Value) bool     { return v.slice == o.Interface() }
-func (v mapSliceValue) Interface() interface{} { return v.slice }
+func (v mapSliceValue) Interface() any { return v.slice }
 
 func (v mapSliceValue) Contains(elem Value) bool {
 	e := elem.Interface()

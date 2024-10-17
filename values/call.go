@@ -12,7 +12,7 @@ import (
 //
 // The function should return one or two values; the second value,
 // if present, should be an error.
-func Call(fn reflect.Value, args []interface{}) (interface{}, error) {
+func Call(fn reflect.Value, args []any) (any, error) {
 	in, err := convertCallArguments(fn, args)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (e *CallParityError) Error() string {
 	return fmt.Sprintf("wrong number of arguments (given %d, expected %d)", e.NumArgs, e.NumParams)
 }
 
-func convertCallResults(results []reflect.Value) (interface{}, error) {
+func convertCallResults(results []reflect.Value) (any, error) {
 	if len(results) > 1 && results[1].Interface() != nil {
 		switch e := results[1].Interface().(type) {
 		case error:
@@ -41,7 +41,7 @@ func convertCallResults(results []reflect.Value) (interface{}, error) {
 }
 
 // Convert args to match the input types of function fn.
-func convertCallArguments(fn reflect.Value, args []interface{}) (results []reflect.Value, err error) {
+func convertCallArguments(fn reflect.Value, args []any) (results []reflect.Value, err error) {
 	rt := fn.Type()
 	if len(args) > rt.NumIn() && !rt.IsVariadic() {
 		return nil, &CallParityError{NumArgs: len(args), NumParams: rt.NumIn()}
@@ -82,14 +82,14 @@ func convertCallArguments(fn reflect.Value, args []interface{}) (results []refle
 			results[i] = reflect.Zero(typ)
 		}
 	}
-	return
+	return results, err
 }
 
 func isDefaultFunctionType(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Func && typ.NumIn() == 1 && typ.NumOut() == 1
 }
 
-func makeConstantFunction(typ reflect.Type, arg interface{}) reflect.Value {
+func makeConstantFunction(typ reflect.Type, arg any) reflect.Value {
 	return reflect.MakeFunc(typ, func(args []reflect.Value) []reflect.Value {
 		return []reflect.Value{reflect.ValueOf(MustConvert(arg, typ.Out(0)))}
 	})

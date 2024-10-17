@@ -34,38 +34,40 @@ func (e FilterError) Error() string {
 type valueFn func(Context) values.Value
 
 // AddFilter adds a filter to the filter dictionary.
-func (c *Config) AddFilter(name string, fn interface{}) {
+func (c *Config) AddFilter(name string, fn any) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
-		panic(fmt.Errorf("a filter must be a function"))
+		panic("a filter must be a function")
 	case rf.Type().NumIn() < 1:
-		panic(fmt.Errorf("a filter function must have at least one input"))
+		panic("a filter function must have at least one input")
 	case rf.Type().NumOut() < 1 || 2 < rf.Type().NumOut():
-		panic(fmt.Errorf("a filter must be have one or two outputs"))
+		panic("a filter must be have one or two outputs")
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
 	if len(c.filters) == 0 {
-		c.filters = make(map[string]interface{})
+		c.filters = make(map[string]any)
 	}
 	c.filters[name] = fn
 }
 
-var closureType = reflect.TypeOf(closure{})
-var interfaceType = reflect.TypeOf([]interface{}{}).Elem()
+var (
+	closureType   = reflect.TypeOf(closure{})
+	interfaceType = reflect.TypeOf([]any{}).Elem()
+)
 
 func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (interface{}, error) {
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(filter)
-	args := []interface{}{receiver(ctx).Interface()}
+	args := []any{receiver(ctx).Interface()}
 	for i, param := range params {
 		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
 			expr, err := Parse(param(ctx).Interface().(string))

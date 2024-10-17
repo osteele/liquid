@@ -11,7 +11,7 @@ import (
 // A Value is a Liquid runtime value.
 type Value interface {
 	// Value retrieval
-	Interface() interface{}
+	Interface() any
 	Int() int
 
 	// Comparison
@@ -28,7 +28,7 @@ type Value interface {
 
 // ValueOf returns a Value that wraps its argument.
 // If the argument is already a Value, it returns this.
-func ValueOf(value interface{}) Value { // nolint: gocyclo
+func ValueOf(value any) Value { //nolint: gocyclo
 	// interned values
 	switch value {
 	case nil:
@@ -92,13 +92,13 @@ func (v valueEmbed) PropertyValue(Value) Value { return nilValue }
 func (v valueEmbed) Test() bool                { return true }
 
 // A wrapperValue wraps a Go value.
-type wrapperValue struct{ value interface{} }
+type wrapperValue struct{ value any }
 
 func (v wrapperValue) Equal(other Value) bool    { return Equal(v.value, other.Interface()) }
 func (v wrapperValue) Less(other Value) bool     { return Less(v.value, other.Interface()) }
 func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
 func (v wrapperValue) Contains(Value) bool       { return false }
-func (v wrapperValue) Interface() interface{}    { return v.value }
+func (v wrapperValue) Interface() any            { return v.value }
 func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
 func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
 
@@ -110,21 +110,26 @@ func (v wrapperValue) Int() int {
 }
 
 // interned values
-var nilValue = wrapperValue{nil}
-var falseValue = wrapperValue{false}
-var trueValue = wrapperValue{true}
-var zeroValue = wrapperValue{0}
-var oneValue = wrapperValue{1}
+var (
+	nilValue   = wrapperValue{nil}
+	falseValue = wrapperValue{false}
+	trueValue  = wrapperValue{true}
+	zeroValue  = wrapperValue{0}
+	oneValue   = wrapperValue{1}
+)
 
 // container values
-type arrayValue struct{ wrapperValue }
-type mapValue struct{ wrapperValue }
-type stringValue struct{ wrapperValue }
+type (
+	arrayValue  struct{ wrapperValue }
+	mapValue    struct{ wrapperValue }
+	stringValue struct{ wrapperValue }
+)
 
 func (av arrayValue) Contains(ev Value) bool {
 	ar := reflect.ValueOf(av.value)
 	e := ev.Interface()
-	for i, len := 0, ar.Len(); i < len; i++ {
+	l := ar.Len()
+	for i := range l {
 		if Equal(ar.Index(i).Interface(), e) {
 			return true
 		}
