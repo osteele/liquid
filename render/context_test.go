@@ -80,8 +80,10 @@ var contextTests = []struct{ in, out string }{
 	{`{% test_expand_tag_arg x %}`, "x"},
 	{`{% test_expand_tag_arg {{x}} %}`, "123"},
 	{`{% test_tag_name %}`, "test_tag_name"},
-	{`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
-		"rendered shadowed=2; unshadowed=1"},
+	{
+		`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
+		"rendered shadowed=2; unshadowed=1",
+	},
 	{`{% test_block_sourcefile %}x{% endtest_block_sourcefile %}`, ``},
 }
 

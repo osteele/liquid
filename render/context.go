@@ -82,7 +82,6 @@ func (c rendererContext) Errorf(format string, a ...interface{}) Error {
 	default:
 		return renderErrorf(invalidLoc, format, a...)
 	}
-
 }
 
 func (c rendererContext) WrapError(err error) Error {

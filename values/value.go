@@ -110,16 +110,20 @@ func (v wrapperValue) Int() int {
 }
 
 // interned values
-var nilValue = wrapperValue{nil}
-var falseValue = wrapperValue{false}
-var trueValue = wrapperValue{true}
-var zeroValue = wrapperValue{0}
-var oneValue = wrapperValue{1}
+var (
+	nilValue   = wrapperValue{nil}
+	falseValue = wrapperValue{false}
+	trueValue  = wrapperValue{true}
+	zeroValue  = wrapperValue{0}
+	oneValue   = wrapperValue{1}
+)
 
 // container values
-type arrayValue struct{ wrapperValue }
-type mapValue struct{ wrapperValue }
-type stringValue struct{ wrapperValue }
+type (
+	arrayValue  struct{ wrapperValue }
+	mapValue    struct{ wrapperValue }
+	stringValue struct{ wrapperValue }
+)
 
 func (av arrayValue) Contains(ev Value) bool {
 	ar := reflect.ValueOf(av.value)

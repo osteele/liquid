@@ -55,8 +55,10 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ forloop.rindex0 }}.{% endfor %}`, "2.1.0."},
 	{`{% for a in array %}{{ forloop.length }}.{% endfor %}`, "3.3.3."},
 
-	{`{% for i in array %}{{ forloop.index }}[{% for j in array %}{{ forloop.index }}{% endfor %}]{{ forloop.index }}{% endfor %}`,
-		"1[123]12[123]23[123]3"},
+	{
+		`{% for i in array %}{{ forloop.index }}[{% for j in array %}{{ forloop.index }}{% endfor %}]{{ forloop.index }}{% endfor %}`,
+		"1[123]12[123]23[123]3",
+	},
 
 	{`{% for a in array reversed %}{{ forloop.first }}.{% endfor %}`, "true.false.false."},
 	{`{% for a in array reversed %}{{ forloop.last }}.{% endfor %}`, "false.false.true."},
@@ -90,30 +92,40 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% assign l = (3..5) %}{% for i in l %}{{i}}.{% endfor %}`, "3.4.5."},
 
 	// tablerow
-	{`{% tablerow product in products %}{{ product }}{% endtablerow %}`,
+	{
+		`{% tablerow product in products %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td>
 	<td class="col2">Alien Poster</td>
 	<td class="col3">Batman Poster</td>
 	<td class="col4">Bullseye Shirt</td>
 	<td class="col5">Another Classic Vinyl</td>
-	<td class="col6">Awesome Jeans</td></tr>`},
+	<td class="col6">Awesome Jeans</td></tr>`,
+	},
 
-	{`{% tablerow product in products cols:2 %}{{ product }}{% endtablerow %}`,
+	{
+		`{% tablerow product in products cols:2 %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
-	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
-	{`{% tablerow product in products cols: cols %}{{ product }}{% endtablerow %}`,
+	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`,
+	},
+	{
+		`{% tablerow product in products cols: cols %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
-	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
-	{`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
+	  	 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`,
+	},
+	{
+		`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
-		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
-	{`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
+		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`,
+	},
+	{
+		`{% tablerow product in products cols: loopmods.cols %}{{ product }}{% endtablerow %}`,
 		`<tr class="row1"><td class="col1">Cool Shirt</td><td class="col2">Alien Poster</td></tr>
 		 <tr class="row2"><td class="col1">Batman Poster</td><td class="col2">Bullseye Shirt</td></tr>
-		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`},
+		 <tr class="row3"><td class="col1">Another Classic Vinyl</td><td class="col2">Awesome Jeans</td></tr>`,
+	},
 }
 
 var iterationSyntaxErrorTests = []struct{ in, expected string }{

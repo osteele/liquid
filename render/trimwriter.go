@@ -42,6 +42,7 @@ func (tw *trimWriter) Write(b []byte) (int, error) {
 	_, err := tw.w.Write(nonWS)
 	return n, err
 }
+
 func (tw *trimWriter) Flush() (err error) {
 	if tw.buf.Len() > 0 {
 		_, err = tw.buf.WriteTo(tw.w)

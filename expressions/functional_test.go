@@ -13,6 +13,7 @@ func TestConstant(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 10, v)
 }
+
 func TestNot(t *testing.T) {
 	ctx := NewContext(map[string]interface{}{}, NewConfig())
 	k := Constant(10)

@@ -8,7 +8,6 @@ import (
 
 // Scan breaks a string into a sequence of Tokens.
 func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
-
 	// Apply defaults
 	if len(delims) != 4 {
 		delims = []string{"{{", "}}", "{%", "%}"}

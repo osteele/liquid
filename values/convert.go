@@ -25,8 +25,7 @@ func conversionError(modifier string, value interface{}, typ reflect.Type) error
 	if modifier != "" {
 		modifier += " "
 	}
-	switch ref := value.(type) {
-	case reflect.Value:
+	if ref, ok := value.(reflect.Value); ok {
 		value = ref.Interface()
 	}
 	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
@@ -208,7 +207,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { //nolin
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			result := reflect.MakeSlice(typ, 0, rv.Len())
-			for i := 0; i < rv.Len(); i++ {
+			for i := range rv.Len() {
 				item, err := Convert(rv.Index(i).Interface(), typ.Elem())
 				if err != nil {
 					return nil, err

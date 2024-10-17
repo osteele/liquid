@@ -54,7 +54,7 @@ func TestTemplate_Parse_race(t *testing.T) {
 		count  = 10
 		wg     sync.WaitGroup
 	)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		wg.Add(1)
 		go func(i int) {
 			path := fmt.Sprintf("path %d", i)
@@ -77,7 +77,7 @@ func TestTemplate_Render_race(t *testing.T) {
 		ts    = make([]*Template, count)
 		wg    sync.WaitGroup
 	)
-	for i := 0; i < count; i++ {
+	for i := range count {
 		paths[i] = fmt.Sprintf("path %d", i)
 		wg.Add(1)
 		go func(i int) {
@@ -90,7 +90,7 @@ func TestTemplate_Render_race(t *testing.T) {
 	wg.Wait()
 
 	var wg2 sync.WaitGroup
-	for i := 0; i < count; i++ {
+	for i := range count {
 		wg2.Add(1)
 		go func(i int) {
 			defer wg2.Done()
@@ -110,7 +110,7 @@ func BenchmarkTemplate_Render(b *testing.B) {
 		b.Fatal(err)
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := tpl.Render(bindings)
 		require.NoError(b, err)
 	}

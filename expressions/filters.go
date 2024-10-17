@@ -38,11 +38,11 @@ func (c *Config) AddFilter(name string, fn interface{}) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
-		panic(fmt.Errorf("a filter must be a function"))
+		panic("a filter must be a function")
 	case rf.Type().NumIn() < 1:
-		panic(fmt.Errorf("a filter function must have at least one input"))
+		panic("a filter function must have at least one input")
 	case rf.Type().NumOut() < 1 || 2 < rf.Type().NumOut():
-		panic(fmt.Errorf("a filter must be have one or two outputs"))
+		panic("a filter must be have one or two outputs")
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
@@ -52,8 +52,10 @@ func (c *Config) AddFilter(name string, fn interface{}) {
 	c.filters[name] = fn
 }
 
-var closureType = reflect.TypeOf(closure{})
-var interfaceType = reflect.TypeOf([]interface{}{}).Elem()
+var (
+	closureType   = reflect.TypeOf(closure{})
+	interfaceType = reflect.TypeOf([]interface{}{}).Elem()
+)
 
 func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)

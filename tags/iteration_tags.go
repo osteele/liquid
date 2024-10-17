@@ -18,8 +18,10 @@ type IterationKeyedMap map[string]interface{}
 
 const forloopVarName = "forloop"
 
-var errLoopContinueLoop = fmt.Errorf("continue outside a loop")
-var errLoopBreak = fmt.Errorf("break outside a loop")
+var (
+	errLoopContinueLoop = fmt.Errorf("continue outside a loop")
+	errLoopBreak        = fmt.Errorf("break outside a loop")
+)
 
 type iterable interface {
 	Len() int

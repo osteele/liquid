@@ -203,9 +203,11 @@ var _expression_eof_trans = []int16{
 	67, 67, 50,
 }
 
-const expression_start int = 23
-const expression_first_final int = 23
-const expression_error int = -1
+const (
+	expression_start       int = 23
+	expression_first_final int = 23
+	expression_error       int = -1
+)
 
 const expression_en_main int = 23
 

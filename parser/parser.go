@@ -58,7 +58,7 @@ func (c Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocyclo
 			*ap = append(*ap, &ASTText{Token: tok})
 		case tok.Type == TagTokenType:
 			if g == nil {
-				return nil, Errorf(tok, "Grammer field is nil")
+				return nil, Errorf(tok, "Grammar field is nil")
 			}
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {

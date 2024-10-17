@@ -6,7 +6,7 @@ issues:
 
     # go generate introduces these
     - path: expressions/scanner.go
-      linters: [deadcode, unused, varcheck]
+      linters: [deadcode, unused, varcheck, revive, stylecheck, gocritic, unconvert]
 linters:
   enable-all: true
   disable:
@@ -30,4 +30,16 @@ linters:
     - inamedparam
     - lll
     - paralleltest
+    - gocognit
+    - goconst
+    - cyclop
+    - dupword
+    - whitespace
+    - nolintlint
+    - nestif
+    - forcetypeassert
+
+    # Todo: re-add
+    - err113
+    - errorlint
   fix: true

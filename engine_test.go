@@ -3,8 +3,8 @@ package liquid
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -32,7 +32,7 @@ var testBindings = map[string]interface{}{
 func TestEngine_ParseAndRenderString(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
-		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
+		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, testBindings)
 			require.NoErrorf(t, err, test.in)
 			require.Equalf(t, test.expected, out, test.in)
@@ -51,7 +51,7 @@ func (c *capWriter) Write(bs []byte) (int, error) {
 func TestEngine_ParseAndFRender(t *testing.T) {
 	engine := NewEngine()
 	for i, test := range liquidTests {
-		t.Run(fmt.Sprint(i+1), func(t *testing.T) {
+		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
 			wr := capWriter{}
 			err := engine.ParseAndFRender(&wr, []byte(test.in), testBindings)
 			require.NoErrorf(t, err, test.in)
@@ -103,7 +103,7 @@ func TestEngine_ParseAndRender_errors(t *testing.T) {
 func BenchmarkEngine_Parse(b *testing.B) {
 	engine := NewEngine()
 	buf := new(bytes.Buffer)
-	for i := 0; i < 1000; i++ {
+	for range 1000 {
 		_, err := io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
 		require.NoError(b, err)
 		_, err = io.WriteString(buf, `loop{% for item in array %}loop{% break %}{% endfor %}`)
@@ -115,7 +115,7 @@ func BenchmarkEngine_Parse(b *testing.B) {
 	}
 	s := buf.Bytes()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		_, err := engine.ParseTemplate(s)
 		require.NoError(b, err)
 	}

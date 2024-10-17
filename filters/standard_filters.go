@@ -148,11 +148,11 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("remove_first", func(s, old string) string {
 		return strings.Replace(s, old, "", 1)
 	})
-	fd.AddFilter("replace", func(s, old, new string) string {
-		return strings.Replace(s, old, new, -1)
+	fd.AddFilter("replace", func(s, old, n string) string {
+		return strings.Replace(s, old, n, -1)
 	})
-	fd.AddFilter("replace_first", func(s, old, new string) string {
-		return strings.Replace(s, old, new, 1)
+	fd.AddFilter("replace_first", func(s, old, n string) string {
+		return strings.Replace(s, old, n, 1)
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {

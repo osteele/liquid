@@ -35,6 +35,7 @@ func ExampleEngine_ParseAndRenderString() {
 	fmt.Println(out)
 	// Output: Hola Mundo
 }
+
 func ExampleEngine_ParseTemplate() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
@@ -50,6 +51,7 @@ func ExampleEngine_ParseTemplate() {
 	fmt.Println(out)
 	// Output: Hola Mundo
 }
+
 func ExampleEngine_RegisterFilter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
@@ -64,6 +66,7 @@ func ExampleEngine_RegisterFilter() {
 	fmt.Println(out)
 	// Output: true
 }
+
 func ExampleEngine_RegisterFilter_optional_argument() {
 	engine := NewEngine()
 	// func(a, b int) int) would default the second argument to zero.

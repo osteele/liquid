@@ -21,7 +21,7 @@ func Equal(a, b interface{}) bool { //nolint: gocyclo
 		if ra.Len() != rb.Len() {
 			return false
 		}
-		for i := 0; i < ra.Len(); i++ {
+		for i := range ra.Len() {
 			if !Equal(ra.Index(i).Interface(), rb.Index(i).Interface()) {
 				return false
 			}

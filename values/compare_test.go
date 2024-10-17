@@ -7,8 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var eqTestObj = struct{ a, b int }{1, 2}
-var eqArrayTestObj = [2]int{1, 2}
+var (
+	eqTestObj      = struct{ a, b int }{1, 2}
+	eqArrayTestObj = [2]int{1, 2}
+)
 
 var eqTests = []struct {
 	a, b     interface{}

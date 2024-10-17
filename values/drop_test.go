@@ -26,10 +26,10 @@ func TestValue_drop(t *testing.T) {
 func TestDrop_Resolve_race(t *testing.T) {
 	d := ValueOf(testDrop{1})
 	values := make(chan int, 2)
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		go func() { values <- d.Int() }()
 	}
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		require.Equal(t, 1, <-values)
 	}
 }

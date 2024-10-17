@@ -119,7 +119,7 @@ func writeObject(w io.Writer, value interface{}) error {
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
 	case reflect.Array, reflect.Slice:
-		for i := 0; i < rt.Len(); i++ {
+		for i := range rt.Len() {
 			item := rt.Index(i)
 			if item.IsValid() {
 				if err := writeObject(w, item.Interface()); err != nil {
