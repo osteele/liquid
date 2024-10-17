@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	e "github.com/osteele/liquid/expressions"
 	"io"
 	"testing"
 	"time"
+
+	e "github.com/osteele/liquid/expressions"
 
 	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"

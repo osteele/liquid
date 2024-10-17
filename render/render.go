@@ -4,10 +4,11 @@ package render
 import (
 	"errors"
 	"fmt"
-	"github.com/osteele/liquid/parser"
 	"io"
 	"reflect"
 	"time"
+
+	"github.com/osteele/liquid/parser"
 
 	"github.com/osteele/liquid/values"
 )
