@@ -27,28 +27,43 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 		source := data[ts:te]
 		switch {
 		case data[ts:ts+len(delims[0])] == delims[0]:
-			tok := Token{
+			if source[2] == '-' {
+				tokens = append(tokens, Token{
+					Type: TrimLeftTokenType,
+				})
+			}
+			tokens = append(tokens, Token{
 				Type:      ObjTokenType,
 				SourceLoc: loc,
 				Source:    source,
 				Args:      data[m[2]:m[3]],
-				TrimLeft:  source[2] == '-',
-				TrimRight: source[len(source)-3] == '-',
+			})
+			if source[len(source)-3] == '-' {
+				tokens = append(tokens, Token{
+					Type: TrimRightTokenType,
+				})
 			}
-			tokens = append(tokens, tok)
 		case data[ts:ts+len(delims[2])] == delims[2]:
+			if source[2] == '-' {
+				tokens = append(tokens, Token{
+					Type: TrimLeftTokenType,
+				})
+			}
 			tok := Token{
 				Type:      TagTokenType,
 				SourceLoc: loc,
 				Source:    source,
 				Name:      data[m[4]:m[5]],
-				TrimLeft:  source[2] == '-',
-				TrimRight: source[len(source)-3] == '-',
 			}
 			if m[6] > 0 {
 				tok.Args = data[m[6]:m[7]]
 			}
 			tokens = append(tokens, tok)
+			if source[len(source)-3] == '-' {
+				tokens = append(tokens, Token{
+					Type: TrimRightTokenType,
+				})
+			}
 		}
 		loc.LineNo += strings.Count(source, "\n")
 		p = te
