@@ -3,7 +3,6 @@ package render
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -147,7 +146,7 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 }
 
 func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
-	source, err := ioutil.ReadFile(filename)
+	source, err := os.ReadFile(filename)
 	if err != nil && os.IsNotExist(err) {
 		// Is it cached?
 		if cval, ok := c.ctx.config.Cache[filename]; ok {
