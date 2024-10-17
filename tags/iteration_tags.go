@@ -1,6 +1,7 @@
 package tags
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -19,8 +20,8 @@ type IterationKeyedMap map[string]interface{}
 const forloopVarName = "forloop"
 
 var (
-	errLoopContinueLoop = fmt.Errorf("continue outside a loop")
-	errLoopBreak        = fmt.Errorf("break outside a loop")
+	errLoopContinueLoop = errors.New("continue outside a loop")
+	errLoopBreak        = errors.New("break outside a loop")
 )
 
 type iterable interface {
@@ -88,7 +89,7 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 		}
 
 		if len(node.Clauses) > 1 {
-			return fmt.Errorf("for loops accept at most one else clause")
+			return errors.New("for loops accept at most one else clause")
 		}
 
 		if iter.Len() == 0 && len(node.Clauses) == 1 && node.Clauses[0].Name == "else" {
@@ -118,21 +119,21 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
 	cycleMap := map[string]int{}
 loop:
-	for i, len := 0, iter.Len(); i < len; i++ {
+	for i, l := 0, iter.Len(); i < l; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
 		ctx.Set(forloopVarName, map[string]interface{}{
 			"first":   i == 0,
-			"last":    i == len-1,
+			"last":    i == l-1,
 			"index":   i + 1,
 			"index0":  i,
-			"rindex":  len - i,
-			"rindex0": len - i - 1,
-			"length":  len,
+			"rindex":  l - i,
+			"rindex0": l - i - 1,
+			"length":  l,
 			".cycles": cycleMap,
 		})
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
-		decorator.after(w, i, len)
+		decorator.after(w, i, l)
 		switch {
 		case err == nil:
 		// fall through

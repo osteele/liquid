@@ -128,7 +128,8 @@ type (
 func (av arrayValue) Contains(ev Value) bool {
 	ar := reflect.ValueOf(av.value)
 	e := ev.Interface()
-	for i, len := 0, ar.Len(); i < len; i++ {
+	l := ar.Len()
+	for i := range l {
 		if Equal(ar.Index(i).Interface(), e) {
 			return true
 		}

@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -159,7 +160,7 @@ func addRenderTestTags(cfg Config) {
 	})
 	cfg.AddBlock("errblock").Compiler(func(c BlockNode) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
-			return fmt.Errorf("errblock error")
+			return errors.New("errblock error")
 		}, nil
 	})
 }

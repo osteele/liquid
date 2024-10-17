@@ -1,7 +1,7 @@
 package values
 
 import (
-	"fmt"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
@@ -36,7 +36,7 @@ func TestCall(t *testing.T) {
 	require.Contains(t, err.Error(), "expected 2")
 
 	// error return
-	fn2 := func(int) (int, error) { return 0, fmt.Errorf("expected error") }
+	fn2 := func(int) (int, error) { return 0, errors.New("expected error") }
 	_, err = Call(reflect.ValueOf(fn2), []interface{}{2})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "expected error")

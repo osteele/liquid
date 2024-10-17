@@ -1,7 +1,7 @@
 package values
 
 import (
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -19,11 +19,11 @@ type testValueStruct struct {
 
 func (tv testValueStruct) M1() int           { return 3 }
 func (tv testValueStruct) M2() (int, error)  { return 4, nil }
-func (tv testValueStruct) M2e() (int, error) { return 4, fmt.Errorf("expected error") }
+func (tv testValueStruct) M2e() (int, error) { return 4, errors.New("expected error") }
 
 func (tv *testValueStruct) PM1() int           { return 3 }
 func (tv *testValueStruct) PM2() (int, error)  { return 4, nil }
-func (tv *testValueStruct) PM2e() (int, error) { return 4, fmt.Errorf("expected error") }
+func (tv *testValueStruct) PM2e() (int, error) { return 4, errors.New("expected error") }
 
 func TestValue_struct(t *testing.T) {
 	s := ValueOf(testValueStruct{
@@ -33,7 +33,7 @@ func TestValue_struct(t *testing.T) {
 		Omitted: 200,
 		F1:      func() int { return 1 },
 		F2:      func() (int, error) { return 2, nil },
-		F2e:     func() (int, error) { return 0, fmt.Errorf("expected error") },
+		F2e:     func() (int, error) { return 0, errors.New("expected error") },
 	})
 
 	// fields

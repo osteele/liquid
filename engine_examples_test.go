@@ -3,6 +3,7 @@ package liquid
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/osteele/liquid/render"
@@ -111,7 +112,7 @@ func ExampleEngine_RegisterBlock() {
 			return "", err
 		}
 		n := len(s)
-		return fmt.Sprint(n), nil
+		return strconv.Itoa(n), nil
 	})
 
 	template := `{% length %}abc{% endlength %}`

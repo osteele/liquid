@@ -134,5 +134,5 @@ func TestEngine_ParseTemplateAndCache(t *testing.T) {
 	// ...and execute the second.
 	result, err := eng.ParseAndRender(templateB, Bindings{})
 	require.NoError(t, err)
-	require.Equal(t, string(result), "Foo, Bar")
+	require.Equal(t, "Foo, Bar", string(result))
 }

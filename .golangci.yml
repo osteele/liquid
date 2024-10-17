@@ -38,6 +38,12 @@ linters:
     - nolintlint
     - nestif
     - forcetypeassert
+    - interfacebloat
+    - revive
+    - gocyclo
+    - errname
+    - gosmopolitan
+    - maintidx
 
     # Todo: re-add
     - err113

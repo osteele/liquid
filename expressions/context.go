@@ -22,20 +22,20 @@ func NewContext(vars map[string]interface{}, cfg Config) Context {
 	return &context{cfg, vars}
 }
 
-func (c *context) Clone() Context {
+func (ctx *context) Clone() Context {
 	bindings := map[string]interface{}{}
-	for k, v := range c.bindings {
+	for k, v := range ctx.bindings {
 		bindings[k] = v
 	}
-	return &context{c.Config, bindings}
+	return &context{ctx.Config, bindings}
 }
 
 // Get looks up a variable value in the expression context.
-func (c *context) Get(name string) interface{} {
-	return values.ToLiquid(c.bindings[name])
+func (ctx *context) Get(name string) interface{} {
+	return values.ToLiquid(ctx.bindings[name])
 }
 
 // Set sets a variable value in the expression context.
-func (c *context) Set(name string, value interface{}) {
-	c.bindings[name] = value
+func (ctx *context) Set(name string, value interface{}) {
+	ctx.bindings[name] = value
 }

@@ -82,7 +82,7 @@ func convertCallArguments(fn reflect.Value, args []interface{}) (results []refle
 			results[i] = reflect.Zero(typ)
 		}
 	}
-	return
+	return results, err
 }
 
 func isDefaultFunctionType(typ reflect.Type) bool {

@@ -57,7 +57,7 @@ func TestSort(t *testing.T) {
 		map[string]interface{}{},
 	}
 	SortByProperty(array, "key", true)
-	require.Equal(t, nil, array[0].(map[string]interface{})["key"])
+	require.Nil(t, array[0].(map[string]interface{})["key"])
 	require.Equal(t, 10, array[1].(map[string]interface{})["key"])
 	require.Equal(t, 20, array[2].(map[string]interface{})["key"])
 }

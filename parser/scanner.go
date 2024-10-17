@@ -64,7 +64,7 @@ func formTokenMatcher(delims []string) *regexp.Regexp {
 	// For example, if delims is default the exclusion expression is "[^%]|%[^}]".
 	// If tagRight is "TAG!RIGHT" then expression is
 	// [^T]|T[^A]|TA[^G]|TAG[^!]|TAG![^R]|TAG!R[^I]|TAG!RI[^G]|TAG!RIG[^H]|TAG!RIGH[^T]
-	var exclusion []string
+	exclusion := make([]string, 0, len(delims[3]))
 	for idx, val := range delims[3] {
 		exclusion = append(exclusion, "[^"+string(val)+"]")
 		if idx > 0 {

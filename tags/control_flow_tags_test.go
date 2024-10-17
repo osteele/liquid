@@ -2,6 +2,7 @@ package tags
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"testing"
@@ -78,7 +79,7 @@ func TestControlFlowTags_errors(t *testing.T) {
 	AddStandardTags(cfg)
 	cfg.AddTag("error", func(string) (func(io.Writer, render.Context) error, error) {
 		return func(io.Writer, render.Context) error {
-			return fmt.Errorf("tag render error")
+			return errors.New("tag render error")
 		}, nil
 	})
 

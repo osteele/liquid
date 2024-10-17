@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/osteele/liquid/render"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -59,8 +60,8 @@ func TestTemplate_Parse_race(t *testing.T) {
 		go func(i int) {
 			path := fmt.Sprintf("path %d", i)
 			_, err := engine.ParseTemplateLocation([]byte("{{ syntax error }}"), path, i)
-			require.Error(t, err)
-			require.Equal(t, path, err.Path())
+			assert.Error(t, err)
+			assert.Equal(t, path, err.Path())
 			wg.Done()
 		}(i)
 	}
@@ -84,7 +85,7 @@ func TestTemplate_Render_race(t *testing.T) {
 			defer wg.Done()
 			var err error
 			ts[i], err = engine.ParseTemplateLocation(src, paths[i], i)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}(i)
 	}
 	wg.Wait()
@@ -95,8 +96,8 @@ func TestTemplate_Render_race(t *testing.T) {
 		go func(i int) {
 			defer wg2.Done()
 			_, err := ts[i].Render(Bindings{})
-			require.Error(t, err)
-			require.Equal(t, paths[i], err.Path())
+			assert.Error(t, err)
+			assert.Equal(t, paths[i], err.Path())
 		}(i)
 	}
 	wg2.Wait()
