@@ -39,7 +39,7 @@ func TestLex(t *testing.T) {
 	require.Equal(t, IDENTIFIER, ts[0].tok)
 	require.Equal(t, "abc", ts[0].typ.name)
 	require.Equal(t, LITERAL, ts[2].tok)
-	require.Equal(t, 123, ts[2].typ.val)
+	require.Equal(t, int64(123), ts[2].typ.val)
 
 	// verify these don't match "for", "or", or "false"
 	ts, _ = scanExpression("forage")
@@ -67,7 +67,7 @@ func TestLex(t *testing.T) {
 	require.Equal(t, true, ts[0].typ.val)
 	require.Equal(t, false, ts[1].typ.val)
 	require.Equal(t, nil, ts[2].typ.val)
-	require.Equal(t, 2, ts[3].typ.val)
+	require.Equal(t, int64(2), ts[3].typ.val)
 	require.Equal(t, 2.3, ts[4].typ.val)
 	require.Equal(t, "abc", ts[5].typ.val)
 	require.Equal(t, "abc", ts[6].typ.val)
@@ -92,4 +92,16 @@ func TestLex(t *testing.T) {
 
 	// ts, _ = scanExpression(`%loop i in (3..5)`)
 	// require.Len(t, ts, 9)
+
+	// string unescape
+	ts, _ = scanExpression(`"abc" 'abc' "ab\nc" 'ab\tc'`)
+	require.Len(t, ts, 4)
+	require.Equal(t, LITERAL, ts[0].tok)
+	require.Equal(t, LITERAL, ts[1].tok)
+	require.Equal(t, LITERAL, ts[2].tok)
+	require.Equal(t, LITERAL, ts[3].tok)
+	require.Equal(t, "abc", ts[0].typ.val)
+	require.Equal(t, "abc", ts[1].typ.val)
+	require.Equal(t, "ab\nc", ts[2].typ.val)
+	require.Equal(t, "ab\\tc", ts[3].typ.val)
 }

@@ -7,14 +7,7 @@ import (
 )
 
 // Scan breaks a string into a sequence of Tokens.
-func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
-
-	// Apply defaults
-	if len(delims) != 4 {
-		delims = []string{"{{", "}}", "{%", "%}"}
-	}
-	tokenMatcher := formTokenMatcher(delims)
-
+func Scan(data string, loc SourceLoc, delims []string, tokenMatcher *regexp.Regexp) (tokens []Token) {
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	p, pe := 0, len(data)

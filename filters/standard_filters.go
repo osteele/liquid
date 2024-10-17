@@ -19,25 +19,25 @@ import (
 
 // A FilterDictionary holds filters.
 type FilterDictionary interface {
-	AddFilter(string, interface{})
+	AddFilter(string, any)
 }
 
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	// value filters
-	fd.AddFilter("default", func(value, defaultValue interface{}) interface{} {
+	fd.AddFilter("default", func(value, defaultValue any) any {
 		if value == nil || value == false || values.IsEmpty(value) {
 			value = defaultValue
 		}
 		return value
 	})
-	fd.AddFilter("json", func(a interface{}) interface{} {
+	fd.AddFilter("json", func(a any) any {
 		result, _ := json.Marshal(a)
 		return result
 	})
 
 	// array filters
-	fd.AddFilter("compact", func(a []interface{}) (result []interface{}) {
+	fd.AddFilter("compact", func(a []any) (result []any) {
 		for _, item := range a {
 			if item != nil {
 				result = append(result, item)
@@ -45,12 +45,12 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 		}
 		return
 	})
-	fd.AddFilter("concat", func(a, b []interface{}) (result []interface{}) {
-		result = make([]interface{}, 0, len(a)+len(b))
+	fd.AddFilter("concat", func(a, b []any) (result []any) {
+		result = make([]any, 0, len(a)+len(b))
 		return append(append(result, a...), b...)
 	})
 	fd.AddFilter("join", joinFilter)
-	fd.AddFilter("map", func(a []interface{}, key string) (result []interface{}) {
+	fd.AddFilter("map", func(a []any, key string) (result []any) {
 		keyValue := values.ValueOf(key)
 		for _, obj := range a {
 			value := values.ValueOf(obj)
@@ -62,13 +62,13 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
 	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	fd.AddFilter("first", func(a []interface{}) interface{} {
+	fd.AddFilter("first", func(a []any) any {
 		if len(a) == 0 {
 			return nil
 		}
 		return a[0]
 	})
-	fd.AddFilter("last", func(a []interface{}) interface{} {
+	fd.AddFilter("last", func(a []any) any {
 		if len(a) == 0 {
 			return nil
 		}
@@ -83,37 +83,133 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 
 	// number filters
-	fd.AddFilter("abs", math.Abs)
-	fd.AddFilter("ceil", func(a float64) int {
-		return int(math.Ceil(a))
-	})
-	fd.AddFilter("floor", func(a float64) int {
-		return int(math.Floor(a))
-	})
-	fd.AddFilter("modulo", math.Mod)
-	fd.AddFilter("minus", func(a, b float64) float64 {
-		return a - b
-	})
-	fd.AddFilter("plus", func(a, b float64) float64 {
-		return a + b
-	})
-	fd.AddFilter("times", func(a, b float64) float64 {
-		return a * b
-	})
-	fd.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
-		switch q := b.(type) {
-		case int, int16, int32, int64:
-			return int(a) / q.(int)
-		case float32, float64:
-			return a / b.(float64)
-		default:
-			return nil
+	fd.AddFilter("abs", func(a any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			if ia < 0 {
+				return -ia
+			} else {
+				return ia
+			}
 		}
+		if fa, ok := values.ToFloat64(a); ok {
+			return math.Abs(fa)
+		}
+		return math.NaN()
 	})
-	fd.AddFilter("round", func(n float64, places func(int) int) float64 {
-		pl := places(0)
-		exp := math.Pow10(pl)
-		return math.Floor(n*exp+0.5) / exp
+	fd.AddFilter("ceil", func(a any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			return ia
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			return int64(math.Ceil(fa))
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("floor", func(a any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			return ia
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			return int64(math.Floor(fa))
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("modulo", func(a, b any) any {
+		if fa, ok := values.ToFloat64(a); ok {
+			if fb, ok := values.ToFloat64(b); ok {
+				return math.Mod(fa, fb)
+			}
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("minus", func(a, b any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			if ib, ok := values.ToInt64(b); ok {
+				return ia - ib
+			}
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			if fb, ok := values.ToFloat64(b); ok {
+				return fa - fb
+			}
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("plus", func(a, b any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			if ib, ok := values.ToInt64(b); ok {
+				return ia + ib
+			}
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			if fb, ok := values.ToFloat64(b); ok {
+				return fa + fb
+			}
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("times", func(a, b any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			if ib, ok := values.ToInt64(b); ok {
+				return ia * ib
+			}
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			if fb, ok := values.ToFloat64(b); ok {
+				return fa * fb
+			}
+		}
+		return math.NaN()
+	})
+	fd.AddFilter("divided_by", func(a any, b any) any {
+		if ia, ok := values.ToInt64(a); ok {
+			if ib, ok := values.ToInt64(b); ok {
+				if ib == 0 {
+					if ia == 0 {
+						return math.NaN()
+					}
+					return math.Inf(int(ia))
+				}
+				return ia / ib
+			}
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			if fb, ok := values.ToFloat64(b); ok {
+				if fb == 0 {
+					if fa == 0 {
+						return math.NaN()
+					}
+					return math.Inf(sign(fa))
+				}
+				return fa / fb
+			}
+		}
+		return math.NaN()
+	})
+	//fd.AddFilter("round", func(a any, places func(int) int) float64 {
+	//	if ia, ok := values.ToInt64(a); ok {
+	//		return float64(ia)
+	//	}
+	//	if fa, ok := values.ToFloat64(a); ok {
+	//		pl := places(0)
+	//		exp := math.Pow10(pl)
+	//		return math.Floor(fa*exp+0.5) / exp
+	//	}
+	//	return math.NaN()
+	//})
+	fd.AddFilter("round", func(a any, places any) float64 {
+		pl, ok := values.ToInt64(places)
+		if !ok {
+			return math.NaN()
+		}
+		if ia, ok := values.ToInt64(a); ok {
+			return float64(ia)
+		}
+		if fa, ok := values.ToFloat64(a); ok {
+			exp := math.Pow10(int(pl))
+			return math.Floor(fa*exp+0.5) / exp
+		}
+		return math.NaN()
 	})
 
 	// sequence filters
@@ -207,19 +303,19 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 
 	// debugging filters
 	// inspect is from Jekyll
-	fd.AddFilter("inspect", func(value interface{}) string {
+	fd.AddFilter("inspect", func(value any) string {
 		s, err := json.Marshal(value)
 		if err != nil {
 			return fmt.Sprintf("%#v", value)
 		}
 		return string(s)
 	})
-	fd.AddFilter("type", func(value interface{}) string {
+	fd.AddFilter("type", func(value any) string {
 		return fmt.Sprintf("%T", value)
 	})
 }
 
-func joinFilter(a []interface{}, sep func(string) string) interface{} {
+func joinFilter(a []any, sep func(string) string) any {
 	ss := make([]string, 0, len(a))
 	s := sep(" ")
 	for _, v := range a {
@@ -230,8 +326,8 @@ func joinFilter(a []interface{}, sep func(string) string) interface{} {
 	return strings.Join(ss, s)
 }
 
-func reverseFilter(a []interface{}) interface{} {
-	result := make([]interface{}, len(a))
+func reverseFilter(a []any) any {
+	result := make([]any, len(a))
 	for i, x := range a {
 		result[len(result)-1-i] = x
 	}
@@ -240,7 +336,7 @@ func reverseFilter(a []interface{}) interface{} {
 
 var wsre = regexp.MustCompile(`[[:space:]]+`)
 
-func splitFilter(s, sep string) interface{} {
+func splitFilter(s, sep string) any {
 	result := strings.Split(s, sep)
 	if sep == " " {
 		// Special case for Ruby, therefore Liquid
@@ -253,9 +349,9 @@ func splitFilter(s, sep string) interface{} {
 	return result
 }
 
-func uniqFilter(a []interface{}) (result []interface{}) {
-	seenMap := map[interface{}]bool{}
-	seen := func(item interface{}) bool {
+func uniqFilter(a []any) (result []any) {
+	seenMap := map[any]bool{}
+	seen := func(item any) bool {
 		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
 			if seenMap[item] {
 				return true
@@ -279,9 +375,19 @@ func uniqFilter(a []interface{}) (result []interface{}) {
 	return
 }
 
-func eqItems(a, b interface{}) bool {
+func eqItems(a, b any) bool {
 	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
 		return a == b
 	}
 	return reflect.DeepEqual(a, b)
+}
+
+func sign(a float64) int {
+	if a > 0 {
+		return 1
+	} else if a < 0 {
+		return -1
+	} else {
+		return 0
+	}
 }

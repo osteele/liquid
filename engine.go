@@ -43,7 +43,7 @@ func (e *Engine) RegisterBlock(name string, td Renderer) {
 // * https://github.com/osteele/liquid/blob/main/filters/standard_filters.go
 //
 // * https://github.com/osteele/gojekyll/blob/master/filters/filters.go
-func (e *Engine) RegisterFilter(name string, fn interface{}) {
+func (e *Engine) RegisterFilter(name string, fn any) {
 	e.cfg.AddFilter(name, fn)
 }
 
@@ -120,7 +120,7 @@ func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, Source
 // ParseTemplate, ParseTemplateLocation, ParseAndRender, or ParseAndRenderString. An empty delimiter
 // stands for the corresponding default: objectLeft = {{, objectRight = }}, tagLeft = {% , tagRight = %}
 func (e *Engine) Delims(objectLeft, objectRight, tagLeft, tagRight string) *Engine {
-	e.cfg.Delims = []string{objectLeft, objectRight, tagLeft, tagRight}
+	e.cfg.Delims(objectLeft, objectRight, tagLeft, tagRight)
 	return e
 }
 
