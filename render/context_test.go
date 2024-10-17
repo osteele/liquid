@@ -48,7 +48,7 @@ func addContextTestTags(s Config) {
 	})
 	s.AddTag("test_render_file", func(filename string) (func(w io.Writer, c Context) error, error) {
 		return func(w io.Writer, c Context) error {
-			s, err := c.RenderFile(filename, map[string]interface{}{"shadowed": 2})
+			s, err := c.RenderFile(filename, map[string]any{"shadowed": 2})
 			if err != nil {
 				return err
 			}
@@ -97,7 +97,7 @@ var contextErrorTests = []struct{ in, expect string }{
 	{`{% test_block_errorf %}{% endtest_block_errorf %}`, "giftwrapped"},
 }
 
-var contextTestBindings = map[string]interface{}{
+var contextTestBindings = map[string]any{
 	"x":        123,
 	"shadowed": 1,
 }

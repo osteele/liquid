@@ -40,13 +40,13 @@ var tagErrorTests = []struct{ in, expected string }{
 }
 
 // this is also used in the other test files
-var tagTestBindings = map[string]interface{}{
+var tagTestBindings = map[string]any{
 	"x": 123,
-	"obj": map[string]interface{}{
+	"obj": map[string]any{
 		"a": 1,
 	},
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
-	"pages": []map[string]interface{}{
+	"pages": []map[string]any{
 		{"category": "business"},
 		{"category": "celebrities"},
 		{},
@@ -55,13 +55,13 @@ var tagTestBindings = map[string]interface{}{
 		{},
 		{"category": "technology"},
 	},
-	"sort_prop": []map[string]interface{}{
+	"sort_prop": []map[string]any{
 		{"weight": 1},
 		{"weight": 5},
 		{"weight": 3},
 		{"weight": nil},
 	},
-	"page": map[string]interface{}{
+	"page": map[string]any{
 		"title": "Introduction",
 	},
 }

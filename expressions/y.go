@@ -21,7 +21,7 @@ func init() {
 type yySymType struct {
 	yys           int
 	name          string
-	val           interface{}
+	val           any
 	f             func(Context) values.Value
 	s             string
 	ss            []string

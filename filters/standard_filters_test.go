@@ -13,7 +13,7 @@ import (
 
 var filterTests = []struct {
 	in       string
-	expected interface{}
+	expected any
 }{
 	// value filters
 	{`undefined | default: 2.99`, 2.99},
@@ -197,27 +197,27 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"1" | type`, `string`},
 }
 
-var filterTestBindings = map[string]interface{}{
-	"empty_array":     []interface{}{},
-	"empty_map":       map[string]interface{}{},
+var filterTestBindings = map[string]any{
+	"empty_array":     []any{},
+	"empty_map":       map[string]any{},
 	"empty_map_slice": yaml.MapSlice{},
-	"map": map[string]interface{}{
+	"map": map[string]any{
 		"a": 1,
 	},
 	"map_slice_2":       yaml.MapSlice{{Key: 1, Value: "b"}, {Key: 2, Value: "a"}},
 	"map_slice_dup":     yaml.MapSlice{{Key: 1, Value: "a"}, {Key: 2, Value: "a"}, {Key: 3, Value: "b"}},
 	"map_slice_has_nil": yaml.MapSlice{{Key: 1, Value: "a"}, {Key: 2, Value: nil}, {Key: 3, Value: "b"}},
 	"map_slice_objs": yaml.MapSlice{
-		{Key: 1, Value: map[string]interface{}{"key": "a"}},
-		{Key: 2, Value: map[string]interface{}{"key": "b"}},
+		{Key: 1, Value: map[string]any{"key": "a"}},
+		{Key: 2, Value: map[string]any{"key": "b"}},
 	},
 	"mixed_case_array": []string{"c", "a", "B"},
-	"mixed_case_hash_values": []map[string]interface{}{
+	"mixed_case_hash_values": []map[string]any{
 		{"key": "c"},
 		{"key": "a"},
 		{"key": "B"},
 	},
-	"sort_prop": []map[string]interface{}{
+	"sort_prop": []map[string]any{
 		{"weight": 1},
 		{"weight": 5},
 		{"weight": 3},
@@ -230,13 +230,13 @@ var filterTestBindings = map[string]interface{}{
 	// for examples from liquid docs
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
 	"fruits":  []string{"apples", "oranges", "peaches", "plums"},
-	"article": map[string]interface{}{
+	"article": map[string]any{
 		"published_at": timeMustParse("2015-07-17T15:04:05Z"),
 	},
-	"page": map[string]interface{}{
+	"page": map[string]any{
 		"title": "Introduction",
 	},
-	"pages": []map[string]interface{}{
+	"pages": []map[string]any{
 		{"name": "page 1", "category": "business"},
 		{"name": "page 2", "category": "celebrities"},
 		{"name": "page 3"},
@@ -258,11 +258,11 @@ func TestFilters(t *testing.T) {
 	t.Setenv("TZ", "America/New_York")
 
 	var (
-		m1 = map[string]interface{}{"name": "m1"}
-		m2 = map[string]interface{}{"name": "m2"}
-		m3 = map[string]interface{}{"name": "m3"}
+		m1 = map[string]any{"name": "m1"}
+		m2 = map[string]any{"name": "m2"}
+		m3 = map[string]any{"name": "m3"}
 	)
-	filterTestBindings["dup_maps"] = []interface{}{m1, m2, m1, m3}
+	filterTestBindings["dup_maps"] = []any{m1, m2, m1, m3}
 
 	cfg := expressions.NewConfig()
 	AddStandardFilters(&cfg)

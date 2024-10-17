@@ -9,7 +9,7 @@ import (
 
 var parseTests = []struct {
 	in     string
-	expect interface{}
+	expect any
 }{
 	{`true`, true},
 	{`false`, false},
@@ -37,7 +37,7 @@ var parseErrorTests = []struct{ in, expected string }{
 func TestParse(t *testing.T) {
 	cfg := NewConfig()
 	cfg.AddFilter("add", func(a, b int) int { return a + b })
-	ctx := NewContext(map[string]interface{}{
+	ctx := NewContext(map[string]any{
 		"a":   1,
 		"b":   2,
 		"obj": map[string]int{"prop": 2},

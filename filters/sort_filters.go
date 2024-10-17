@@ -9,8 +9,8 @@ import (
 	"github.com/osteele/liquid/values"
 )
 
-func sortFilter(array []interface{}, key interface{}) []interface{} {
-	result := make([]interface{}, len(array))
+func sortFilter(array []any, key any) []any {
+	result := make([]any, len(array))
 	copy(result, array)
 	if key == nil {
 		values.Sort(result)
@@ -20,13 +20,13 @@ func sortFilter(array []interface{}, key interface{}) []interface{} {
 	return result
 }
 
-func sortNaturalFilter(array []interface{}, key interface{}) interface{} {
-	result := make([]interface{}, len(array))
+func sortNaturalFilter(array []any, key any) any {
+	result := make([]any, len(array))
 	copy(result, array)
 	switch {
 	case reflect.ValueOf(array).Len() == 0:
 	case key != nil:
-		sort.Sort(keySortable{result, func(m interface{}) string {
+		sort.Sort(keySortable{result, func(m any) string {
 			rv := reflect.ValueOf(m)
 			if rv.Kind() != reflect.Map {
 				return ""
@@ -40,7 +40,7 @@ func sortNaturalFilter(array []interface{}, key interface{}) interface{} {
 			return ""
 		}})
 	case reflect.TypeOf(array[0]).Kind() == reflect.String:
-		sort.Sort(keySortable{result, func(s interface{}) string {
+		sort.Sort(keySortable{result, func(s any) string {
 			return strings.ToUpper(s.(string))
 		}})
 	}
@@ -48,8 +48,8 @@ func sortNaturalFilter(array []interface{}, key interface{}) interface{} {
 }
 
 type keySortable struct {
-	slice []interface{}
-	keyFn func(interface{}) string
+	slice []any
+	keyFn func(any) string
 }
 
 // Len is part of sort.Interface.

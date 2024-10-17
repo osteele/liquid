@@ -115,7 +115,7 @@ Contributions:
 
 * Fix array[nil] ([e39a1fe](https://github.com/osteele/liquid/commit/e39a1fe))
 * Fix file not found tests for Windows ([068afef](https://github.com/osteele/liquid/commit/068afef))
-* Restore m['str'] where m map[interface{}]interface{}
+* Restore m['str'] where m map[any]any
   ([9852226](https://github.com/osteele/liquid/commit/9852226))
 
 ### Docs

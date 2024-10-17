@@ -14,12 +14,12 @@ import (
 
 type redConvertible struct{}
 
-func (c redConvertible) ToLiquid() interface{} {
+func (c redConvertible) ToLiquid() any {
 	return "red"
 }
 
 var convertTests = []struct {
-	value, expected interface{}
+	value, expected any
 }{
 	{nil, false},
 	{false, 0},
@@ -70,33 +70,33 @@ var convertTests = []struct {
 	{"2.1", float32(2.1)},
 	{"2.1", float64(2.1)},
 	{"string", "string"},
-	{[]interface{}{1, 2}, []interface{}{1, 2}},
+	{[]any{1, 2}, []any{1, 2}},
 	{[]int{1, 2}, []int{1, 2}},
-	{[]int{1, 2}, []interface{}{1, 2}},
-	{[]interface{}{1, 2}, []int{1, 2}},
+	{[]int{1, 2}, []any{1, 2}},
+	{[]any{1, 2}, []int{1, 2}},
 	{[]int{1, 2}, []string{"1", "2"}},
-	{yaml.MapSlice{{Key: 1, Value: 1}}, []interface{}{1}},
+	{yaml.MapSlice{{Key: 1, Value: 1}}, []any{1}},
 	{yaml.MapSlice{{Key: 1, Value: 1}}, []string{"1"}},
 	{yaml.MapSlice{{Key: 1, Value: "a"}}, []string{"a"}},
-	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[interface{}]interface{}{1: "a"}},
+	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[any]any{1: "a"}},
 	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[int]string{1: "a"}},
 	{yaml.MapSlice{{Key: 1, Value: "a"}}, map[string]string{"1": "a"}},
 	{yaml.MapSlice{{Key: "a", Value: 1}}, map[string]string{"a": "1"}},
-	{yaml.MapSlice{{Key: "a", Value: nil}}, map[string]interface{}{"a": nil}},
-	{yaml.MapSlice{{Key: nil, Value: 1}}, map[interface{}]string{nil: "1"}},
-	{Range{1, 5}, []interface{}{1, 2, 3, 4, 5}},
-	{Range{0, 0}, []interface{}{0}},
+	{yaml.MapSlice{{Key: "a", Value: nil}}, map[string]any{"a": nil}},
+	{yaml.MapSlice{{Key: nil, Value: 1}}, map[any]string{nil: "1"}},
+	{Range{1, 5}, []any{1, 2, 3, 4, 5}},
+	{Range{0, 0}, []any{0}},
 	// {"March 14, 2016", time.Now(), timeMustParse("2016-03-14T00:00:00Z")},
 	{redConvertible{}, "red"},
 }
 
 var convertErrorTests = []struct {
-	value, proto interface{}
+	value, proto any
 	expected     []string
 }{
 	{map[string]bool{"k": true}, map[int]bool{}, []string{"map key"}},
 	{map[string]string{"k": "v"}, map[string]int{}, []string{"map element"}},
-	{map[interface{}]interface{}{"k": "v"}, map[string]int{}, []string{"map element"}},
+	{map[any]any{"k": "v"}, map[string]int{}, []string{"map element"}},
 	{"notanumber", int(0), []string{"can't convert string", "to type int"}},
 	{"notanumber", uint(0), []string{"can't convert string", "to type uint"}},
 	{"notanumber", float64(0), []string{"can't convert string", "to type float64"}},
@@ -130,7 +130,7 @@ func TestConvert_errors(t *testing.T) {
 
 func TestConvert_map(t *testing.T) {
 	typ := reflect.TypeOf(map[string]string{})
-	v, err := Convert(map[interface{}]interface{}{"key": "value"}, typ)
+	v, err := Convert(map[any]any{"key": "value"}, typ)
 	require.NoError(t, err)
 	m, ok := v.(map[string]string)
 	require.True(t, ok)
@@ -138,7 +138,7 @@ func TestConvert_map(t *testing.T) {
 }
 
 func TestConvert_map_synonym(t *testing.T) {
-	type VariableMap map[interface{}]interface{}
+	type VariableMap map[any]any
 	typ := reflect.TypeOf(map[string]string{})
 	v, err := Convert(VariableMap{"key": "value"}, typ)
 	require.NoError(t, err)

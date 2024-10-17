@@ -6,9 +6,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type testDrop struct{ proxy interface{} }
+type testDrop struct{ proxy any }
 
-func (d testDrop) ToLiquid() interface{} { return d.proxy }
+func (d testDrop) ToLiquid() any { return d.proxy }
 
 func TestToLiquid(t *testing.T) {
 	require.Equal(t, 2, ToLiquid(2))

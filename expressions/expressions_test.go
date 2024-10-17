@@ -12,7 +12,7 @@ import (
 
 var evaluatorTests = []struct {
 	in       string
-	expected interface{}
+	expected any
 }{
 	// Literals
 	{`12`, 12},
@@ -113,19 +113,19 @@ var evaluatorTests = []struct {
 	{`"seafood" | length`, 8},
 }
 
-var evaluatorTestBindings = (map[string]interface{}{
+var evaluatorTestBindings = (map[string]any{
 	"n":               123,
 	"array":           []string{"first", "second", "third"},
-	"interface_array": []interface{}{"first", "second", "third"},
-	"empty_list":      []interface{}{},
+	"interface_array": []any{"first", "second", "third"},
+	"empty_list":      []any{},
 	"fruits":          []string{"apples", "oranges", "peaches", "plums"},
-	"hash": map[string]interface{}{
+	"hash": map[string]any{
 		"a": "first",
-		"b": map[string]interface{}{"c": "d"},
+		"b": map[string]any{"c": "d"},
 		"c": []string{"r", "g", "b"},
 	},
-	"hash_with_size_key": map[string]interface{}{"size": "key_value"},
-	"range": map[string]interface{}{
+	"hash_with_size_key": map[string]any{"size": "key_value"},
+	"range": map[string]any{
 		"begin": 1,
 		"end":   5,
 	},
@@ -149,14 +149,14 @@ func TestEvaluateString(t *testing.T) {
 	_, err = EvaluateString("1 | undefined_filter", ctx)
 	require.Error(t, err)
 
-	cfg.AddFilter("error", func(input interface{}) (string, error) { return "", errors.New("test error") })
+	cfg.AddFilter("error", func(input any) (string, error) { return "", errors.New("test error") })
 	_, err = EvaluateString("1 | error", ctx)
 	require.Error(t, err)
 }
 
 func TestClosure(t *testing.T) {
 	cfg := NewConfig()
-	ctx := NewContext(map[string]interface{}{"x": 1}, cfg)
+	ctx := NewContext(map[string]any{"x": 1}, cfg)
 	expr, err := Parse("x")
 	require.NoError(t, err)
 	c1 := closure{expr, ctx}

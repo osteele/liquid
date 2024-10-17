@@ -143,11 +143,11 @@ var iterationErrorTests = []struct{ in, expected string }{
 	{`{% for a in array %}{% else %}{% else %}{% endfor %}`, "for loops accept at most one else clause"},
 }
 
-var iterationTestBindings = map[string]interface{}{
+var iterationTestBindings = map[string]any{
 	"array": []string{"first", "second", "third"},
 	// hash has only one element, since iteration order is non-deterministic
-	"map":       map[string]interface{}{"a": 1},
-	"keyed_map": IterationKeyedMap(map[string]interface{}{"a": 1, "b": 2}),
+	"map":       map[string]any{"a": 1},
+	"keyed_map": IterationKeyedMap(map[string]any{"a": 1, "b": 2}),
 	"map_slice": yaml.MapSlice{{Key: "a", Value: 1}, {Key: "b", Value: 2}},
 	"products": []string{
 		"Cool Shirt", "Alien Poster", "Batman Poster", "Bullseye Shirt", "Another Classic Vinyl", "Awesome Jeans",
@@ -155,7 +155,7 @@ var iterationTestBindings = map[string]interface{}{
 	"offset":   1,
 	"limit":    2,
 	"cols":     2,
-	"loopmods": map[string]interface{}{"limit": 2, "offset": 1, "cols": 2},
+	"loopmods": map[string]any{"limit": 2, "offset": 1, "cols": 2},
 }
 
 func TestIterationTags(t *testing.T) {

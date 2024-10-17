@@ -5,12 +5,12 @@ import (
 	"sort"
 )
 
-// Sort any []interface{} value.
-func Sort(data []interface{}) {
+// Sort any []any value.
+func Sort(data []any) {
 	sort.Sort(genericSortable(data))
 }
 
-type genericSortable []interface{}
+type genericSortable []any
 
 // Len is part of sort.Interface.
 func (s genericSortable) Len() int {
@@ -28,12 +28,12 @@ func (s genericSortable) Less(i, j int) bool {
 }
 
 // SortByProperty sorts maps on their key indices.
-func SortByProperty(data []interface{}, key string, nilFirst bool) {
+func SortByProperty(data []any, key string, nilFirst bool) {
 	sort.Sort(sortableByProperty{data, key, nilFirst})
 }
 
 type sortableByProperty struct {
-	data     []interface{}
+	data     []any
 	key      string
 	nilFirst bool
 }
@@ -52,7 +52,7 @@ func (s sortableByProperty) Swap(i, j int) {
 // Less is part of sort.Interface.
 func (s sortableByProperty) Less(i, j int) bool {
 	// index returns the value at s.key, if in is a map that contains this key
-	index := func(i int) interface{} {
+	index := func(i int) any {
 		value := ToLiquid(s.data[i])
 		rt := reflect.ValueOf(value)
 		if rt.Kind() == reflect.Map && rt.Type().Key().Kind() == reflect.String {

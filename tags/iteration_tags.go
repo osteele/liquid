@@ -15,7 +15,7 @@ import (
 )
 
 // An IterationKeyedMap is a map that yields its keys, instead of (key, value) pairs, when iterated.
-type IterationKeyedMap map[string]interface{}
+type IterationKeyedMap map[string]any
 
 const forloopVarName = "forloop"
 
@@ -26,7 +26,7 @@ var (
 
 type iterable interface {
 	Len() int
-	Index(int) interface{}
+	Index(int) any
 }
 
 func breakTag(string) (func(io.Writer, render.Context) error, error) {
@@ -54,7 +54,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		}
 		// The next few lines could panic if the user spoofs us by creating their own loop object.
 		// “C++ protects against accident, not against fraud.” – Bjarne Stroustrup
-		loopRec := loopVar.(map[string]interface{})
+		loopRec := loopVar.(map[string]any)
 		cycleMap := loopRec[".cycles"].(map[string]int)
 		group, values := cycle.Group, cycle.Values
 		n := cycleMap[group]
@@ -113,7 +113,7 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 	}
 
 	// shallow-bind the loop variables; restore on exit
-	defer func(index, forloop interface{}) {
+	defer func(index, forloop any) {
 		ctx.Set(forloopVarName, index)
 		ctx.Set(loop.Variable, forloop)
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
@@ -121,7 +121,7 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 loop:
 	for i, l := 0, iter.Len(); i < l; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
-		ctx.Set(forloopVarName, map[string]interface{}{
+		ctx.Set(forloopVarName, map[string]any{
 			"first":   i == 0,
 			"last":    i == l-1,
 			"index":   i + 1,
@@ -241,7 +241,7 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 	return iter, nil
 }
 
-func makeIterator(value interface{}) iterable {
+func makeIterator(value any) iterable {
 	if iter, ok := value.(iterable); ok {
 		return iter
 	}
@@ -259,10 +259,10 @@ func makeIterator(value interface{}) iterable {
 		return sliceWrapper(reflect.ValueOf(value))
 	case reflect.Map:
 		rv := reflect.ValueOf(value)
-		array := make([][]interface{}, rv.Len())
+		array := make([][]any, rv.Len())
 		for i, k := range rv.MapKeys() {
 			v := rv.MapIndex(k)
-			array[i] = []interface{}{k.Interface(), v.Interface()}
+			array[i] = []any{k.Interface(), v.Interface()}
 		}
 		return sliceWrapper(reflect.ValueOf(array))
 	default:
@@ -270,7 +270,7 @@ func makeIterator(value interface{}) iterable {
 	}
 }
 
-func makeIterationKeyedMap(m map[string]interface{}) iterable {
+func makeIterationKeyedMap(m map[string]any) iterable {
 	// Iteration chooses a random start, so we need a copy of the keys to iterate through them.
 	keys := make([]string, 0, len(m))
 	for k := range m {
@@ -283,15 +283,15 @@ func makeIterationKeyedMap(m map[string]interface{}) iterable {
 
 type sliceWrapper reflect.Value
 
-func (w sliceWrapper) Len() int                { return reflect.Value(w).Len() }
-func (w sliceWrapper) Index(i int) interface{} { return reflect.Value(w).Index(i).Interface() }
+func (w sliceWrapper) Len() int        { return reflect.Value(w).Len() }
+func (w sliceWrapper) Index(i int) any { return reflect.Value(w).Index(i).Interface() }
 
 type mapSliceWrapper struct{ ms yaml.MapSlice }
 
 func (w mapSliceWrapper) Len() int { return len(w.ms) }
-func (w mapSliceWrapper) Index(i int) interface{} {
+func (w mapSliceWrapper) Index(i int) any {
 	item := w.ms[i]
-	return []interface{}{item.Key, item.Value}
+	return []any{item.Key, item.Value}
 }
 
 type limitWrapper struct {
@@ -299,23 +299,23 @@ type limitWrapper struct {
 	n int
 }
 
-func (w limitWrapper) Len() int                { return intMin(w.n, w.i.Len()) }
-func (w limitWrapper) Index(i int) interface{} { return w.i.Index(i) }
+func (w limitWrapper) Len() int        { return intMin(w.n, w.i.Len()) }
+func (w limitWrapper) Index(i int) any { return w.i.Index(i) }
 
 type offsetWrapper struct {
 	i iterable
 	n int
 }
 
-func (w offsetWrapper) Len() int                { return intMax(0, w.i.Len()-w.n) }
-func (w offsetWrapper) Index(i int) interface{} { return w.i.Index(i + w.n) }
+func (w offsetWrapper) Len() int        { return intMax(0, w.i.Len()-w.n) }
+func (w offsetWrapper) Index(i int) any { return w.i.Index(i + w.n) }
 
 type reverseWrapper struct {
 	i iterable
 }
 
-func (w reverseWrapper) Len() int                { return w.i.Len() }
-func (w reverseWrapper) Index(i int) interface{} { return w.i.Index(w.i.Len() - 1 - i) }
+func (w reverseWrapper) Len() int        { return w.i.Len() }
+func (w reverseWrapper) Index(i int) any { return w.i.Index(w.i.Len() - 1 - i) }
 
 func intMax(a, b int) int {
 	if a > b {

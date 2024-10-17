@@ -7,7 +7,7 @@ import (
 )
 
 func TestConstant(t *testing.T) {
-	ctx := NewContext(map[string]interface{}{}, NewConfig())
+	ctx := NewContext(map[string]any{}, NewConfig())
 	k := Constant(10)
 	v, err := k.Evaluate(ctx)
 	require.NoError(t, err)
@@ -15,7 +15,7 @@ func TestConstant(t *testing.T) {
 }
 
 func TestNot(t *testing.T) {
-	ctx := NewContext(map[string]interface{}{}, NewConfig())
+	ctx := NewContext(map[string]any{}, NewConfig())
 	k := Constant(10)
 	v, err := Not(k).Evaluate(ctx)
 	require.NoError(t, err)

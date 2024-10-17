@@ -34,7 +34,7 @@ func (e FilterError) Error() string {
 type valueFn func(Context) values.Value
 
 // AddFilter adds a filter to the filter dictionary.
-func (c *Config) AddFilter(name string, fn interface{}) {
+func (c *Config) AddFilter(name string, fn any) {
 	rf := reflect.ValueOf(fn)
 	switch {
 	case rf.Kind() != reflect.Func:
@@ -47,27 +47,27 @@ func (c *Config) AddFilter(name string, fn interface{}) {
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
 	if len(c.filters) == 0 {
-		c.filters = make(map[string]interface{})
+		c.filters = make(map[string]any)
 	}
 	c.filters[name] = fn
 }
 
 var (
 	closureType   = reflect.TypeOf(closure{})
-	interfaceType = reflect.TypeOf([]interface{}{}).Elem()
+	interfaceType = reflect.TypeOf([]any{}).Elem()
 )
 
 func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (interface{}, error) {
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
 	}
 	fr := reflect.ValueOf(filter)
-	args := []interface{}{receiver(ctx).Interface()}
+	args := []any{receiver(ctx).Interface()}
 	for i, param := range params {
 		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
 			expr, err := Parse(param(ctx).Interface().(string))

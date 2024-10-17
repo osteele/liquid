@@ -9,22 +9,22 @@ import (
 )
 
 // Convert should be replaced by values.Convert.
-func Convert(value interface{}, typ reflect.Type) (interface{}, error) {
+func Convert(value any, typ reflect.Type) (any, error) {
 	return values.Convert(value, typ)
 }
 
 // MustConvertItem should be replaced by values.Convert.
-func MustConvertItem(item interface{}, array interface{}) interface{} {
+func MustConvertItem(item any, array any) any {
 	return values.MustConvertItem(item, array)
 }
 
 // Sort should be replaced by values.
-func Sort(data []interface{}) {
+func Sort(data []any) {
 	values.Sort(data)
 }
 
 // SortByProperty should be replaced by values.SortByProperty
-func SortByProperty(data []interface{}, key string, nilFirst bool) {
+func SortByProperty(data []any, key string, nilFirst bool) {
 	values.SortByProperty(data, key, nilFirst)
 }
 

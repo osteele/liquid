@@ -11,7 +11,7 @@ import (
 // A Value is a Liquid runtime value.
 type Value interface {
 	// Value retrieval
-	Interface() interface{}
+	Interface() any
 	Int() int
 
 	// Comparison
@@ -28,7 +28,7 @@ type Value interface {
 
 // ValueOf returns a Value that wraps its argument.
 // If the argument is already a Value, it returns this.
-func ValueOf(value interface{}) Value { //nolint: gocyclo
+func ValueOf(value any) Value { //nolint: gocyclo
 	// interned values
 	switch value {
 	case nil:
@@ -92,13 +92,13 @@ func (v valueEmbed) PropertyValue(Value) Value { return nilValue }
 func (v valueEmbed) Test() bool                { return true }
 
 // A wrapperValue wraps a Go value.
-type wrapperValue struct{ value interface{} }
+type wrapperValue struct{ value any }
 
 func (v wrapperValue) Equal(other Value) bool    { return Equal(v.value, other.Interface()) }
 func (v wrapperValue) Less(other Value) bool     { return Less(v.value, other.Interface()) }
 func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
 func (v wrapperValue) Contains(Value) bool       { return false }
-func (v wrapperValue) Interface() interface{}    { return v.value }
+func (v wrapperValue) Interface() any            { return v.value }
 func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
 func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
 

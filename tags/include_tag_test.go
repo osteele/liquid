@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var includeTestBindings = map[string]interface{}{
+var includeTestBindings = map[string]any{
 	"test": true,
 	"var":  "value",
 }

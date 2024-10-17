@@ -13,7 +13,7 @@ var (
 )
 
 var eqTests = []struct {
-	a, b     interface{}
+	a, b     any
 	expected bool
 }{
 	{nil, nil, true},
@@ -37,7 +37,7 @@ var eqTests = []struct {
 	{[]string{"a", "b"}, []string{"a"}, false},
 	{[]string{"a", "b"}, []string{"a", "b"}, true},
 	{[]string{"a", "b"}, []string{"a", "c"}, false},
-	{[]interface{}{1.0, 2}, []interface{}{1, 2.0}, true},
+	{[]any{1.0, 2}, []any{1, 2.0}, true},
 	{eqTestObj, eqTestObj, true},
 }
 

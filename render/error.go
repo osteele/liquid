@@ -12,7 +12,7 @@ type Error interface {
 	Error() string
 }
 
-func renderErrorf(loc parser.Locatable, format string, a ...interface{}) Error {
+func renderErrorf(loc parser.Locatable, format string, a ...any) Error {
 	return parser.Errorf(loc, format, a...)
 }
 

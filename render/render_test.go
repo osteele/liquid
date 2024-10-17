@@ -73,11 +73,11 @@ var renderErrorTests = []struct{ in, out string }{
 	{`{% errblock %}{% enderrblock %}`, "errblock error"},
 }
 
-var renderTestBindings = map[string]interface{}{
+var renderTestBindings = map[string]any{
 	"array": []string{"first", "second", "third"},
 	"date":  time.Date(2015, 7, 17, 15, 4, 5, 123456789, time.UTC),
 	"int":   123,
-	"sort_prop": []map[string]interface{}{
+	"sort_prop": []map[string]any{
 		{"weight": 1},
 		{"weight": 5},
 		{"weight": 3},
@@ -85,10 +85,10 @@ var renderTestBindings = map[string]interface{}{
 	},
 	// for examples from liquid docs
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
-	"page": map[string]interface{}{
+	"page": map[string]any{
 		"title": "Introduction",
 	},
-	"pages": []map[string]interface{}{
+	"pages": []map[string]any{
 		{"category": "business"},
 		{"category": "celebrities"},
 		{},

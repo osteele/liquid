@@ -12,7 +12,7 @@ import (
 func Example() {
 	engine := NewEngine()
 	source := `<h1>{{ page.title }}</h1>`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"page": map[string]string{
 			"title": "Introduction",
 		},
@@ -28,7 +28,7 @@ func Example() {
 func ExampleEngine_ParseAndRenderString() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
-	bindings := map[string]interface{}{"hello": "hola"}
+	bindings := map[string]any{"hello": "hola"}
 	out, err := engine.ParseAndRenderString(source, bindings)
 	if err != nil {
 		log.Fatalln(err)
@@ -40,7 +40,7 @@ func ExampleEngine_ParseAndRenderString() {
 func ExampleEngine_ParseTemplate() {
 	engine := NewEngine()
 	source := `{{ hello | capitalize | append: " Mundo" }}`
-	bindings := map[string]interface{}{"hello": "hola"}
+	bindings := map[string]any{"hello": "hola"}
 	tpl, err := engine.ParseString(source)
 	if err != nil {
 		log.Fatalln(err)
@@ -57,7 +57,7 @@ func ExampleEngine_RegisterFilter() {
 	engine := NewEngine()
 	engine.RegisterFilter("has_prefix", strings.HasPrefix)
 	template := `{{ title | has_prefix: "Intro" }}`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"title": "Introduction",
 	}
 	out, err := engine.ParseAndRenderString(template, bindings)
@@ -78,7 +78,7 @@ func ExampleEngine_RegisterFilter_optional_argument() {
 		return a + b(1)
 	})
 	template := `10 + 1 = {{ m | inc }}; 20 + 5 = {{ n | inc: 5 }}`
-	bindings := map[string]interface{}{
+	bindings := map[string]any{
 		"m": 10,
 		"n": "20",
 	}

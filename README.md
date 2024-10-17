@@ -43,7 +43,7 @@ generator.
 ```go
 engine := liquid.NewEngine()
 template := `<h1>{{ page.title }}</h1>`
-bindings := map[string]interface{}{
+bindings := map[string]any{
     "page": map[string]string{
         "title": "Introduction",
     },
@@ -84,7 +84,7 @@ These features of Shopify Liquid aren't implemented:
 
 Drops have a different design from the Shopify (Ruby) implementation. A Ruby
 drop sets `liquid_attributes` to a list of attributes that are exposed to
-Liquid. A Go drop implements `ToLiquid() interface{}`, that returns a proxy
+Liquid. A Go drop implements `ToLiquid() any`, that returns a proxy
 object. Conventionally, the proxy is a `map` or `struct` that defines the
 exposed properties. See <http://godoc.org/github.com/osteele/liquid#Drop> for
 additional information.
@@ -92,7 +92,7 @@ additional information.
 ### Value Types
 
 `Render` and friends take a `Bindings` parameter. This is a map of `string` to
-`interface{}`, that associates template variable names with Go values.
+`any`, that associates template variable names with Go values.
 
 Any Go value can be used as a variable value. These values have special meaning:
 

@@ -5,7 +5,7 @@ import (
 )
 
 // IsEmpty returns a bool indicating whether the value is empty according to Liquid semantics.
-func IsEmpty(value interface{}) bool {
+func IsEmpty(value any) bool {
 	value = ToLiquid(value)
 	if value == nil {
 		return false
