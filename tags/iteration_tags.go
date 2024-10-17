@@ -67,7 +67,34 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	if err != nil {
 		return nil, err
 	}
-	return loopRenderer{stmt.Loop, node.Name}.render, nil
+
+	return func(w io.Writer, ctx render.Context) error {
+		// loop modifiers
+		val, err := ctx.Evaluate(stmt.Loop.Expr)
+		if err != nil {
+			return err
+		}
+
+		iter := makeIterator(val)
+		if iter == nil {
+			return nil
+		}
+
+		iter, err = applyLoopModifiers(stmt.Loop, ctx, iter)
+		if err != nil {
+			return err
+		}
+
+		if len(node.Clauses) > 1 {
+			return fmt.Errorf("for loops accept at most one else clause")
+		}
+
+		if iter.Len() == 0 && len(node.Clauses) == 1 && node.Clauses[0].Name == "else" {
+			return ctx.RenderBlock(w, node.Clauses[0])
+		}
+
+		return loopRenderer{stmt.Loop, node.Name}.render(iter, w, ctx)
+	}, nil
 }
 
 type loopRenderer struct {
@@ -75,21 +102,7 @@ type loopRenderer struct {
 	tagName string
 }
 
-func (loop loopRenderer) render(w io.Writer, ctx render.Context) error {
-	// loop modifiers
-	val, err := ctx.Evaluate(loop.Expr)
-	if err != nil {
-		return err
-	}
-	iter := makeIterator(val)
-	if iter == nil {
-		return nil
-	}
-	iter, err = applyLoopModifiers(loop.Loop, ctx, iter)
-	if err != nil {
-		return err
-	}
-
+func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) error {
 	// loop decorator
 	decorator, err := makeLoopDecorator(loop, ctx)
 	if err != nil {

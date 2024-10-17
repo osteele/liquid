@@ -17,6 +17,7 @@ import (
 
 var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ a }} {% endfor %}`, "first second third "},
+	{`{% for a in array %}{{ a }} {% else %}else{% endfor %}`, "first second third "},
 	{`{% for a in nil %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in false %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in 2 %}{{ a }}.{% endfor %}`, ""},
@@ -37,6 +38,7 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array offset: loopmods["offset"] %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
 	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
+	{`{% for a in array limit: 0 %}{{ a }}.{% else %}ELSE{% endfor %}`, "ELSE"},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 10 %}{{ a }}.{% endfor %}`, ""},
 	// TODO investigate how these combine; does it depend on the order?
@@ -126,6 +128,7 @@ var iterationErrorTests = []struct{ in, expected string }{
 	{`{% cycle 'a', 'b' %}`, "cycle must be within a forloop"},
 	{`{% for a in array | undefined_filter %}{% endfor %}`, "undefined filter"},
 	{`{% for a in array %}{{ a | undefined_filter }}{% endfor %}`, "undefined filter"},
+	{`{% for a in array %}{% else %}{% else %}{% endfor %}`, "for loops accept at most one else clause"},
 }
 
 var iterationTestBindings = map[string]interface{}{
