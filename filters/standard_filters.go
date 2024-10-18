@@ -3,6 +3,7 @@ package filters
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"math"
@@ -16,6 +17,8 @@ import (
 	"github.com/osteele/liquid/values"
 	"github.com/osteele/tuesday"
 )
+
+var errDivisionByZero = errors.New("division by zero")
 
 // A FilterDictionary holds filters.
 type FilterDictionary interface {
@@ -100,14 +103,42 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("times", func(a, b float64) float64 {
 		return a * b
 	})
-	fd.AddFilter("divided_by", func(a float64, b any) any {
+	fd.AddFilter("divided_by", func(a float64, b any) (any, error) {
+		divInt := func(a, b int64) (int64, error) {
+			if b == 0 {
+				return 0, errDivisionByZero
+			}
+			return a / b, nil
+		}
+		divFloat := func(a, b float64) (float64, error) {
+			if b == 0 {
+				return 0, errDivisionByZero
+			}
+			return a / b, nil
+		}
 		switch q := b.(type) {
-		case int, int16, int32, int64:
-			return int(a) / q.(int)
-		case float32, float64:
-			return a / b.(float64)
+		case int:
+			return divInt(int64(a), int64(q))
+		case int8:
+			return divInt(int64(a), int64(q))
+		case int16:
+			return divInt(int64(a), int64(q))
+		case int32:
+			return divInt(int64(a), int64(q))
+		case int64:
+			return divInt(int64(a), q)
+		case uint8:
+			return divInt(int64(a), int64(q))
+		case uint16:
+			return divInt(int64(a), int64(q))
+		case uint32:
+			return divInt(int64(a), int64(q))
+		case float32:
+			return divFloat(a, float64(q))
+		case float64:
+			return divFloat(a, q)
 		default:
-			return nil
+			return nil, fmt.Errorf("invalid divisor: '%v'", b)
 		}
 	})
 	fd.AddFilter("round", func(n float64, places func(int) int) float64 {
