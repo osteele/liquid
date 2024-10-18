@@ -184,7 +184,6 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`5 | divided_by: 3`, 1},
 	{`20 | divided_by: 7`, 2},
 	{`20 | divided_by: 7.0`, 2.857142857142857},
-	{`20 | divided_by: 's'`, nil},
 
 	{`1.2 | round`, 1.0},
 	{`2.7 | round`, 3.0},
@@ -195,6 +194,14 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+}
+
+var filterErrorTests = []struct {
+	in    string
+	error string
+}{
+	{`20 | divided_by: 's'`, `error applying filter "divided_by" ("invalid divisor: 's'")`},
+	{`20 | divided_by: 0`, `error applying filter "divided_by" ("division by zero")`},
 }
 
 var filterTestBindings = map[string]any{
@@ -272,7 +279,14 @@ func TestFilters(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			actual, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
-			require.Equalf(t, test.expected, actual, test.in)
+			require.EqualValuesf(t, test.expected, actual, test.in)
+		})
+	}
+
+	for i, test := range filterErrorTests {
+		t.Run(fmt.Sprintf("%02d", i+len(filterTests)+1), func(t *testing.T) {
+			_, err := expressions.EvaluateString(test.in, context)
+			require.EqualErrorf(t, err, test.error, test.in)
 		})
 	}
 }
