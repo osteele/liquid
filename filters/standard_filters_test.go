@@ -111,6 +111,8 @@ Liquid" | slice: 0`, "L"},
 	{`"Liquid
 Liquid" | slice: 2, 4`, "quid"},
 	{`"Liquid" | slice: -3, 2`, "ui"},
+	{`"" | slice: 1`, ""},
+	{`"Liquid" | slice: -7`, ""},
 
 	{`"a/b/c" | split: '/' | join: '-'`, "a-b-c"},
 	{`"a/b/" | split: '/' | join: '-'`, "a-b"},

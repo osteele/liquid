@@ -185,10 +185,16 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
+		if len(s) == 0 {
+			return ""
+		}
 		ss := []rune(s)
 		n := length(1)
 		if start < 0 {
 			start = len(ss) + start
+		}
+		if start < 0 {
+			return ""
 		}
 		end := start + n
 		if end > len(ss) {
