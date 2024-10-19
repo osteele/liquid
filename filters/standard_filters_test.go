@@ -83,6 +83,8 @@ var filterTests = []struct {
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
+	// count chars, not bytes
+	{`"Straße" | size`, 6},
 
 	// string filters
 	{`"Take my protein pills and put my helmet on" | replace: "my", "your"`, "Take your protein pills and put your helmet on"},

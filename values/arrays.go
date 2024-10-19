@@ -2,6 +2,7 @@ package values
 
 import (
 	"reflect"
+	"unicode/utf8"
 )
 
 // TODO Length is now only used by the "size" filter.
@@ -13,8 +14,10 @@ func Length(value any) int {
 	value = ToLiquid(value)
 	ref := reflect.ValueOf(value)
 	switch ref.Kind() {
-	case reflect.Array, reflect.Slice, reflect.String:
+	case reflect.Array, reflect.Slice:
 		return ref.Len()
+	case reflect.String:
+		return utf8.RuneCountInString(ref.String())
 	default:
 		return 0
 	}
