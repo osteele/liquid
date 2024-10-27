@@ -2,7 +2,9 @@ package values
 
 import (
 	"reflect"
+	"strconv"
 	"time"
+	"unicode"
 )
 
 var zeroTime time.Time
@@ -49,6 +51,14 @@ func ParseDate(s string) (time.Time, error) {
 	if s == "now" {
 		return time.Now(), nil
 	}
+	// Parse potentially Unix timestamps.
+	if isOnlyNumbers(s) {
+		i, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return time.Time{}, err
+		}
+		return time.Unix(i, 0), nil
+	}
 	for _, layout := range dateLayouts {
 		t, err := time.ParseInLocation(layout, s, time.Local)
 		if err == nil {
@@ -56,4 +66,13 @@ func ParseDate(s string) (time.Time, error) {
 		}
 	}
 	return zeroTime, conversionError("", s, reflect.TypeOf(zeroTime))
+}
+
+func isOnlyNumbers(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
 }

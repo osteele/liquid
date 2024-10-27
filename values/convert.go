@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 // A TypeError is an error during type conversion.
@@ -85,9 +85,18 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	if typ.Kind() != reflect.String && value != nil && rv.Type().ConvertibleTo(typ) {
 		return rv.Convert(typ).Interface(), nil
 	}
-	if typ == timeType && rv.Kind() == reflect.String {
-		return ParseDate(value.(string))
+
+	if typ == timeType {
+		switch rv.Kind() {
+		case reflect.String:
+			return ParseDate(value.(string))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return time.Unix(rv.Int(), 0), nil
+		case reflect.Float32, reflect.Float64:
+			return time.Unix(int64(rv.Float()), 0), nil
+		}
 	}
+
 	// currently unused:
 	// case reflect.PtrTo(r.Type()) == typ:
 	// 	return &value, nil
@@ -251,7 +260,7 @@ func MustConvert(value any, t reflect.Type) any {
 
 // MustConvertItem converts item to conform to the type array's element, else panics.
 // Unlike MustConvert, the second argument is a value not a type.
-func MustConvertItem(item any, array any) any {
+func MustConvertItem(item, array any) any {
 	item, err := Convert(item, reflect.TypeOf(array).Elem())
 	if err != nil {
 		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))

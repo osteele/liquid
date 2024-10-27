@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
-
 	"github.com/osteele/liquid/expressions"
+
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v2"
 )
 
 var filterTests = []struct {
@@ -79,6 +79,8 @@ var filterTests = []struct {
 	{`"2017-07-09" | date: "%d/%m"`, "09/07"},
 	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
 	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
+	{`1730040524 | date: "%b %d, %y"`, "Oct 27, 24"},
+	{`"1730040524" | date: "%b %d, %y"`, "Oct 27, 24"},
 
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
