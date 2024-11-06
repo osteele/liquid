@@ -40,6 +40,25 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 	}
 }
 
+func TestBasicEngine_ParseAndRenderString(t *testing.T) {
+	engine := NewBasicEngine()
+
+	t.Run("1", func(t *testing.T) {
+		test := liquidTests[0]
+		out, err := engine.ParseAndRenderString(test.in, testBindings)
+		require.NoErrorf(t, err, test.in)
+		require.Equalf(t, test.expected, out, test.in)
+	})
+
+	for i, test := range liquidTests[1:] {
+		t.Run(strconv.Itoa(i+2), func(t *testing.T) {
+			out, err := engine.ParseAndRenderString(test.in, testBindings)
+			require.Errorf(t, err, test.in)
+			require.Equalf(t, "", out, test.in)
+		})
+	}
+}
+
 type capWriter struct {
 	bytes.Buffer
 }

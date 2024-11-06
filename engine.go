@@ -21,6 +21,11 @@ func NewEngine() *Engine {
 	return &e
 }
 
+// NewBasicEngine returns a new Engine without the standard filters or tags.
+func NewBasicEngine() *Engine {
+	return &Engine{render.NewConfig()}
+}
+
 // RegisterBlock defines a block e.g. {% tag %}…{% endtag %}.
 func (e *Engine) RegisterBlock(name string, td Renderer) {
 	e.cfg.AddBlock(name).Renderer(func(w io.Writer, ctx render.Context) error {
