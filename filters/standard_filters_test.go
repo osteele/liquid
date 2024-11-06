@@ -149,6 +149,7 @@ var filterTests = []struct {
 	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
 
 	// number filters
+	{`"45" | to_number`, 45},
 	{`-17 | abs`, 17},
 	{`4 | abs`, 4},
 	{`"-19.86" | abs`, 19.86},
