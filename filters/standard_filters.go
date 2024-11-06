@@ -110,6 +110,31 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	})
 
 	// number filters
+	fd.AddFilter("to_number", func(value interface{}) float64 {
+		switch v := value.(type) {
+		case float64:
+			return v
+		case int:
+			return float64(v)
+		case int8:
+			return float64(v)
+		case int16:
+			return float64(v)
+		case int32:
+			return float64(v)
+		case int64:
+			return float64(v)
+		case float32:
+			return float64(v)
+		case string:
+			if f, err := strconv.ParseFloat(v, 64); err == nil {
+				return f
+			}
+			return 0
+		default:
+			return 0
+		}
+	})
 	fd.AddFilter("abs", math.Abs)
 	fd.AddFilter("ceil", math.Ceil)
 	fd.AddFilter("floor", math.Floor)
