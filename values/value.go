@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -226,7 +227,7 @@ func (sv stringValue) Contains(substr Value) bool {
 
 func (sv stringValue) PropertyValue(iv Value) Value {
 	if iv.Interface() == sizeKey {
-		return ValueOf(len(sv.value.(string)))
+		return ValueOf(utf8.RuneCountInString(sv.value.(string)))
 	}
 	return nilValue
 }
