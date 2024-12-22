@@ -1,9 +1,12 @@
 package expressions
 
 import (
+	gocontext "context"
+	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/autopilot3/ap3-helpers-go/logger"
 	"github.com/autopilot3/liquid/values"
 )
 
@@ -140,12 +143,18 @@ func (c *varsContext) Get(name string) interface{} {
 							Attributes: make(map[string]*VariableBind),
 						}
 						c.variables[loopVar.Source] = bind
-					} else {
+					} else if val != nil {
 						bind = val.(*VariableBind)
 						bind.Loop = true
 						if bind.Attributes == nil {
 							bind.Attributes = make(map[string]*VariableBind)
 						}
+					} else {
+						bind = &VariableBind{
+							Loop:       true,
+							Attributes: make(map[string]*VariableBind),
+						}
+						logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
 					}
 					bind.Attributes[attributeName] = &VariableBind{}
 				}
