@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"fmt"
 
 	"github.com/stretchr/testify/require"
 )
@@ -154,4 +155,26 @@ func TestEngine_ParseTemplateAndCache(t *testing.T) {
 	result, err := eng.ParseAndRender(templateB, Bindings{})
 	require.NoError(t, err)
 	require.Equal(t, "Foo, Bar", string(result))
+}
+
+type MockTemplateStore struct {}
+
+func (tl *MockTemplateStore) ReadTemplate(filename string) ([]byte, error) {
+	template := []byte(fmt.Sprintf("Message Text: {{ message.Text }} from: %v.", filename))
+	return template, nil
+}
+
+
+func Test_template_store(t *testing.T){
+	template := []byte(`{% include "template.liquid" %}`)
+	mockstore := &MockTemplateStore{}
+	params := map[string]any{
+		"message": testStruct{
+			Text: "filename",
+		},
+	}
+	engine := NewEngine()
+	engine.RegisterTemplateStore(mockstore)
+	out, _ := engine.ParseAndRenderString(string(template), params)
+	require.Equal(t, "Message Text: filename from: template.liquid.", out)
 }

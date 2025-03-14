@@ -55,6 +55,10 @@ type Context interface {
 	WrapError(err error) Error
 }
 
+type ITemplateStore interface {
+	ReadTemplate(templatename string) ([]byte, error)
+}
+
 type rendererContext struct {
 	ctx  nodeContext
 	node *TagNode
@@ -145,7 +149,7 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 }
 
 func (c rendererContext) RenderFile(filename string, b map[string]any) (string, error) {
-	source, err := os.ReadFile(filename)
+	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && os.IsNotExist(err) {
 		// Is it cached?
 		if cval, ok := c.ctx.config.Cache[filename]; ok {
