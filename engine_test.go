@@ -20,6 +20,7 @@ var liquidTests = []struct{ in, expected string }{
 	{`{% if x %}true{% endif %}`, "true"},
 	{`{{ "upper" | upcase }}`, "UPPER"},
 	{`{{ page.ar | first }}`, "first"},
+	{`{% if page.nil-number < x %}true{% endif %}`, "true"},
 }
 
 var testBindings = map[string]interface{}{

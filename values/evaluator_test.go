@@ -25,6 +25,18 @@ var lessTests = []struct {
 	{"a", "b", true},
 	{"b", "a", false},
 	{[]string{"a"}, []string{"a"}, false},
+	// comparisons involving 1 nil and the other non-nil, nil will be default to 0 for number/string comparison. Otherwise all false
+	{nil, 0, false},
+	{nil, 1, true},
+	{nil, -1, false},
+	{nil, 1.1, true},
+	{nil, -1.1, false},
+	{1.1, nil, false},
+	{0, nil, false},
+	{-1, nil, true},
+	{nil, "", false},
+	{nil, "a", true},
+	{nil, struct{}{}, false},
 }
 
 func TestLess(t *testing.T) {
