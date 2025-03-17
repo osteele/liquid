@@ -75,7 +75,29 @@ func Equal(a, b interface{}) bool { // nolint: gocyclo
 // Less returns a bool indicating whether a < b.
 func Less(a, b interface{}) bool {
 	a, b = ToLiquid(a), ToLiquid(b)
-	if a == nil || b == nil {
+	if a == nil && b == nil {
+		return false
+	} else if a == nil {
+		if reflect.ValueOf(b).Kind() == reflect.String {
+			return "" < b.(string)
+		} else if reflect.ValueOf(b).Kind() == reflect.Int || reflect.ValueOf(b).Kind() == reflect.Int8 || reflect.ValueOf(b).Kind() == reflect.Int16 || reflect.ValueOf(b).Kind() == reflect.Int32 || reflect.ValueOf(b).Kind() == reflect.Int64 {
+			rb := reflect.ValueOf(b).Convert(int64Type).Int()
+			return 0 < rb
+		} else if reflect.ValueOf(b).Kind() == reflect.Float32 || reflect.ValueOf(b).Kind() == reflect.Float64 {
+			rb := reflect.ValueOf(b).Convert(float64Type).Float()
+			return 0 < rb
+		}
+		return false
+	} else if b == nil {
+		if reflect.ValueOf(a).Kind() == reflect.String {
+			return a.(string) < ""
+		} else if reflect.ValueOf(a).Kind() == reflect.Int || reflect.ValueOf(a).Kind() == reflect.Int8 || reflect.ValueOf(a).Kind() == reflect.Int16 || reflect.ValueOf(a).Kind() == reflect.Int32 || reflect.ValueOf(a).Kind() == reflect.Int64 {
+			ra := reflect.ValueOf(a).Convert(int64Type).Int()
+			return ra < 0
+		} else if reflect.ValueOf(a).Kind() == reflect.Float32 || reflect.ValueOf(a).Kind() == reflect.Float64 {
+			ra := reflect.ValueOf(a).Convert(float64Type).Float()
+			return ra < 0
+		}
 		return false
 	}
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
