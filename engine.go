@@ -43,7 +43,6 @@ func NewEngine() *Engine {
 	engine.RegisterFilter("hideCountryCodeAndDefault", func(v interface{}, hide bool, defaultValue string) string {
 		s, ok := v.(phone.International)
 		if !ok {
-			logger.Infow(context.Background(), fmt.Sprintf("failed to cast field value %+v to phone.International", v), "lqiuid", "filter")
 			return defaultValue
 		}
 		if s.Number.IsZero() && s.CountryCode.IsZero() {
