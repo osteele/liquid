@@ -36,20 +36,21 @@ func TestDrop_Resolve_race(t *testing.T) {
 
 func BenchmarkDrop_Resolve_1(b *testing.B) {
 	d := ValueOf(testDrop{1})
-	for n := 0; n < b.N; n++ {
+
+	for range b.N {
 		_ = d.Int()
 	}
 }
 
 func BenchmarkDrop_Resolve_2(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		d := ValueOf(testDrop{1})
 		_ = d.Int()
 	}
 }
 
 func BenchmarkDrop_Resolve_3(b *testing.B) {
-	for n := 0; n < b.N; n++ {
+	for range b.N {
 		d := ValueOf(testDrop{1})
 		values := make(chan int, 10)
 		for i := cap(values); i > 0; i-- {

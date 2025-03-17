@@ -3,11 +3,11 @@ package liquid
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"testing"
-	"fmt"
 
 	"github.com/stretchr/testify/require"
 )
@@ -157,15 +157,14 @@ func TestEngine_ParseTemplateAndCache(t *testing.T) {
 	require.Equal(t, "Foo, Bar", string(result))
 }
 
-type MockTemplateStore struct {}
+type MockTemplateStore struct{}
 
 func (tl *MockTemplateStore) ReadTemplate(filename string) ([]byte, error) {
 	template := []byte(fmt.Sprintf("Message Text: {{ message.Text }} from: %v.", filename))
 	return template, nil
 }
 
-
-func Test_template_store(t *testing.T){
+func Test_template_store(t *testing.T) {
 	template := []byte(`{% include "template.liquid" %}`)
 	mockstore := &MockTemplateStore{}
 	params := map[string]any{
