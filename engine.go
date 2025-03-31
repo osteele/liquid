@@ -341,6 +341,15 @@ func NewEngine() *Engine {
 	engine.RegisterFilter("trackURL", func(s string) string {
 		return "$$TRACK_ME:" + html.UnescapeString(s) + "$$"
 	})
+
+	engine.RegisterFilter("startsWith", func(s string, prefix string) bool {
+		return strings.HasPrefix(s, prefix)
+	})
+
+	engine.RegisterFilter("endsWith", func(s string, suffix string) bool {
+		return strings.HasSuffix(s, suffix)
+	})
+
 	return engine
 }
 
