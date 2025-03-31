@@ -200,3 +200,25 @@ func TestFindVariables(t *testing.T) {
 		})
 	}
 }
+
+func TestStartsWith(t *testing.T) {
+	engine := NewEngine()
+	template := `{{ 'hello' | startsWith: 'he' }}`
+	str, err := engine.ParseAndRenderString(template, nil)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "true" {
+		t.Error("startsWith filter error")
+	}
+}
+
+func TestEndsWith(t *testing.T) {
+	engine := NewEngine()
+	template := `{{ 'hello' | endsWith: 'lo' }}`
+	str, err := engine.ParseAndRenderString(template, nil)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "true" {
+		t.Error("endsWith filter error")
+	}
+}
