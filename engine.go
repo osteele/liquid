@@ -283,10 +283,11 @@ func NewEngine() *Engine {
 			}
 			return false
 		case reflect.Slice:
-			slice := s.([]interface{})
-			for _, match := range matches {
-				for _, s := range slice {
-					if reflect.DeepEqual(s, match) {
+			val := reflect.ValueOf(s)
+			for i := 0; i < val.Len(); i++ {
+				elem := val.Index(i).Interface()
+				for _, match := range matches {
+					if reflect.DeepEqual(elem, match) {
 						return true
 					}
 				}
@@ -319,11 +320,12 @@ func NewEngine() *Engine {
 			}
 			return true
 		case reflect.Slice:
-			slice := s.([]interface{})
-			for _, match := range matches {
+			val := reflect.ValueOf(s)
+			for i := 0; i < val.Len(); i++ {
+				elem := val.Index(i).Interface()
 				containMatch := false
-				for _, s := range slice {
-					if reflect.DeepEqual(s, match) {
+				for _, match := range matches {
+					if reflect.DeepEqual(elem, match) {
 						containMatch = true
 						break
 					}
