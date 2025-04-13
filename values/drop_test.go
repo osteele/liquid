@@ -56,7 +56,7 @@ func BenchmarkDrop_Resolve_3(b *testing.B) {
 			values <- d.Int()
 		}
 		for i := cap(values); i > 0; i-- {
-			_ = <-values
+			<-values
 		}
 	}
 }

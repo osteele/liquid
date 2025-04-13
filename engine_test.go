@@ -30,6 +30,9 @@ var testBindings = map[string]interface{}{
 		"ar":    []interface{}{"first", "second", "third"},
 		"title": "Introduction",
 	},
+	"set": map[string]interface{}{
+		"chars": []string{"a", "b", "c"},
+	},
 }
 
 func TestEngine_ParseAndRenderString(t *testing.T) {
@@ -220,5 +223,30 @@ func TestEndsWith(t *testing.T) {
 	t.Log(str)
 	if str != "true" {
 		t.Error("endsWith filter error")
+	}
+}
+
+func TestSetContains(t *testing.T) {
+	engine := NewEngine()
+	template := `{{ set.chars | setContains: 'a' }}`
+	str, err := engine.ParseAndRenderString(template, testBindings)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "true" {
+		t.Error("set contains filter error")
+	}
+	template = `{{ set.chars | setContains: 'd' }}`
+	str, err = engine.ParseAndRenderString(template, testBindings)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "false" {
+		t.Error("set contains filter error")
+	}
+	template = `{{ set.chars | setContains: 'a', 'b' }}`
+	str, err = engine.ParseAndRenderString(template, testBindings)
+	require.NoError(t, err)
+	t.Log(str)
+	if str != "true" {
+		t.Error("set contains filter error")
 	}
 }

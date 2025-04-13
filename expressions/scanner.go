@@ -277,11 +277,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			_lower := int(_keys)
 			var _mid int
 			_upper := int(_keys + _klen - 1)
-			for {
-				if _upper < _lower {
-					break
-				}
-
+			for _upper >= _lower {
 				_mid = _lower + ((_upper - _lower) >> 1)
 				switch {
 				case lex.data[(lex.p)] < _expression_trans_keys[_mid]:
@@ -302,11 +298,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 			_lower := int(_keys)
 			var _mid int
 			_upper := int(_keys + (_klen << 1) - 2)
-			for {
-				if _upper < _lower {
-					break
-				}
-
+			for _upper >= _lower {
 				_mid = _lower + (((_upper - _lower) >> 1) & ^1)
 				switch {
 				case lex.data[(lex.p)] < _expression_trans_keys[_mid]:
