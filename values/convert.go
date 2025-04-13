@@ -80,7 +80,7 @@ func Convert(value interface{}, typ reflect.Type) (interface{}, error) { // noli
 	// }
 	switch typ.Kind() {
 	case reflect.Bool:
-		return !(value == nil || value == false), nil
+		return value != nil && value != false, nil
 	case reflect.Uint:
 		v, err := convertValueToInt(value, typ)
 		return uint(v), err
