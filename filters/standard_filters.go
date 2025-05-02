@@ -154,13 +154,13 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 			if q.(int) == 0 {
 				return nil
 			}
-			return int(a) / b.(int)
+			return int(a) / q.(int)
 		case float32, float64:
 			// check divider
 			if q.(float64) == 0 {
 				return nil
 			}
-			return a / b.(float64)
+			return a / q.(float64)
 		default:
 			return nil
 		}
