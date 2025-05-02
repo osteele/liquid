@@ -183,6 +183,7 @@ var filterTests = []struct {
 	{`20 | divided_by: 7`, 2},
 	{`20 | divided_by: 7.0`, 2.857142857142857},
 	{`20 | divided_by: 's'`, nil},
+	{`20 | divided_by: 0`, nil},
 
 	{`1.2 | round`, 1},
 	{`2.7 | round`, 3},

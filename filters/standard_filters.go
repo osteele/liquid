@@ -151,7 +151,6 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 	fd.AddFilter("divided_by", func(a float64, b interface{}) interface{} {
 		switch q := b.(type) {
 		case int, int16, int32, int64:
-			// check divider
 			if q.(int) == 0 {
 				return nil
 			}
@@ -161,7 +160,7 @@ func AddStandardFilters(fd FilterDictionary) { // nolint: gocyclo
 			if q.(float64) == 0 {
 				return nil
 			}
-			return a / b.(float64)
+			return a / q.(float64)
 		default:
 			return nil
 		}
