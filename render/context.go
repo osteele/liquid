@@ -2,8 +2,8 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"io"
-	"os"
 	"strings"
 
 	"github.com/autopilot3/liquid/expressions"
@@ -139,26 +139,7 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 // Deprecated: RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
 // We removed `include` tag to prevent reading files from the filesystem.
 func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
-	source, err := os.ReadFile(filename)
-	if err != nil {
-		return "", err
-	}
-	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
-	if err != nil {
-		return "", err
-	}
-	bindings := map[string]interface{}{}
-	for k, v := range c.ctx.bindings {
-		bindings[k] = v
-	}
-	for k, v := range b {
-		bindings[k] = v
-	}
-	buf := new(bytes.Buffer)
-	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	return "", errors.New("RenderFile is deprecated and removed")
 }
 
 // InnerString renders the children to a string.
