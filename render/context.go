@@ -136,6 +136,8 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 
+// Deprecated: RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
+// We removed `include` tag to prevent reading files from the filesystem.
 func (c rendererContext) RenderFile(filename string, b map[string]interface{}) (string, error) {
 	source, err := os.ReadFile(filename)
 	if err != nil {
