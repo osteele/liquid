@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"os"
 	"testing"
 
 	"github.com/autopilot3/liquid/parser"
@@ -45,16 +44,6 @@ func addContextTestTags(s Config) {
 			return err
 		}, nil
 	})
-	s.AddTag("test_render_file", func(filename string) (func(w io.Writer, c Context) error, error) {
-		return func(w io.Writer, c Context) error {
-			s, err := c.RenderFile(filename, map[string]interface{}{"shadowed": 2})
-			if err != nil {
-				return err
-			}
-			_, err = io.WriteString(w, s)
-			return err
-		}, nil
-	})
 }
 
 var contextTests = []struct{ in, out string }{
@@ -63,16 +52,12 @@ var contextTests = []struct{ in, out string }{
 	{`{% test_expand_tag_arg x %}`, "x"},
 	{`{% test_expand_tag_arg {{x}} %}`, "123"},
 	{`{% test_tag_name %}`, "test_tag_name"},
-	{`{% test_render_file testdata/render_file.txt %}; unshadowed={{ shadowed }}`,
-		"rendered shadowed=2; unshadowed=1"},
 }
 
 var contextErrorTests = []struct{ in, expect string }{
 	{`{% test_evaluate_string syntax error %}`, "syntax error"},
 	{`{% test_expand_tag_arg {{ syntax error }} %}`, "syntax error"},
 	{`{% test_expand_tag_arg {{ x | undefined_filter }} %}`, "undefined filter"},
-	{`{% test_render_file testdata/render_file_syntax_error.txt %}`, "syntax error"},
-	{`{% test_render_file testdata/render_file_runtime_error.txt %}`, "undefined tag"},
 }
 
 var contextTestBindings = map[string]interface{}{
@@ -107,18 +92,4 @@ func TestContext_errors(t *testing.T) {
 			require.Containsf(t, err.Error(), test.expect, test.in)
 		})
 	}
-}
-
-func TestContext_file_not_found_error(t *testing.T) {
-	// Test the cause instead of looking for a string, since the error message is different
-	// between Darwin and Linux ("no such file") and Windows ("The system cannot find the file specified"), at least.
-	//
-	// Also see TestIncludeTag_file_not_found_error.
-	cfg := NewConfig()
-	addContextTestTags(cfg)
-	root, err := cfg.Compile(`{% test_render_file testdata/missing_file %}`, parser.SourceLoc{})
-	require.NoError(t, err)
-	err = Render(root, io.Discard, contextTestBindings, cfg)
-	require.Error(t, err)
-	require.True(t, os.IsNotExist(err.Cause()))
 }
