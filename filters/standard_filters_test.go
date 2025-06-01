@@ -184,9 +184,9 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
-	{`16 | divided_by: 4`, 4},
-	{`5 | divided_by: 3`, 1},
-	{`20 | divided_by: 7`, 2},
+	{`16 | divided_by: 4`, int64(4)},
+	{`5 | divided_by: 3`, int64(1)},
+	{`20 | divided_by: 7`, int64(2)},
 	{`20 | divided_by: 7.0`, 2.857142857142857},
 
 	{`1.2 | round`, 1.0},
