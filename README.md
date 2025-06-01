@@ -21,6 +21,7 @@ generator.
     - [Status](#status)
     - [Drops](#drops)
     - [Value Types](#value-types)
+    - [Template Store](#template-store)
     - [References](#references)
   - [Contributing](#contributing)
     - [Contributors](#contributors)
@@ -151,6 +152,25 @@ Any Go value can be used as a variable value. These values have special meaning:
 - `MapSlice`
   - An instance of `yaml.MapSlice` acts as a map. It implements `m.key`,
     `m[key]`, and `m.size`.
+
+### Template Store
+
+The template store allows for usage of varying template storage implementations (embedded file system, database, service, etc).  In order to use:
+
+1. Create a struct that implements ITemplateStore
+    ```go
+    type ITemplateStore interface {
+	      ReadTemplate(templatename string) ([]byte, error)
+    }
+    ```
+1. Register with the engine
+    ```go
+    engine.RegisterTemplateStore()
+    ```
+
+`FileTemplateStore` is the default mechanism for backwards compatibility.
+
+Refer to [example](./docs/TemplateStoreExample.md) for an example implementation.
 
 ### References
 
