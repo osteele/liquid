@@ -5,10 +5,7 @@ import (
 )
 
 // ASTNode is a node of an AST.
-type ASTNode interface {
-	SourceLocation() SourceLoc
-	SourceText() string
-}
+type ASTNode Locatable
 
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {

@@ -1,51 +1,78 @@
-issues:
-  exclude-rules:
-    - linters: [gosimple]
-      path: values/drop_test.go # see the note in the file
-      text: "S1005:"
-
-    # go generate introduces these
-    - path: expressions/scanner.go
-      linters: [deadcode, unused, varcheck, revive, stylecheck, gocritic, unconvert, gofumpt]
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
+    - cyclop
     - depguard
-    - exhaustruct
-    - varnamelen
-    - godox
-    - wsl
-    - wrapcheck
-    - gomnd
-    - gochecknoglobals
+    - dupword
+    - err113
+    - errname
+    - errorlint
     - exhaustive
-    - testpackage
-    - ireturn
-    - godot
-    - mnd
-    - nonamedreturns
+    - exhaustruct
+    - forcetypeassert
     - funlen
-    - gci
-    - nlreturn
-    - inamedparam
-    - lll
-    - paralleltest
+    - gochecknoglobals
     - gocognit
     - goconst
-    - cyclop
-    - dupword
-    - whitespace
-    - nolintlint
-    - nestif
-    - forcetypeassert
-    - interfacebloat
-    - revive
     - gocyclo
-    - errname
+    - godot
+    - godox
     - gosmopolitan
+    - inamedparam
+    - interfacebloat
+    - ireturn
+    - lll
     - maintidx
+    - mnd
+    - nestif
+    - nlreturn
+    - nolintlint
+    - nonamedreturns
+    - paralleltest
+    - revive
+    - testpackage
+    - varnamelen
+    - whitespace
+    - wrapcheck
+    - wsl
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - staticcheck
+        path: values/drop_test.go
+        text: 'S1005:'
+      - linters:
+          - deadcode
+          - gocritic
+          - revive
+          - staticcheck
+          - unconvert
+          - unused
+          - varcheck
+        path: expressions/scanner.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - expressions/scanner.go
 
-    # Todo: re-add
-    - err113
-    - errorlint
+issues:
   fix: true

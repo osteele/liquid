@@ -46,7 +46,7 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	}
 	cases := []caseInterpreter{}
 	for _, clause := range node.Clauses {
-		switch clause.Token.Name {
+		switch clause.Name {
 		case "when":
 			stmt, err := e.ParseStatement(e.WhenStatementSelector, clause.Args)
 			if err != nil {

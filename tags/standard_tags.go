@@ -35,7 +35,7 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 		return nil, err
 	}
 	return func(w io.Writer, ctx render.Context) error {
-		value, err := ctx.Evaluate(stmt.Assignment.ValueFn)
+		value, err := ctx.Evaluate(stmt.ValueFn)
 		if err != nil {
 			return err
 		}

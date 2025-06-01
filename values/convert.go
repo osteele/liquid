@@ -94,7 +94,7 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	// }
 	switch typ.Kind() {
 	case reflect.Bool:
-		return !(value == nil || value == false), nil
+		return value != nil && value != false, nil
 	case reflect.Uint:
 		v, err := convertValueToInt(value, typ)
 		return uint(v), err

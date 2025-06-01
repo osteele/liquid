@@ -206,9 +206,9 @@ func (c rendererContext) SourceFile() string {
 func (c rendererContext) TagArgs() string {
 	switch {
 	case c.node != nil:
-		return c.node.Token.Args
+		return c.node.Args
 	case c.cn != nil:
-		return c.cn.Token.Args
+		return c.cn.Args
 	default:
 		return ""
 	}
@@ -217,9 +217,9 @@ func (c rendererContext) TagArgs() string {
 func (c rendererContext) TagName() string {
 	switch {
 	case c.node != nil:
-		return c.node.Token.Name
+		return c.node.Name
 	case c.cn != nil:
-		return c.cn.Token.Name
+		return c.cn.Name
 	default:
 		return ""
 	}

@@ -73,7 +73,7 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 
 	return func(w io.Writer, ctx render.Context) error {
 		// loop modifiers
-		val, err := ctx.Evaluate(stmt.Loop.Expr)
+		val, err := ctx.Evaluate(stmt.Expr)
 		if err != nil {
 			return err
 		}

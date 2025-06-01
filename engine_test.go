@@ -55,7 +55,7 @@ func TestBasicEngine_ParseAndRenderString(t *testing.T) {
 		t.Run(strconv.Itoa(i+2), func(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, testBindings)
 			require.Errorf(t, err, test.in)
-			require.Equalf(t, "", out, test.in)
+			require.Emptyf(t, out, test.in)
 		})
 	}
 }

@@ -283,7 +283,7 @@ func TestFilters(t *testing.T) {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			actual, err := expressions.EvaluateString(test.in, context)
 			require.NoErrorf(t, err, test.in)
-			require.EqualValuesf(t, test.expected, actual, test.in)
+			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}
 
