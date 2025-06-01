@@ -168,7 +168,7 @@ The template store allows for usage of varying template storage implementations 
     engine.RegisterTemplateStore()
     ```
 
-`FileTemplateStore` is the default mechanism for backwards compatability.
+`FileTemplateStore` is the default mechanism for backwards compatibility.
 
 Refer to [example](./docs/TemplateStoreExample.md) for an example implementation.
 
