@@ -7,7 +7,7 @@ import (
 )
 
 // Compile parses a source template. It returns an AST root, that can be evaluated.
-func (c Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Error) {
+func (c *Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Error) {
 	root, err := c.Parse(source, loc)
 	if err != nil {
 		return nil, err
@@ -16,7 +16,7 @@ func (c Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Error
 }
 
 // nolint: gocyclo
-func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
+func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 	switch n := n.(type) {
 	case *parser.ASTBlock:
 		body, err := c.compileNodes(n.Body)
@@ -73,7 +73,7 @@ func (c Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 	}
 }
 
-func (c Config) compileBlocks(blocks []*parser.ASTBlock) ([]*BlockNode, parser.Error) {
+func (c *Config) compileBlocks(blocks []*parser.ASTBlock) ([]*BlockNode, parser.Error) {
 	out := make([]*BlockNode, 0, len(blocks))
 	for _, child := range blocks {
 		compiled, err := c.compileNode(child)
@@ -85,7 +85,7 @@ func (c Config) compileBlocks(blocks []*parser.ASTBlock) ([]*BlockNode, parser.E
 	return out, nil
 }
 
-func (c Config) compileNodes(nodes []parser.ASTNode) ([]Node, parser.Error) {
+func (c *Config) compileNodes(nodes []parser.ASTNode) ([]Node, parser.Error) {
 	out := make([]Node, 0, len(nodes))
 	for _, child := range nodes {
 		compiled, err := c.compileNode(child)

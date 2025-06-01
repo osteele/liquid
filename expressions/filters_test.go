@@ -15,7 +15,7 @@ func TestContext_AddFilter(t *testing.T) {
 	require.Panics(t, func() { cfg.AddFilter("f", func() int { return 0 }) })
 	require.Panics(t, func() { cfg.AddFilter("f", func(int) {}) })
 	// require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, b int) { return }) })
-	//nolint:stylecheck
+	//nolint:staticcheck
 	require.Panics(t, func() { cfg.AddFilter("f", func(int) (a int, e error, b int) { return }) })
 	require.Panics(t, func() { cfg.AddFilter("f", 10) })
 }

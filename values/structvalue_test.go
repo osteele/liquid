@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:recvcheck
 type testValueStruct struct {
 	F       int
 	Nest    *testValueStruct
