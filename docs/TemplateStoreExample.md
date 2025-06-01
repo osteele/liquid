@@ -1,6 +1,6 @@
 # Template Store Example
 
-This document describes the implementation of an `ITemplateStore` that uses an embedded file system as its storage type.
+This document describes the implementation of an `TemplateStore` that uses an embedded file system as its storage type.
 
 Add a go file to your project with configuration properties and the ReadTemplate() implementation
 

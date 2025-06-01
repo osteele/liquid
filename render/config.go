@@ -10,7 +10,7 @@ type Config struct {
 	grammar
 	Cache           map[string][]byte
 	StrictVariables bool
-	TemplateStore   ITemplateStore
+	TemplateStore   TemplateStore
 }
 
 type grammar struct {

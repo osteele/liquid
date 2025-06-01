@@ -55,7 +55,7 @@ type Context interface {
 	WrapError(err error) Error
 }
 
-type ITemplateStore interface {
+type TemplateStore interface {
 	ReadTemplate(templatename string) ([]byte, error)
 }
 

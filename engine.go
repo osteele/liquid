@@ -70,7 +70,7 @@ func (e *Engine) RegisterTag(name string, td Renderer) {
 	})
 }
 
-func (e *Engine) RegisterTemplateStore(templateStore render.ITemplateStore) {
+func (e *Engine) RegisterTemplateStore(templateStore render.TemplateStore) {
 	e.cfg.TemplateStore = templateStore
 }
 

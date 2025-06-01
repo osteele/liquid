@@ -157,9 +157,9 @@ Any Go value can be used as a variable value. These values have special meaning:
 
 The template store allows for usage of varying template storage implementations (embedded file system, database, service, etc).  In order to use:
 
-1. Create a struct that implements ITemplateStore
+1. Create a struct that implements TemplateStore
     ```go
-    type ITemplateStore interface {
+    type TemplateStore interface {
 	      ReadTemplate(templatename string) ([]byte, error)
     }
     ```
