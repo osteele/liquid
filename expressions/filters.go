@@ -33,6 +33,12 @@ func (e FilterError) Error() string {
 
 type valueFn func(Context) values.Value
 
+func (c *Config) ensureMapIsCreated() {
+	if c.filters == nil {
+		c.filters = make(map[string]interface{})
+	}
+}
+
 // AddFilter adds a filter to the filter dictionary.
 func (c *Config) AddFilter(name string, fn any) {
 	rf := reflect.ValueOf(fn)
@@ -46,10 +52,22 @@ func (c *Config) AddFilter(name string, fn any) {
 		// case rf.Type().Out(1).Implements(…):
 		// 	panic(typeError("a filter's second output must be type error"))
 	}
-	if len(c.filters) == 0 {
-		c.filters = make(map[string]any)
-	}
+	c.ensureMapIsCreated()
 	c.filters[name] = fn
+}
+
+func (c *Config) AddSafeFilter() {
+	if c.filters["safe"] == nil {
+		c.ensureMapIsCreated()
+		c.filters["safe"] = func(in interface{}) interface{} {
+			if in, alreadySafe := in.(values.SafeValue); alreadySafe {
+				return in
+			}
+			return values.SafeValue{
+				Value: in,
+			}
+		}
+	}
 }
 
 var (

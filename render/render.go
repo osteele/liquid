@@ -74,8 +74,22 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	if value == nil && ctx.config.StrictVariables {
 		return wrapRenderError(errors.New("undefined variable"), n)
 	}
-	if err := wrapRenderError(writeObject(w, value), n); err != nil {
-		return err
+	if sv, isSafe := value.(values.SafeValue); isSafe {
+		err = writeObject(w, sv.Value)
+	} else {
+		var fw io.Writer
+		if replacer := ctx.config.escapeReplacer; replacer != nil {
+			fw = &replacerWriter{
+				replacer: replacer,
+				w:        w,
+			}
+		} else {
+			fw = w
+		}
+		err = writeObject(fw, value)
+	}
+	if err != nil {
+		return wrapRenderError(err, n)
 	}
 	return nil
 }
@@ -142,4 +156,17 @@ func writeObject(w io.Writer, value any) error {
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
 	}
+}
+
+type replacerWriter struct {
+	replacer Replacer
+	w        io.Writer
+}
+
+func (h *replacerWriter) Write(p []byte) (n int, err error) {
+	return h.WriteString(string(p))
+}
+
+func (h *replacerWriter) WriteString(s string) (n int, err error) {
+	return h.replacer.WriteString(h.w, s)
 }
