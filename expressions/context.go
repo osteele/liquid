@@ -126,7 +126,11 @@ func (c *varsContext) Get(name string) interface{} {
 				objArrays := strings.SplitN(loopVar.Source, "[]", 2)
 				if len(objArrays) > 1 {
 					if val, ok := c.variables[objArrays[0]]; ok {
-						bind = val.(*VariableBind)
+						bind, ok = val.(*VariableBind)
+						if !ok {
+							logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
+							bind = &VariableBind{}
+						}
 						attr, ok := bind.Attributes[strings.TrimPrefix(objArrays[1], ".")]
 						if ok {
 							if attr.Attributes == nil {
@@ -144,7 +148,11 @@ func (c *varsContext) Get(name string) interface{} {
 						}
 						c.variables[loopVar.Source] = bind
 					} else if val != nil {
-						bind = val.(*VariableBind)
+						bind, ok = val.(*VariableBind)
+						if !ok {
+							logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
+							bind = &VariableBind{}
+						}
 						bind.Loop = true
 						if bind.Attributes == nil {
 							bind.Attributes = make(map[string]*VariableBind)
