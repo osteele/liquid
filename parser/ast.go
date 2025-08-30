@@ -18,8 +18,9 @@ type ASTBlock struct {
 
 // ASTRaw holds the text between the start and end of a raw tag.
 type ASTRaw struct {
-	Slices []string
 	sourcelessNode
+
+	Slices []string
 }
 
 // ASTTag is a tag {% tag %} that is not a block start or end.
@@ -41,8 +42,9 @@ type ASTObject struct {
 
 // ASTSeq is a sequence of nodes.
 type ASTSeq struct {
-	Children []ASTNode
 	sourcelessNode
+
+	Children []ASTNode
 }
 
 // TrimDirection determines the trim direction of an ASTTrim object.

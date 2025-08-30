@@ -38,19 +38,19 @@ func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Cont
 		}
 
 		// Check if dot notation is used without Jekyll extensions enabled
-		if len(stmt.Assignment.Path) > 1 && !cfg.JekyllExtensions {
+		if len(stmt.Path) > 1 && !cfg.JekyllExtensions {
 			return nil, errors.New("syntax error: dot notation in assign tag (e.g., 'obj.property = value') requires Jekyll extensions to be enabled")
 		}
 
 		return func(w io.Writer, ctx render.Context) error {
-			value, err := ctx.Evaluate(stmt.Assignment.ValueFn)
+			value, err := ctx.Evaluate(stmt.ValueFn)
 			if err != nil {
 				return err
 			}
 
 			// Use Path if available (dot notation), otherwise fall back to Variable (simple assignment)
-			if len(stmt.Assignment.Path) > 1 {
-				return ctx.SetPath(stmt.Assignment.Path, value)
+			if len(stmt.Path) > 1 {
+				return ctx.SetPath(stmt.Path, value)
 			}
 
 			// Simple assignment (backward compatibility and standard mode)
