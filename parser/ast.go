@@ -10,6 +10,7 @@ type ASTNode Locatable
 // ASTBlock represents a {% tag %}…{% endtag %}.
 type ASTBlock struct {
 	Token
+
 	syntax  BlockSyntax
 	Body    []ASTNode   // Body is the nodes before the first branch
 	Clauses []*ASTBlock // E.g. else and elseif w/in an if
@@ -34,6 +35,7 @@ type ASTText struct {
 // ASTObject is an {{ object }} object.
 type ASTObject struct {
 	Token
+
 	Expr expressions.Expression
 }
 

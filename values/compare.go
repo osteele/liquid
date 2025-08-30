@@ -15,17 +15,20 @@ func Equal(a, b any) bool { //nolint: gocyclo
 	if a == nil || b == nil {
 		return a == b
 	}
+
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
 	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Array, reflect.Slice:
 		if ra.Len() != rb.Len() {
 			return false
 		}
+
 		for i := range ra.Len() {
 			if !Equal(ra.Index(i).Interface(), rb.Index(i).Interface()) {
 				return false
 			}
 		}
+
 		return true
 	case reflect.Bool:
 		return ra.Bool() == rb.Bool()
@@ -39,6 +42,7 @@ func Equal(a, b any) bool { //nolint: gocyclo
 		if rb.Kind() == reflect.Ptr && (ra.IsNil() || rb.IsNil()) {
 			return ra.IsNil() == rb.IsNil()
 		}
+
 		return a == b
 	default:
 		return a == b
@@ -51,6 +55,7 @@ func Less(a, b any) bool {
 	if a == nil || b == nil {
 		return false
 	}
+
 	ra, rb := reflect.ValueOf(a), reflect.ValueOf(b)
 	switch joinKind(ra.Kind(), rb.Kind()) {
 	case reflect.Bool:
@@ -70,6 +75,7 @@ func joinKind(a, b reflect.Kind) reflect.Kind { //nolint: gocyclo
 	if a == b {
 		return a
 	}
+
 	switch a {
 	case reflect.Array, reflect.Slice:
 		if b == reflect.Array || b == reflect.Slice {
@@ -79,6 +85,7 @@ func joinKind(a, b reflect.Kind) reflect.Kind { //nolint: gocyclo
 		if isIntKind(b) {
 			return reflect.Int64
 		}
+
 		if isFloatKind(b) {
 			return reflect.Float64
 		}
@@ -87,6 +94,7 @@ func joinKind(a, b reflect.Kind) reflect.Kind { //nolint: gocyclo
 			return reflect.Float64
 		}
 	}
+
 	return reflect.Invalid
 }
 

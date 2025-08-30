@@ -61,11 +61,13 @@ var cfTagErrorTests = []struct{ in, expected string }{
 
 func TestControlFlowTags(t *testing.T) {
 	cfg := render.NewConfig()
-	AddStandardTags(cfg)
+	AddStandardTags(&cfg)
+
 	for i, test := range cfTagTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
+
 			buf := new(bytes.Buffer)
 			err = render.Render(root, buf, tagTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
@@ -76,7 +78,7 @@ func TestControlFlowTags(t *testing.T) {
 
 func TestControlFlowTags_errors(t *testing.T) {
 	cfg := render.NewConfig()
-	AddStandardTags(cfg)
+	AddStandardTags(&cfg)
 	cfg.AddTag("error", func(string) (func(io.Writer, render.Context) error, error) {
 		return func(io.Writer, render.Context) error {
 			return errors.New("tag render error")
@@ -90,6 +92,7 @@ func TestControlFlowTags_errors(t *testing.T) {
 			require.Contains(t, err.Error(), test.expected, test.in)
 		})
 	}
+
 	for i, test := range cfTagErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})

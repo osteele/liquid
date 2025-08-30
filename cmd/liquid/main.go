@@ -92,14 +92,18 @@ func render() error {
 	if strictVars {
 		e.StrictVariables()
 	}
+
 	tpl, err := e.ParseTemplate(buf)
 	if err != nil {
 		return err
 	}
+
 	out, err := tpl.Render(bindings)
 	if err != nil {
 		return err
 	}
+
 	_, err = stdout.Write(out)
+
 	return err
 }

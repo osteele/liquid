@@ -52,6 +52,7 @@ var parserTests = []struct{ in string }{
 
 func TestParseErrors(t *testing.T) {
 	cfg := Config{Grammar: grammarFake{}}
+
 	for i, test := range parseErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			_, err := cfg.Parse(test.in, SourceLoc{})
@@ -63,6 +64,7 @@ func TestParseErrors(t *testing.T) {
 
 func TestParser(t *testing.T) {
 	cfg := Config{Grammar: grammarFake{}}
+
 	for i, test := range parserTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			_, err := cfg.Parse(test.in, SourceLoc{})

@@ -67,5 +67,6 @@ func (s SourceLoc) String() string {
 	if s.Pathname != "" {
 		return fmt.Sprintf("%s:%d", s.Pathname, s.LineNo)
 	}
+
 	return fmt.Sprintf("line %d", s.LineNo)
 }

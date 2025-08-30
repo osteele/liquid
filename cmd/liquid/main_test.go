@@ -32,11 +32,13 @@ func TestMain(t *testing.T) {
 	buf := &bytes.Buffer{}
 	stdin = bytes.NewBufferString(src)
 	stdout = buf
+
 	main()
 	require.Equal(t, "hello!", buf.String())
 
 	// environment binding
 	var envCalled bool
+
 	env = func() []string {
 		envCalled = true
 		return []string{"TARGET=World"}
@@ -47,6 +49,7 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stdout = buf
 	os.Args = []string{"liquid"}
+
 	main()
 	require.False(t, envCalled)
 	require.Equal(t, "Hello, !", buf.String())
@@ -55,9 +58,11 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stdout = buf
 	os.Args = []string{"liquid", "--env"}
+
 	main()
 	require.True(t, envCalled)
 	require.Equal(t, "Hello, World!", buf.String())
+
 	bindings = make(map[string]any)
 
 	// filename
@@ -65,11 +70,13 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stdout = buf
 	os.Args = []string{"liquid", "testdata/source.liquid"}
+
 	main()
 	require.Contains(t, buf.String(), "file system")
 
 	// following tests test the exit code
 	var exitCalled bool
+
 	exitCode := 0
 	exit = func(n int) { exitCalled = true; exitCode = n }
 
@@ -78,6 +85,7 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stderr = buf
 	os.Args = []string{"liquid", "--strict"}
+
 	main()
 	require.True(t, exitCalled)
 	require.Equal(t, 1, exitCode)
@@ -85,6 +93,7 @@ func TestMain(t *testing.T) {
 
 	exitCode = 0
 	os.Args = []string{"liquid", "testdata/source.liquid"}
+
 	main()
 	require.Equal(t, 0, exitCode)
 
@@ -93,6 +102,7 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stderr = buf
 	os.Args = []string{"liquid", "testdata/missing_file"}
+
 	main()
 	require.Equal(t, 1, exitCode)
 	// Darwin/Linux, and Windows, have different error messages
@@ -103,6 +113,7 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stderr = buf
 	os.Args = []string{"liquid", "--help"}
+
 	main()
 	require.Contains(t, buf.String(), "usage:")
 	require.True(t, exitCalled)
@@ -112,6 +123,7 @@ func TestMain(t *testing.T) {
 	buf = &bytes.Buffer{}
 	stderr = buf
 	os.Args = []string{"liquid", "--undefined-flag"}
+
 	main()
 	require.Equal(t, 1, exitCode)
 	require.Contains(t, buf.String(), "defined")
@@ -120,6 +132,7 @@ func TestMain(t *testing.T) {
 	os.Args = []string{"liquid", "testdata/source.liquid", "file2"}
 	buf = &bytes.Buffer{}
 	stderr = buf
+
 	main()
 	require.Contains(t, buf.String(), "too many")
 	require.Equal(t, 1, exitCode)

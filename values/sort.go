@@ -54,6 +54,7 @@ func (s sortableByProperty) Less(i, j int) bool {
 	// index returns the value at s.key, if in is a map that contains this key
 	index := func(i int) any {
 		value := ToLiquid(s.data[i])
+
 		rt := reflect.ValueOf(value)
 		if rt.Kind() == reflect.Map && rt.Type().Key().Kind() == reflect.String {
 			elem := rt.MapIndex(reflect.ValueOf(s.key))
@@ -61,8 +62,10 @@ func (s sortableByProperty) Less(i, j int) bool {
 				return elem.Interface()
 			}
 		}
+
 		return nil
 	}
+
 	a, b := index(i), index(j)
 	switch {
 	case a == nil && b == nil:
@@ -72,5 +75,6 @@ func (s sortableByProperty) Less(i, j int) bool {
 	case b == nil:
 		return !s.nilFirst
 	}
+
 	return Less(a, b)
 }

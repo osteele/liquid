@@ -26,9 +26,11 @@ func TestValue_drop(t *testing.T) {
 func TestDrop_Resolve_race(t *testing.T) {
 	d := ValueOf(testDrop{1})
 	values := make(chan int, 2)
+
 	for range 2 {
 		go func() { values <- d.Int() }()
 	}
+
 	for range 2 {
 		require.Equal(t, 1, <-values)
 	}
@@ -52,10 +54,12 @@ func BenchmarkDrop_Resolve_2(b *testing.B) {
 func BenchmarkDrop_Resolve_3(b *testing.B) {
 	for range b.N {
 		d := ValueOf(testDrop{1})
+
 		values := make(chan int, 10)
 		for i := cap(values); i > 0; i-- {
 			values <- d.Int()
 		}
+
 		for i := cap(values); i > 0; i-- {
 			//lint:ignore S1005 TODO look up how else to read the values
 			<-values

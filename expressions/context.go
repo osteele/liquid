@@ -14,6 +14,7 @@ type Context interface {
 
 type context struct {
 	Config
+
 	bindings map[string]any
 }
 
@@ -27,6 +28,7 @@ func (ctx *context) Clone() Context {
 	for k, v := range ctx.bindings {
 		bindings[k] = v
 	}
+
 	return &context{ctx.Config, bindings}
 }
 

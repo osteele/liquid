@@ -57,6 +57,43 @@ fmt.Println(out)
 
 See the [API documentation][godoc-url] for additional examples.
 
+### Jekyll Compatibility
+
+This library was originally developed for [Gojekyll](https://github.com/osteele/gojekyll), a Go port of Jekyll. 
+As such, it includes optional Jekyll-specific extensions that are not part of the Shopify Liquid specification.
+
+To enable Jekyll compatibility mode:
+
+```go
+engine := liquid.NewEngine()
+engine.EnableJekyllExtensions()
+```
+
+Jekyll extensions include:
+
+- **Dot notation in assign tags**: `{% assign page.canonical_url = "/about/" %}`
+  - In standard Liquid, this would be a syntax error
+  - With Jekyll extensions enabled, this creates or updates nested object properties
+  - Intermediate objects are created automatically if they don't exist
+
+Example:
+
+```go
+engine := liquid.NewEngine()
+engine.EnableJekyllExtensions()  // Enable Jekyll-specific features
+
+template := `{% assign page.meta.author = "John Doe" %}{{ page.meta.author }}`
+bindings := map[string]any{
+    "page": map[string]any{
+        "title": "Home",
+    },
+}
+out, _ := engine.ParseAndRenderString(template, bindings)
+// Output: John Doe
+```
+
+**Note**: Jekyll extensions are disabled by default to maintain compatibility with standard Shopify Liquid.
+
 ### Command-Line tool
 
 `go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line

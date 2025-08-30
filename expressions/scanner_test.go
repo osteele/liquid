@@ -27,8 +27,10 @@ func scanExpression(data string) []testSymbol {
 		if tok == 0 {
 			break
 		}
+
 		symbols = append(symbols, testSymbol{tok, s})
 	}
+
 	return symbols
 }
 

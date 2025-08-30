@@ -160,20 +160,25 @@ var iterationTestBindings = map[string]any{
 
 func TestIterationTags(t *testing.T) {
 	config := render.NewConfig()
-	AddStandardTags(config)
+	AddStandardTags(&config)
+
 	for i, test := range iterationTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := config.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
+
 			buf := new(bytes.Buffer)
 			err = render.Render(root, buf, iterationTestBindings, config)
 			require.NoErrorf(t, err, test.in)
+
 			actual := buf.String()
+
 			if strings.Contains(test.in, "{% tablerow") {
 				replaceWS := regexp.MustCompile(`\n\s*`).ReplaceAllString
 				actual = replaceWS(actual, "")
 				test.expected = replaceWS(test.expected, "")
 			}
+
 			require.Equalf(t, test.expected, actual, test.in)
 		})
 	}
@@ -181,7 +186,7 @@ func TestIterationTags(t *testing.T) {
 
 func TestIterationTags_errors(t *testing.T) {
 	cfg := render.NewConfig()
-	AddStandardTags(cfg)
+	AddStandardTags(&cfg)
 
 	for i, test := range iterationSyntaxErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {

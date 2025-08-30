@@ -39,10 +39,12 @@ func ExampleDrop_map() {
 		"car": redConvertible{},
 	}
 	template := `{{ car.color }}`
+
 	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	fmt.Println(out)
 	// Output: red
 }
@@ -77,16 +79,17 @@ func ExampleDrop_struct() {
 	// func (c carDrop) Drive() string {
 	// 	return "AWD"
 	// }
-
 	engine := NewEngine()
 	bindings := map[string]any{
 		"car": car{"blue", "S85"},
 	}
 	template := `{{ car.color }} {{ car.Drive }} Model {{ car.Model }}`
+
 	out, err := engine.ParseAndRenderString(template, bindings)
 	if err != nil {
 		log.Fatalln(err)
 	}
+
 	fmt.Println(out)
 	// Output: blue AWD Model S85
 }

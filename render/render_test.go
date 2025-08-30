@@ -112,10 +112,12 @@ var renderTestBindings = map[string]any{
 func TestRender(t *testing.T) {
 	cfg := NewConfig()
 	addRenderTestTags(cfg)
+
 	for i, test := range renderTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
+
 			buf := new(bytes.Buffer)
 			err = Render(root, buf, renderTestBindings, cfg)
 			require.NoErrorf(t, err, test.in)
@@ -127,6 +129,7 @@ func TestRender(t *testing.T) {
 func TestRenderErrors(t *testing.T) {
 	cfg := NewConfig()
 	addRenderTestTags(cfg)
+
 	for i, test := range renderErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
@@ -142,17 +145,21 @@ func TestRenderStrictVariables(t *testing.T) {
 	cfg := NewConfig()
 	cfg.StrictVariables = true
 	addRenderTestTags(cfg)
+
 	for i, test := range renderStrictTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			root, err := cfg.Compile(test.in, parser.SourceLoc{})
 			require.NoErrorf(t, err, test.in)
+
 			buf := new(bytes.Buffer)
+
 			err = Render(root, buf, renderTestBindings, cfg)
 			if test.in == `{{ invalid }}` {
 				require.Errorf(t, err, test.in)
 			} else {
 				require.NoErrorf(t, err, test.in)
 			}
+
 			require.Equalf(t, test.out, buf.String(), test.in)
 		})
 	}
@@ -183,18 +190,22 @@ func ifTagCompiler(polarity bool) func(BlockNode) (func(io.Writer, Context) erro
 			test e.Expression
 			body *BlockNode
 		}
+
 		expr, err := e.Parse(node.Args)
 		if err != nil {
 			return nil, err
 		}
+
 		if !polarity {
 			expr = e.Not(expr)
 		}
+
 		branches := []branchRec{
 			{expr, &node},
 		}
 		for _, c := range node.Clauses {
 			test := e.Constant(true)
+
 			switch c.Name {
 			case "else":
 			// TODO syntax error if this isn't the last branch
@@ -203,20 +214,25 @@ func ifTagCompiler(polarity bool) func(BlockNode) (func(io.Writer, Context) erro
 				if err != nil {
 					return nil, err
 				}
+
 				test = t
 			}
+
 			branches = append(branches, branchRec{test, c})
 		}
+
 		return func(w io.Writer, ctx Context) error {
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
 				if err != nil {
 					return err
 				}
+
 				if value != nil && value != false {
 					return ctx.RenderBlock(w, b.body)
 				}
 			}
+
 			return nil
 		}, nil
 	}

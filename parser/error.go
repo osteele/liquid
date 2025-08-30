@@ -26,23 +26,28 @@ func WrapError(err error, loc Locatable) Error {
 	if err == nil {
 		return nil
 	}
+
 	if e, ok := err.(Error); ok {
 		// re-wrap the error, if the inner layer implemented the locatable interface
 		// but didn't actually provide any information
 		if e.Path() != "" || loc.SourceLocation().IsZero() {
 			return e
 		}
+
 		if e.Cause() != nil {
 			err = e.Cause()
 		}
 	}
+
 	re := Errorf(loc, "%s", err)
 	re.cause = err
+
 	return re
 }
 
 type sourceLocError struct {
 	SourceLoc
+
 	context string
 	message string
 	cause   error
@@ -65,9 +70,11 @@ func (e *sourceLocError) Error() string {
 	if e.LineNo > 0 {
 		line = fmt.Sprintf(" (line %d)", e.LineNo)
 	}
+
 	locative := " in " + e.context
 	if e.Pathname != "" {
 		locative = " in " + e.Pathname
 	}
+
 	return fmt.Sprintf("Liquid error%s: %s%s", line, e.message, locative)
 }
