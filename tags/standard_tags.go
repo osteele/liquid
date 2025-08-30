@@ -35,11 +35,17 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 		return nil, err
 	}
 	return func(w io.Writer, ctx render.Context) error {
-		value, err := ctx.Evaluate(stmt.ValueFn)
+		value, err := ctx.Evaluate(stmt.Assignment.ValueFn)
 		if err != nil {
 			return err
 		}
-		_ = value
+		
+		// Use Path if available (dot notation), otherwise fall back to Variable (simple assignment)
+		if len(stmt.Assignment.Path) > 0 {
+			return ctx.SetPath(stmt.Assignment.Path, value)
+		}
+		
+		// Backward compatibility: use Variable for simple assignments
 		ctx.Set(stmt.Assignment.Variable, value)
 		return nil
 	}, nil

@@ -26,6 +26,13 @@ var tagTests = []struct{ in, expected string }{
 	{`{% assign av = obj.a %}{{ av }}`, "1"},
 	{`{% assign av = (1..5) %}{{ av }}`, "{1 5}"},
 	{`{% capture x %}captured{% endcapture %}{{ x }}`, "captured"},
+	
+	// dot notation assignments
+	{`{% assign page.canonical_url = "/about/" %}{{ page.canonical_url }}`, "/about/"},
+	{`{% assign page.meta.description = "Test description" %}{{ page.meta.description }}`, "Test description"},
+	{`{% assign obj.nested = 42 %}{{ obj.nested }}`, "42"},
+	{`{% assign new_obj.prop = "value" %}{{ new_obj.prop }}`, "value"},
+	{`{% assign page.title = "New Title" %}{{ page.title }}`, "New Title"},
 
 	// TODO research whether Liquid requires matching interior tags
 	{`{% comment %}{{ a }}{% undefined_tag %}{% endcomment %}`, ""},
@@ -63,6 +70,9 @@ var tagTestBindings = map[string]any{
 	},
 	"page": map[string]any{
 		"title": "Introduction",
+		"meta": map[string]any{
+			"author": "John Doe",
+		},
 	},
 }
 

@@ -30,7 +30,7 @@ func init() {
 %type<exprs> exprs expr2
 %type<cycle> cycle
 %type<cyclefn> cycle2
-%type<ss> cycle3
+%type<ss> cycle3 assign_target
 %type<loop> loop
 %type<loopmods> loop_modifiers
 %type<s> string
@@ -43,12 +43,23 @@ func init() {
 %%
 start:
   cond ';' { yylex.(*lexer).val = $1 }
-| ASSIGN IDENTIFIER '=' cond ';' {
-	yylex.(*lexer).Assignment = Assignment{$2, &expression{$4}}
+| ASSIGN assign_target '=' cond ';' {
+	path := $2
+	var variable string
+	if len(path) == 1 {
+		variable = path[0]
+	}
+	yylex.(*lexer).Assignment = Assignment{Variable: variable, Path: path, ValueFn: &expression{$4}}
 }
 | CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }
 | LOOP loop ';'   { yylex.(*lexer).Loop = $2 }
 | WHEN exprs ';'  { yylex.(*lexer).When = When{$2} }
+;
+
+assign_target:
+  IDENTIFIER { $$ = []string{$1} }
+| IDENTIFIER PROPERTY { $$ = []string{$1, $2} }
+| assign_target PROPERTY { $$ = append($1, $2) }
 ;
 
 cycle: string cycle2 { $$ = $2($1) };

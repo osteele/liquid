@@ -16,7 +16,8 @@ type Statement struct{ parseValue }
 
 // An Assignment is a parse of an {% assign %} statement
 type Assignment struct {
-	Variable string
+	Variable string     // Simple variable name (for backward compatibility)
+	Path     []string   // Property path for dot notation (e.g., ["page", "canonical_url"])
 	ValueFn  Expression
 }
 
