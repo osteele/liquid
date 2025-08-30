@@ -29,9 +29,10 @@ type Cycle struct {
 
 // A Loop is a parse of a {% loop %} statement
 type Loop struct {
+	loopModifiers
+
 	Variable string
 	Expr     Expression
-	loopModifiers
 }
 
 type loopModifiers struct {

@@ -5,8 +5,9 @@ import (
 )
 
 type mapSliceValue struct {
-	slice yaml.MapSlice
 	valueEmbed
+
+	slice yaml.MapSlice
 }
 
 // func (v mapSliceValue) Equal(o Value) bool     { return v.slice == o.Interface() }

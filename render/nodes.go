@@ -25,8 +25,9 @@ type BlockNode struct {
 
 // RawNode holds the text between the start and end of a raw tag.
 type RawNode struct {
-	slices []string
 	sourcelessNode
+
+	slices []string
 }
 
 // TagNode renders itself via a render function that is created during parsing.
@@ -50,8 +51,9 @@ type ObjectNode struct {
 
 // SeqNode is a sequence of nodes.
 type SeqNode struct {
-	Children []Node
 	sourcelessNode
+
+	Children []Node
 }
 
 // TrimNode is a trim object.

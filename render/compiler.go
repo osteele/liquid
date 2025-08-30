@@ -51,14 +51,14 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 
 		return &node, nil
 	case *parser.ASTRaw:
-		return &RawNode{n.Slices, sourcelessNode{}}, nil
+		return &RawNode{sourcelessNode{}, n.Slices}, nil
 	case *parser.ASTSeq:
 		children, err := c.compileNodes(n.Children)
 		if err != nil {
 			return nil, err
 		}
 
-		return &SeqNode{children, sourcelessNode{}}, nil
+		return &SeqNode{sourcelessNode{}, children}, nil
 	case *parser.ASTTag:
 		if td, ok := c.FindTagDefinition(n.Name); ok {
 			f, err := td(n.Args)

@@ -196,6 +196,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 // InnerString renders the children to a string.
 func (c rendererContext) InnerString() (string, error) {
 	buf := new(bytes.Buffer)
+
 	err := c.RenderChildren(buf)
 	if err != nil {
 		return "", err

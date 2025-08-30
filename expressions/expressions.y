@@ -96,7 +96,7 @@ string: LITERAL {
 
 loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4
-	$$ = Loop{name, &expression{expr}, mods}
+	$$ = Loop{mods, name, &expression{expr}}
 }
 ;
 
