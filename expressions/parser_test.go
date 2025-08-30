@@ -42,10 +42,12 @@ func TestParse(t *testing.T) {
 		"b":   2,
 		"obj": map[string]int{"prop": 2},
 	}, cfg)
+
 	for i, test := range parseTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			expr, err := Parse(test.in)
 			require.NoError(t, err, test.in)
+
 			_ = expr
 			value, err := expr.Evaluate(ctx)
 			require.NoError(t, err, test.in)

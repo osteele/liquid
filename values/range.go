@@ -22,5 +22,6 @@ func (r Range) AsArray() []any {
 	for i := r.b; i <= r.e; i++ {
 		a = append(a, i)
 	}
+
 	return a
 }

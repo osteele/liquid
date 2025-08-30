@@ -12,6 +12,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 	if len(delims) != 4 {
 		delims = []string{"{{", "}}", "{%", "%}"}
 	}
+
 	tokenMatcher := formTokenMatcher(delims)
 
 	// TODO error on unterminated {{ and {%
@@ -23,6 +24,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 			tokens = append(tokens, Token{Type: TextTokenType, SourceLoc: loc, Source: data[p:ts]})
 			loc.LineNo += strings.Count(data[p:ts], "\n")
 		}
+
 		source := data[ts:te]
 		switch {
 		case data[ts:ts+len(delims[0])] == delims[0]:
@@ -31,6 +33,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 					Type: TrimLeftTokenType,
 				})
 			}
+
 			tokens = append(tokens, Token{
 				Type:      ObjTokenType,
 				SourceLoc: loc,
@@ -48,6 +51,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 					Type: TrimLeftTokenType,
 				})
 			}
+
 			tok := Token{
 				Type:      TagTokenType,
 				SourceLoc: loc,
@@ -57,6 +61,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 			if m[6] > 0 {
 				tok.Args = data[m[6]:m[7]]
 			}
+
 			tokens = append(tokens, tok)
 			if source[len(source)-3] == '-' {
 				tokens = append(tokens, Token{
@@ -64,12 +69,15 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 				})
 			}
 		}
+
 		loc.LineNo += strings.Count(source, "\n")
 		p = te
 	}
+
 	if p < pe {
 		tokens = append(tokens, Token{Type: TextTokenType, SourceLoc: loc, Source: data[p:]})
 	}
+
 	return tokens
 }
 

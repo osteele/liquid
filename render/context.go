@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -129,13 +130,17 @@ func (c rendererContext) ExpandTagArg() (string, error) {
 		if err != nil {
 			return "", err
 		}
+
 		buf := new(bytes.Buffer)
+
 		err = Render(root, buf, c.ctx.bindings, c.ctx.config)
 		if err != nil {
 			return "", err
 		}
+
 		return buf.String(), nil
 	}
+
 	return args, nil
 }
 
@@ -149,6 +154,7 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 	if c.cn == nil {
 		return nil
 	}
+
 	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 
@@ -164,30 +170,37 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 	} else if err != nil {
 		return "", err
 	}
+
 	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
 	if err != nil {
 		return "", err
 	}
+
 	bindings := map[string]any{}
 	for k, v := range c.ctx.bindings {
 		bindings[k] = v
 	}
+
 	for k, v := range b {
 		bindings[k] = v
 	}
+
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
 		return "", err
 	}
+
 	return buf.String(), nil
 }
 
 // InnerString renders the children to a string.
 func (c rendererContext) InnerString() (string, error) {
 	buf := new(bytes.Buffer)
-	if err := c.RenderChildren(buf); err != nil {
+	err := c.RenderChildren(buf)
+	if err != nil {
 		return "", err
 	}
+
 	return buf.String(), nil
 }
 
@@ -200,20 +213,21 @@ func (c rendererContext) Set(name string, value any) {
 // For example, SetPath(["page", "canonical_url"], "/about/") sets page.canonical_url = "/about/"
 func (c rendererContext) SetPath(path []string, value any) error {
 	if len(path) == 0 {
-		return fmt.Errorf("empty path")
+		return errors.New("empty path")
 	}
-	
+
 	// For single element paths, use regular Set
 	if len(path) == 1 {
 		c.Set(path[0], value)
 		return nil
 	}
-	
+
 	// Navigate to the parent object
 	current := c.ctx.bindings
-	for i := 0; i < len(path)-1; i++ {
+
+	for i := range len(path) - 1 {
 		key := path[i]
-		
+
 		// Get or create the intermediate object
 		if obj, exists := current[key]; exists {
 			// Check if it's a map we can navigate into
@@ -231,9 +245,10 @@ func (c rendererContext) SetPath(path []string, value any) error {
 			current = newMap
 		}
 	}
-	
+
 	// Set the final value
 	current[path[len(path)-1]] = value
+
 	return nil
 }
 

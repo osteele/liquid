@@ -10,6 +10,7 @@ import (
 
 func TestContext_AddFilter(t *testing.T) {
 	cfg := NewConfig()
+
 	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) int { return 0 }) })
 	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) (a int, e error) { return }) })
 	require.Panics(t, func() { cfg.AddFilter("f", func() int { return 0 }) })
@@ -64,6 +65,7 @@ func TestContext_runFilter(t *testing.T) {
 		if e != nil {
 			return "", e
 		}
+
 		return fmt.Sprintf("(%v, %v)", a, value), nil
 	})
 	ctx = NewContext(map[string]any{"x": 10}, cfg)

@@ -10,6 +10,7 @@ func IsEmpty(value any) bool {
 	if value == nil {
 		return false
 	}
+
 	r := reflect.ValueOf(value)
 	switch r.Kind() {
 	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:

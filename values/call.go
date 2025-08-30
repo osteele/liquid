@@ -17,7 +17,9 @@ func Call(fn reflect.Value, args []any) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	results := fn.Call(in)
+
 	return convertCallResults(results)
 }
 
@@ -37,6 +39,7 @@ func convertCallResults(results []reflect.Value) (any, error) {
 			panic(e)
 		}
 	}
+
 	return results[0].Interface(), nil
 }
 
@@ -46,15 +49,18 @@ func convertCallArguments(fn reflect.Value, args []any) (results []reflect.Value
 	if len(args) > rt.NumIn() && !rt.IsVariadic() {
 		return nil, &CallParityError{NumArgs: len(args), NumParams: rt.NumIn()}
 	}
+
 	if rt.IsVariadic() {
 		numArgs, minArgs := len(args), rt.NumIn()-1
 		if numArgs < minArgs {
 			numArgs = minArgs
 		}
+
 		results = make([]reflect.Value, numArgs)
 	} else {
 		results = make([]reflect.Value, rt.NumIn())
 	}
+
 	for i, arg := range args {
 		var typ reflect.Type
 		if rt.IsVariadic() && i >= rt.NumIn()-1 {
@@ -62,6 +68,7 @@ func convertCallArguments(fn reflect.Value, args []any) (results []reflect.Value
 		} else {
 			typ = rt.In(i)
 		}
+
 		switch {
 		case isDefaultFunctionType(typ):
 			results[i] = makeConstantFunction(typ, arg)
@@ -82,6 +89,7 @@ func convertCallArguments(fn reflect.Value, args []any) (results []reflect.Value
 			results[i] = reflect.Zero(typ)
 		}
 	}
+
 	return results, err
 }
 

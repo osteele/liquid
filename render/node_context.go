@@ -21,6 +21,7 @@ func newNodeContext(scope map[string]any, c Config) nodeContext {
 	for k, v := range scope {
 		vars[k] = v
 	}
+
 	return nodeContext{vars, c}
 }
 

@@ -40,7 +40,9 @@ func (s *blockSyntax) ParentTags() (parents []string) {
 	for k := range s.parents {
 		parents = append(parents, k)
 	}
+
 	sort.Strings(parents)
+
 	return
 }
 func (s *blockSyntax) TagName() string { return s.name }
@@ -49,6 +51,7 @@ func (g grammar) addBlockDef(ct *blockSyntax) {
 	if g.blockDefs[ct.name] != nil {
 		panic("duplicate definition of " + ct.name)
 	}
+
 	g.blockDefs[ct.name] = ct
 }
 
@@ -65,6 +68,7 @@ func (g grammar) BlockSyntax(name string) (parser.BlockSyntax, bool) {
 
 type blockDefBuilder struct {
 	grammar
+
 	tag *blockSyntax
 }
 
@@ -73,6 +77,7 @@ func (g grammar) AddBlock(name string) blockDefBuilder { //nolint: golint
 	ct := &blockSyntax{name: name}
 	g.addBlockDef(ct)
 	g.addBlockDef(&blockSyntax{name: "end" + name, isEndTag: true, startName: name})
+
 	return blockDefBuilder{g, ct}
 }
 
@@ -82,14 +87,18 @@ func (b blockDefBuilder) Clause(name string) blockDefBuilder {
 	if b.blockDefs[name] == nil {
 		b.addBlockDef(&blockSyntax{name: name, isClauseTag: true})
 	}
+
 	c := b.blockDefs[name]
 	if !c.isClauseTag {
 		panic(name + " has already been defined as a non-clause")
 	}
+
 	if len(c.parents) == 0 {
 		c.parents = make(map[string]bool)
 	}
+
 	c.parents[b.tag.name] = true
+
 	return b
 }
 

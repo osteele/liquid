@@ -121,6 +121,7 @@ func TestConvert_errors(t *testing.T) {
 			name := fmt.Sprintf("Convert %#v -> %v", test.value, typ)
 			_, err := Convert(test.value, typ)
 			require.Errorf(t, err, name)
+
 			for _, expected := range test.expected {
 				require.Containsf(t, err.Error(), expected, name)
 			}
@@ -132,6 +133,7 @@ func TestConvert_map(t *testing.T) {
 	typ := reflect.TypeOf(map[string]string{})
 	v, err := Convert(map[any]any{"key": "value"}, typ)
 	require.NoError(t, err)
+
 	m, ok := v.(map[string]string)
 	require.True(t, ok)
 	require.Equal(t, "value", m["key"])
@@ -139,9 +141,11 @@ func TestConvert_map(t *testing.T) {
 
 func TestConvert_map_synonym(t *testing.T) {
 	type VariableMap map[any]any
+
 	typ := reflect.TypeOf(map[string]string{})
 	v, err := Convert(VariableMap{"key": "value"}, typ)
 	require.NoError(t, err)
+
 	m, ok := v.(map[string]string)
 	require.True(t, ok)
 	require.Equal(t, "value", m["key"])
@@ -151,6 +155,7 @@ func TestConvert_map_to_array(t *testing.T) {
 	typ := reflect.TypeOf([]string{})
 	v, err := Convert(map[int]string{1: "b", 2: "a"}, typ)
 	require.NoError(t, err)
+
 	array, ok := v.([]string)
 	require.True(t, ok)
 	sort.Strings(array)
@@ -174,6 +179,7 @@ func TestMustConvert(t *testing.T) {
 	require.Equal(t, "2", v)
 
 	typ = reflect.TypeOf(2)
+
 	require.Panics(t, func() { MustConvert("x", typ) })
 }
 
@@ -189,5 +195,6 @@ func timeMustParse(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return t
 }

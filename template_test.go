@@ -57,6 +57,7 @@ func TestTemplate_Parse_race(t *testing.T) {
 	)
 	for i := range count {
 		wg.Add(1)
+
 		go func(i int) {
 			path := fmt.Sprintf("path %d", i)
 			_, err := engine.ParseTemplateLocation([]byte("{{ syntax error }}"), path, i)
@@ -65,6 +66,7 @@ func TestTemplate_Parse_race(t *testing.T) {
 			wg.Done()
 		}(i)
 	}
+
 	wg.Wait()
 }
 
@@ -80,37 +82,48 @@ func TestTemplate_Render_race(t *testing.T) {
 	)
 	for i := range count {
 		paths[i] = fmt.Sprintf("path %d", i)
+
 		wg.Add(1)
+
 		go func(i int) {
 			defer wg.Done()
+
 			var err error
+
 			ts[i], err = engine.ParseTemplateLocation(src, paths[i], i)
 			assert.NoError(t, err)
 		}(i)
 	}
+
 	wg.Wait()
 
 	var wg2 sync.WaitGroup
 	for i := range count {
 		wg2.Add(1)
+
 		go func(i int) {
 			defer wg2.Done()
+
 			_, err := ts[i].Render(Bindings{})
 			assert.Error(t, err)
 			assert.Equal(t, paths[i], err.Path())
 		}(i)
 	}
+
 	wg2.Wait()
 }
 
 func BenchmarkTemplate_Render(b *testing.B) {
 	engine := NewEngine()
 	bindings := Bindings{"a": "string value"}
+
 	tpl, err := engine.ParseString(`{% for i in (1..1000) %}{% if i > 500 %}{{a}}{% else %}0{% endif %}{% endfor %}`)
 	if err != nil {
 		b.Fatal(err)
 	}
+
 	b.ResetTimer()
+
 	for range b.N {
 		_, err := tpl.Render(bindings)
 		require.NoError(b, err)

@@ -32,6 +32,7 @@ var testBindings = map[string]any{
 
 func TestEngine_ParseAndRenderString(t *testing.T) {
 	engine := NewEngine()
+
 	for i, test := range liquidTests {
 		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, testBindings)
@@ -70,6 +71,7 @@ func (c *capWriter) Write(bs []byte) (int, error) {
 
 func TestEngine_ParseAndFRender(t *testing.T) {
 	engine := NewEngine()
+
 	for i, test := range liquidTests {
 		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
 			wr := capWriter{}
@@ -122,6 +124,7 @@ func TestEngine_ParseAndRender_errors(t *testing.T) {
 
 func BenchmarkEngine_Parse(b *testing.B) {
 	engine := NewEngine()
+
 	buf := new(bytes.Buffer)
 	for range 1000 {
 		_, err := io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
@@ -133,8 +136,11 @@ func BenchmarkEngine_Parse(b *testing.B) {
 		_, err = io.WriteString(buf, `expr{{ a and b }}{{ a add: b }}`)
 		require.NoError(b, err)
 	}
+
 	s := buf.Bytes()
+
 	b.ResetTimer()
+
 	for range b.N {
 		_, err := engine.ParseTemplate(s)
 		require.NoError(b, err)

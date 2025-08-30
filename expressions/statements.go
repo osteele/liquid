@@ -16,8 +16,8 @@ type Statement struct{ parseValue }
 
 // An Assignment is a parse of an {% assign %} statement
 type Assignment struct {
-	Variable string     // Simple variable name (for backward compatibility)
-	Path     []string   // Property path for dot notation (e.g., ["page", "canonical_url"])
+	Variable string   // Simple variable name (for backward compatibility)
+	Path     []string // Property path for dot notation (e.g., ["page", "canonical_url"])
 	ValueFn  Expression
 }
 
@@ -53,5 +53,6 @@ func ParseStatement(sel, source string) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Statement{*p}, nil
 }

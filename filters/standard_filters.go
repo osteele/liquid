@@ -32,6 +32,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		if value == nil || value == false || values.IsEmpty(value) {
 			value = defaultValue
 		}
+
 		return value
 	})
 	fd.AddFilter("json", func(a any) any {
@@ -46,6 +47,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 				result = append(result, item)
 			}
 		}
+
 		return
 	})
 	fd.AddFilter("concat", func(a, b []any) (result []any) {
@@ -59,6 +61,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 			value := values.ValueOf(obj)
 			result = append(result, value.PropertyValue(keyValue).Interface())
 		}
+
 		return result
 	})
 	fd.AddFilter("reverse", reverseFilter)
@@ -69,12 +72,14 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		if len(a) == 0 {
 			return nil
 		}
+
 		return a[0]
 	})
 	fd.AddFilter("last", func(a []any) any {
 		if len(a) == 0 {
 			return nil
 		}
+
 		return a[len(a)-1]
 	})
 	fd.AddFilter("uniq", uniqFilter)
@@ -108,12 +113,15 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 			if b == 0 {
 				return 0, errDivisionByZero
 			}
+
 			return a / b, nil
 		}
+
 		divFloat := func(a, b float64) (float64, error) {
 			if b == 0 {
 				return 0, errDivisionByZero
 			}
+
 			return a / b, nil
 		}
 		switch q := b.(type) {
@@ -144,6 +152,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("round", func(n float64, places func(int) int) float64 {
 		pl := places(0)
 		exp := math.Pow10(pl)
+
 		return math.Floor(n*exp+0.5) / exp
 	})
 
@@ -158,6 +167,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		if len(s) == 0 {
 			return s
 		}
+
 		return strings.ToUpper(s[:1]) + s[1:]
 	})
 	fd.AddFilter("downcase", func(s, suffix string) string {
@@ -188,18 +198,23 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		if len(s) == 0 {
 			return ""
 		}
+
 		ss := []rune(s)
 		n := length(1)
+
 		if start < 0 {
 			start = len(ss) + start
 		}
+
 		if start < 0 {
 			return ""
 		}
+
 		end := start + n
 		if end > len(ss) {
 			end = len(ss)
 		}
+
 		return string(ss[start:end])
 	})
 	fd.AddFilter("split", splitFilter)
@@ -222,16 +237,19 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		el := ellipsis("...")
 		// runes aren't bytes; don't use slice
 		re := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
+
 		return re.ReplaceAllString(s, `$1`+el)
 	})
 	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
 		el := ellipsis("...")
 		n := length(15)
 		re := regexp.MustCompile(fmt.Sprintf(`^(?:\s*\S+){%d}`, n))
+
 		m := re.FindString(s)
 		if m == "" {
 			return s
 		}
+
 		return m + el
 	})
 	fd.AddFilter("upcase", func(s, suffix string) string {
@@ -247,6 +265,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		if err != nil {
 			return fmt.Sprintf("%#v", value)
 		}
+
 		return string(s)
 	})
 	fd.AddFilter("type", func(value any) string {
@@ -257,11 +276,13 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 func joinFilter(a []any, sep func(string) string) any {
 	ss := make([]string, 0, len(a))
 	s := sep(" ")
+
 	for _, v := range a {
 		if v != nil {
 			ss = append(ss, fmt.Sprint(v))
 		}
 	}
+
 	return strings.Join(ss, s)
 }
 
@@ -270,6 +291,7 @@ func reverseFilter(a []any) any {
 	for i, x := range a {
 		result[len(result)-1-i] = x
 	}
+
 	return result
 }
 
@@ -285,17 +307,21 @@ func splitFilter(s, sep string) any {
 	for len(result) > 0 && result[len(result)-1] == "" {
 		result = result[:len(result)-1]
 	}
+
 	return result
 }
 
 func uniqFilter(a []any) (result []any) {
 	seenMap := map[any]bool{}
+
 	seen := func(item any) bool {
 		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
 			if seenMap[item] {
 				return true
 			}
+
 			seenMap[item] = true
+
 			return false
 		}
 		// the O(n^2) case:
@@ -304,6 +330,7 @@ func uniqFilter(a []any) (result []any) {
 				return true
 			}
 		}
+
 		return false
 	}
 	for _, item := range a {
@@ -311,6 +338,7 @@ func uniqFilter(a []any) (result []any) {
 			result = append(result, item)
 		}
 	}
+
 	return
 }
 
@@ -318,5 +346,6 @@ func eqItems(a, b any) bool {
 	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
 		return a == b
 	}
+
 	return reflect.DeepEqual(a, b)
 }

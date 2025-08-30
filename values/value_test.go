@@ -11,7 +11,9 @@ import (
 func TestValue_Interface(t *testing.T) {
 	nv := ValueOf(nil)
 	iv := ValueOf(123)
+
 	var ni *int = nil
+
 	require.Nil(t, nv.Interface())
 	require.Equal(t, true, ValueOf(true).Interface())
 	require.Equal(t, false, ValueOf(false).Interface())
