@@ -35,6 +35,7 @@ type closure struct {
 func (c closure) Bind(name string, value any) Closure {
 	ctx := c.context.Clone()
 	ctx.Set(name, value)
+
 	return closure{c.expr, ctx}
 }
 
@@ -65,6 +66,7 @@ func (e expression) Evaluate(ctx Context) (out any, err error) {
 			}
 		}
 	}()
+
 	return e.evaluator(ctx).Interface(), nil
 }
 

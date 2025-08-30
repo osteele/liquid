@@ -135,6 +135,7 @@ func TestEvaluateString(t *testing.T) {
 	cfg := NewConfig()
 	cfg.AddFilter("length", strings.Count)
 	ctx := NewContext(evaluatorTestBindings, cfg)
+
 	for i, test := range evaluatorTests {
 		t.Run(fmt.Sprintf("%02d", i), func(t *testing.T) {
 			val, err := EvaluateString(test.in, ctx)
@@ -150,6 +151,7 @@ func TestEvaluateString(t *testing.T) {
 	require.Error(t, err)
 
 	cfg.AddFilter("error", func(input any) (string, error) { return "", errors.New("test error") })
+
 	_, err = EvaluateString("1 | error", ctx)
 	require.Error(t, err)
 }
@@ -159,6 +161,7 @@ func TestClosure(t *testing.T) {
 	ctx := NewContext(map[string]any{"x": 1}, cfg)
 	expr, err := Parse("x")
 	require.NoError(t, err)
+
 	c1 := closure{expr, ctx}
 	c2 := c1.Bind("x", 2)
 	x1, err := c1.Evaluate()

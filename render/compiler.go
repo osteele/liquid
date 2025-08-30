@@ -12,6 +12,7 @@ func (c *Config) Compile(source string, loc parser.SourceLoc) (Node, parser.Erro
 	if err != nil {
 		return nil, err
 	}
+
 	return c.compileNode(root)
 }
 
@@ -23,6 +24,7 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		if err != nil {
 			return nil, err
 		}
+
 		branches, err := c.compileBlocks(n.Clauses)
 		if err != nil {
 			return nil, err
@@ -32,6 +34,7 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		if !ok {
 			return nil, parser.Errorf(n, "undefined tag %q", n.Name)
 		}
+
 		node := BlockNode{
 			Token:   n.Token,
 			Body:    body,
@@ -42,25 +45,30 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 			if err != nil {
 				return nil, parser.WrapError(err, n)
 			}
+
 			node.renderer = r
 		}
+
 		return &node, nil
 	case *parser.ASTRaw:
-		return &RawNode{n.Slices, sourcelessNode{}}, nil
+		return &RawNode{sourcelessNode{}, n.Slices}, nil
 	case *parser.ASTSeq:
 		children, err := c.compileNodes(n.Children)
 		if err != nil {
 			return nil, err
 		}
-		return &SeqNode{children, sourcelessNode{}}, nil
+
+		return &SeqNode{sourcelessNode{}, children}, nil
 	case *parser.ASTTag:
 		if td, ok := c.FindTagDefinition(n.Name); ok {
 			f, err := td(n.Args)
 			if err != nil {
 				return nil, parser.Errorf(n, "%s", err)
 			}
+
 			return &TagNode{n.Token, f}, nil
 		}
+
 		return nil, parser.Errorf(n, "undefined tag %q", n.Name)
 	case *parser.ASTText:
 		return &TextNode{n.Token}, nil
@@ -80,8 +88,10 @@ func (c *Config) compileBlocks(blocks []*parser.ASTBlock) ([]*BlockNode, parser.
 		if err != nil {
 			return nil, err
 		}
+
 		out = append(out, compiled.(*BlockNode))
 	}
+
 	return out, nil
 }
 
@@ -92,7 +102,9 @@ func (c *Config) compileNodes(nodes []parser.ASTNode) ([]Node, parser.Error) {
 		if err != nil {
 			return nil, err
 		}
+
 		out = append(out, compiled)
 	}
+
 	return out, nil
 }

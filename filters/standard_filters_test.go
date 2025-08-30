@@ -273,6 +273,7 @@ func TestFilters(t *testing.T) {
 		m2 = map[string]any{"name": "m2"}
 		m3 = map[string]any{"name": "m3"}
 	)
+
 	filterTestBindings["dup_maps"] = []any{m1, m2, m1, m3}
 
 	cfg := expressions.NewConfig()
@@ -300,5 +301,6 @@ func timeMustParse(s string) time.Time {
 	if err != nil {
 		panic(err)
 	}
+
 	return t
 }

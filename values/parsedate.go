@@ -49,11 +49,13 @@ func ParseDate(s string) (time.Time, error) {
 	if s == "now" {
 		return time.Now(), nil
 	}
+
 	for _, layout := range dateLayouts {
 		t, err := time.ParseInLocation(layout, s, time.Local)
 		if err == nil {
 			return t, nil
 		}
 	}
+
 	return zeroTime, conversionError("", s, reflect.TypeOf(zeroTime))
 }

@@ -25,6 +25,7 @@ func Not(e Expression) Expression {
 			if err != nil {
 				return nil, err
 			}
+
 			return (value == nil || value == false), nil
 		},
 	}

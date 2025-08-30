@@ -5,8 +5,9 @@ import (
 )
 
 type mapSliceValue struct {
-	slice yaml.MapSlice
 	valueEmbed
+
+	slice yaml.MapSlice
 }
 
 // func (v mapSliceValue) Equal(o Value) bool     { return v.slice == o.Interface() }
@@ -19,6 +20,7 @@ func (v mapSliceValue) Contains(elem Value) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -29,6 +31,7 @@ func (v mapSliceValue) IndexValue(index Value) Value {
 			return ValueOf(item.Value)
 		}
 	}
+
 	return nilValue
 }
 
@@ -37,5 +40,6 @@ func (v mapSliceValue) PropertyValue(index Value) Value {
 	if result == nilValue && index.Interface() == sizeKey {
 		result = ValueOf(len(v.slice))
 	}
+
 	return result
 }

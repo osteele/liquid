@@ -15,6 +15,7 @@ type parseValue struct {
 	Cycle
 	Loop
 	When
+
 	val func(Context) values.Value
 }
 
@@ -30,6 +31,7 @@ func Parse(source string) (expr Expression, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &expression{p.val}, nil
 }
 
@@ -48,10 +50,12 @@ func parse(source string) (p *parseValue, err error) {
 	}()
 	// FIXME hack to recognize EOF
 	lex := newLexer([]byte(source + ";"))
+
 	n := yyParse(lex)
 	if n != 0 {
 		return nil, SyntaxError(fmt.Errorf("syntax error in %q", source).Error())
 	}
+
 	return &lex.parseValue, nil
 }
 
@@ -61,5 +65,6 @@ func EvaluateString(source string, ctx Context) (any, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return expr.Evaluate(ctx)
 }

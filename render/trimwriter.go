@@ -27,7 +27,9 @@ func (tw *trimWriter) Write(b []byte) (n int, err error) {
 	} else if n, err = tw.Flush(); err != nil {
 		return n, err
 	}
+
 	_, err = tw.buf.Write(b)
+
 	return
 }
 
@@ -37,6 +39,7 @@ func (tw *trimWriter) Write(b []byte) (n int, err error) {
 func (tw *trimWriter) TrimLeft() error {
 	_, err := tw.w.Write(bytes.TrimRightFunc(tw.buf.Bytes(), unicode.IsSpace))
 	tw.buf.Reset()
+
 	return err
 }
 
@@ -51,7 +54,9 @@ func (tw *trimWriter) Flush() (int, error) {
 	if tw.buf.Len() > 0 {
 		n, err := tw.buf.WriteTo(tw.w)
 		tw.buf.Reset()
+
 		return int(n), err
 	}
+
 	return 0, nil
 }

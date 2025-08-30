@@ -27,6 +27,7 @@ linters:
     - mnd
     - nestif
     - nlreturn
+    - noinlineerr
     - nolintlint
     - nonamedreturns
     - paralleltest
@@ -50,6 +51,7 @@ linters:
         text: 'S1005:'
       - linters:
           - deadcode
+          - funcorder
           - gocritic
           - revive
           - staticcheck

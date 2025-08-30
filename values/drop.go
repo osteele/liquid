@@ -19,9 +19,10 @@ func ToLiquid(value any) any {
 }
 
 type dropWrapper struct {
+	sync.Once
+
 	d drop
 	v Value
-	sync.Once
 }
 
 func (w *dropWrapper) Resolve() Value {
