@@ -2,6 +2,7 @@ package render
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -43,6 +44,9 @@ type Context interface {
 	// Set updates the value of a variable in the current lexical environment.
 	// It's used in the implementation of the {% assign %} and {% capture %} tags.
 	Set(name string, value any)
+	// SetPath sets a value at a nested path in the context.
+	// For example, SetPath(["page", "canonical_url"], "/about/") sets page.canonical_url = "/about/"
+	SetPath(path []string, value any) error
 	// SourceFile retrieves the value set by template.SetSourcePath.
 	// It's used in the implementation of the {% include %} tag.
 	SourceFile() string
@@ -190,6 +194,47 @@ func (c rendererContext) InnerString() (string, error) {
 // Set sets a variable value from an evaluation context.
 func (c rendererContext) Set(name string, value any) {
 	c.ctx.bindings[name] = value
+}
+
+// SetPath sets a value at a nested path in the context.
+// For example, SetPath(["page", "canonical_url"], "/about/") sets page.canonical_url = "/about/"
+func (c rendererContext) SetPath(path []string, value any) error {
+	if len(path) == 0 {
+		return fmt.Errorf("empty path")
+	}
+	
+	// For single element paths, use regular Set
+	if len(path) == 1 {
+		c.Set(path[0], value)
+		return nil
+	}
+	
+	// Navigate to the parent object
+	current := c.ctx.bindings
+	for i := 0; i < len(path)-1; i++ {
+		key := path[i]
+		
+		// Get or create the intermediate object
+		if obj, exists := current[key]; exists {
+			// Check if it's a map we can navigate into
+			switch v := obj.(type) {
+			case map[string]any:
+				current = v
+			default:
+				// Can't navigate into non-map types
+				return fmt.Errorf("cannot set property on non-object at '%s'", key)
+			}
+		} else {
+			// Create intermediate object
+			newMap := make(map[string]any)
+			current[key] = newMap
+			current = newMap
+		}
+	}
+	
+	// Set the final value
+	current[path[len(path)-1]] = value
+	return nil
 }
 
 func (c rendererContext) SourceFile() string {
