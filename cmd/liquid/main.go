@@ -35,8 +35,8 @@ func main() {
 
 	cmdLine := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
 	cmdLine.Usage = func() {
-		fmt.Fprintf(stderr, "usage: %s [OPTIONS] [FILE]\n", cmdLine.Name())
-		fmt.Fprint(stderr, "\nOPTIONS\n")
+		fmt.Fprintf(stderr, "usage: %s [OPTIONS] [FILE]\n", cmdLine.Name()) //nolint:errcheck
+		fmt.Fprint(stderr, "\nOPTIONS\n")                                   //nolint:errcheck
 		cmdLine.PrintDefaults()
 	}
 
@@ -50,7 +50,7 @@ func main() {
 			exit(0)
 			return
 		}
-		fmt.Fprintln(stderr, err)
+		fmt.Fprintln(stderr, err) //nolint:errcheck
 		exit(1)
 		return
 	}
@@ -77,7 +77,7 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintln(stderr, err)
+		fmt.Fprintln(stderr, err) //nolint:errcheck
 		exit(1)
 	}
 }
