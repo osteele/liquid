@@ -25,22 +25,22 @@ jobs:
       with:
         go-version: 1.23.x
 
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v7
-      with:
-        # Must be specified without patch version: we always use the latest patch version.
-        version: v2.4
+    - name: Install golangci-lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
+        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
 
-        # Optional: working directory, useful for monorepos
-        # working-directory: somedir
-
-        # Optional: golangci-lint command line arguments.
-        # Note: By default, the `.golangci.yml` file should be at the root of the repository.
-        # The config file has more priority than command-line options.
-        # args: --timeout=30m --config=.golangci.yml
-
-        # Optional: show only new issues if it's a pull request. The default value is `false`.
-        only-new-issues: true
+    - name: Run golangci-lint
+      run: |
+        # For PRs, only check new issues
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          golangci-lint run --new-from-rev=${{ github.event.pull_request.base.sha }}
+        else
+          golangci-lint run
+        fi
+      env:
+        # Ensure colored output for better readability
+        FORCE_COLOR: true
 
         # Optional: if set to true, then all caching functionality will be completely disabled,
         #           takes precedence over all other caching options.
