@@ -1,4 +1,4 @@
-version: 2
+version: "2"
 
 linters-settings:
   gocyclo:
@@ -84,7 +84,7 @@ issues:
     - path: values/drop_test\.go
       linters: [staticcheck]
       text: "S1005:"
-    
+
     # Exclude all linters for generated scanner file
     - path: expressions/scanner.go
       linters:

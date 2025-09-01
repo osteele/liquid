@@ -10,7 +10,7 @@ jobs:
   ci:
     name: CI Check
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -34,7 +34,7 @@ jobs:
   format-check:
     name: Format Check
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4

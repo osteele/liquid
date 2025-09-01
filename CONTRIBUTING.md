@@ -28,6 +28,32 @@ make deps   # Download Go dependencies
 [Install golangci-lint](https://golangci-lint.run/usage/install/#local-installation).
 On macOS: `brew install golangci-lint`
 
+#### Set up Git Hooks (Recommended)
+
+This project uses pre-commit hooks to automatically run formatting, linting, and tests before commits and pushes:
+
+```bash
+make install-hooks  # Install pre-commit hooks
+```
+
+This will:
+- Install pre-commit if not already installed
+- Set up hooks to run automatically on `git commit` and `git push`
+- Run formatting (`go fmt`)
+- Run linting (`golangci-lint`)
+- Run tests (`go test -short`)
+- Check for common issues (trailing whitespace, large files, merge conflicts)
+
+To test the hooks manually:
+```bash
+make run-hooks  # Run all hooks on all files
+```
+
+To update hooks to latest versions:
+```bash
+make update-hooks  # Update pre-commit hooks
+```
+
 ### Development Workflow
 
 Quick start for development:

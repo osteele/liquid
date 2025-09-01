@@ -151,6 +151,27 @@ tools: ## Install development tools
 	@echo "  or"
 	@echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s"
 
+.PHONY: install-hooks
+install-hooks: ## Install pre-commit hooks
+	@echo "Installing pre-commit hooks..."
+	@if ! command -v pre-commit &> /dev/null; then \
+		echo "${YELLOW}Installing pre-commit...${NC}"; \
+		pip install --user pre-commit || brew install pre-commit || (echo "${RED}Please install pre-commit: https://pre-commit.com/#install${NC}" && exit 1); \
+	fi
+	@pre-commit install
+	@pre-commit install --hook-type pre-push
+	@echo "${GREEN}✓ Pre-commit hooks installed${NC}"
+	@echo "Hooks will run automatically on git commit and push"
+	@echo "Run 'make run-hooks' to test hooks manually"
+
+.PHONY: run-hooks
+run-hooks: ## Run pre-commit hooks on all files
+	@pre-commit run --all-files
+
+.PHONY: update-hooks
+update-hooks: ## Update pre-commit hooks to latest versions
+	@pre-commit autoupdate
+
 .PHONY: check-golangci-lint
 check-golangci-lint:
 	@which $(GOLANGCI_LINT) > /dev/null 2>&1 || (echo "${RED}Error: golangci-lint is not installed${NC}" && echo "Run 'make tools' for installation instructions" && exit 1)
