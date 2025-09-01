@@ -50,7 +50,6 @@ func convertValueToInt(value any, typ reflect.Type) (int64, error) {
 			return 0, conversionError("", value, typ)
 		}
 		return v, nil
-
 	}
 	return 0, conversionError("", value, typ)
 }
