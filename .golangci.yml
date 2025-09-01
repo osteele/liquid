@@ -60,82 +60,125 @@ linters:
     - funlen # Function length is contextual
     - goconst # Too many false positives
 
+  # v2 format for exclusions
+  exclusions:
+    paths:
+      - vendor
+      - third_party
+      - "expressions/scanner.go"
+      - ".*\\.pb\\.go$"
+      - ".*\\.gen\\.go$"
+
+    rules:
+      - path: values/drop_test\.go
+        linters: [staticcheck]
+        text: "S1005:"
+
+      # Exclude all linters for generated scanner file
+      - path: expressions/scanner.go
+        linters:
+          - gocyclo
+          - unconvert
+          - unused
+          - staticcheck
+          - govet
+          - ineffassign
+          - errcheck
+          - bodyclose
+          - contextcheck
+          - nilerr
+          - copyloopvar
+          - dupl
+          - misspell
+          - gosec
+          - whitespace
+          - godot
+
+      # Exclude third party, builtin, examples
+      - path: (third_party|builtin|examples|vendor)/
+        linters:
+          - gocyclo
+          - unconvert
+          - unused
+          - staticcheck
+          - govet
+          - ineffassign
+          - errcheck
+          - bodyclose
+          - contextcheck
+          - nilerr
+          - copyloopvar
+          - dupl
+          - misspell
+          - gosec
+          - whitespace
+
+      # Common exclusions for tests
+      - path: _test\.go
+        linters:
+          - gosec # Security issues less critical in tests
+          - dupl # Test code often has similar patterns
+          - errcheck # Error checking can be relaxed in tests
+          - goconst # Test strings don't need to be constants
+
+      # Generated code exclusions
+      - path: \.pb\.go$
+        linters:
+          - gocyclo
+          - unconvert
+          - unused
+          - staticcheck
+          - govet
+          - ineffassign
+          - errcheck
+          - bodyclose
+          - contextcheck
+          - nilerr
+          - copyloopvar
+          - dupl
+          - misspell
+          - gosec
+          - whitespace
+
+      - path: \.gen\.go$
+        linters:
+          - gocyclo
+          - unconvert
+          - unused
+          - staticcheck
+          - govet
+          - ineffassign
+          - errcheck
+          - bodyclose
+          - contextcheck
+          - nilerr
+          - copyloopvar
+          - dupl
+          - misspell
+          - gosec
+          - whitespace
+
+      # Common false positives
+      - text: "Error return value of .((Close|Write|Flush))` is not checked"
+        linters: [errcheck]
+
 run:
   timeout: 5m
   tests: true # Include test files
   build-tags:
     - integration
-  skip-dirs:
-    - vendor
-    - third_party
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
-  exclude-files:
-    - "expressions/scanner.go"
 
 issues:
   fix: true # Auto-fix what can be fixed
   max-same-issues: 3 # Show at most 3 issues of the same type
   max-issues-per-linter: 50
 
-  # Exclude some linters from running on test files
-  exclude-rules:
-    - path: values/drop_test\.go
-      linters: [staticcheck]
-      text: "S1005:"
-
-    # Exclude all linters for generated scanner file
-    - path: expressions/scanner.go
-      linters:
-        - gocyclo
-        - unconvert
-        - unused
-        - staticcheck
-        - govet
-        - ineffassign
-        - errcheck
-        - bodyclose
-        - contextcheck
-        - nilerr
-        - copyloopvar
-        - dupl
-        - misspell
-        - gosec
-        - whitespace
-        - godot
-
-
-    # Exclude third party, builtin, examples
-    - path: (third_party|builtin|examples|vendor)/
-      linters:
-        - all # Disable all linters for these directories
-
-    # Common exclusions for tests
-    - path: _test\.go
-      linters:
-        - gosec # Security issues less critical in tests
-        - dupl # Test code often has similar patterns
-        - errcheck # Error checking can be relaxed in tests
-        - goconst # Test strings don't need to be constants
-
-    # Generated code exclusions
-    - path: \.pb\.go$
-      linters:
-        - all # Disable all linters for protobuf files
-    - path: \.gen\.go$
-      linters:
-        - all # Disable all linters for generated files
-
-    # Common false positives
-    - text: "Error return value of .((Close|Write|Flush))` is not checked"
-      linters: [errcheck]
-      # Often intentionally ignored in deferred cleanup
-
 output:
   formats:
-    default: colored-line-number
-  sort-results: true
-  print-issued-lines: true
-  print-linter-name: true
-  uniq-by-line: true # Remove duplicate issues on the same line
+    text:
+      path: stdout
+      colors: true
+      print-linter-name: true
+      print-issued-lines: true
+      sort-results: true
+      uniq-by-line: true
