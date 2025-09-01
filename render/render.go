@@ -164,7 +164,11 @@ type replacerWriter struct {
 }
 
 func (h *replacerWriter) Write(p []byte) (n int, err error) {
-	return h.WriteString(string(p))
+	_, err = h.WriteString(string(p))
+	if err != nil {
+		return 0, err
+	}
+	return len(p), nil
 }
 
 func (h *replacerWriter) WriteString(s string) (n int, err error) {

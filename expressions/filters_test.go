@@ -71,3 +71,37 @@ func TestContext_runFilter(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "(self, 11)", out)
 }
+
+// TestAddSafeFilterNilMap verifies that AddSafeFilter doesn't panic
+// when called on a Config with nil filters map
+func TestAddSafeFilterNilMap(t *testing.T) {
+	// Create a config without initializing filters map
+	cfg := &Config{}
+	
+	// This should not panic even though filters map is nil
+	require.NotPanics(t, func() {
+		cfg.AddSafeFilter()
+	}, "AddSafeFilter should not panic with nil filters map")
+	
+	// Verify the safe filter was added
+	require.NotNil(t, cfg.filters)
+	require.NotNil(t, cfg.filters["safe"])
+	
+	// Test that calling AddSafeFilter again doesn't duplicate
+	cfg.AddSafeFilter()
+	require.NotNil(t, cfg.filters["safe"])
+	
+	// Test the safe filter works correctly
+	safeFilter := cfg.filters["safe"].(func(interface{}) interface{})
+	
+	// Test with regular value
+	result := safeFilter("test")
+	safeVal, ok := result.(values.SafeValue)
+	require.True(t, ok, "Should return SafeValue")
+	require.Equal(t, "test", safeVal.Value)
+	
+	// Test with already safe value
+	alreadySafe := values.SafeValue{Value: "already safe"}
+	result2 := safeFilter(alreadySafe)
+	require.Equal(t, alreadySafe, result2, "Should return the same SafeValue if already safe")
+}

@@ -73,3 +73,36 @@ func TestRenderEscapeFilter(t *testing.T) {
 		)
 	})
 }
+
+// TestReplacerWriterIOContract verifies that replacerWriter.Write correctly
+// implements the io.Writer contract by returning len(p)
+func TestReplacerWriterIOContract(t *testing.T) {
+	buf := new(bytes.Buffer)
+	rw := &replacerWriter{
+		replacer: HtmlEscaper,
+		w:        buf,
+	}
+
+	// Test with input that gets escaped (different output length)
+	input := []byte("<script>")
+	n, err := rw.Write(input)
+	require.NoError(t, err)
+	require.Equal(t, len(input), n, "Write must return len(p) per io.Writer contract")
+	require.Equal(t, "&lt;script&gt;", buf.String(), "Content should be escaped")
+
+	// Test with normal input (same output length)
+	buf.Reset()
+	input2 := []byte("hello world")
+	n2, err2 := rw.Write(input2)
+	require.NoError(t, err2)
+	require.Equal(t, len(input2), n2, "Write must return len(p) for normal input")
+	require.Equal(t, "hello world", buf.String())
+
+	// Test with empty input
+	buf.Reset()
+	input3 := []byte("")
+	n3, err3 := rw.Write(input3)
+	require.NoError(t, err3)
+	require.Equal(t, 0, n3, "Write must return 0 for empty input")
+	require.Equal(t, "", buf.String())
+}
