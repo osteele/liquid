@@ -26,11 +26,11 @@ jobs:
         go-version: 1.23.x
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v7
       with:
         # Must be specified without patch version: we always use the latest patch version.
         version: v2.4
-        
+
         # Optional: working directory, useful for monorepos
         # working-directory: somedir
 

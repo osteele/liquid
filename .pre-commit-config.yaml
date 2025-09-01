@@ -1,0 +1,56 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # Go-specific hooks
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        name: go fmt
+        description: Run go fmt on files
+      - id: go-vet
+        name: go vet
+        description: Run go vet
+      - id: go-mod-tidy
+        name: go mod tidy
+        description: Run go mod tidy
+        args: [-diff]
+      - id: golangci-lint
+        name: golangci-lint
+        description: Run golangci-lint
+      - id: go-build
+        name: go build
+        description: Build the project
+      # Note: go-unit-tests disabled due to environment issues
+      # Tests should be run via 'make test' instead
+
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+      - id: end-of-file-fixer
+        name: Fix end of files
+      - id: check-yaml
+        name: Check YAML syntax
+      - id: check-added-large-files
+        name: Check for large files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+      - id: check-case-conflict
+        name: Check for case conflicts
+
+# Configure when to run
+default_stages: [pre-commit]
+fail_fast: false
+
+# Files to exclude (if needed)
+exclude: |
+  (?x)^(
+    .*\.pb\.go|
+    .*\.gen\.go|
+    vendor/.*|
+    .*/testdata/.*
+  )$
