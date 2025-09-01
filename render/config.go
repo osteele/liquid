@@ -11,6 +11,8 @@ type Config struct {
 	Cache           map[string][]byte
 	StrictVariables bool
 	TemplateStore   TemplateStore
+
+	escapeReplacer Replacer
 }
 
 type grammar struct {
@@ -31,4 +33,9 @@ func NewConfig() Config {
 		Cache:         map[string][]byte{},
 		TemplateStore: &FileTemplateStore{},
 	}
+}
+
+func (c *Config) SetAutoEscapeReplacer(replacer Replacer) {
+	c.escapeReplacer = replacer
+	c.AddSafeFilter()
 }
