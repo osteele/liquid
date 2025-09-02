@@ -1,6 +1,8 @@
 package render
 
 import (
+	"context"
+
 	"github.com/autopilot3/liquid/parser"
 )
 
@@ -17,14 +19,18 @@ type grammar struct {
 	blockDefs map[string]*blockSyntax
 }
 
-// NewConfig creates a new Settings.
 func NewConfig() Config {
+	return NewConfigWitchContext(context.Background())
+}
+
+// NewConfig creates a new Settings.
+func NewConfigWitchContext(ctx context.Context) Config {
 	g := grammar{
 		tags:      map[string]TagCompiler{},
 		blockDefs: map[string]*blockSyntax{},
 	}
 	return Config{
-		parser.NewConfig(g),
+		parser.NewConfig(g, ctx),
 		g,
 		nil,
 		false,

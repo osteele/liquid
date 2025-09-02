@@ -1,7 +1,6 @@
 package expressions
 
 import (
-	gocontext "context"
 	"fmt"
 	"reflect"
 	"strings"
@@ -128,7 +127,7 @@ func (c *varsContext) Get(name string) interface{} {
 					if val, ok := c.variables[objArrays[0]]; ok {
 						bind, ok = val.(*VariableBind)
 						if !ok {
-							logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
+							logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
 							bind = &VariableBind{}
 						}
 						attr, ok := bind.Attributes[strings.TrimPrefix(objArrays[1], ".")]
@@ -150,7 +149,7 @@ func (c *varsContext) Get(name string) interface{} {
 					} else if val != nil {
 						bind, ok = val.(*VariableBind)
 						if !ok {
-							logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
+							logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
 							bind = &VariableBind{}
 						}
 						bind.Loop = true
@@ -162,7 +161,7 @@ func (c *varsContext) Get(name string) interface{} {
 							Loop:       true,
 							Attributes: make(map[string]*VariableBind),
 						}
-						logger.Errorw(gocontext.Background(), fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
+						logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
 					}
 					bind.Attributes[attributeName] = &VariableBind{}
 				}

@@ -35,9 +35,13 @@ func (e *Engine) AllowedTagsWithDefault() *Engine {
 	return e
 }
 
-// NewEngine returns a new Engine.
 func NewEngine() *Engine {
-	engine := &Engine{render.NewConfig()}
+	return NewEngineWithContext(context.Background())
+}
+
+// NewEngine returns a new Engine.
+func NewEngineWithContext(ctx context.Context) *Engine {
+	engine := &Engine{render.NewConfigWitchContext(ctx)}
 	filters.AddStandardFilters(&engine.cfg)
 	tags.AddStandardTags(engine.cfg)
 	engine.RegisterFilter("hideCountryCodeAndDefault", func(v interface{}, hide bool, defaultValue string) string {
@@ -150,7 +154,7 @@ func NewEngine() *Engine {
 		}
 		num, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			logger.Warnw(context.Background(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
+			logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
 			return s
 		}
 		var formatTemplate string
@@ -180,7 +184,7 @@ func NewEngine() *Engine {
 		}
 		num, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			logger.Warnw(context.Background(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
+			logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
 			return s
 		}
 		var formatTemplate string
@@ -214,7 +218,7 @@ func NewEngine() *Engine {
 		}
 		num, err := strconv.ParseFloat(s, 64)
 		if err != nil {
-			logger.Warnw(context.Background(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
+			logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
 			return s
 		}
 		var formatTemplate string

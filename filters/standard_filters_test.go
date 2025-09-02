@@ -1,6 +1,7 @@
 package filters
 
 import (
+	gocontext "context"
 	"fmt"
 	"os"
 	"testing"
@@ -406,7 +407,7 @@ func TestFilters(t *testing.T) {
 	)
 	filterTestBindings["dup_maps"] = []interface{}{m1, m2, m1, m3}
 
-	cfg := expressions.NewConfig()
+	cfg := expressions.NewConfig(gocontext.Background())
 	AddStandardFilters(&cfg)
 	context := expressions.NewContext(filterTestBindings, cfg)
 

@@ -1,6 +1,7 @@
 package expressions
 
 import (
+	gocontext "context"
 	"fmt"
 	"testing"
 
@@ -35,7 +36,7 @@ var parseErrorTests = []struct{ in, expected string }{
 
 // Since the parser returns funcs, there's no easy way to test them except evaluation
 func TestParse(t *testing.T) {
-	cfg := NewConfig()
+	cfg := NewConfig(gocontext.Background())
 	cfg.AddFilter("add", func(a, b int) int { return a + b })
 	ctx := NewContext(map[string]interface{}{
 		"a":   1,

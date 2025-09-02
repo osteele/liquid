@@ -1,6 +1,7 @@
 package expressions
 
 import (
+	gocontext "context"
 	"errors"
 	"fmt"
 	"strings"
@@ -124,7 +125,7 @@ var evaluatorTestBindings = (map[string]interface{}{
 })
 
 func TestEvaluateString(t *testing.T) {
-	cfg := NewConfig()
+	cfg := NewConfig(gocontext.Background())
 	cfg.AddFilter("length", strings.Count)
 	ctx := NewContext(evaluatorTestBindings, cfg)
 	for i, test := range evaluatorTests {
@@ -147,7 +148,7 @@ func TestEvaluateString(t *testing.T) {
 }
 
 func TestClosure(t *testing.T) {
-	cfg := NewConfig()
+	cfg := NewConfig(gocontext.Background())
 	ctx := NewContext(map[string]interface{}{"x": 1}, cfg)
 	expr, err := Parse("x")
 	require.NoError(t, err)
