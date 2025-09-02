@@ -1,6 +1,7 @@
 package expressions
 
 import (
+	gocontext "context"
 	"fmt"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func TestContext_AddFilter(t *testing.T) {
-	cfg := NewConfig()
+	cfg := NewConfig(gocontext.Background())
 	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) int { return 0 }) })
 	require.NotPanics(t, func() { cfg.AddFilter("f", func(int) (a int, e error) { return }) })
 	require.Panics(t, func() { cfg.AddFilter("f", func() int { return 0 }) })
@@ -20,7 +21,7 @@ func TestContext_AddFilter(t *testing.T) {
 }
 
 func TestContext_runFilter(t *testing.T) {
-	cfg := NewConfig()
+	cfg := NewConfig(gocontext.Background())
 	constant := func(value interface{}) valueFn {
 		return func(Context) values.Value { return values.ValueOf(value) }
 	}

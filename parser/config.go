@@ -1,6 +1,10 @@
 package parser
 
-import "github.com/autopilot3/liquid/expressions"
+import (
+	"context"
+
+	"github.com/autopilot3/liquid/expressions"
+)
 
 // A Config holds configuration information for parsing and rendering.
 type Config struct {
@@ -10,6 +14,9 @@ type Config struct {
 }
 
 // NewConfig creates a parser Config.
-func NewConfig(g Grammar) Config {
-	return Config{Grammar: g}
+func NewConfig(g Grammar, ctx context.Context) Config {
+	return Config{
+		Grammar: g,
+		Config:  expressions.NewConfig(ctx),
+	}
 }
