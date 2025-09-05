@@ -140,13 +140,13 @@ func (c *varsContext) Get(name string) interface{} {
 						}
 					}
 				} else {
-					if val, ok := c.variables[loopVar.Source]; !ok {
+					if val, ok := c.variables[loopVar.Source]; !ok || val == nil {
 						bind = &VariableBind{
 							Loop:       true,
 							Attributes: make(map[string]*VariableBind),
 						}
 						c.variables[loopVar.Source] = bind
-					} else if val != nil {
+					} else {
 						bind, ok = val.(*VariableBind)
 						if !ok {
 							logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
@@ -156,12 +156,6 @@ func (c *varsContext) Get(name string) interface{} {
 						if bind.Attributes == nil {
 							bind.Attributes = make(map[string]*VariableBind)
 						}
-					} else {
-						bind = &VariableBind{
-							Loop:       true,
-							Attributes: make(map[string]*VariableBind),
-						}
-						logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
 					}
 					bind.Attributes[attributeName] = &VariableBind{}
 				}
