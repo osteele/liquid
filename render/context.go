@@ -56,6 +56,7 @@ type Context interface {
 
 	SetLoopVar(name string, sourceName string) int
 	RemoveLoopVar(key int)
+	SetVar(name string)
 }
 
 type rendererContext struct {
@@ -75,6 +76,15 @@ func (c rendererContext) SetLoopVar(name string, sourceName string) int {
 		c.ctx.bindings[expressions.LoopVarsKey] = loopVars
 	}
 	return loopVars.(*expressions.LoopVarsStack).Set(name, sourceName)
+}
+
+func (c rendererContext) SetVar(name string) {
+	assignedVars, ok := c.ctx.bindings[expressions.AssignedVarsKey]
+	if !ok {
+		assignedVars = make(map[string]struct{})
+		c.ctx.bindings[expressions.AssignedVarsKey] = assignedVars
+	}
+	assignedVars.(map[string]struct{})[name] = struct{}{}
 }
 
 func (c rendererContext) RemoveLoopVar(key int) {

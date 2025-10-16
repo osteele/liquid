@@ -71,6 +71,7 @@ func (c *varsContext) Clone() Context {
 
 const LatestVarNameKey = "$LATEST$"
 const LoopVarsKey = "$LOOP_VARS$"
+const AssignedVarsKey = "$ASSIGNED_VARS$"
 
 type VariableBind struct {
 	Loop       bool
@@ -127,8 +128,13 @@ func (c *varsContext) Get(name string) interface{} {
 					if val, ok := c.variables[objArrays[0]]; ok {
 						bind, ok = val.(*VariableBind)
 						if !ok {
-							logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
-							bind = &VariableBind{}
+							if _, ok := val.(string); ok { // assigned variable
+								bind = &VariableBind{}
+								c.variables[objArrays[0]] = bind
+							} else {
+								logger.Errorw(c.ctx, fmt.Sprintf("Error variable %s is not of VariableBind type %T: variables: %+v, current varibale %+v, config filter %+v,", objArrays[0], val, c.variables, c.currentVars, c.Config.filters), "Get", "context")
+								continue
+							}
 						}
 						attr, ok := bind.Attributes[strings.TrimPrefix(objArrays[1], ".")]
 						if ok {
@@ -149,8 +155,14 @@ func (c *varsContext) Get(name string) interface{} {
 					} else {
 						bind, ok = val.(*VariableBind)
 						if !ok {
-							logger.Errorw(c.ctx, fmt.Sprintf("Error variables is not of VariableBind type: variables: %+v, current varibale %+v, config filter %+v,", c.variables, c.currentVars, c.Config.filters), "Get", "context")
-							bind = &VariableBind{}
+							if _, ok := val.(string); ok { // assigned variable
+								bind = &VariableBind{}
+								c.variables[loopVar.Source] = bind
+							} else {
+								// it could be binded in assign before loop (% assign varoffers = activity.custom.comparison-offers.offers | default: '' %})
+								logger.Errorw(c.ctx, fmt.Sprintf("Error variables %s is not of VariableBind type %T: variables: %+v, current varibale %+v, config filter %+v,", loopVar.Source, val, c.variables, c.currentVars, c.Config.filters), "Get", "context")
+								continue
+							}
 						}
 						bind.Loop = true
 						if bind.Attributes == nil {
