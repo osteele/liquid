@@ -38,7 +38,9 @@ func assignTag(source string) (func(io.Writer, render.Context) error, error) {
 		if err != nil {
 			return err
 		}
-		_ = value
+		if ctx.IsFindVars() {
+			ctx.SetVar(stmt.Assignment.Variable)
+		}
 		ctx.Set(stmt.Assignment.Variable, value)
 		return nil
 	}, nil

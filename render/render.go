@@ -37,6 +37,12 @@ func FindVariables(node Node, c Config) (map[string]interface{}, Error) {
 	}
 	delete(ctx.bindings, expressions.LatestVarNameKey)
 	delete(ctx.bindings, expressions.LoopVarsKey)
+	if assignedVars, ok := ctx.bindings[expressions.AssignedVarsKey]; ok {
+		for name := range assignedVars.(map[string]struct{}) {
+			delete(ctx.bindings, name)
+		}
+		delete(ctx.bindings, expressions.AssignedVarsKey)
+	}
 	return ctx.bindings, nil
 }
 
