@@ -8,6 +8,7 @@ func makeRangeExpr(startFn, endFn func(Context) values.Value) func(Context) valu
 	return func(ctx Context) values.Value {
 		a := startFn(ctx).Int()
 		b := endFn(ctx).Int()
+
 		return values.ValueOf(values.NewRange(a, b))
 	}
 }
@@ -27,6 +28,7 @@ func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
 				Err:        err,
 			})
 		}
+
 		return values.ValueOf(result)
 	}
 }
@@ -39,6 +41,7 @@ func makeIndexExpr(sequenceFn, indexFn func(Context) values.Value) func(Context)
 
 func makeObjectPropertyExpr(objFn func(Context) values.Value, name string) func(Context) values.Value {
 	index := values.ValueOf(name)
+
 	return func(ctx Context) values.Value {
 		return objFn(ctx).PropertyValue(index)
 	}

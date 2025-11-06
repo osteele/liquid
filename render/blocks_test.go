@@ -18,6 +18,7 @@ func TestBlockSyntax(t *testing.T) {
 	ifBlock, _ := g.findBlockDef("if")
 	elseBlock, _ := g.findBlockDef("else")
 	unlessBlock, _ := g.findBlockDef("unless")
+
 	require.True(t, elseBlock.CanHaveParent(ifBlock))
 	require.False(t, elseBlock.CanHaveParent(unlessBlock))
 	require.Equal(t, []string{"case", "if"}, elseBlock.ParentTags())

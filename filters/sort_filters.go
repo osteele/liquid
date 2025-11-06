@@ -12,17 +12,20 @@ import (
 func sortFilter(array []any, key any) []any {
 	result := make([]any, len(array))
 	copy(result, array)
+
 	if key == nil {
 		values.Sort(result)
 	} else {
 		values.SortByProperty(result, fmt.Sprint(key), true)
 	}
+
 	return result
 }
 
 func sortNaturalFilter(array []any, key any) any {
 	result := make([]any, len(array))
 	copy(result, array)
+
 	switch {
 	case reflect.ValueOf(array).Len() == 0:
 	case key != nil:
@@ -31,12 +34,14 @@ func sortNaturalFilter(array []any, key any) any {
 			if rv.Kind() != reflect.Map {
 				return ""
 			}
+
 			ev := rv.MapIndex(reflect.ValueOf(key))
 			if ev.CanInterface() {
 				if s, ok := ev.Interface().(string); ok {
 					return strings.ToLower(s)
 				}
 			}
+
 			return ""
 		}})
 	case reflect.TypeOf(array[0]).Kind() == reflect.String:
@@ -44,6 +49,7 @@ func sortNaturalFilter(array []any, key any) any {
 			return strings.ToUpper(s.(string))
 		}})
 	}
+
 	return result
 }
 
@@ -67,5 +73,6 @@ func (s keySortable) Swap(i, j int) {
 func (s keySortable) Less(i, j int) bool {
 	k, sl := s.keyFn, s.slice
 	a, b := k(sl[i]), k(sl[j])
+
 	return a < b
 }

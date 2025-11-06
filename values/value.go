@@ -51,15 +51,18 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	case Value:
 		return v
 	}
+
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Ptr:
 		rv := reflect.ValueOf(value)
 		if rv.IsNil() {
 			return nilValue
 		}
+
 		if rv.Type().Elem().Kind() == reflect.Struct {
 			return structValue{wrapperValue{value}}
 		}
+
 		return ValueOf(rv.Elem().Interface())
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
@@ -106,6 +109,7 @@ func (v wrapperValue) Int() int {
 	if n, ok := v.value.(int); ok {
 		return n
 	}
+
 	panic(conversionError("", v.value, reflect.TypeOf(1)))
 }
 
@@ -128,17 +132,20 @@ type (
 func (av arrayValue) Contains(ev Value) bool {
 	ar := reflect.ValueOf(av.value)
 	e := ev.Interface()
+
 	l := ar.Len()
 	for i := range l {
 		if Equal(ar.Index(i).Interface(), e) {
 			return true
 		}
 	}
+
 	return false
 }
 
 func (av arrayValue) IndexValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
+
 	var n int
 	switch ix := iv.Interface().(type) {
 	case int:
@@ -151,17 +158,21 @@ func (av arrayValue) IndexValue(iv Value) Value {
 	default:
 		return nilValue
 	}
+
 	if n < 0 {
 		n += ar.Len()
 	}
+
 	if 0 <= n && n < ar.Len() {
 		return ValueOf(ar.Index(n).Interface())
 	}
+
 	return nilValue
 }
 
 func (av arrayValue) PropertyValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
+
 	switch iv.Interface() {
 	case firstKey:
 		if ar.Len() > 0 {
@@ -174,21 +185,25 @@ func (av arrayValue) PropertyValue(iv Value) Value {
 	case sizeKey:
 		return ValueOf(ar.Len())
 	}
+
 	return nilValue
 }
 
 func (mv mapValue) Contains(iv Value) bool {
 	mr := reflect.ValueOf(mv.value)
+
 	ir := reflect.ValueOf(iv.Interface())
 	if ir.IsValid() && mr.Type().Key() == ir.Type() {
 		return mr.MapIndex(ir).IsValid()
 	}
+
 	return false
 }
 
 func (mv mapValue) IndexValue(iv Value) Value {
 	mr := reflect.ValueOf(mv.value)
 	ir := reflect.ValueOf(iv.Interface())
+
 	kt := mr.Type().Key()
 	if ir.IsValid() && ir.Type().ConvertibleTo(kt) && ir.Type().Comparable() {
 		er := mr.MapIndex(ir.Convert(kt))
@@ -196,15 +211,18 @@ func (mv mapValue) IndexValue(iv Value) Value {
 			return ValueOf(er.Interface())
 		}
 	}
+
 	return nilValue
 }
 
 func (mv mapValue) PropertyValue(iv Value) Value {
 	mr := reflect.ValueOf(mv.Interface())
+
 	ir := reflect.ValueOf(iv.Interface())
 	if !ir.IsValid() {
 		return nilValue
 	}
+
 	er := mr.MapIndex(ir)
 	switch {
 	case er.IsValid():
@@ -221,6 +239,7 @@ func (sv stringValue) Contains(substr Value) bool {
 	if !ok {
 		s = fmt.Sprint(substr.Interface())
 	}
+
 	return strings.Contains(sv.value.(string), s)
 }
 
@@ -228,6 +247,7 @@ func (sv stringValue) PropertyValue(iv Value) Value {
 	if iv.Interface() == sizeKey {
 		return ValueOf(len(sv.value.(string)))
 	}
+
 	return nilValue
 }
 

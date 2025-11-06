@@ -20,11 +20,13 @@ var includeTestBindings = map[string]any{
 func TestIncludeTag(t *testing.T) {
 	config := render.NewConfig()
 	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
-	AddStandardTags(config)
+
+	AddStandardTags(&config)
 
 	// basic functionality
 	root, err := config.Compile(`{% include "include_target.html" %}`, loc)
 	require.NoError(t, err)
+
 	buf := new(bytes.Buffer)
 	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)
@@ -33,6 +35,7 @@ func TestIncludeTag(t *testing.T) {
 	// tag and variable
 	root, err = config.Compile(`{% include "include_target_2.html" %}`, loc)
 	require.NoError(t, err)
+
 	buf = new(bytes.Buffer)
 	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)
@@ -49,7 +52,8 @@ func TestIncludeTag(t *testing.T) {
 func TestIncludeTag_file_not_found_error(t *testing.T) {
 	config := render.NewConfig()
 	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
-	AddStandardTags(config)
+
+	AddStandardTags(&config)
 
 	// See the comment in TestIncludeTag_file_not_found_error.
 	root, err := config.Compile(`{% include "missing_file.html" %}`, loc)
@@ -65,10 +69,12 @@ func TestIncludeTag_cached_value_handling(t *testing.T) {
 	config.Cache["testdata/missing-file.html"] = []byte("include-content")
 	config.Cache["testdata\\missing-file.html"] = []byte("include-content")
 	loc := parser.SourceLoc{Pathname: "testdata/include_source.html", LineNo: 1}
-	AddStandardTags(config)
+
+	AddStandardTags(&config)
 
 	root, err := config.Compile(`{% include "missing-file.html" %}`, loc)
 	require.NoError(t, err)
+
 	buf := new(bytes.Buffer)
 	err = render.Render(root, buf, includeTestBindings, config)
 	require.NoError(t, err)

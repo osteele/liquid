@@ -16,7 +16,8 @@ type Statement struct{ parseValue }
 
 // An Assignment is a parse of an {% assign %} statement
 type Assignment struct {
-	Variable string
+	Variable string   // Simple variable name (for backward compatibility)
+	Path     []string // Property path for dot notation (e.g., ["page", "canonical_url"])
 	ValueFn  Expression
 }
 
@@ -28,9 +29,10 @@ type Cycle struct {
 
 // A Loop is a parse of a {% loop %} statement
 type Loop struct {
+	loopModifiers
+
 	Variable string
 	Expr     Expression
-	loopModifiers
 }
 
 type loopModifiers struct {
@@ -52,5 +54,6 @@ func ParseStatement(sel, source string) (*Statement, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Statement{*p}, nil
 }

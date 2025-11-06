@@ -14,6 +14,7 @@ type caseInterpreter interface {
 }
 type exprCase struct {
 	e.When
+
 	b *render.BlockNode
 }
 
@@ -25,10 +26,12 @@ func (c exprCase) test(caseValue any, ctx render.Context) (bool, error) {
 		if err != nil {
 			return false, err
 		}
+
 		if values.Equal(caseValue, whenValue) {
 			return true, nil
 		}
 	}
+
 	return false, nil
 }
 
@@ -44,7 +47,9 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 	if err != nil {
 		return nil, err
 	}
+
 	cases := []caseInterpreter{}
+
 	for _, clause := range node.Clauses {
 		switch clause.Name {
 		case "when":
@@ -52,25 +57,30 @@ func caseTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			if err != nil {
 				return nil, err
 			}
+
 			cases = append(cases, exprCase{stmt.When, clause})
 		default: // should be a check for "else", but I like the metacircularity
 			cases = append(cases, elseCase{clause})
 		}
 	}
+
 	return func(w io.Writer, ctx render.Context) error {
 		sel, err := ctx.Evaluate(expr)
 		if err != nil {
 			return err
 		}
+
 		for _, clause := range cases {
 			b, err := clause.test(sel, ctx)
 			if err != nil {
 				return err
 			}
+
 			if b {
 				return ctx.RenderBlock(w, clause.body())
 			}
 		}
+
 		return nil
 	}, nil
 }
@@ -81,18 +91,22 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 			test e.Expression
 			body *render.BlockNode
 		}
+
 		expr, err := e.Parse(node.Args)
 		if err != nil {
 			return nil, err
 		}
+
 		if !polarity {
 			expr = e.Not(expr)
 		}
+
 		branches := []branchRec{
 			{expr, &node},
 		}
 		for _, c := range node.Clauses {
 			test := e.Constant(true)
+
 			switch c.Name {
 			case "else":
 			// TODO syntax error if this isn't the last branch
@@ -101,20 +115,25 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 				if err != nil {
 					return nil, err
 				}
+
 				test = t
 			}
+
 			branches = append(branches, branchRec{test, c})
 		}
+
 		return func(w io.Writer, ctx render.Context) error {
 			for _, b := range branches {
 				value, err := ctx.Evaluate(b.test)
 				if err != nil {
 					return err
 				}
+
 				if value != nil && value != false {
 					return ctx.RenderBlock(w, b.body)
 				}
 			}
+
 			return nil
 		}, nil
 	}

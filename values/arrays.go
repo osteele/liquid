@@ -12,6 +12,7 @@ import (
 // and contra Go, it does not return the size of a map.
 func Length(value any) int {
 	value = ToLiquid(value)
+
 	ref := reflect.ValueOf(value)
 	switch ref.Kind() {
 	case reflect.Array, reflect.Slice:

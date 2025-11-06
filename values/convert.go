@@ -25,9 +25,11 @@ func conversionError(modifier string, value any, typ reflect.Type) error {
 	if modifier != "" {
 		modifier += " "
 	}
+
 	if ref, ok := value.(reflect.Value); ok {
 		value = ref.Interface()
 	}
+
 	return typeErrorf("can't convert %s%T(%v) to type %s", modifier, value, value, typ)
 }
 
@@ -37,20 +39,24 @@ func convertValueToInt(value any, typ reflect.Type) (int64, error) {
 		if value {
 			return 1, nil
 		}
+
 		return 0, nil
 	case string:
 		v, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return 0, conversionError("", value, typ)
 		}
+
 		return v, nil
 	case json.Number:
 		v, err := strconv.ParseInt(value.String(), 10, 64)
 		if err != nil {
 			return 0, conversionError("", value, typ)
 		}
+
 		return v, nil
 	}
+
 	return 0, conversionError("", value, typ)
 }
 
@@ -62,14 +68,17 @@ func convertValueToFloat(value any, typ reflect.Type) (float64, error) {
 		if err != nil {
 			return 0, conversionError("", value, typ)
 		}
+
 		return v, nil
 	case json.Number:
 		v, err := strconv.ParseFloat(value.String(), 64)
 		if err != nil {
 			return 0, conversionError("", value, typ)
 		}
+
 		return v, nil
 	}
+
 	return 0, conversionError("", value, typ)
 }
 
@@ -84,6 +93,7 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	if typ.Kind() != reflect.String && value != nil && rv.Type().ConvertibleTo(typ) {
 		return rv.Convert(typ).Interface(), nil
 	}
+
 	if typ == timeType && rv.Kind() == reflect.String {
 		return ParseDate(value.(string))
 	}
@@ -133,6 +143,7 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	case reflect.Map:
 		et := typ.Elem()
 		result := reflect.MakeMap(typ)
+
 		if ms, ok := value.(yaml.MapSlice); ok {
 			for _, item := range ms {
 				var k, v reflect.Value
@@ -143,8 +154,10 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 					if err != nil {
 						return nil, err
 					}
+
 					k = reflect.ValueOf(kc)
 				}
+
 				if item.Value == nil {
 					v = reflect.Zero(et)
 				} else {
@@ -152,58 +165,76 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 					if err != nil {
 						return nil, err
 					}
+
 					v = reflect.ValueOf(ec)
 				}
+
 				result.SetMapIndex(k, v)
 			}
+
 			return result.Interface(), nil
 		}
+
 		if rv.Kind() != reflect.Map {
 			return nil, conversionError("", value, typ)
 		}
+
 		for _, key := range rv.MapKeys() {
 			if typ.Key().Kind() == reflect.String {
 				key = reflect.ValueOf(fmt.Sprint(key))
 			}
+
 			if !key.Type().ConvertibleTo(typ.Key()) {
 				return nil, conversionError("map key", key, typ.Key())
 			}
+
 			key = key.Convert(typ.Key())
+
 			ev := rv.MapIndex(key)
 			if et.Kind() == reflect.String {
 				ev = reflect.ValueOf(fmt.Sprint(ev))
 			}
+
 			if !ev.Type().ConvertibleTo(et) {
 				return nil, conversionError("map element", ev, et)
 			}
+
 			result.SetMapIndex(key, ev.Convert(et))
 		}
+
 		return result.Interface(), nil
 	case reflect.Slice:
 		et := typ.Elem()
 		if ms, ok := value.(yaml.MapSlice); ok {
 			result := reflect.MakeSlice(typ, 0, rv.Len())
+
 			for _, item := range ms {
 				if item.Value == nil {
 					if et.Kind() >= reflect.Array {
 						ev := reflect.Zero(et)
 						result = reflect.Append(result, ev.Convert(et))
 					}
+
 					continue
 				}
+
 				ev := reflect.ValueOf(item.Value)
 				if et.Kind() == reflect.String {
 					ev = reflect.ValueOf(fmt.Sprint(ev))
 				}
+
 				if !ev.Type().ConvertibleTo(et) {
 					return nil, conversionError("slice element", ev, et)
 				}
+
 				result = reflect.Append(result, ev.Convert(et))
 			}
+
 			return result.Interface(), nil
 		} else if r, ok := value.(Range); ok {
 			return r.AsArray(), nil
 		}
+
 		switch rv.Kind() {
 		case reflect.Array, reflect.Slice:
 			result := reflect.MakeSlice(typ, 0, rv.Len())
@@ -212,8 +243,10 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 				if err != nil {
 					return nil, err
 				}
+
 				result = reflect.Append(result, reflect.ValueOf(item))
 			}
+
 			return result.Interface(), nil
 		case reflect.Map:
 			result := reflect.MakeSlice(typ, 0, rv.Len())
@@ -222,8 +255,10 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 				if err != nil {
 					return nil, err
 				}
+
 				result = reflect.Append(result, reflect.ValueOf(item))
 			}
+
 			return result.Interface(), nil
 		}
 	case reflect.String:
@@ -236,6 +271,7 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 			return fmt.Sprint(value), nil
 		}
 	}
+
 	return nil, conversionError("", value, typ)
 }
 
@@ -245,6 +281,7 @@ func MustConvert(value any, t reflect.Type) any {
 	if err != nil {
 		panic(err)
 	}
+
 	return out
 }
 
@@ -255,5 +292,6 @@ func MustConvertItem(item any, array any) any {
 	if err != nil {
 		panic(typeErrorf("can't convert %#v to %s: %s", item, reflect.TypeOf(array).Elem(), err))
 	}
+
 	return item
 }

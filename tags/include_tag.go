@@ -16,16 +16,21 @@ func includeTag(source string) (func(io.Writer, render.Context) error, error) {
 		if err != nil {
 			return err
 		}
+
 		rel, ok := value.(string)
 		if !ok {
 			return ctx.Errorf("include requires a string argument; got %v", value)
 		}
+
 		filename := filepath.Join(filepath.Dir(ctx.SourceFile()), rel)
+
 		s, err := ctx.RenderFile(filename, map[string]any{})
 		if err != nil {
 			return err
 		}
+
 		_, err = io.WriteString(w, s)
+
 		return err
 	}, nil
 }

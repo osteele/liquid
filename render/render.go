@@ -16,12 +16,16 @@ import (
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
 	tw := trimWriter{w: w}
-	if err := node.render(&tw, newNodeContext(vars, c)); err != nil {
+
+	err := node.render(&tw, newNodeContext(vars, c))
+	if err != nil {
 		return err
 	}
+
 	if _, err := tw.Flush(); err != nil {
 		panic(err)
 	}
+
 	return nil
 }
 
@@ -31,14 +35,18 @@ func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	if !ok {
 		tw = &trimWriter{w: w}
 	}
+
 	for _, n := range seq {
-		if err := n.render(tw, c); err != nil {
+		err := n.render(tw, c)
+		if err != nil {
 			return err
 		}
 	}
+
 	if _, err := tw.Flush(); err != nil {
 		panic(err)
 	}
+
 	return nil
 }
 
@@ -48,11 +56,14 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 		// this should have been detected during compilation; it's an implementation error if it happens here
 		panic(fmt.Errorf("undefined tag %q", n.Name))
 	}
+
 	renderer := n.renderer
 	if renderer == nil {
 		panic(fmt.Errorf("unset renderer for %v", n))
 	}
+
 	err := renderer(w, rendererContext{ctx, nil, n})
+
 	return wrapRenderError(err, n)
 }
 
@@ -63,6 +74,7 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 			return wrapRenderError(err, n)
 		}
 	}
+
 	return nil
 }
 
@@ -71,6 +83,7 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	if err != nil {
 		return wrapRenderError(err, n)
 	}
+
 	if value == nil && ctx.config.StrictVariables {
 		return wrapRenderError(errors.New("undefined variable"), n)
 	}
@@ -91,15 +104,18 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	if err != nil {
 		return wrapRenderError(err, n)
 	}
+
 	return nil
 }
 
 func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
 	for _, c := range n.Children {
-		if err := c.render(w, ctx); err != nil {
+		err := c.render(w, ctx)
+		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -128,6 +144,7 @@ func writeObject(w io.Writer, value any) error {
 	if value == nil {
 		return nil
 	}
+
 	switch value := value.(type) {
 	case time.Time:
 		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
@@ -138,17 +155,20 @@ func writeObject(w io.Writer, value any) error {
 		// there used be a case on fmt.Stringer here, but fmt.Sprint produces better results than obj.Write
 		// for instances of error and *string
 	}
+
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
 	case reflect.Array, reflect.Slice:
 		for i := range rt.Len() {
 			item := rt.Index(i)
 			if item.IsValid() {
-				if err := writeObject(w, item.Interface()); err != nil {
+				err := writeObject(w, item.Interface())
+				if err != nil {
 					return err
 				}
 			}
 		}
+
 		return nil
 	case reflect.Ptr:
 		return writeObject(w, reflect.ValueOf(value).Elem())

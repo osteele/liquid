@@ -18,10 +18,12 @@ type Template struct {
 
 func newTemplate(cfg *render.Config, source []byte, path string, line int) (*Template, SourceError) {
 	loc := parser.SourceLoc{Pathname: path, LineNo: line}
+
 	root, err := cfg.Compile(string(source), loc)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Template{root, cfg}, nil
 }
 
@@ -34,10 +36,12 @@ func (t *Template) GetRoot() render.Node {
 // Render executes the template with the specified variable bindings.
 func (t *Template) Render(vars Bindings) ([]byte, SourceError) {
 	buf := new(bytes.Buffer)
+
 	err := render.Render(t.root, buf, vars, *t.cfg)
 	if err != nil {
 		return nil, err
 	}
+
 	return buf.Bytes(), nil
 }
 
@@ -47,6 +51,7 @@ func (t *Template) FRender(w io.Writer, vars Bindings) SourceError {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -56,5 +61,6 @@ func (t *Template) RenderString(b Bindings) (string, SourceError) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(bs), nil
 }

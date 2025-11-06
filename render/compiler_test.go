@@ -32,6 +32,7 @@ var compilerErrorTests = []struct{ in, expected string }{
 func TestCompile_errors(t *testing.T) {
 	settings := NewConfig()
 	addCompilerTestTags(settings)
+
 	for i, test := range compilerErrorTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
 			_, err := settings.Compile(test.in, parser.SourceLoc{})

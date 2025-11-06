@@ -22,6 +22,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 		node   *ASTBlock
 		ap     *[]ASTNode
 	}
+
 	var (
 		g         = c.Grammar
 		root      = &ASTSeq{}      // root of AST; will be returned
@@ -33,6 +34,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 		inComment = false
 		inRaw     = false
 	)
+
 	for _, tok := range tokens {
 		switch {
 		// The parser needs to know about comment and raw, because tags inside
@@ -53,6 +55,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 			if err != nil {
 				return nil, WrapError(err, tok)
 			}
+
 			*ap = append(*ap, &ASTObject{tok, expr})
 		case tok.Type == TextTokenType:
 			*ap = append(*ap, &ASTText{Token: tok})
@@ -60,6 +63,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 			if g == nil {
 				return nil, Errorf(tok, "Grammar field is nil")
 			}
+
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
 				case tok.Name == "comment":
@@ -73,6 +77,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 					if sd != nil {
 						suffix = "; immediate parent is " + sd.TagName()
 					}
+
 					return nil, Errorf(tok, "%s not inside %s%s", tok.Name, strings.Join(cs.ParentTags(), " or "), suffix)
 				case cs.IsBlockStart():
 					push := func() {
@@ -81,6 +86,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 						*ap = append(*ap, bn)
 					}
 					push()
+
 					ap = &bn.Body
 				case cs.IsClause():
 					n := &ASTBlock{Token: tok, syntax: cs}
@@ -105,8 +111,10 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 			*ap = append(*ap, &ASTTrim{TrimDirection: Right})
 		}
 	}
+
 	if bn != nil {
 		return nil, Errorf(bn, "unterminated %q block", bn.Name)
 	}
+
 	return root, nil
 }

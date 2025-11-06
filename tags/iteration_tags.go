@@ -46,7 +46,9 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cycle := stmt.Cycle
+
 	return func(w io.Writer, ctx render.Context) error {
 		loopVar := ctx.Get(forloopVarName)
 		if loopVar == nil {
@@ -61,6 +63,7 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 		cycleMap[group] = n + 1
 		// The parser guarantees that there will be at least one item.
 		_, err = io.WriteString(w, values[n%len(values)])
+
 		return err
 	}, nil
 }
@@ -102,6 +105,7 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 
 type loopRenderer struct {
 	expressions.Loop
+
 	tagName string
 }
 
@@ -117,8 +121,11 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 		ctx.Set(forloopVarName, index)
 		ctx.Set(loop.Variable, forloop)
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
+
 	cycleMap := map[string]int{}
+
 loop:
+
 	for i, l := 0, iter.Len(); i < l; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
 		ctx.Set(forloopVarName, map[string]any{
@@ -134,6 +141,7 @@ loop:
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
 		decorator.after(w, i, l)
+
 		switch {
 		case err == nil:
 		// fall through
@@ -145,6 +153,7 @@ loop:
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -155,16 +164,20 @@ func makeLoopDecorator(loop loopRenderer, ctx render.Context) (loopDecorator, er
 			if err != nil {
 				return nil, err
 			}
+
 			cols, ok := val.(int)
 			if !ok {
 				return nil, ctx.Errorf("loop cols must be an integer")
 			}
+
 			if cols > 0 {
 				return tableRowDecorator(cols), nil
 			}
 		}
+
 		return tableRowDecorator(math.MaxInt32), nil
 	}
+
 	return forLoopDecorator{}, nil
 }
 
@@ -182,12 +195,14 @@ type tableRowDecorator int
 
 func (c tableRowDecorator) before(w io.Writer, i int) {
 	cols := int(c)
+
 	row, col := i/cols, i%cols
 	if col == 0 {
 		if _, err := fmt.Fprintf(w, `<tr class="row%d">`, row+1); err != nil {
 			panic(err)
 		}
 	}
+
 	if _, err := fmt.Fprintf(w, `<td class="col%d">`, col+1); err != nil {
 		panic(err)
 	}
@@ -195,9 +210,11 @@ func (c tableRowDecorator) before(w io.Writer, i int) {
 
 func (c tableRowDecorator) after(w io.Writer, i, l int) {
 	cols := int(c)
+
 	if _, err := io.WriteString(w, `</td>`); err != nil {
 		panic(err)
 	}
+
 	if (i+1)%cols == 0 || i+1 == l {
 		if _, err := io.WriteString(w, `</tr>`); err != nil {
 			panic(err)
@@ -215,10 +232,12 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 		if err != nil {
 			return nil, err
 		}
+
 		offset, ok := val.(int)
 		if !ok {
 			return nil, ctx.Errorf("loop offset must be an integer")
 		}
+
 		if offset > 0 {
 			iter = offsetWrapper{iter, offset}
 		}
@@ -229,10 +248,12 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 		if err != nil {
 			return nil, err
 		}
+
 		limit, ok := val.(int)
 		if !ok {
 			return nil, ctx.Errorf("loop limit must be an integer")
 		}
+
 		if limit >= 0 {
 			iter = limitWrapper{iter, limit}
 		}
@@ -245,25 +266,30 @@ func makeIterator(value any) iterable {
 	if iter, ok := value.(iterable); ok {
 		return iter
 	}
+
 	if value == nil {
 		return nil
 	}
+
 	switch value := value.(type) {
 	case IterationKeyedMap:
 		return makeIterationKeyedMap(value)
 	case yaml.MapSlice:
 		return mapSliceWrapper{value}
 	}
+
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Array, reflect.Slice:
 		return sliceWrapper(reflect.ValueOf(value))
 	case reflect.Map:
 		rv := reflect.ValueOf(value)
+
 		array := make([][]any, rv.Len())
 		for i, k := range rv.MapKeys() {
 			v := rv.MapIndex(k)
 			array[i] = []any{k.Interface(), v.Interface()}
 		}
+
 		return sliceWrapper(reflect.ValueOf(array))
 	default:
 		return nil
@@ -278,6 +304,7 @@ func makeIterationKeyedMap(m map[string]any) iterable {
 	}
 	// Sorting isn't necessary to match Shopify liquid, but it simplifies debugging.
 	sort.Strings(keys)
+
 	return sliceWrapper(reflect.ValueOf(keys))
 }
 
@@ -321,6 +348,7 @@ func intMax(a, b int) int {
 	if a > b {
 		return a
 	}
+
 	return b
 }
 
@@ -328,5 +356,6 @@ func intMin(a, b int) int {
 	if a < b {
 		return a
 	}
+
 	return b
 }
