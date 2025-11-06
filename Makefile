@@ -54,7 +54,7 @@ build: ## Build the binary
 clean: ## Remove build artifacts and temporary files
 	@echo "Cleaning..."
 	@rm -f $(BINARY_NAME)
-	@rm -f $(COVERAGE_FILE) $(COVERAGE_HTML)
+	@rm -f $(COVERAGE_FILE) $(COVERAGE_HTML) .coverage.tmp
 	@find . -type f -name '*.test' -delete
 	@find . -type f -name '*.out' -delete
 
@@ -79,10 +79,20 @@ test-short: ## Run short tests
 .PHONY: coverage
 coverage: ## Generate test coverage report
 	@echo "Generating coverage report..."
-	$(GOTEST) -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
-	@$(GOCMD) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
-	@echo "Coverage report generated: $(COVERAGE_HTML)"
-	@$(GOCMD) tool cover -func=$(COVERAGE_FILE) | grep total | awk '{print "Total coverage: " $$3}'
+	@# Note: -race flag removed to avoid "inconsistent NumStmt" error with generated code
+	@# Race detection still runs in the 'test' target
+	@$(GOTEST) -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./... 2>&1 | tee .coverage.tmp
+	@# Try to generate HTML report; may fail due to generated code with //line directives
+	@$(GOCMD) tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML) 2>/dev/null && \
+		echo "Coverage HTML report generated: $(COVERAGE_HTML)" || \
+		echo "Note: HTML report generation skipped (incompatibility with generated code)"
+	@# Show coverage summary from test output
+	@echo ""
+	@echo "Coverage by package:"
+	@grep "coverage:" .coverage.tmp | grep -v "0.0%" || true
+	@rm -f .coverage.tmp
+	@echo ""
+	@echo "Coverage profile saved to: $(COVERAGE_FILE)"
 
 .PHONY: benchmark
 benchmark: ## Run benchmarks
