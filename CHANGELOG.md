@@ -1,6 +1,82 @@
 # Release Notes
 <!-- markdownlint-disable MD024 -->
 
+## Unreleased
+
+### Added
+
+- **Unicode Identifier Support** (#116): Added Unicode identifier support with major performance improvements. Thanks [@uksarkar](https://github.com/uksarkar)
+
+- **Jekyll Extensions Support** (#114): Added support for dot notation in assign tags (e.g., `{% assign page.canonical_url = "/about/" %}`) when `JekyllExtensions` config flag is enabled. This allows Jekyll-compatible template syntax while maintaining Shopify Liquid compatibility by default.
+
+- **Auto-Escape Feature** (#111): Implemented automatic HTML escaping for template output with opt-in/opt-out support via the `safe` filter. Output is automatically escaped by default when auto-escape is enabled, and can be marked as safe using `{{ value | safe }}`. Thanks [@dop251](https://github.com/dop251)
+
+- **Template Loader** (#107): Implemented custom template loader interface for flexible template storage. Thanks [@chrisatbd](https://github.com/chrisatbd)
+
+- **BasicEngine** (#104): Added `NewBasicEngine()` function for simpler engine instantiation without standard tags/filters (#102). Thanks [@jam3sn](https://github.com/jam3sn)
+
+- **JSON Filter** (#84): Added `json` filter for JSON encoding. Thanks [@prestonprice57](https://github.com/prestonprice57)
+
+- **Strict Variables Mode** (#74): Added support for strict variable checking to catch undefined variables. Thanks [@jamesog](https://github.com/jamesog)
+
+- **Custom Writer Support** (#86): Added `FRender` to allow rendering into a custom `io.Writer`. Thanks [@jamslinger](https://github.com/jamslinger)
+
+- **Template AST Access** (#59, #66): Exposed template AST and lexical environment for introspection. Thanks [@carolynvs](https://github.com/carolynvs), [@aisbergg](https://github.com/aisbergg)
+
+- **For-Else Support** (#93): Implemented `else` clauses in `for` loops. Thanks [@codykrieger](https://github.com/codykrieger)
+
+- **Unless-Else Support** (#68): Allow `unless` tags to have `else` clauses. Thanks [@aisbergg](https://github.com/aisbergg)
+
+- **General Range Expressions** (#65): Allow range expressions as general expressions, not only in loops. Thanks [@aisbergg](https://github.com/aisbergg)
+
+- **Loop Modifier Expressions** (#67): Allow loop modifiers to be general expressions, not just literals. Thanks [@aisbergg](https://github.com/aisbergg)
+
+### Changed
+
+- **Modernized Build Tooling** (#115): Updated golangci-lint configuration to v2 format, reorganized Makefile with comprehensive targets, and added pre-commit hooks for automated code quality checks. All existing lint and format issues have been resolved.
+
+- **Modernization** (#95): Various modernization improvements. Thanks [@danog](https://github.com/danog)
+
+- **GitHub Actions** (#87): Bumped GitHub workflow actions to latest versions. Thanks [@deining](https://github.com/deining)
+
+### Fixed
+
+- **Slice Filter Enhancement** (#126, #72): Enhanced slice filter with Unicode support and array slicing. Thanks [@ofavre](https://github.com/ofavre)
+
+- **Integer to Float Conversion** (#124): Fixed issue where simple mathematical operations on integers transformed them into floats (#109). Thanks [@GauthierHacout](https://github.com/GauthierHacout) for reporting
+
+- **Size Filter** (#101): Count number of characters instead of bytes (#100). Thanks [@jamslinger](https://github.com/jamslinger)
+
+- **Slice Bounds** (#99): Don't panic when slicing with index out of bound (#98). Thanks [@jamslinger](https://github.com/jamslinger)
+
+- **Division by Zero** (#97): Don't panic in `divided_by` filter on division by zero (#96). Thanks [@jamslinger](https://github.com/jamslinger)
+
+- **Nil Pointer** (#94): Fix panic in `ValueOf` with nil pointer. Thanks [@stephanejais](https://github.com/stephanejais)
+
+- **Nil Check** (#91): Add nil check for grammar field before `BlockSyntax` call. Thanks [@magiusdarrigo](https://github.com/magiusdarrigo)
+
+- **Whitespace Control** (#88, #78): Fix whitespace control and trimming (#79). Thanks [@jamslinger](https://github.com/jamslinger), [@chrisghill](https://github.com/chrisghill) for reporting, [@danog](https://github.com/danog)
+
+- **Multiline Slice** (#82): Fix slice on multiline strings. Thanks [@danog](https://github.com/danog)
+
+- **Block Errors** (#81): Bug fixes for `WrapError()`, `Errorf()` and `SourceFile()` in block context (#80). Thanks [@wttw](https://github.com/wttw)
+
+- **Map Filter** (#71): Fix map filter with slice of structs. Thanks [@ofavre](https://github.com/ofavre)
+
+- **Documentation** (#69): Fix example filter URL in documentation. Thanks [@peteraba](https://github.com/peteraba)
+
+- **Windows Tests** (#61): Fixed include tag test cases on Windows
+
+- Fixed trailing whitespace issues in test files
+- Resolved all golangci-lint v2 compatibility issues
+
+### Documentation
+
+- **Security Documentation** (#119): Added comprehensive security documentation.
+
+- **Loop Semantics** (#117): Documented and compared loop semantics with Ruby implementation.
+
+- **FRender Documentation** (#118): Added documentation for FRender feature (#85).
 ## 1.3.0 (2020-02-13)
 
 Contributions:
