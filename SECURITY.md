@@ -243,16 +243,128 @@ If you discover a security vulnerability, please see the [Reporting Vulnerabilit
 
 ### Shopify Liquid (Ruby)
 
-The original Ruby implementation has similar security characteristics:
-- Sandboxed execution environment
-- No disk/network access from core engine
-- Vulnerable to DoS attacks
-- Used in production at scale by Shopify
+The original Ruby implementation and this Go implementation share the **same fundamental security design** from Shopify Liquid, but there are important differences to consider when choosing between them for security-sensitive applications.
 
-The Ruby implementation has the benefit of:
-- More extensive production testing
-- Longer history and community review
-- Built-in resource limiting options (in some contexts)
+#### Core Security Model: Very Similar
+
+Both implementations provide:
+- Sandboxed execution (no arbitrary code execution from templates)
+- No filesystem access from built-in tags/filters
+- No network access from built-in tags/filters
+- Templates can only access explicitly provided data bindings
+- Same vulnerability to DoS attacks (infinite loops, memory exhaustion)
+
+#### Key Differences
+
+**1. Production Battle-Testing**
+
+- **Ruby**:
+  - Used by Shopify to process millions of templates daily since 2006
+  - Extensive real-world security testing through actual attack attempts
+  - Edge cases discovered and hardened over 15+ years
+  - Large community continuously identifying and reporting issues
+  - Well-documented CVEs and security patches
+
+- **Go**:
+  - Newer implementation (since 2017) with less production usage at scale
+  - Fewer real-world attack scenarios encountered
+  - Smaller community, less security scrutiny
+  - **No independent security audit** (as documented above)
+  - Security issues may remain undiscovered
+
+**2. Built-in Resource Limiting**
+
+- **Ruby**: Has built-in resource limiting capabilities:
+  ```ruby
+  Liquid::Template.parse(template, resource_limits: {
+    render_length_limit: 100000,      # Maximum output size
+    render_score_limit: 1000,         # Complexity scoring to prevent expensive operations
+    assign_score_limit: 500           # Limits on variable assignments
+  })
+  ```
+  - Complexity scoring tracks "render score" to prevent expensive operations
+  - Better timeout support through Ruby's threading model
+  - Can abort rendering when limits are exceeded
+
+- **Go**: **No built-in resource limits currently**
+  - Must implement timeouts externally (as shown in [Production Deployment Recommendations](#production-deployment-recommendations))
+  - No complexity scoring mechanism
+  - No built-in iteration count limits
+  - More challenging to implement proper resource constraints
+  - Goroutine-based timeouts have limitations (goroutine continues running)
+
+**3. Memory Safety**
+
+- **Ruby**: Memory-safe language with garbage collection
+  - No buffer overflows or memory corruption from language itself
+  - Dynamic typing provides flexibility but less compile-time safety
+
+- **Go**: Memory-safe language with garbage collection
+  - **Similar memory safety guarantees**
+  - Static typing provides additional compile-time safety
+  - Both can still exhaust memory through malicious template logic
+
+**4. Type System & Attack Surface**
+
+- **Ruby**: Dynamic typing with powerful reflection
+  - Larger attack surface if custom filters/tags use reflection carelessly
+  - Method calls can be intercepted and controlled via metaprogramming
+  - More runtime flexibility but requires careful security review
+
+- **Go**: Static typing with limited reflection
+  - Smaller attack surface in custom extensions
+  - Type safety provides compile-time guardrails
+  - Less flexibility but inherently more restrictive
+
+**5. Community Security Review**
+
+- **Ruby**:
+  - Original implementation by Shopify's security-conscious team
+  - 15+ years of community scrutiny and security research
+  - Established vulnerability disclosure and patching process
+  - Known security properties well-documented
+
+- **Go**:
+  - Smaller community, less extensive security review
+  - Newer implementation with shorter security track record
+  - Security properties less thoroughly tested in production
+  - Potential vulnerabilities may be undiscovered
+
+#### Bottom Line: Which to Choose?
+
+**For processing untrusted templates at scale in production:**
+
+The **Ruby implementation is currently the more battle-tested and safer choice** due to:
+- Built-in resource limiting (render_score_limit, render_length_limit)
+- 15+ years of production hardening at Shopify
+- Larger security-focused community
+- Better-established security track record
+
+**However**, both implementations:
+- Share the same fundamental security model and core guarantees
+- Require additional application-level safeguards for untrusted templates
+- Are vulnerable to DoS without proper external controls
+- Are equally safe for trusted templates (e.g., your own template files)
+
+**The Go implementation is perfectly suitable when:**
+- You control all templates (e.g., static site generator, internal tools)
+- You can implement external resource limiting (timeouts, OS-level limits)
+- You need Go's performance characteristics and deployment simplicity
+- You're willing to implement more defensive programming practices
+
+**Choose Ruby if:**
+- You need built-in resource limiting without external infrastructure
+- You're processing large volumes of untrusted templates
+- You want the most battle-tested implementation
+- You need established security guarantees
+
+**If using the Go implementation with untrusted templates**, you **must** implement:
+- External timeouts (goroutine-based as shown above)
+- Resource limits (memory, CPU via OS-level controls)
+- Template complexity validation before execution
+- Rate limiting per user/source
+- Comprehensive monitoring and alerting
+- Regular security reviews of custom extensions
 
 ## Security Best Practices Summary
 
@@ -301,6 +413,9 @@ Please include:
 ## Version History
 
 - **2025-01-08**: Initial security documentation created (addresses [#35](https://github.com/osteele/liquid/issues/35))
+  - Added comprehensive comparison with Ruby implementation
+  - Documented security guarantees, limitations, and DoS vulnerabilities
+  - Provided production deployment recommendations with code examples
 
 ## License
 
