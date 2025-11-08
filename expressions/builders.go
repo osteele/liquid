@@ -19,7 +19,7 @@ func makeContainsExpr(e1, e2 func(Context) values.Value) func(Context) values.Va
 	}
 }
 
-func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
+func makeFilter(fn valueFn, name string, args []filterParam) valueFn {
 	return func(ctx Context) values.Value {
 		result, err := ctx.ApplyFilter(name, fn, args)
 		if err != nil {
