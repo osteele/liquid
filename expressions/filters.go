@@ -57,8 +57,8 @@ func (c *Config) AddFilter(name string, fn any) {
 }
 
 func (c *Config) AddSafeFilter() {
-	c.ensureMapIsCreated()
 	if c.filters["safe"] == nil {
+		c.ensureMapIsCreated()
 		c.filters["safe"] = func(in interface{}) interface{} {
 			if in, alreadySafe := in.(values.SafeValue); alreadySafe {
 				return in
