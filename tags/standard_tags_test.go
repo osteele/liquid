@@ -27,6 +27,15 @@ var tagTests = []struct{ in, expected string }{
 	{`{% assign av = (1..5) %}{{ av }}`, "{1 5}"},
 	{`{% capture x %}captured{% endcapture %}{{ x }}`, "captured"},
 
+	// issue #76: assign with boolean expressions using 'and'/'or' operators
+	{`{% assign result = x == 123 and obj.a == 1 %}{{ result }}`, "true"},
+	{`{% assign result = x == 999 and obj.a == 1 %}{{ result }}`, "false"},
+	{`{% assign result = x == 999 or obj.a == 1 %}{{ result }}`, "true"},
+	{`{% assign result = x == 123 or obj.a == 999 %}{{ result }}`, "true"},
+	{`{% assign result = x == 999 or obj.a == 999 %}{{ result }}`, "false"},
+	// exact test case from issue #76
+	{`{% assign con_0_Euh43 = user.name == "Ryan" and user.email == "xx@gmail.com" %}{{ con_0_Euh43 }}`, "true"},
+
 	// TODO research whether Liquid requires matching interior tags
 	{`{% comment %}{{ a }}{% undefined_tag %}{% endcomment %}`, ""},
 
@@ -66,6 +75,10 @@ var tagTestBindings = map[string]any{
 		"meta": map[string]any{
 			"author": "John Doe",
 		},
+	},
+	"user": map[string]any{
+		"name":  "Ryan",
+		"email": "xx@gmail.com",
 	},
 }
 
