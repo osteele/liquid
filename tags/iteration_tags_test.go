@@ -48,7 +48,7 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
 	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "second.first."}, // same result - syntax order doesn't matter
 	{`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
-	{`{% for a in array offset:1 limit:1 %}{{ a }}.{% endfor %}`, "second."},         // same result
+	{`{% for a in array offset:1 limit:1 %}{{ a }}.{% endfor %}`, "second."}, // same result
 	{`{% for a in array reversed limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
 	{`{% for a in array reversed offset:1 limit:1 %}{{ a }}.{% endfor %}`, "second."}, // same result
 	{`{% for a in array limit:1 offset:1 reversed %}{{ a }}.{% endfor %}`, "second."}, // same result
