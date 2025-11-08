@@ -17,6 +17,7 @@ generator.
   - [Installation](#installation)
   - [Usage](#usage)
     - [Command-Line tool](#command-line-tool)
+  - [Security](#security)
   - [Documentation](#documentation)
     - [Status](#status)
     - [Drops](#drops)
@@ -106,6 +107,19 @@ usage: liquid [FILE]
 $ echo '{{ "Hello World" | downcase | split: " " | first | append: "!"}}' | liquid
 hello!
 ```
+
+## Security
+
+**Important**: If you plan to process untrusted templates (templates authored by users you don't fully trust), please review the [Security Policy](SECURITY.md) documentation.
+
+Key security considerations:
+
+- **Sandboxed Execution**: Templates cannot execute arbitrary code or access filesystem/network resources (by default)
+- **DoS Vulnerabilities**: The engine is vulnerable to denial-of-service attacks via infinite loops and memory exhaustion when processing untrusted templates
+- **Resource Limiting via FRender**: Use the `FRender` method with custom writers to implement timeouts and output size limits for untrusted templates
+- **Third-Party Extensions**: Custom filters and tags execute arbitrary Go code and should be carefully audited
+
+For detailed information about security guarantees, limitations, and production deployment recommendations, see [SECURITY.md](SECURITY.md). For implementing resource limits, see the [FRender documentation](./docs/FRender.md).
 
 ## Documentation
 
