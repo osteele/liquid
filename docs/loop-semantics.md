@@ -151,7 +151,7 @@ This suggests either:
 ## Test Code
 
 The investigation included:
-- `loop_semantics_test.go` - Go implementation tests
-- `test_ruby_liquid.rb` - Ruby reference implementation tests
+- `tags/iteration_tags_test.go` - Go implementation tests (added test cases for combined modifiers)
+- `scripts/test_ruby_liquid.rb` - Ruby reference implementation test script
 
-Both test files are included in this repository for reproduction.
+The Ruby script can be run to verify the behavior of the Shopify Ruby Liquid implementation.
