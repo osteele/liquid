@@ -209,6 +209,25 @@ The template store allows for usage of varying template storage implementations 
 
 Refer to [example](./docs/TemplateStoreExample.md) for an example implementation.
 
+### Advanced Rendering
+
+#### Custom Writers (FRender)
+
+For advanced use cases like streaming to files, implementing timeouts, or limiting output size, use the `FRender` method to render directly to any `io.Writer`:
+
+```go
+var buf bytes.Buffer
+err := template.FRender(&buf, bindings)
+```
+
+This is particularly useful for:
+- Rendering large templates without buffering in memory
+- Implementing cancellation via context
+- Limiting output size from untrusted templates
+- Custom output transformation
+
+See the [FRender documentation](./docs/FRender.md) for detailed examples and security best practices.
+
 ### References
 
 - [Shopify.github.io/liquid](https://shopify.github.io/liquid)
