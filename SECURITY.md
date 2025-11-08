@@ -548,6 +548,8 @@ Please include:
   - Added comprehensive comparison with Ruby implementation
   - Documented security guarantees, limitations, and DoS vulnerabilities
   - Provided production deployment recommendations with code examples
+  - Updated to reflect FRender capabilities for timeout and output size limiting
+  - Co-authored by Claude Code
 
 ## License
 
