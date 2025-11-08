@@ -21,8 +21,10 @@ repos:
       - id: go-build
         name: go build
         description: Build the project
-      # Note: go-unit-tests disabled due to environment issues
-      # Tests should be run via 'make test' instead
+      - id: go-unit-tests
+        name: go test
+        description: Run unit tests
+        args: [-short]
 
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks

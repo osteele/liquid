@@ -17,13 +17,13 @@ type EmbeddedFileSystemTemplateStore struct {
 	RootDir string
 }
 
-// implementation of ITemplateProvider
+// implementation of TemplateStore
 func (tl *EmbeddedFileSystemTemplateStore) ReadTemplate(filename string) ([]byte, error) {
 
 	fileName := fmt.Sprintf("%v/%v", tl.RootDir, filename)
-	templateFile, _ := tl.Folder.ReadFile(fileName)
+	templateFile, err := tl.Folder.ReadFile(fileName)
 
-	return templateFile, nil
+	return templateFile, err
 }
 
 ```

@@ -36,7 +36,7 @@ generator.
 
 ## Installation
 
-`go get gopkg.in/osteele/liquid.v1` # latest snapshot
+`go get github.com/osteele/liquid` # latest version
 
 `go get -u github.com/osteele/liquid` # development version
 
@@ -97,7 +97,7 @@ out, _ := engine.ParseAndRenderString(template, bindings)
 
 ### Command-Line tool
 
-`go install gopkg.in/osteele/liquid.v0/cmd/liquid` installs a command-line
+`go install github.com/osteele/liquid/cmd/liquid@latest` installs a command-line
 `liquid` executable. This is intended to make it easier to create test cases for
 bug reports.
 
@@ -122,6 +122,46 @@ Key security considerations:
 For detailed information about security guarantees, limitations, and production deployment recommendations, see [SECURITY.md](SECURITY.md). For implementing resource limits, see the [FRender documentation](./docs/FRender.md).
 
 ## Documentation
+
+This section provides a comprehensive guide to using and extending the Liquid template engine. Documentation is organized by topic:
+
+### Getting Started
+
+- **[Installation](#installation)** - Install the library and command-line tool
+- **[Usage](#usage)** - Quick start guide with examples
+- **[Command-Line Tool](#command-line-tool)** - Testing templates from the command line
+- **[API Documentation][godoc-url]** - Complete API reference on pkg.go.dev
+
+### Core Concepts
+
+- **[Value Types](#value-types)** - How Go values map to Liquid types
+- **[Drops](#drops)** - Custom types in templates
+- **[Status](#status)** - Feature compatibility with Shopify Liquid
+
+### Advanced Usage
+
+- **[Template Store](#template-store)** - Custom template storage (filesystem, database, etc.)
+  - See also: [Template Store Example](./docs/TemplateStoreExample.md)
+- **[Advanced Rendering](#advanced-rendering)** - FRender for streaming, timeouts, and size limits
+  - See also: [FRender Documentation](./docs/FRender.md)
+
+### Security & Performance
+
+- **[Security](#security)** - Resource limits and security considerations
+  - See also: [SECURITY.md](SECURITY.md)
+- **[FRender Documentation](./docs/FRender.md)** - Implementing resource limits in production
+
+### Internals
+
+- **[Loop Semantics](./docs/loop-semantics.md)** - Comparison with Ruby Liquid implementation
+- **[References](#references)** - Shopify Liquid documentation and resources
+
+### Contributing
+
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - How to contribute to the project
+- **[Contributors](#contributors)** - List of project contributors
+
+---
 
 ### Status
 
@@ -216,7 +256,7 @@ The template store allows for usage of varying template storage implementations 
     ```
 1. Register with the engine
     ```go
-    engine.RegisterTemplateStore()
+    engine.RegisterTemplateStore(myTemplateStore)
     ```
 
 `FileTemplateStore` is the default mechanism for backwards compatibility.
