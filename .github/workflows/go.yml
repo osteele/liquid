@@ -37,6 +37,30 @@ jobs:
     - name: Test
       run: make test
 
+  test-32bit:
+    name: Test on 32-bit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    container:
+      image: i386/golang:1.23
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: go mod download
+    
+    - name: Build
+      run: go build -v ./...
+    
+    - name: Run go vet
+      run: go vet ./...
+    
+    - name: Test
+      run: go test -race -v ./...
+
   coverage:
     runs-on: ubuntu-latest
     needs: test
