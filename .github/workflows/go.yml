@@ -40,6 +40,8 @@ jobs:
   test-32bit:
     name: Test on 32-bit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     container:
       image: i386/golang:1.23
     
