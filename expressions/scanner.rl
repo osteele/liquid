@@ -1,6 +1,9 @@
 package expressions
 
-import "strconv"
+import (
+	"strconv"
+	"unicode"
+)
 
 %%{
 	machine expression;
@@ -8,6 +11,18 @@ import "strconv"
 	access lex.;
 	variable p lex.p;
 	variable pe lex.pe;
+
+	utf8_cont = 0x80..0xBF;
+
+	# UTF-8 sequence patterns
+	utf8_2byte = (0xC2..0xDF) utf8_cont;
+	utf8_3byte = (0xE0..0xEF) utf8_cont{2};
+	utf8_4byte = (0xF0..0xF7) utf8_cont{3};
+	utf8_char = utf8_2byte | utf8_3byte | utf8_4byte;
+
+	# Unicode identifier - match ASCII OR multi-byte UTF-8 sequences
+	unicode_first = (alpha | '_' | utf8_char);
+	unicode_tail = (alnum | '_' | '-' | utf8_char);
 }%%
 
 type lexer struct {
@@ -42,7 +57,13 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action Identifier {
 			tok = IDENTIFIER
-			out.name = lex.token()
+			t := lex.token()
+
+			if !isValidUnicodeIdentifier(t) {
+				panic("syntax error in identifier " + t)
+			}
+
+			out.name = t
 			fbreak;
 		}
 		action Int {
@@ -71,9 +92,9 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
 
-		identifier = (alpha | '_') . (alnum | '_' | '-')*  '?'? ;
-		# TODO is this the form for a property? (in which case can share w/ identifier)
-		property = '.' (alpha | '_') . (alnum | '_' | '-')* '?' ? ;
+		identifier = unicode_first unicode_tail* '?'?;
+		property = '.' unicode_first unicode_tail* '?'?;
+
 		int = '-'? digit+ ;
 		float = '-'? digit+ ('.' digit+)? ;
 		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
@@ -123,4 +144,30 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 func (lex *lexer) Error(e string) {
     // fmt.Println("scan error:", e)
+}
+
+func isValidUnicodeIdentifier(s string) bool {
+	// Remove optional trailing '?' for validation
+	checkStr := s
+	if len(s) > 0 && s[len(s)-1] == '?' {
+		checkStr = s[:len(s)-1]
+	}
+
+	if len(checkStr) == 0 {
+		return false // "?" alone is invalid
+	}
+
+	// validate the core identifier part
+	runes := []rune(checkStr)
+	if !unicode.IsLetter(runes[0]) && runes[0] != '_' {
+		return false
+	}
+
+	for _, r := range runes[1:] {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && !unicode.IsMark(r) && r != '_' && r != '-' {
+			return false
+		}
+	}
+
+	return true
 }

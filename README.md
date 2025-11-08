@@ -241,6 +241,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
   <tr>
     <td align="center"><a href="https://github.com/kke"><img src="https://avatars.githubusercontent.com/u/224971?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Kimmo Lehto</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=kke" title="Code">💻</a></td>
     <td align="center"><a href="https://vito.io/"><img src="https://avatars.githubusercontent.com/u/77198?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Victor "Vito" Gama</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=heyvito" title="Code">💻</a></td>
+    <td align="center"><a href="https://utpal.io/"><img src="https://avatars.githubusercontent.com/u/19898129?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Utpal Sarkar</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=uksarkar" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=uksarkar" title="Tests">⚠️</a></td>
   </tr>
 </table>
 
