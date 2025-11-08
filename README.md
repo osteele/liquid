@@ -287,9 +287,6 @@ and filter test cases are taken directly from the Liquid documentation.
 
 MIT License
 
-[coveralls-url]: https://coveralls.io/r/osteele/liquid?branch=master
-[coveralls-svg]: https://img.shields.io/coveralls/osteele/liquid.svg?branch=master
-
 [go-url]: https://github.com/osteele/liquid/actions?query=workflow%3A%22Build+Status%22
 [go-svg]: https://github.com/osteele/liquid/actions/workflows/go.yml/badge.svg
 
