@@ -54,14 +54,21 @@ Liquid was designed by Shopify to allow end-user modification of templates while
 4. **Deep Nesting**
    - Deeply nested data structures or template constructs may cause stack overflow
 
-### Currently, there are NO built-in mechanisms for:
-- Execution timeouts
-- Memory limits
+### Mitigation via FRender
+
+While there are **no automatic built-in limits** like Ruby's `resource_limits`, the `FRender` method (available since v1.4.0) enables implementing these protections:
+
+✅ **Available via FRender**:
+- Execution timeouts (via context cancellation)
+- Output size limits (via custom writers)
+- Memory protection (via streaming output)
+
+❌ **Not currently available**:
 - CPU usage limits
-- Template complexity limits
+- Template complexity scoring
 - Iteration count limits
 
-**Recommendation**: If you need to process untrusted templates, implement your own timeout and resource limiting mechanisms at the application level. See [Production Deployment Recommendations](#production-deployment-recommendations) below.
+**Recommendation**: When processing untrusted templates, use `FRender` with custom writer implementations for timeout and size limiting. See [Production Deployment Recommendations](#production-deployment-recommendations) below for detailed examples.
 
 ### Data Injection Risks
 
@@ -110,57 +117,175 @@ engine.RegisterFilter("custom_filter", func(input any) any {
 
 If you plan to execute untrusted templates (templates authored by users you don't fully trust), consider implementing these safeguards:
 
-### 1. Timeout Protection
+### 1. Timeout Protection with FRender
 
-Wrap template execution with context timeouts:
+Use `FRender` with a context-aware writer to implement **proper cancellation** that actually stops rendering:
 
 ```go
 package main
 
 import (
+    "bytes"
     "context"
+    "errors"
     "fmt"
+    "io"
     "time"
 
     "github.com/osteele/liquid"
 )
 
-func renderWithTimeout(engine *liquid.Engine, template string, bindings map[string]any, timeout time.Duration) (string, error) {
+// CancelWriter wraps an io.Writer with context cancellation support
+type CancelWriter struct {
+    ctx context.Context
+    w   io.Writer
+}
+
+func (cw *CancelWriter) Write(p []byte) (n int, err error) {
+    select {
+    case <-cw.ctx.Done():
+        return 0, cw.ctx.Err()
+    default:
+        return cw.w.Write(p)
+    }
+}
+
+func renderWithTimeout(template *liquid.Template, bindings map[string]any, timeout time.Duration) (string, error) {
     ctx, cancel := context.WithTimeout(context.Background(), timeout)
     defer cancel()
 
-    resultChan := make(chan struct {
-        output string
-        err    error
-    }, 1)
+    var buf bytes.Buffer
+    cw := &CancelWriter{ctx: ctx, w: &buf}
 
-    go func() {
-        output, err := engine.ParseAndRenderString(template, bindings)
-        resultChan <- struct {
-            output string
-            err    error
-        }{output, err}
-    }()
-
-    select {
-    case result := <-resultChan:
-        return result.output, result.err
-    case <-ctx.Done():
-        return "", fmt.Errorf("template rendering timed out after %v", timeout)
+    err := template.FRender(cw, bindings)
+    if err != nil {
+        if errors.Is(err, context.DeadlineExceeded) {
+            return "", fmt.Errorf("template rendering exceeded %v timeout", timeout)
+        }
+        return "", err
     }
+
+    return buf.String(), nil
 }
 ```
 
-**Note**: This approach has limitations - the goroutine will continue running until completion even after timeout.
+**Advantages over goroutine approach**:
+- ✅ Actually stops rendering when timeout occurs (not just detection)
+- ✅ No resource leaks from continuing goroutines
+- ✅ Clean error handling via context
+- ✅ Can be combined with other writer wrappers
 
-### 2. Resource Limits
+### 2. Output Size Limits with FRender
 
-Run template execution in resource-limited environments:
-- Use OS-level process isolation (containers, VMs)
-- Set memory limits (cgroups, container limits)
-- Use separate processes with ulimits
+Protect against memory exhaustion from excessive output:
 
-### 3. Input Validation
+```go
+import (
+    "errors"
+    "io"
+)
+
+var ErrOutputLimitExceeded = errors.New("output size limit exceeded")
+
+// LimitWriter enforces a maximum output size
+type LimitWriter struct {
+    w        io.Writer
+    written  int64
+    maxBytes int64
+}
+
+func NewLimitWriter(w io.Writer, maxBytes int64) *LimitWriter {
+    return &LimitWriter{w: w, maxBytes: maxBytes}
+}
+
+func (lw *LimitWriter) Write(p []byte) (n int, err error) {
+    if lw.written+int64(len(p)) > lw.maxBytes {
+        return 0, ErrOutputLimitExceeded
+    }
+
+    n, err = lw.w.Write(p)
+    lw.written += int64(n)
+    return n, err
+}
+
+func renderWithSizeLimit(template *liquid.Template, bindings map[string]any, maxBytes int64) (string, error) {
+    var buf bytes.Buffer
+    lw := NewLimitWriter(&buf, maxBytes)
+
+    err := template.FRender(lw, bindings)
+    if err != nil {
+        if errors.Is(err, ErrOutputLimitExceeded) {
+            return "", fmt.Errorf("template output exceeded %d bytes", maxBytes)
+        }
+        return "", err
+    }
+
+    return buf.String(), nil
+}
+
+// Usage - limit untrusted template output to 1MB
+result, err := renderWithSizeLimit(template, bindings, 1024*1024)
+```
+
+This is equivalent to Ruby's `render_length_limit` option.
+
+### 3. Combined Protection (Recommended)
+
+For production use with untrusted templates, combine timeout and size limits:
+
+```go
+// SafeWriter combines context cancellation and size limiting
+type SafeWriter struct {
+    ctx      context.Context
+    w        io.Writer
+    written  int64
+    maxBytes int64
+}
+
+func (sw *SafeWriter) Write(p []byte) (n int, err error) {
+    // Check context cancellation
+    select {
+    case <-sw.ctx.Done():
+        return 0, sw.ctx.Err()
+    default:
+    }
+
+    // Check size limit
+    if sw.written+int64(len(p)) > sw.maxBytes {
+        return 0, ErrOutputLimitExceeded
+    }
+
+    n, err = sw.w.Write(p)
+    sw.written += int64(n)
+    return n, err
+}
+
+func renderUntrusted(template *liquid.Template, bindings map[string]any) (string, error) {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    var buf bytes.Buffer
+    safeWriter := &SafeWriter{
+        ctx:      ctx,
+        w:        &buf,
+        maxBytes: 10 * 1024 * 1024, // 10MB limit
+    }
+
+    err := template.FRender(safeWriter, bindings)
+    return buf.String(), err
+}
+```
+
+See [docs/FRender.md](./docs/FRender.md) for more examples and patterns.
+
+### 4. Additional Resource Limits
+
+For defense in depth, also consider:
+- OS-level process isolation (containers, VMs)
+- Memory limits (cgroups, container limits)
+- CPU limits via containerization
+
+### 5. Input Validation
 
 ```go
 // Validate template complexity before execution
@@ -179,7 +304,7 @@ func validateTemplate(template string) error {
 }
 ```
 
-### 4. Minimal Bindings
+### 6. Minimal Bindings
 
 Only expose data that templates absolutely need:
 
@@ -197,7 +322,7 @@ bindings := map[string]any{
 }
 ```
 
-### 5. Output Sanitization
+### 7. Output Sanitization
 
 Always sanitize template output before displaying in web contexts:
 
@@ -213,7 +338,7 @@ if err != nil {
 safeOutput := html.EscapeString(output)
 ```
 
-### 6. Template Review and Approval
+### 8. Template Review and Approval
 
 For sensitive applications:
 - Implement a template review process
@@ -221,7 +346,7 @@ For sensitive applications:
 - Audit template changes before deployment
 - Consider static analysis of templates
 
-### 7. Rate Limiting
+### 9. Rate Limiting
 
 Limit how often users can render templates:
 - Prevent abuse and DoS attacks
@@ -286,12 +411,13 @@ Both implementations provide:
   - Better timeout support through Ruby's threading model
   - Can abort rendering when limits are exceeded
 
-- **Go**: **No built-in resource limits currently**
-  - Must implement timeouts externally (as shown in [Production Deployment Recommendations](#production-deployment-recommendations))
-  - No complexity scoring mechanism
-  - No built-in iteration count limits
-  - More challenging to implement proper resource constraints
-  - Goroutine-based timeouts have limitations (goroutine continues running)
+- **Go**: Provides resource limiting via `FRender` (custom writer pattern):
+  - ✅ **Timeout support**: Context-based cancellation via custom writers (since v1.4.0)
+  - ✅ **Output size limits**: `render_length_limit` equivalent via `LimitWriter`
+  - ✅ **Proper cancellation**: Actually stops rendering (not just detection)
+  - ❌ **No complexity scoring**: No `render_score_limit` equivalent
+  - ❌ **No iteration limits**: No `assign_score_limit` equivalent
+  - **Requires custom writer implementation** (see [Production Deployment Recommendations](#production-deployment-recommendations))
 
 **3. Memory Safety**
 
@@ -334,43 +460,49 @@ Both implementations provide:
 
 **For processing untrusted templates at scale in production:**
 
-The **Ruby implementation is currently the more battle-tested and safer choice** due to:
-- Built-in resource limiting (render_score_limit, render_length_limit)
+**Ruby** remains the more battle-tested choice due to:
 - 15+ years of production hardening at Shopify
+- Automatic complexity scoring (`render_score_limit`, `assign_score_limit`)
 - Larger security-focused community
 - Better-established security track record
 
-**However**, both implementations:
+**Go** now provides comparable timeout and output limiting via FRender:
+- ✅ Proper timeout support with cancellation (via `FRender` + context)
+- ✅ Output size limiting equivalent to `render_length_limit`
+- ❌ No automatic complexity scoring for CPU/iteration limits
+- Requires custom writer implementation (more code, but flexible)
+
+**Both implementations**:
 - Share the same fundamental security model and core guarantees
-- Require additional application-level safeguards for untrusted templates
-- Are vulnerable to DoS without proper external controls
 - Are equally safe for trusted templates (e.g., your own template files)
+- Require template complexity validation for full DoS protection
 
-**The Go implementation is perfectly suitable when:**
+**Choose Go when:**
 - You control all templates (e.g., static site generator, internal tools)
-- You can implement external resource limiting (timeouts, OS-level limits)
+- You're willing to implement `FRender` writers for timeout/size limits
 - You need Go's performance characteristics and deployment simplicity
-- You're willing to implement more defensive programming practices
+- You want fine-grained control over resource limiting logic
 
-**Choose Ruby if:**
-- You need built-in resource limiting without external infrastructure
+**Choose Ruby when:**
+- You need automatic complexity scoring without custom code
+- You want a single `resource_limits` configuration instead of custom writers
 - You're processing large volumes of untrusted templates
-- You want the most battle-tested implementation
-- You need established security guarantees
+- You prefer the most battle-tested implementation
 
-**If using the Go implementation with untrusted templates**, you **must** implement:
-- External timeouts (goroutine-based as shown above)
-- Resource limits (memory, CPU via OS-level controls)
-- Template complexity validation before execution
-- Rate limiting per user/source
-- Comprehensive monitoring and alerting
-- Regular security reviews of custom extensions
+**If using the Go implementation with untrusted templates**, you **must** use:
+- ✅ `FRender` with context-aware writer for timeouts ([example above](#1-timeout-protection-with-frender))
+- ✅ `FRender` with size-limiting writer for output limits ([example above](#2-output-size-limits-with-frender))
+- ✅ Template complexity validation before execution
+- ✅ Rate limiting per user/source
+- ✅ Comprehensive monitoring and alerting
+- ✅ Regular security reviews of custom extensions
 
 ## Security Best Practices Summary
 
 ✅ **DO**:
-- Implement timeouts for template execution
-- Use resource limits (memory, CPU)
+- **Use `FRender` for untrusted templates** with timeout and size-limiting writers
+- Implement timeouts via context-aware writers
+- Limit output size to prevent memory exhaustion
 - Validate template complexity before execution
 - Minimize data exposed in bindings
 - Sanitize template output

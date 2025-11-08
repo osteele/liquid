@@ -116,10 +116,10 @@ Key security considerations:
 
 - **Sandboxed Execution**: Templates cannot execute arbitrary code or access filesystem/network resources (by default)
 - **DoS Vulnerabilities**: The engine is vulnerable to denial-of-service attacks via infinite loops and memory exhaustion when processing untrusted templates
-- **No Built-in Resource Limits**: There are currently no built-in timeouts, memory limits, or complexity constraints
+- **Resource Limiting via FRender**: Use the `FRender` method with custom writers to implement timeouts and output size limits for untrusted templates
 - **Third-Party Extensions**: Custom filters and tags execute arbitrary Go code and should be carefully audited
 
-For detailed information about security guarantees, limitations, and production deployment recommendations, see [SECURITY.md](SECURITY.md).
+For detailed information about security guarantees, limitations, and production deployment recommendations, see [SECURITY.md](SECURITY.md). For implementing resource limits, see the [FRender documentation](./docs/FRender.md).
 
 ## Documentation
 
