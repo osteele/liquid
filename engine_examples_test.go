@@ -288,3 +288,20 @@ func TestUnicodeEdgeCases(t *testing.T) {
 		require.Equal(t, "HELLO WORLD", string(result))
 	})
 }
+
+// TestIssue63_UnicodeVariableNames tests that Unicode variable names work correctly
+// See: https://github.com/osteele/liquid/issues/63
+func TestIssue63_UnicodeVariableNames(t *testing.T) {
+	t.Run("ExactIssue63Example", func(t *testing.T) {
+		// This is the exact example from issue #63 that was failing
+		vars := map[string]any{
+			"描述": "content",
+		}
+
+		template := NewEngine()
+		result, err := template.ParseAndRender([]byte("{{ 描述 }}"), vars)
+
+		require.NoError(t, err)
+		require.Equal(t, "content", string(result))
+	})
+}
