@@ -58,6 +58,69 @@ fmt.Println(out)
 
 See the [API documentation][godoc-url] for additional examples.
 
+### Filters
+
+Filters transform template values. The library includes [standard Shopify Liquid filters](https://shopify.github.io/liquid/filters/abs/), and you can also define custom filters.
+
+#### Basic Filter
+
+```go
+engine := liquid.NewEngine()
+engine.RegisterFilter("has_prefix", strings.HasPrefix)
+
+out, _ := engine.ParseAndRenderString(`{{ title | has_prefix: "Intro" }}`,
+    map[string]any{"title": "Introduction"})
+// Output: true
+```
+
+#### Filter with Optional Arguments
+
+Use a function parameter to provide default values:
+
+```go
+engine.RegisterFilter("inc", func(a int, b func(int) int) int {
+    return a + b(1)  // b(1) provides default value
+})
+
+out, _ := engine.ParseAndRenderString(`{{ n | inc }}`, map[string]any{"n": 10})
+// Output: 11
+
+out, _ = engine.ParseAndRenderString(`{{ n | inc: 5 }}`, map[string]any{"n": 10})
+// Output: 15
+```
+
+#### Filters with Named Arguments
+
+Filters can accept named arguments by including a `map[string]any` parameter:
+
+```go
+engine.RegisterFilter("img_url", func(image string, size string, opts map[string]any) string {
+    scale := 1
+    if s, ok := opts["scale"].(int); ok {
+        scale = s
+    }
+    return fmt.Sprintf("https://cdn.example.com/%s?size=%s&scale=%d", image, size, scale)
+})
+
+// Use with named arguments
+out, _ := engine.ParseAndRenderString(
+    `{{image | img_url: '580x', scale: 2}}`,
+    map[string]any{"image": "product.jpg"})
+// Output: https://cdn.example.com/product.jpg?size=580x&scale=2
+
+// Named arguments are optional
+out, _ = engine.ParseAndRenderString(
+    `{{image | img_url: '300x'}}`,
+    map[string]any{"image": "product.jpg"})
+// Output: https://cdn.example.com/product.jpg?size=300x&scale=1
+```
+
+The named arguments syntax follows Shopify Liquid conventions:
+- Named arguments use the format `name: value`
+- Multiple arguments are comma-separated: `filter: pos_arg, name1: value1, name2: value2`
+- Positional arguments come before named arguments
+- If the filter function's last parameter is `map[string]any`, it receives all named arguments
+
 ### Jekyll Compatibility
 
 This library was originally developed for [Gojekyll](https://github.com/osteele/gojekyll), a Go port of Jekyll. 
@@ -167,8 +230,6 @@ This section provides a comprehensive guide to using and extending the Liquid te
 
 These features of Shopify Liquid aren't implemented:
 
-- Filter keyword parameters, for example `{{ image | img_url: '580x', scale: 2
-  }}`. [[Issue #42](https://github.com/osteele/liquid/issues/42)]
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
 - Non-strict filters. An undefined filter is currently an error.
 

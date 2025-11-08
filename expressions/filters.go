@@ -33,6 +33,12 @@ func (e FilterError) Error() string {
 
 type valueFn func(Context) values.Value
 
+// filterParam represents a filter parameter that can be either positional or named
+type filterParam struct {
+	name  string  // empty string for positional parameters
+	value valueFn // the parameter value expression
+}
+
 func (c *Config) ensureMapIsCreated() {
 	if c.filters == nil {
 		c.filters = make(map[string]interface{})
@@ -80,7 +86,7 @@ func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params []filterParam) (any, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
 		panic(UndefinedFilter(name))
@@ -89,17 +95,56 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 	fr := reflect.ValueOf(filter)
 	args := []any{receiver(ctx).Interface()}
 
-	for i, param := range params {
-		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
-			expr, err := Parse(param(ctx).Interface().(string))
+	// Separate positional and named parameters
+	var positionalParams []filterParam
+	namedParams := make(map[string]any)
+
+	for _, param := range params {
+		if param.name == "" {
+			positionalParams = append(positionalParams, param)
+		} else {
+			namedParams[param.name] = param.value(ctx).Interface()
+		}
+	}
+
+	// Check if filter function accepts named arguments (last param is map[string]any or map[string]interface{})
+	acceptsNamedArgs := false
+	namedArgsIndex := -1
+	if fr.Type().NumIn() > 1 {
+		lastParamType := fr.Type().In(fr.Type().NumIn() - 1)
+		if lastParamType.Kind() == reflect.Map &&
+			lastParamType.Key().Kind() == reflect.String &&
+			(lastParamType.Elem().Kind() == reflect.Interface || lastParamType.Elem() == reflect.TypeOf((*any)(nil)).Elem()) {
+			acceptsNamedArgs = true
+			namedArgsIndex = fr.Type().NumIn() - 1
+		}
+	}
+
+	// Process positional parameters
+	for i, param := range positionalParams {
+		// Calculate the actual parameter index (1-based because receiver is first)
+		paramIdx := i + 1
+
+		// Skip the named args slot if it exists and we've reached it
+		if acceptsNamedArgs && paramIdx >= namedArgsIndex {
+			break
+		}
+
+		if paramIdx < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(paramIdx)) {
+			expr, err := Parse(param.value(ctx).Interface().(string))
 			if err != nil {
 				panic(err)
 			}
 
 			args = append(args, closure{expr, ctx})
 		} else {
-			args = append(args, param(ctx).Interface())
+			args = append(args, param.value(ctx).Interface())
 		}
+	}
+
+	// Add named arguments map if the filter accepts them (always pass, even if empty)
+	if acceptsNamedArgs {
+		args = append(args, namedParams)
 	}
 
 	out, err := values.Call(fr, args)
