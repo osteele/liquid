@@ -57,6 +57,7 @@ func (c *Config) AddFilter(name string, fn any) {
 }
 
 func (c *Config) AddSafeFilter() {
+	// Reading from a nil map is safe; delay allocation until we need to write.
 	if c.filters["safe"] == nil {
 		c.ensureMapIsCreated()
 		c.filters["safe"] = func(in interface{}) interface{} {
