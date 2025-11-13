@@ -8,6 +8,7 @@ require (
 	github.com/autopilot3/ap3-crm-api-go v0.0.0-20230721090944-c8612d9147a5
 	github.com/autopilot3/ap3-helpers-go v0.0.0-20250506013120-83414d6baf31
 	github.com/autopilot3/ap3-types-go v0.0.0-20250409014854-d8c500a2e4d0
+	github.com/bojanz/currency v1.4.0
 	github.com/osteele/tuesday v1.0.3
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/text v0.25.0
@@ -25,6 +26,7 @@ require (
 	github.com/aws/aws-sdk-go v1.44.278 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gocql/gocql v1.4.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

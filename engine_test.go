@@ -144,12 +144,36 @@ func TestDecimalFilter(t *testing.T) {
 
 func TestDecimalWithDelimiterFilter(t *testing.T) {
 	engine := NewEngine()
-	template := `{{ 12345 | decimalWithDelimiter: 'one', '€', 'de' }}`
-	str, err := engine.ParseAndRenderString(template, nil)
-	require.NoError(t, err)
-	t.Log(str)
-	if str != "€12,3" {
-		t.Error("decimal with delimiter filter error")
+	tests := []struct {
+		name          string
+		liquid        string
+		expectedValue string
+	}{
+		{
+			name:          "currency symbol",
+			liquid:        `{{ 12345 | decimalWithDelimiter: 'one', '€', 'de' }}`,
+			expectedValue: "€12,3",
+		},
+		{
+			name:          "norwegian Krone",
+			liquid:        `{{ 12345 | decimalWithDelimiter: 'one', 'NOK', 'no-NO' }}`,
+			expectedValue: "12,3 kr",
+		},
+		{
+			name:          "us dollar in english",
+			liquid:        `{{ 12345 | decimalWithDelimiter: 'one', 'USD', 'en' }}`,
+			expectedValue: "$12.3",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			str, err := engine.ParseAndRenderString(test.liquid, nil)
+			require.NoError(t, err)
+			if str != test.expectedValue {
+				t.Errorf("For %s, expected %s, got %s", test.name, test.expectedValue, str)
+			}
+		})
 	}
 }
 

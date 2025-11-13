@@ -17,6 +17,7 @@ import (
 	"github.com/autopilot3/liquid/render"
 	"github.com/autopilot3/liquid/tags"
 
+	"github.com/bojanz/currency"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
@@ -178,7 +179,7 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 		return value
 	})
 
-	engine.RegisterFilter("decimalWithDelimiter", func(s string, format string, currency string, loc string) string {
+	engine.RegisterFilter("decimalWithDelimiter", func(s string, format string, currencyCode string, loc string) string {
 		if s == "" {
 			return s
 		}
@@ -186,6 +187,29 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 		if err != nil {
 			logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s to decimal: %s", s, err.Error()), "lqiuid", "filter")
 			return s
+		}
+
+		if len(currencyCode) == 3 { // iso code
+			amount, err := currency.NewAmount(fmt.Sprintf("%.3f", num/1000), currencyCode)
+			if err == nil {
+				locale := currency.NewLocale(loc)
+				formatter := currency.NewFormatter(locale)
+
+				switch format {
+				case "whole":
+					formatter.MaxDigits = 0
+				case "one":
+					formatter.MaxDigits = 1
+				case "two":
+					formatter.MaxDigits = 2
+				default:
+					formatter.MaxDigits = 2
+				}
+				return formatter.Format(amount)
+			} else {
+				// log and fallback to the previous logic
+				logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s with currency code %s to decimal: %s", s, currencyCode, err.Error()), "lqiuid", "filter")
+			}
 		}
 		var formatTemplate string
 		switch format {
@@ -204,12 +228,11 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 			tag = language.English
 		}
 		p := message.NewPrinter(tag)
-		value := p.Sprintf(formatTemplate, float64(num)/1000)
-		if currency != "" {
-			return currency + value
+		val := p.Sprintf(formatTemplate, num/1000)
+		if currencyCode != "" {
+			return currencyCode + val
 		}
-
-		return value
+		return val
 	})
 
 	engine.RegisterFilter("numberWithDelimiter", func(s string, loc string, format string) string {
