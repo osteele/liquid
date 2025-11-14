@@ -194,28 +194,55 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return strings.Replace(s, old, n, 1)
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
-	fd.AddFilter("slice", func(s string, start int, length func(int) int) string {
-		if len(s) == 0 {
-			return ""
+	fd.AddFilter("slice", func(v interface{}, start int, length func(int) int) interface{} {
+		// Are we in the []byte case? Transform []byte to string
+		if b, ok := v.([]byte); ok {
+			v = string(b)
 		}
-
-		ss := []rune(s)
-		n := length(1)
-
-		if start < 0 {
-			start = len(ss) + start
+		// Are we in the string case?
+		if s, ok := v.(string); ok {
+			// Work on runes, not chars
+			runes := []rune(s)
+			n := length(1)
+			if start < 0 {
+				start = len(runes) + start
+				if start < 0 {
+					start = 0
+				}
+			}
+			if start > len(runes) {
+				start = len(runes)
+			}
+			end := start + n
+			if end > len(runes) {
+				end = len(runes)
+			}
+			return string(runes[start:end])
 		}
-
-		if start < 0 {
-			return ""
+		// Are we in the slice case?
+		// A type test cannot suffice because []T and []U are different types, so we must use conversion.
+		var slice []interface{}
+		if sliceIface, err := values.Convert(v, reflect.TypeOf(slice)); err == nil {
+			var ok bool
+			if slice, ok = sliceIface.([]interface{}); ok {
+				n := length(1)
+				if start < 0 {
+					start = len(slice) + start
+					if start < 0 {
+						start = 0
+					}
+				}
+				if start > len(slice) {
+					start = len(slice)
+				}
+				end := start + n
+				if end > len(slice) {
+					end = len(slice)
+				}
+				return slice[start:end]
+			}
 		}
-
-		end := start + n
-		if end > len(ss) {
-			end = len(ss)
-		}
-
-		return string(ss[start:end])
+		return nil
 	})
 	fd.AddFilter("split", splitFilter)
 	fd.AddFilter("strip_html", func(s string) string {
