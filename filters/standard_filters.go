@@ -27,19 +27,25 @@ type FilterDictionary interface {
 
 // Helper functions for type-aware arithmetic operations
 
-// isIntegerType checks if a value is an integer type
-// Note: uint and uint64 are not included to avoid potential overflow issues
-// when converting to int64. These types will fall back to float arithmetic.
+// isIntegerType checks if a value is an integer type that can be safely
+// represented as int64 without overflow
 func isIntegerType(v any) bool {
-	switch v.(type) {
+	switch val := v.(type) {
 	case int, int8, int16, int32, int64, uint8, uint16, uint32:
 		return true
+	case uint:
+		// Check if uint value fits in int64 range
+		return val <= math.MaxInt64
+	case uint64:
+		// Check if uint64 value fits in int64 range
+		return val <= math.MaxInt64
 	default:
 		return false
 	}
 }
 
 // toInt64 converts a value to int64
+// Caller must ensure value fits in int64 range by calling isIntegerType first
 func toInt64(v any) int64 {
 	switch val := v.(type) {
 	case int:
@@ -58,6 +64,10 @@ func toInt64(v any) int64 {
 		return int64(val)
 	case uint32:
 		return int64(val)
+	case uint:
+		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
+	case uint64:
+		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
 	default:
 		return 0
 	}
