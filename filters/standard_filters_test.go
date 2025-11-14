@@ -189,6 +189,14 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`1743096453 | plus: 7`, int64(1743096460)},
 	{`1000000 | times: 1000`, int64(1000000000)},
 
+	// Test uint types - should preserve integer type when in int64 range
+	{`small_uint | plus: 1`, int64(1001)},
+	{`small_uint | minus: 1`, int64(999)},
+	{`small_uint | times: 2`, int64(2000)},
+	{`small_uint64 | plus: 100`, int64(1100)},
+	{`small_uint64 | minus: 100`, int64(900)},
+	{`small_uint64 | times: 3`, int64(3000)},
+
 	{`3 | modulo: 2`, 1.0},
 	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
@@ -246,6 +254,10 @@ var filterTestBindings = map[string]any{
 	"string_with_newlines": "\nHello\nthere\n",
 	"dup_ints":             []int{1, 2, 1, 3},
 	"dup_strings":          []string{"one", "two", "one", "three"},
+
+	// Test uint types in arithmetic operations (issue #109)
+	"small_uint":   uint(1000),
+	"small_uint64": uint64(1000),
 
 	// for examples from liquid docs
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},
