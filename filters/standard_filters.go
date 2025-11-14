@@ -28,9 +28,11 @@ type FilterDictionary interface {
 // Helper functions for type-aware arithmetic operations
 
 // isIntegerType checks if a value is an integer type
+// Note: uint and uint64 are not included to avoid potential overflow issues
+// when converting to int64. These types will fall back to float arithmetic.
 func isIntegerType(v any) bool {
 	switch v.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	case int, int8, int16, int32, int64, uint8, uint16, uint32:
 		return true
 	default:
 		return false
@@ -50,15 +52,11 @@ func toInt64(v any) int64 {
 		return int64(val)
 	case int64:
 		return val
-	case uint:
-		return int64(val)
 	case uint8:
 		return int64(val)
 	case uint16:
 		return int64(val)
 	case uint32:
-		return int64(val)
-	case uint64:
 		return int64(val)
 	default:
 		return 0
