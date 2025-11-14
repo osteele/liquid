@@ -25,6 +25,86 @@ type FilterDictionary interface {
 	AddFilter(string, any)
 }
 
+// Helper functions for type-aware arithmetic operations
+
+// isIntegerType checks if a value is an integer type that can be safely
+// represented as int64 without overflow
+func isIntegerType(v any) bool {
+	switch val := v.(type) {
+	case int, int8, int16, int32, int64, uint8, uint16, uint32:
+		return true
+	case uint:
+		// Check if uint value fits in int64 range
+		return val <= math.MaxInt64
+	case uint64:
+		// Check if uint64 value fits in int64 range
+		return val <= math.MaxInt64
+	default:
+		return false
+	}
+}
+
+// toInt64 converts a value to int64
+// Caller must ensure value fits in int64 range by calling isIntegerType first
+func toInt64(v any) int64 {
+	switch val := v.(type) {
+	case int:
+		return int64(val)
+	case int8:
+		return int64(val)
+	case int16:
+		return int64(val)
+	case int32:
+		return int64(val)
+	case int64:
+		return val
+	case uint8:
+		return int64(val)
+	case uint16:
+		return int64(val)
+	case uint32:
+		return int64(val)
+	case uint:
+		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
+	case uint64:
+		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
+	default:
+		return 0
+	}
+}
+
+// toFloat64 converts a value to float64
+func toFloat64(v any) float64 {
+	switch val := v.(type) {
+	case int:
+		return float64(val)
+	case int8:
+		return float64(val)
+	case int16:
+		return float64(val)
+	case int32:
+		return float64(val)
+	case int64:
+		return float64(val)
+	case uint:
+		return float64(val)
+	case uint8:
+		return float64(val)
+	case uint16:
+		return float64(val)
+	case uint32:
+		return float64(val)
+	case uint64:
+		return float64(val)
+	case float32:
+		return float64(val)
+	case float64:
+		return val
+	default:
+		return 0
+	}
+}
+
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	// value filters
@@ -99,14 +179,29 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return int(math.Floor(a))
 	})
 	fd.AddFilter("modulo", math.Mod)
-	fd.AddFilter("minus", func(a, b float64) float64 {
-		return a - b
+	fd.AddFilter("minus", func(a, b any) any {
+		// If both operands are integers, perform integer arithmetic
+		if isIntegerType(a) && isIntegerType(b) {
+			return toInt64(a) - toInt64(b)
+		}
+		// Otherwise, perform float arithmetic
+		return toFloat64(a) - toFloat64(b)
 	})
-	fd.AddFilter("plus", func(a, b float64) float64 {
-		return a + b
+	fd.AddFilter("plus", func(a, b any) any {
+		// If both operands are integers, perform integer arithmetic
+		if isIntegerType(a) && isIntegerType(b) {
+			return toInt64(a) + toInt64(b)
+		}
+		// Otherwise, perform float arithmetic
+		return toFloat64(a) + toFloat64(b)
 	})
-	fd.AddFilter("times", func(a, b float64) float64 {
-		return a * b
+	fd.AddFilter("times", func(a, b any) any {
+		// If both operands are integers, perform integer arithmetic
+		if isIntegerType(a) && isIntegerType(b) {
+			return toInt64(a) * toInt64(b)
+		}
+		// Otherwise, perform float arithmetic
+		return toFloat64(a) * toFloat64(b)
 	})
 	fd.AddFilter("divided_by", func(a float64, b any) (any, error) {
 		divInt := func(a, b int64) (int64, error) {
