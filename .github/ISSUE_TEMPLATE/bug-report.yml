@@ -1,0 +1,68 @@
+name: Bug Report
+description: Report a bug in the Liquid template engine
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the form below to help us understand and fix the issue.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify you've completed these steps before submitting
+      options:
+        - label: I have searched the [issue list](https://github.com/osteele/liquid/issues) for similar issues
+          required: true
+        - label: I have tested my example against Shopify Liquid (not required if the issue is a panic or an error where `IsTemplateError` returns false)
+          required: false
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Describe the expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: Describe what actually happened, including any error messages
+    validations:
+      required: true
+
+  - type: textarea
+    id: detailed-description
+    attributes:
+      label: Detailed Description
+      description: Provide a detailed description with example code, input data, and steps to reproduce
+      placeholder: |
+        Example:
+        ```go
+        template := `{{ "hello" | upcase }}`
+        engine := liquid.NewEngine()
+        out, err := engine.ParseAndRenderString(template, nil)
+        ```
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: possible-solution
+    attributes:
+      label: Possible Solution
+      description: (Optional) Suggest a fix or reason for the bug
+      placeholder: If you have ideas about what might be causing this or how to fix it, please share
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: What version of liquid are you using?
+      placeholder: e.g., v1.2.3 or commit SHA

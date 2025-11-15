@@ -1,0 +1,62 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[FEATURE] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest in improving the Liquid template engine! Please describe your feature request below.
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Pre-submission Checklist
+      description: Please verify you've completed this step before submitting
+      options:
+        - label: I have searched the [issue list](https://github.com/osteele/liquid/issues) for similar feature requests
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Description
+      description: What problem does this feature solve? Is your feature request related to a problem?
+      placeholder: I'm frustrated when... / It would be useful to have...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: |
+        What should the feature do? How should it work?
+
+        Example:
+        ```liquid
+        {{ variable | new_filter }}
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or features you've considered
+      placeholder: Have you considered workarounds or other approaches?
+
+  - type: textarea
+    id: shopify-compatibility
+    attributes:
+      label: Shopify Liquid Compatibility
+      description: Does this feature exist in Shopify Liquid? If so, please provide documentation or examples
+      placeholder: Link to Shopify Liquid docs or describe how it works in Shopify
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Add any other context, examples, or screenshots about the feature request
