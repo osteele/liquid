@@ -42,4 +42,8 @@ func TestParseStatement(t *testing.T) {
 	stmt, err = ParseStatement(WhenStatementSelector, "a, b")
 	require.NoError(t, err)
 	require.Len(t, stmt.Exprs, 2)
+
+	stmt, err = ParseStatement(WhenStatementSelector, "a or b")
+	require.NoError(t, err)
+	require.Len(t, stmt.Exprs, 2)
 }

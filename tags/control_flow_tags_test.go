@@ -20,10 +20,18 @@ var cfTagTests = []struct{ in, expected string }{
 	// else
 	{`{% case 1 %}{% when 1 %}a{% else %}b{% endcase %}`, "a"},
 	{`{% case 2 %}{% when 1 %}a{% else %}b{% endcase %}`, "b"},
-	// disjunction
+	// disjunction with commas
 	{`{% case 1 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "a"},
 	{`{% case 2 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "a"},
 	{`{% case 3 %}{% when 1,2 %}a{% else %}b{% endcase %}`, "b"},
+	// disjunction with 'or' operator
+	{`{% case 1 %}{% when 1 or 2 %}a{% else %}b{% endcase %}`, "a"},
+	{`{% case 2 %}{% when 1 or 2 %}a{% else %}b{% endcase %}`, "a"},
+	{`{% case 3 %}{% when 1 or 2 %}a{% else %}b{% endcase %}`, "b"},
+	// string values with 'or' operator (matching Shopify docs example)
+	{`{% case 'Love' %}{% when 'Love' or 'Luck' %}potion{% endcase %}`, "potion"},
+	{`{% case 'Luck' %}{% when 'Love' or 'Luck' %}potion{% endcase %}`, "potion"},
+	{`{% case 'Health' %}{% when 'Love' or 'Luck' %}potion{% endcase %}`, ""},
 
 	// if
 	{`{% if true %}true{% endif %}`, "true"},
