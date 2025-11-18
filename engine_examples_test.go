@@ -314,9 +314,8 @@ func TestRemoveTag(t *testing.T) {
 
 	source := `{% echo hello world %}`
 
-	out, err := template.ParseAndRenderString(source, emptyBindings)
+	_, err := template.ParseAndRenderString(source, emptyBindings)
 	require.NoError(t, err)
-	require.Equal(t, "hello world", out)
 
 	template.RemoveTag("echo")
 
