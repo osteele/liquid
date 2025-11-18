@@ -174,6 +174,10 @@ func (e *Engine) SetAutoEscapeReplacer(replacer render.Replacer) {
 	e.cfg.SetAutoEscapeReplacer(replacer)
 }
 
+// RemoveTag removes the named tag definition from the engine's configuration.
+// After calling RemoveTag the tag will no longer be recognized by subsequent
+// parsing or rendering operations. The call is idempotent — removing a tag
+// that is not registered is a no-op.
 func (e *Engine) RemoveTag(name string) {
 	e.cfg.RemoveTag(name)
 }
