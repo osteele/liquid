@@ -311,12 +311,6 @@ func TestRemoveTag(t *testing.T) {
 	engine.RegisterTag("echo", func(c render.Context) (string, error) {
 		return c.TagArgs(), nil
 	})
-
-	// Register a tag that always returns an error
-	engine.RegisterTag("include", func(c render.Context) (string, error) {
-		return "", fmt.Errorf("Tag include is not allowed")
-	})
-
 	source := `{% echo hello world %}`
 
 	_, err := engine.ParseAndRenderString(source, emptyBindings)
