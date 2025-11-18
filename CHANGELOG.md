@@ -8,6 +8,7 @@
 - **Named Filter Arguments** (#42): Added keyword arguments for filters, including `allow_false` support in the `default` filter.
 - **String Literal Escapes** (#45): Added `\\`, `\"`, `\n`, `\t`, and `\r` escapes in double-quoted string literals. Single-quoted strings remain literal.
 - **Shopify Filters** (#146): Added `where`, `sum`, `at_least`, `at_most`, `pluralize`, `handleize`/`handle`, `remove_last`, and `replace_last`.
+- **Render Tag** (#128, #129): Added isolated snippet rendering with named parameters and `with`, `for`, and `as` forms.
 
 ### Fixed
 

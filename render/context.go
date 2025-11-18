@@ -160,6 +160,21 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 }
 
 func (c rendererContext) RenderFile(filename string, b map[string]any) (string, error) {
+	bindings := make(map[string]any, len(c.ctx.bindings)+len(b))
+	maps.Copy(bindings, c.ctx.bindings)
+	maps.Copy(bindings, b)
+
+	return c.renderFile(filename, bindings)
+}
+
+// RenderFileIsolated renders a template without inheriting the parent lexical scope.
+// It is intentionally not part of Context, so adding the render tag does not break
+// third-party Context implementations.
+func (c rendererContext) RenderFileIsolated(filename string, bindings map[string]any) (string, error) {
+	return c.renderFile(filename, maps.Clone(bindings))
+}
+
+func (c rendererContext) renderFile(filename string, bindings map[string]any) (string, error) {
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
@@ -176,10 +191,6 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 	if err != nil {
 		return "", err
 	}
-
-	bindings := make(map[string]any, len(c.ctx.bindings)+len(b))
-	maps.Copy(bindings, c.ctx.bindings)
-	maps.Copy(bindings, b)
 
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
