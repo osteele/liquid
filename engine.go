@@ -173,3 +173,7 @@ func (e *Engine) ParseTemplateAndCache(source []byte, path string, line int) (*T
 func (e *Engine) SetAutoEscapeReplacer(replacer render.Replacer) {
 	e.cfg.SetAutoEscapeReplacer(replacer)
 }
+
+func (e *Engine) RemoveTag(name string) {
+	e.cfg.RemoveTag(name)
+}
