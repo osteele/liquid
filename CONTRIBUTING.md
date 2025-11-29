@@ -4,7 +4,7 @@ Here's some ways to help:
 
 * Select an item from the [issues list](https://github.com/osteele/liquid/issues)
 * Search the sources for FIXME and TODO comments using `make list-todo`
-* Improve the [code coverage](https://coveralls.io/github/osteele/liquid?branch=master) - run `make coverage` to see current coverage
+* Improve the code coverage - run `make coverage` to see current coverage (currently ~84%)
 
 Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
 
@@ -68,9 +68,17 @@ make pre-commit  # Run formatter, linter, and tests before committing
 ```bash
 make test        # Run all tests
 make test-short  # Run short tests only
-make coverage    # Generate test coverage report (HTML)
+make coverage    # Generate test coverage report
 make benchmark   # Run performance benchmarks
 ```
+
+**Coverage Reporting**: Code coverage is tracked automatically via GitHub Actions. When you push to the main branch, the CI pipeline:
+- Generates a coverage report using Go's native coverage tools
+- Extracts the coverage percentage
+- Displays coverage details in the workflow summary
+- Optionally creates a coverage badge (if `GIST_SECRET` is configured)
+
+To view coverage locally, run `make coverage`. This generates `coverage.out` and displays per-package coverage percentages. The coverage data is generated without external SaaS services, using only Go's built-in tooling.
 
 ### Code Quality
 

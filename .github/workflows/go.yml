@@ -57,13 +57,32 @@ jobs:
     - name: Generate coverage report
       run: make coverage
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+    - name: Extract coverage percentage
+      id: coverage
+      run: |
+        COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "percentage=$COVERAGE" >> $GITHUB_OUTPUT
+        echo "Coverage: $COVERAGE%"
+
+    - name: Create coverage badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && secrets.GIST_SECRET != ''
+      continue-on-error: true
       with:
-        file: ./coverage.out
-        flags: unittests
-        name: codecov-umbrella
-        fail_ci_if_error: false
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: ${{ secrets.GIST_ID }}
+        filename: liquid-coverage.json
+        label: coverage
+        message: ${{ steps.coverage.outputs.percentage }}%
+        color: ${{ steps.coverage.outputs.percentage > 80 && 'green' || steps.coverage.outputs.percentage > 60 && 'yellow' || 'red' }}
+
+    - name: Add coverage to summary
+      run: |
+        echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "Total coverage: ${{ steps.coverage.outputs.percentage }}%" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Per-package coverage:" >> $GITHUB_STEP_SUMMARY
+        go tool cover -func=coverage.out | grep -v "total:" | awk '{printf "- %s: %s\n", $2, $3}' >> $GITHUB_STEP_SUMMARY
 
   verify-mod:
     runs-on: ubuntu-latest
