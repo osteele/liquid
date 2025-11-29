@@ -84,6 +84,7 @@ exprs: expr expr2 { $$ = append([]Expression{&expression{$1}}, $2...) } ;
 expr2:
   /* empty */    { $$ = []Expression{} }
 | ',' expr expr2 { $$ = append([]Expression{&expression{$2}}, $3...) }
+| OR expr expr2  { $$ = append([]Expression{&expression{$2}}, $3...) }
 ;
 
 string: LITERAL {
