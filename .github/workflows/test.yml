@@ -117,8 +117,10 @@ jobs:
 
     - name: Create coverage badge
       uses: schneegans/dynamic-badges-action@v1.7.0
-      if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && secrets.GIST_SECRET != ''
+      if: ${{ (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') && env.GIST_SECRET != '' }}
       continue-on-error: true
+      env:
+        GIST_SECRET: ${{ secrets.GIST_SECRET }}
       with:
         auth: ${{ secrets.GIST_SECRET }}
         gistID: ${{ secrets.GIST_ID }}
