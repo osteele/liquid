@@ -19,11 +19,11 @@ PACKAGES := $(shell $(GOCMD) list ./... | grep -v /vendor/)
 COVERAGE_FILE := coverage.out
 COVERAGE_HTML := coverage.html
 
-# Tools - installed via tools.go
+# Tools - installed via tools.go or go.mod tool directive
 TOOLS_DIR := $(shell $(GOCMD) env GOPATH)/bin
 GOYACC := $(TOOLS_DIR)/goyacc
 STRINGER := $(TOOLS_DIR)/stringer
-GOLANGCI_LINT := golangci-lint  # Use system-installed version
+GOLANGCI_LINT := $(GOCMD) tool golangci-lint  # Use version from go.mod
 
 # Colors for output
 RED := \033[0;31m
@@ -101,13 +101,13 @@ benchmark: ## Run benchmarks
 ##@ Code Quality
 
 .PHONY: lint
-lint: check-golangci-lint ## Run linter
+lint: ## Run linter
 	@echo "Running linter..."
 	$(GOLANGCI_LINT) run
 	@echo "${GREEN}✓ Lint passed${NC}"
 
 .PHONY: lint-fix
-lint-fix: check-golangci-lint ## Run linter with auto-fix
+lint-fix: ## Run linter with auto-fix
 	$(GOLANGCI_LINT) run --fix
 
 .PHONY: fmt
@@ -156,10 +156,8 @@ tools: ## Install development tools
 	@$(GOCMD) install golang.org/x/tools/cmd/stringer@latest
 	@echo "${GREEN}✓ Tools installed${NC}"
 	@echo ""
-	@echo "${YELLOW}Note: golangci-lint should be installed separately:${NC}"
-	@echo "  brew install golangci-lint"
-	@echo "  or"
-	@echo "  curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s"
+	@echo "${YELLOW}Note: golangci-lint is managed via go.mod tool directive${NC}"
+	@echo "Run 'go tool golangci-lint' to use it"
 
 .PHONY: install-hooks
 install-hooks: ## Install pre-commit hooks
@@ -181,10 +179,6 @@ run-hooks: ## Run pre-commit hooks on all files
 .PHONY: update-hooks
 update-hooks: ## Update pre-commit hooks to latest versions
 	@pre-commit autoupdate
-
-.PHONY: check-golangci-lint
-check-golangci-lint:
-	@which $(GOLANGCI_LINT) > /dev/null 2>&1 || (echo "${RED}Error: golangci-lint is not installed${NC}" && echo "Run 'make tools' for installation instructions" && exit 1)
 
 ##@ CI/CD
 

@@ -6,9 +6,10 @@ import (
 	"io"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
-	"github.com/stretchr/testify/require"
 )
 
 var parseErrorTests = []struct{ in, expected string }{

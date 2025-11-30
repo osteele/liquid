@@ -10,9 +10,10 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
-	"github.com/stretchr/testify/require"
 )
 
 var iterationTests = []struct{ in, expected string }{

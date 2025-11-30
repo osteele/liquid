@@ -14,8 +14,9 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/osteele/liquid/values"
 	"github.com/osteele/tuesday"
+
+	"github.com/osteele/liquid/values"
 )
 
 var errDivisionByZero = errors.New("division by zero")

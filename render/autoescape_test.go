@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"
+
+	"github.com/osteele/liquid/parser"
 )
 
 func TestRenderEscapeFilter(t *testing.T) {
