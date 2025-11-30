@@ -10,8 +10,9 @@ import (
 
 	e "github.com/osteele/liquid/expressions"
 
-	"github.com/osteele/liquid/parser"
 	"github.com/stretchr/testify/require"
+
+	"github.com/osteele/liquid/parser"
 )
 
 var renderTests = []struct{ in, out string }{

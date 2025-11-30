@@ -1,4 +1,4 @@
-name: Lint
+name: golangci-lint
 
 on:
   push:
@@ -8,49 +8,23 @@ on:
 
 permissions:
   contents: read
-  # Optional: allow read access to pull request. Use with `only-new-issues` option.
   pull-requests: read
 
 jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Install Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.23.x
-
-    - name: Install golangci-lint
-      run: |
-        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
-        echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
-    - name: Run golangci-lint
-      run: |
-        # For PRs, only check new issues
-        if [ "${{ github.event_name }}" = "pull_request" ]; then
-          golangci-lint run --new-from-rev=${{ github.event.pull_request.base.sha }}
-        else
-          golangci-lint run
-        fi
-      env:
-        # Ensure colored output for better readability
-        FORCE_COLOR: true
-
-        # Optional: if set to true, then all caching functionality will be completely disabled,
-        #           takes precedence over all other caching options.
-        # skip-cache: true
-
-        # Optional: if set to true, then the action won't cache or restore ~/go/pkg.
-        # skip-pkg-cache: true
-
-        # Optional: if set to true, then the action won't cache or restore ~/.cache/go-build.
-        # skip-build-cache: true
-
-        # Optional: The mode to install golangci-lint. It can be 'binary' or 'goinstall'.
-        # install-mode: "goinstall"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.x'
+          # Cache disabled because golangci-lint-action has its own caching
+          cache: false
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.6.2
+          # On PRs, only check new issues introduced by the PR
+          only-new-issues: ${{ github.event_name == 'pull_request' }}
+          args: --timeout=30m
