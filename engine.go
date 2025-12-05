@@ -179,5 +179,5 @@ func (e *Engine) SetAutoEscapeReplacer(replacer render.Replacer) {
 // parsing or rendering operations. The call is idempotent — unregistering a tag
 // that is not registered is a no-op.
 func (e *Engine) UnregisterTag(name string) {
-	e.cfg.RemoveTag(name)
+	e.cfg.UnregisterTag(name)
 }
