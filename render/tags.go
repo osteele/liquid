@@ -18,3 +18,8 @@ func (c *Config) FindTagDefinition(name string) (TagCompiler, bool) {
 	td, ok := c.tags[name]
 	return td, ok
 }
+
+// UnregisterTag removes a tag definition.
+func (c *Config) UnregisterTag(name string) {
+	delete(c.tags, name)
+}

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
 )
 
@@ -182,4 +183,20 @@ func Test_template_store(t *testing.T) {
 	engine.RegisterTemplateStore(mockstore)
 	out, _ := engine.ParseAndRenderString(string(template), params)
 	require.Equal(t, "Message Text: filename from: template.liquid.", out)
+}
+
+func TestEngine_UnregisterTag(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterTag("echo", func(c render.Context) (string, error) {
+		return c.TagArgs(), nil
+	})
+	source := `{% echo hello world %}`
+
+	_, err := engine.ParseAndRenderString(source, emptyBindings)
+	require.NoError(t, err)
+
+	engine.UnregisterTag("echo")
+
+	_, err = engine.ParseAndRenderString(source, emptyBindings)
+	require.Error(t, err)
 }
