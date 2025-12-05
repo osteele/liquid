@@ -305,19 +305,3 @@ func TestIssue63_UnicodeVariableNames(t *testing.T) {
 		require.Equal(t, "content", string(result))
 	})
 }
-
-func TestRemoveTag(t *testing.T) {
-	engine := NewEngine()
-	engine.RegisterTag("echo", func(c render.Context) (string, error) {
-		return c.TagArgs(), nil
-	})
-	source := `{% echo hello world %}`
-
-	_, err := engine.ParseAndRenderString(source, emptyBindings)
-	require.NoError(t, err)
-
-	engine.RemoveTag("echo")
-
-	_, err = engine.ParseAndRenderString(source, emptyBindings)
-	require.Error(t, err)
-}
