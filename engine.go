@@ -189,8 +189,8 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 			return s
 		}
 
-		if len(currencyCode) == 3 { // iso code
-			amount, err := currency.NewAmount(fmt.Sprintf("%.3f", num/1000), currencyCode)
+		if isoCode := strings.TrimSpace(currencyCode); len(isoCode) == 3 { // iso code
+			amount, err := currency.NewAmount(fmt.Sprintf("%.3f", num/1000), isoCode)
 			if err == nil {
 				locale := currency.NewLocale(loc)
 				formatter := currency.NewFormatter(locale)
@@ -208,7 +208,7 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 				return formatter.Format(amount)
 			} else {
 				// log and fallback to the previous logic
-				logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s with currency code %s to decimal: %s", s, currencyCode, err.Error()), "lqiuid", "filter")
+				logger.Warnw(engine.cfg.Context(), fmt.Sprintf("failed to parse field value %s with currency code %s to decimal: %s", s, isoCode, err.Error()), "lqiuid", "filter")
 			}
 		}
 		var formatTemplate string
