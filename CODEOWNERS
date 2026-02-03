@@ -1,0 +1,12 @@
+# CODEOWNERS
+#
+# This file is partially managed by ap3-github-repo-bot.
+
+# BEGIN ap3-github-repo-bot managed
+/CODEOWNERS @autopilot3/ops
+/.buildkite/pipeline.yml @autopilot3/ops
+/.github/ @autopilot3/ops
+/iam/ @autopilot3/ops
+/terraform/ @autopilot3/ops
+*.tf @autopilot3/ops
+# END ap3-github-repo-bot managed
