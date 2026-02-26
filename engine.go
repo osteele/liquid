@@ -84,6 +84,13 @@ func (e *Engine) StrictVariables() {
 	e.cfg.StrictVariables = true
 }
 
+// LaxFilters causes the renderer to silently pass through the input value
+// when the template contains an undefined filter, matching Shopify Liquid behavior.
+// By default, undefined filters cause an error.
+func (e *Engine) LaxFilters() {
+	e.cfg.LaxFilters = true
+}
+
 // EnableJekyllExtensions enables Jekyll-specific extensions to Liquid.
 // This includes support for dot notation in assign tags (e.g., {% assign page.canonical_url = value %}).
 // Note: This is not part of the Shopify Liquid standard but is used in Jekyll and Gojekyll.
