@@ -23,7 +23,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.6.2
+          version: v2.10.1
           # On PRs, only check new issues introduced by the PR
           only-new-issues: ${{ github.event_name == 'pull_request' }}
           args: --timeout=30m
