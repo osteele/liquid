@@ -94,8 +94,19 @@ func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 		return rv.Convert(typ).Interface(), nil
 	}
 
-	if typ == timeType && rv.Kind() == reflect.String {
-		return ParseDate(value.(string))
+	if typ == timeType {
+		switch rv.Kind() {
+		case reflect.String:
+			return ParseDate(value.(string))
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return time.Unix(rv.Int(), 0), nil
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return time.Unix(int64(rv.Uint()), 0), nil
+		case reflect.Float32, reflect.Float64:
+			sec := int64(rv.Float())
+			nsec := int64((rv.Float() - float64(sec)) * 1e9)
+			return time.Unix(sec, nsec), nil
+		}
 	}
 	// currently unused:
 	// case reflect.PtrTo(r.Type()) == typ:

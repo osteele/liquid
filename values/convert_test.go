@@ -183,6 +183,30 @@ func TestMustConvert(t *testing.T) {
 	require.Panics(t, func() { MustConvert("x", typ) })
 }
 
+func TestConvert_intToTime(t *testing.T) {
+	typ := reflect.TypeOf(time.Time{})
+
+	// int -> time.Time
+	v, err := Convert(int(1152098955), typ)
+	require.NoError(t, err)
+	require.Equal(t, time.Unix(1152098955, 0), v)
+
+	// int64 -> time.Time
+	v, err = Convert(int64(1152098955), typ)
+	require.NoError(t, err)
+	require.Equal(t, time.Unix(1152098955, 0), v)
+
+	// float64 -> time.Time
+	v, err = Convert(float64(1152098955), typ)
+	require.NoError(t, err)
+	require.Equal(t, time.Unix(1152098955, 0), v)
+
+	// string timestamp -> time.Time
+	v, err = Convert("1152098955", typ)
+	require.NoError(t, err)
+	require.Equal(t, time.Unix(1152098955, 0), v)
+}
+
 func TestMustConvertItem(t *testing.T) {
 	v := MustConvertItem(2, []string{})
 	require.Equal(t, "2", v)
