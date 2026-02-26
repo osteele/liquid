@@ -185,6 +185,26 @@ func Test_template_store(t *testing.T) {
 	require.Equal(t, "Message Text: filename from: template.liquid.", out)
 }
 
+func TestEngine_LaxFilters(t *testing.T) {
+	// Default: undefined filters cause an error
+	engine := NewEngine()
+	_, err := engine.ParseAndRenderString(`{{ "hello" | nofilter }}`, emptyBindings)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "undefined filter")
+
+	// LaxFilters: undefined filters pass through the value
+	engine = NewEngine()
+	engine.LaxFilters()
+	out, err := engine.ParseAndRenderString(`{{ "hello" | nofilter }}`, emptyBindings)
+	require.NoError(t, err)
+	require.Equal(t, "hello", out)
+
+	// LaxFilters: defined filters still work
+	out, err = engine.ParseAndRenderString(`{{ "hello" | upcase }}`, emptyBindings)
+	require.NoError(t, err)
+	require.Equal(t, "HELLO", out)
+}
+
 func TestEngine_UnregisterTag(t *testing.T) {
 	engine := NewEngine()
 	engine.RegisterTag("echo", func(c render.Context) (string, error) {

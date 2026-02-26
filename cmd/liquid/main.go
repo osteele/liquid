@@ -28,6 +28,7 @@ var (
 	env        func() []string = os.Environ
 	bindings   map[string]any  = map[string]any{}
 	strictVars bool
+	laxFilters bool
 )
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 	var bindEnvs bool
 	cmdLine.BoolVar(&bindEnvs, "env", false, "bind environment variables")
 	cmdLine.BoolVar(&strictVars, "strict", false, "enable strict variable mode in templates")
+	cmdLine.BoolVar(&laxFilters, "lax-filters", false, "ignore undefined filters instead of raising an error")
 
 	err = cmdLine.Parse(os.Args[1:])
 	if err != nil {
@@ -91,6 +93,9 @@ func render() error {
 	e := liquid.NewEngine()
 	if strictVars {
 		e.StrictVariables()
+	}
+	if laxFilters {
+		e.LaxFilters()
 	}
 
 	tpl, err := e.ParseTemplate(buf)

@@ -83,7 +83,10 @@ func isClosureInterfaceType(t reflect.Type) bool {
 func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
-		panic(UndefinedFilter(name))
+		if !ctx.LaxFilters {
+			panic(UndefinedFilter(name))
+		}
+		return receiver(ctx).Interface(), nil
 	}
 
 	fr := reflect.ValueOf(filter)
