@@ -5,6 +5,12 @@
 
 ### Added
 
+- **LaxFilters Option** (#139, #9): Added `Engine.LaxFilters()` method that causes undefined filters to silently pass through the input value, matching Shopify Liquid behavior. By default, undefined filters still cause an error for backward compatibility. Also added `--lax-filters` CLI flag.
+
+- **Date Timestamp Support** (#137, #110): The `date` filter now accepts Unix timestamps as integers, unsigned integers, floats, and numeric strings. For example, `{{ 1152098955 | date: "%Y-%m-%d" }}` now works.
+
+- **UnregisterTag** (#130): Added `Engine.UnregisterTag()` method to remove tag definitions, including built-in tags. Thanks [@jaime-amate](https://github.com/jaime-amate)
+
 - **Unicode Identifier Support** (#116): Added Unicode identifier support with major performance improvements. Thanks [@uksarkar](https://github.com/uksarkar)
 
 - **Jekyll Extensions Support** (#114): Added support for dot notation in assign tags (e.g., `{% assign page.canonical_url = "/about/" %}`) when `JekyllExtensions` config flag is enabled. This allows Jekyll-compatible template syntax while maintaining Shopify Liquid compatibility by default.
@@ -32,6 +38,10 @@
 - **Loop Modifier Expressions** (#67): Allow loop modifiers to be general expressions, not just literals. Thanks [@aisbergg](https://github.com/aisbergg)
 
 ### Changed
+
+- **CI Generated File Verification** (#138, #50): Added CI job to verify yacc-generated parser files are up to date.
+
+- **CI Consolidation** (#134): Consolidated CI workflows into a single test.yml with coverage, format, lint, vet, and mod verification jobs.
 
 - **Modernized Build Tooling** (#115): Updated golangci-lint configuration to v2 format, reorganized Makefile with comprehensive targets, and added pre-commit hooks for automated code quality checks. All existing lint and format issues have been resolved.
 

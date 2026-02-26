@@ -170,7 +170,7 @@ These features of Shopify Liquid aren't implemented:
 - Filter keyword parameters, for example `{{ image | img_url: '580x', scale: 2
   }}`. [[Issue #42](https://github.com/osteele/liquid/issues/42)]
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
-- Non-strict filters. An undefined filter is currently an error.
+  - Note: `Engine.LaxFilters()` enables Shopify-compatible behavior for undefined filters (silently pass through).
 
 ### Drops
 
@@ -336,6 +336,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
     <td align="center"><a href="https://github.com/chrisatbd"><img src="https://avatars.githubusercontent.com/u/180913248?v=4?s=100" width="100px;" alt=""/><br /><sub><b>chris</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=chrisatbd" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/dop251"><img src="https://avatars.githubusercontent.com/u/995021?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Dmitry Panov</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=dop251" title="Code">💻</a></td>
     <td align="center"><a href="https://github.com/GauthierHacout"><img src="https://avatars.githubusercontent.com/u/71611631?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gauthier Hacout</b></sub></a><br /><a href="https://github.com/osteele/liquid/issues?q=author%3AGauthierHacout" title="Bug reports">🐛</a></td>
+    <td align="center"><a href="https://github.com/jaime-amate"><img src="https://avatars.githubusercontent.com/u/16927375?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jaime Amate</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=jaime-amate" title="Code">💻</a></td>
   </tr>
 </table>
 
