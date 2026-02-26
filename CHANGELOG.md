@@ -39,6 +39,8 @@
 
 ### Changed
 
+- **Go Version Support**: Updated minimum Go version to 1.25. CI now tests against Go 1.25 and 1.26.
+
 - **CI Generated File Verification** (#138, #50): Added CI job to verify yacc-generated parser files are up to date.
 
 - **CI Consolidation** (#134): Consolidated CI workflows into a single test.yml with coverage, format, lint, vet, and mod verification jobs.
