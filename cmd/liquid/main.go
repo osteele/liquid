@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/osteele/liquid"
@@ -69,7 +70,7 @@ func main() {
 	case 0:
 		// use stdin
 	case 1:
-		stdin, err = os.Open(args[0])
+		stdin, err = os.Open(filepath.Clean(args[0])) //nolint:gosec // CLI tool intentionally opens user-specified files
 	default:
 		err = errors.New("too many arguments")
 	}
