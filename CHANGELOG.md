@@ -1,7 +1,7 @@
 # Release Notes
 <!-- markdownlint-disable MD024 -->
 
-## Unreleased
+## 1.8.0 (2026-02-26)
 
 ### Added
 
