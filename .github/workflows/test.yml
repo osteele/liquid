@@ -73,6 +73,35 @@ jobs:
           exit 1
         fi
 
+  verify-generated:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.24.x
+
+    - name: Install tools
+      run: make tools
+
+    - name: Regenerate yacc parser
+      run: |
+        cd expressions
+        goyacc expressions.y
+        gofmt -w y.go
+
+    - name: Check for differences
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "Generated parser files are out of date. Please run 'go generate ./...' and commit the results."
+          git diff
+          exit 1
+        fi
+
   verify-mod:
     runs-on: ubuntu-latest
 
