@@ -2,6 +2,7 @@ package values
 
 import (
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -48,6 +49,10 @@ var dateLayouts = []string{
 func ParseDate(s string) (time.Time, error) {
 	if s == "now" {
 		return time.Now(), nil
+	}
+
+	if sec, err := strconv.ParseInt(s, 10, 64); err == nil {
+		return time.Unix(sec, 0), nil
 	}
 
 	for _, layout := range dateLayouts {
