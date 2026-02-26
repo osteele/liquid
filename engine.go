@@ -27,6 +27,173 @@ import (
 // An engine can be configured with additional filters and tags.
 type Engine struct{ cfg render.Config }
 
+func formatDate(d date.Date, format string) string {
+	// Convert to time.Time for standard formatting
+	t, err := d.Time()
+	if err != nil {
+		return d.String()
+	}
+
+	switch format {
+	case "mdy":
+		return t.Format("01/02/2006")
+	case "dmy":
+		return t.Format("02/01/2006")
+	case "ymd":
+		return t.Format("2006/01/02")
+	case "ydm":
+		return t.Format("2006/02/01")
+	// US formats
+	case "mdyaw":
+		return t.Format("Monday, January 2, 2006")
+	case "mdya":
+		return t.Format("January 2, 2006")
+	case "mdys":
+		return t.Format("1/2/06")
+	// Everyone else formats
+	case "dmyaw":
+		return t.Format("Monday, 2 January, 2006")
+	case "dmya":
+		return t.Format("2 January, 2006")
+	case "dmys":
+		return t.Format("2/1/06")
+	// Individual pieces
+	case "d":
+		return t.Format("2")
+	case "dd":
+		return t.Format("02")
+	case "m":
+		return t.Format("1")
+	case "mm":
+		return t.Format("01")
+	case "yy":
+		return t.Format("06")
+	case "yyyy":
+		return t.Format("2006")
+	default:
+		return d.String()
+	}
+}
+
+func lowerMeridiem(value string) string {
+	value = strings.ReplaceAll(value, "AM", "am")
+	return strings.ReplaceAll(value, "PM", "pm")
+}
+
+func formatDateTime(t time.Time, format string) string {
+	switch format {
+	case "mdy12":
+		return t.Format("Jan 02 2006 3:04 PM")
+	case "mdy24":
+		return t.Format("Jan 02 2006 15:04")
+	case "dmy12":
+		return t.Format("02 Jan 2006 3:04 PM")
+	case "dmy24":
+		return t.Format("02 Jan 2006 15:04")
+	case "ymd12":
+		return t.Format("2006 Jan 02 3:04 PM")
+	case "ymd24":
+		return t.Format("2006 Jan 02 15:04")
+	case "ydm12":
+		return t.Format("2006 02 Jan 3:04 PM")
+	case "ydm24":
+		return t.Format("2006 02 Jan 15:04")
+	// US formats
+	case "mdy24aw":
+		return t.Format("15:04 Monday, January 2, 2006")
+	case "mdy12aw":
+		return lowerMeridiem(t.Format("3:04PM Monday, January 2, 2006"))
+	case "mdyaw":
+		return t.Format("Monday, January 2, 2006")
+	case "mdy24a":
+		return t.Format("15:04 January 2, 2006")
+	case "mdy12a":
+		return lowerMeridiem(t.Format("3:04PM January 2, 2006"))
+	case "mdya":
+		return t.Format("January 2, 2006")
+	case "mdy24n":
+		return t.Format("15:04 01/02/2006")
+	case "mdy12n":
+		return lowerMeridiem(t.Format("3:04PM 01/02/2006"))
+	case "mdy24nd":
+		return t.Format("01/02/2006 15:04")
+	case "mdy12nd":
+		return lowerMeridiem(t.Format("01/02/2006 3:04PM"))
+	case "mdy":
+		return t.Format("01/02/2006")
+	case "mdys24":
+		return t.Format("15:04 1/2/06")
+	case "mdys12":
+		return lowerMeridiem(t.Format("3:04PM 1/2/06"))
+	case "mdys24d":
+		return t.Format("1/2/06 15:04")
+	case "mdys12d":
+		return lowerMeridiem(t.Format("1/2/06 3:04PM"))
+	case "mdys":
+		return t.Format("1/2/06")
+	// Everyone else formats
+	case "dmy24aw":
+		return t.Format("15:04 Monday, 2 January, 2006")
+	case "dmy12aw":
+		return lowerMeridiem(t.Format("3:04PM Monday, 2 January, 2006"))
+	case "dmyaw":
+		return t.Format("Monday, 2 January, 2006")
+	case "dmy24a":
+		return t.Format("15:04 2 January, 2006")
+	case "dmy12a":
+		return lowerMeridiem(t.Format("3:04PM 2 January, 2006"))
+	case "dmya":
+		return t.Format("2 January, 2006")
+	case "dmy24n":
+		return t.Format("15:04 02/01/2006")
+	case "dmy12n":
+		return lowerMeridiem(t.Format("3:04PM 02/01/2006"))
+	case "dmy24nd":
+		return t.Format("02/01/2006 15:04")
+	case "dmy12nd":
+		return lowerMeridiem(t.Format("02/01/2006 3:04PM"))
+	case "dmy":
+		return t.Format("02/01/2006")
+	case "dmys24":
+		return t.Format("15:04 2/1/06")
+	case "dmys12":
+		return lowerMeridiem(t.Format("3:04PM 2/1/06"))
+	case "dmys24d":
+		return t.Format("2/1/06 15:04")
+	case "dmys12d":
+		return lowerMeridiem(t.Format("2/1/06 3:04PM"))
+	case "dmys":
+		return t.Format("2/1/06")
+	// Individual pieces
+	case "h24":
+		return t.Format("15")
+	case "h12":
+		return t.Format("3")
+	case "min":
+		return t.Format("04")
+	case "p":
+		return lowerMeridiem(t.Format("PM"))
+	case "d":
+		return t.Format("2")
+	case "dd":
+		return t.Format("02")
+	case "dow":
+		return t.Format("Monday")
+	case "m":
+		return t.Format("1")
+	case "mm":
+		return t.Format("01")
+	case "mon":
+		return t.Format("January")
+	case "yy":
+		return t.Format("06")
+	case "yyyy":
+		return t.Format("2006")
+	default:
+		return t.String()
+	}
+}
+
 func (e *Engine) SetAllowedTags(allowedTags map[string]struct{}) *Engine {
 	e.cfg.AllowedTags = allowedTags
 	return e
@@ -64,26 +231,8 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 		if err != nil {
 			return ""
 		}
-		switch format {
-		case "mdy12":
-			return s.In(tz).Format("Jan 02 2006 3:04 PM")
-		case "mdy24":
-			return s.In(tz).Format("Jan 02 2006 15:04")
-		case "dmy12":
-			return s.In(tz).Format("02 Jan 2006 3:04 PM")
-		case "dmy24":
-			return s.In(tz).Format("02 Jan 2006 15:04")
-		case "ymd12":
-			return s.Format("2006 Jan 02 3:04 PM")
-		case "ymd24":
-			return s.Format("2006 Jan 02 15:04")
-		case "ydm12":
-			return s.Format("2006 02 Jan 3:04 PM")
-		case "ydm24":
-			return s.Format("2006 02 Jan 15:04")
-		default:
-			return s.String()
-		}
+		st := s.In(tz)
+		return formatDateTime(st, format)
 	})
 
 	engine.RegisterFilter("rawPhone", func(s phone.International) string {
@@ -94,27 +243,7 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 		if s.IsZero() {
 			return defaultValue
 		}
-
-		switch format {
-		case "mdy12":
-			return s.Format("Jan 02 2006 3:04 PM")
-		case "mdy24":
-			return s.Format("Jan 02 2006 15:04")
-		case "dmy12":
-			return s.Format("02 Jan 2006 3:04 PM")
-		case "dmy24":
-			return s.Format("02 Jan 2006 15:04")
-		case "ymd12":
-			return s.Format("2006 Jan 02 3:04 PM")
-		case "ymd24":
-			return s.Format("2006 Jan 02 15:04")
-		case "ydm12":
-			return s.Format("2006 02 Jan 3:04 PM")
-		case "ydm24":
-			return s.Format("2006 02 Jan 15:04")
-		default:
-			return s.String()
-		}
+		return formatDateTime(s, format)
 	})
 
 	engine.RegisterFilter("dateFormatOrDefault", func(s interface{}, format string, defaultValue string) string {
@@ -134,19 +263,7 @@ func NewEngineWithContext(ctx context.Context) *Engine {
 		if d.IsZero() {
 			return defaultValue
 		}
-
-		switch format {
-		case "mdy":
-			return fmt.Sprintf("%02d/%02d/%d", d.Month(), d.Day(), d.Year())
-		case "dmy":
-			return fmt.Sprintf("%02d/%02d/%d", d.Day(), d.Month(), d.Year())
-		case "ymd":
-			return fmt.Sprintf("%d/%02d/%02d", d.Year(), d.Month(), d.Day())
-		case "ydm":
-			return fmt.Sprintf("%d/%02d/%02d", d.Year(), d.Day(), d.Month())
-		default:
-			return d.String()
-		}
+		return formatDate(d, format)
 	})
 
 	engine.RegisterFilter("decimal", func(s string, format string, currency string) string {
