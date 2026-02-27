@@ -23,7 +23,7 @@ func init() {
    cyclefn  func(string) Cycle
    loop     Loop
    loopmods loopModifiers
-   filter_params []valueFn
+   filter_params *filterArgs
 }
 %type<f> expr rel filtered cond
 %type<filter_params> filter_params
@@ -142,9 +142,11 @@ filtered:
 ;
 
 filter_params:
-  expr { $$ = []valueFn{$1} }
+  expr { $$ = &filterArgs{positional: []valueFn{$1}} }
 | filter_params ',' expr
-  { $$ = append($1, $3) }
+  { $1.positional = append($1.positional, $3); $$ = $1 }
+| filter_params ',' KEYWORD expr
+  { $1.keyword = append($1.keyword, keywordArg{$3, $4}); $$ = $1 }
 
 rel:
   filtered

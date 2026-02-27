@@ -34,7 +34,7 @@ func TestContext_runFilter(t *testing.T) {
 		return "<" + s + ">"
 	})
 	ctx := NewContext(map[string]any{"x": 10}, cfg)
-	out, err := ctx.ApplyFilter("f1", receiver, []valueFn{})
+	out, err := ctx.ApplyFilter("f1", receiver, nil)
 	require.NoError(t, err)
 	require.Equal(t, "<self>", out)
 
@@ -43,7 +43,7 @@ func TestContext_runFilter(t *testing.T) {
 		return fmt.Sprintf("(%s, %s)", a, b)
 	})
 	ctx = NewContext(map[string]any{"x": 10}, cfg)
-	out, err = ctx.ApplyFilter("with_arg", receiver, []valueFn{constant("arg")})
+	out, err = ctx.ApplyFilter("with_arg", receiver, &filterArgs{positional: []valueFn{constant("arg")}})
 	require.NoError(t, err)
 	require.Equal(t, "(self, arg)", out)
 
@@ -51,7 +51,7 @@ func TestContext_runFilter(t *testing.T) {
 	// TODO error return
 
 	// extra argument
-	_, err = ctx.ApplyFilter("with_arg", receiver, []valueFn{constant(1), constant(2)})
+	_, err = ctx.ApplyFilter("with_arg", receiver, &filterArgs{positional: []valueFn{constant(1), constant(2)}})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "wrong number of arguments")
 	require.Contains(t, err.Error(), "given 2")
@@ -70,9 +70,40 @@ func TestContext_runFilter(t *testing.T) {
 		return fmt.Sprintf("(%v, %v)", a, value), nil
 	})
 	ctx = NewContext(map[string]any{"x": 10}, cfg)
-	out, err = ctx.ApplyFilter("closure", receiver, []valueFn{constant("x |add: y")})
+	out, err = ctx.ApplyFilter("closure", receiver, &filterArgs{positional: []valueFn{constant("x |add: y")}})
 	require.NoError(t, err)
 	require.Equal(t, "(self, 11)", out)
+}
+
+func TestContext_runFilter_keywordArgs(t *testing.T) {
+	cfg := NewConfig()
+	constant := func(value any) valueFn {
+		return func(Context) values.Value { return values.ValueOf(value) }
+	}
+	receiver := constant("self")
+
+	cfg.AddFilter("with_kwargs", func(s string, kwargs ...map[string]any) string {
+		if len(kwargs) > 0 {
+			if v, ok := kwargs[0]["option"]; ok {
+				return fmt.Sprintf("(%s, option=%v)", s, v)
+			}
+		}
+		return fmt.Sprintf("(%s)", s)
+	})
+
+	ctx := NewContext(map[string]any{}, cfg)
+
+	// without keyword args
+	out, err := ctx.ApplyFilter("with_kwargs", receiver, nil)
+	require.NoError(t, err)
+	require.Equal(t, "(self)", out)
+
+	// with keyword args
+	out, err = ctx.ApplyFilter("with_kwargs", receiver, &filterArgs{
+		keyword: []keywordArg{{name: "option", val: constant(true)}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "(self, option=true)", out)
 }
 
 // TestAddSafeFilterNilMap verifies that AddSafeFilter doesn't panic

@@ -117,9 +117,31 @@ func toFloat64(v any) float64 {
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	// value filters
-	fd.AddFilter("default", func(value, defaultValue any) any {
-		if value == nil || value == false || values.IsEmpty(value) {
-			value = defaultValue
+	fd.AddFilter("default", func(value, defaultValue any, kwargs ...map[string]any) any {
+		allowFalse := false
+		if len(kwargs) > 0 {
+			if v, ok := kwargs[0]["allow_false"]; ok {
+				if b, ok := v.(bool); ok {
+					allowFalse = b
+				}
+			}
+		}
+		if allowFalse {
+			// With allow_false, only nil and empty strings/arrays/maps trigger default
+			if value == nil {
+				return defaultValue
+			}
+			r := reflect.ValueOf(value)
+			switch r.Kind() {
+			case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+				if r.Len() == 0 {
+					return defaultValue
+				}
+			}
+		} else {
+			if value == nil || value == false || values.IsEmpty(value) {
+				value = defaultValue
+			}
 		}
 
 		return value

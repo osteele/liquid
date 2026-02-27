@@ -29,6 +29,14 @@ var filterTests = []struct {
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
 	{`fruits | default: 2.99 | join`, "apples oranges peaches plums"},
+
+	// default with allow_false
+	{`false | default: 2.99, allow_false: true`, false},
+	{`nil | default: 2.99, allow_false: true`, 2.99},
+	{`"" | default: 2.99, allow_false: true`, 2.99},
+	{`false | default: 2.99, allow_false: false`, 2.99},
+	{`true | default: 2.99, allow_false: true`, true},
+
 	{`"string" | json`, "\"string\""},
 	{`true | json`, "true"},
 	{`1 | json`, "1"},
