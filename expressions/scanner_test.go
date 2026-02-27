@@ -96,6 +96,59 @@ func TestLex(t *testing.T) {
 	// require.Len(t, ts, 9)
 }
 
+func TestLexStringEscapes(t *testing.T) {
+	// Double-quoted strings support escape sequences
+	t.Run("backslash", func(t *testing.T) {
+		ts := scanExpression(`"a\\b"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, `a\b`, ts[0].typ.val)
+	})
+	t.Run("escaped_quote", func(t *testing.T) {
+		ts := scanExpression(`"say \"hello\""`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, `say "hello"`, ts[0].typ.val)
+	})
+	t.Run("newline", func(t *testing.T) {
+		ts := scanExpression(`"line1\nline2"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "line1\nline2", ts[0].typ.val)
+	})
+	t.Run("tab", func(t *testing.T) {
+		ts := scanExpression(`"col1\tcol2"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "col1\tcol2", ts[0].typ.val)
+	})
+	t.Run("carriage_return", func(t *testing.T) {
+		ts := scanExpression(`"a\rb"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "a\rb", ts[0].typ.val)
+	})
+	t.Run("unknown_escape_passthrough", func(t *testing.T) {
+		ts := scanExpression(`"a\xb"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, `a\xb`, ts[0].typ.val)
+	})
+	// Single-quoted strings do NOT process escapes
+	t.Run("single_quote_no_escape", func(t *testing.T) {
+		ts := scanExpression(`'a\nb'`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, `a\nb`, ts[0].typ.val)
+	})
+	t.Run("no_escapes_plain", func(t *testing.T) {
+		ts := scanExpression(`"hello"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "hello", ts[0].typ.val)
+	})
+}
+
 func TestLexUnicodeIdentifiers(t *testing.T) {
 	// Test Bengali
 	t.Run("Bengali", func(t *testing.T) {
