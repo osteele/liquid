@@ -3,7 +3,9 @@ package tags
 
 import (
 	"errors"
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
@@ -62,8 +64,10 @@ func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Cont
 }
 
 func captureTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
-	// TODO verify syntax
-	varname := node.Args
+	varname := strings.TrimSpace(node.Args)
+	if varname == "" || strings.ContainsAny(varname, " \t") {
+		return nil, fmt.Errorf("syntax error: capture tag requires exactly one variable name, got %q", node.Args)
+	}
 
 	return func(w io.Writer, ctx render.Context) error {
 		s, err := ctx.InnerString()

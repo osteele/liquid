@@ -90,7 +90,10 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 	}
 
 	fr := reflect.ValueOf(filter)
-	args := []any{receiver(ctx).Interface()}
+	// Use stack-allocated array to avoid heap allocation for filters with ≤4 args.
+	var argsBuf [4]any
+	args := argsBuf[:1]
+	args[0] = receiver(ctx).Interface()
 
 	for i, param := range params {
 		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {

@@ -1,6 +1,22 @@
 # Release Notes
 <!-- markdownlint-disable MD024 -->
 
+## Unreleased
+
+### Performance
+
+- **Template Rendering**: ~25% faster, ~54% less memory, ~27% fewer allocations in template rendering benchmarks.
+  - Cache compiled scanner regex instead of recompiling per `Scan()` call
+  - Reuse forloop variable map across loop iterations instead of allocating a new map per iteration
+  - Add fast paths for string, int, float64, and bool in `writeObject`, avoiding `fmt.Sprint` and reflection
+  - Reuse expression evaluation context across `{{ }}` expressions instead of allocating per expression
+  - Use stack-allocated array for filter arguments, avoiding heap allocation for filters with ≤4 args
+  - Use `maps.Copy` with pre-sized maps for bindings copies
+
+### Changed
+
+- Replace custom `intMin`/`intMax` helpers with Go 1.21+ `min`/`max` builtins.
+
 ## 1.8.0 (2026-02-26)
 
 ### Added

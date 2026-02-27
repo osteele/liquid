@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"io/fs"
+	"maps"
 	"strings"
 
 	"github.com/osteele/liquid/parser"
@@ -160,7 +161,7 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 
 func (c rendererContext) RenderFile(filename string, b map[string]any) (string, error) {
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
-	if err != nil && os.IsNotExist(err) {
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
 		if cval, ok := c.ctx.config.Cache[filename]; ok {
 			source = cval
@@ -176,14 +177,9 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 		return "", err
 	}
 
-	bindings := map[string]any{}
-	for k, v := range c.ctx.bindings {
-		bindings[k] = v
-	}
-
-	for k, v := range b {
-		bindings[k] = v
-	}
+	bindings := make(map[string]any, len(c.ctx.bindings)+len(b))
+	maps.Copy(bindings, c.ctx.bindings)
+	maps.Copy(bindings, b)
 
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {

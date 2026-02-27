@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
+
+// defaultTokenMatcher is the compiled regex for the default delimiters, cached at package level.
+var defaultTokenMatcher = formTokenMatcher([]string{"{{", "}}", "{%", "%}"})
+
+// customTokenMatchers caches compiled regexps for custom delimiter sets.
+var customTokenMatchers sync.Map // key: [4]string, value: *regexp.Regexp
 
 // Scan breaks a string into a sequence of Tokens.
 func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
@@ -13,7 +20,18 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 		delims = []string{"{{", "}}", "{%", "%}"}
 	}
 
-	tokenMatcher := formTokenMatcher(delims)
+	var tokenMatcher *regexp.Regexp
+	if delims[0] == "{{" && delims[1] == "}}" && delims[2] == "{%" && delims[3] == "%}" {
+		tokenMatcher = defaultTokenMatcher
+	} else {
+		key := [4]string{delims[0], delims[1], delims[2], delims[3]}
+		if cached, ok := customTokenMatchers.Load(key); ok {
+			tokenMatcher = cached.(*regexp.Regexp)
+		} else {
+			tokenMatcher = formTokenMatcher(delims)
+			customTokenMatchers.Store(key, tokenMatcher)
+		}
+	}
 
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string

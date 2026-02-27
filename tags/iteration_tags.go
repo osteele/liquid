@@ -123,21 +123,30 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
 
 	cycleMap := map[string]int{}
+	// Pre-allocate the forloop map once and reuse it across iterations.
+	forloopMap := map[string]any{
+		"first":   false,
+		"last":    false,
+		"index":   0,
+		"index0":  0,
+		"rindex":  0,
+		"rindex0": 0,
+		"length":  0,
+		".cycles": cycleMap,
+	}
+	ctx.Set(forloopVarName, forloopMap)
 
 loop:
 
 	for i, l := 0, iter.Len(); i < l; i++ {
 		ctx.Set(loop.Variable, iter.Index(i))
-		ctx.Set(forloopVarName, map[string]any{
-			"first":   i == 0,
-			"last":    i == l-1,
-			"index":   i + 1,
-			"index0":  i,
-			"rindex":  l - i,
-			"rindex0": l - i - 1,
-			"length":  l,
-			".cycles": cycleMap,
-		})
+		forloopMap["first"] = i == 0
+		forloopMap["last"] = i == l-1
+		forloopMap["index"] = i + 1
+		forloopMap["index0"] = i
+		forloopMap["rindex"] = l - i
+		forloopMap["rindex0"] = l - i - 1
+		forloopMap["length"] = l
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
 		decorator.after(w, i, l)
@@ -326,7 +335,7 @@ type limitWrapper struct {
 	n int
 }
 
-func (w limitWrapper) Len() int        { return intMin(w.n, w.i.Len()) }
+func (w limitWrapper) Len() int        { return min(w.n, w.i.Len()) }
 func (w limitWrapper) Index(i int) any { return w.i.Index(i) }
 
 type offsetWrapper struct {
@@ -334,7 +343,7 @@ type offsetWrapper struct {
 	n int
 }
 
-func (w offsetWrapper) Len() int        { return intMax(0, w.i.Len()-w.n) }
+func (w offsetWrapper) Len() int        { return max(0, w.i.Len()-w.n) }
 func (w offsetWrapper) Index(i int) any { return w.i.Index(i + w.n) }
 
 type reverseWrapper struct {
@@ -344,18 +353,3 @@ type reverseWrapper struct {
 func (w reverseWrapper) Len() int        { return w.i.Len() }
 func (w reverseWrapper) Index(i int) any { return w.i.Index(w.i.Len() - 1 - i) }
 
-func intMax(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
-}
-
-func intMin(a, b int) int {
-	if a < b {
-		return a
-	}
-
-	return b
-}

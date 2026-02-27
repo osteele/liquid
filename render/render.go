@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strconv"
 	"time"
 
 	"github.com/osteele/liquid/parser"
@@ -146,14 +147,28 @@ func writeObject(w io.Writer, value any) error {
 	}
 
 	switch value := value.(type) {
+	case string:
+		_, err := io.WriteString(w, value)
+		return err
+	case int:
+		_, err := io.WriteString(w, strconv.Itoa(value))
+		return err
+	case float64:
+		_, err := io.WriteString(w, strconv.FormatFloat(value, 'f', -1, 64))
+		return err
+	case bool:
+		if value {
+			_, err := io.WriteString(w, "true")
+			return err
+		}
+		_, err := io.WriteString(w, "false")
+		return err
 	case time.Time:
 		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
 		return err
 	case []byte:
 		_, err := w.Write(value)
 		return err
-		// there used be a case on fmt.Stringer here, but fmt.Sprint produces better results than obj.Write
-		// for instances of error and *string
 	}
 
 	rt := reflect.ValueOf(value)

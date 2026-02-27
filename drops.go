@@ -5,7 +5,7 @@ type Drop interface {
 	ToLiquid() any
 }
 
-// FromDrop returns returns object.ToLiquid() if object's type implement this function;
+// FromDrop returns object.ToLiquid() if object's type implements this function;
 // else the object itself.
 func FromDrop(object any) any {
 	switch object := object.(type) {
