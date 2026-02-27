@@ -26,6 +26,8 @@ var compilerErrorTests = []struct{ in, expected string }{
 	{`{% undefined_tag %}`, "undefined tag"},
 	{`{% error_block %}{% enderror_block %}`, "block compiler error"},
 	{`{% block %}{% undefined_tag %}{% endblock %}`, "undefined tag"},
+	// clause child with compile error exercises compileBlocks error path
+	{`{% if true %}{% else %}{% undefined_tag %}{% endif %}`, "undefined tag"},
 	// {`{% tag %}`, "tag compiler error"},
 	// {`{%for syntax error%}{%endfor%}`, "syntax error"},
 }

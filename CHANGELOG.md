@@ -17,6 +17,16 @@
 
 - Replace custom `intMin`/`intMax` helpers with Go 1.21+ `min`/`max` builtins.
 
+## 1.8.1 (2026-02-27)
+
+### Fixed
+
+- **String-to-Number Conversion in Arithmetic Filters**: Fixed regression where string values from bindings were not converted to numbers in `plus`, `minus`, `times`, and `divided_by` filters. For example, `{{ str_var | plus: 1 }}` where `str_var = "10"` now correctly returns `11` instead of `1`. This was introduced in v1.8.0 when filter signatures changed from `float64` to `any` (#124).
+
+### Tests
+
+- Expanded test coverage across render, parser, values, filters, and engine packages.
+
 ## 1.8.0 (2026-02-26)
 
 ### Added

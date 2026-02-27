@@ -166,6 +166,46 @@ func TestRenderStrictVariables(t *testing.T) {
 	}
 }
 
+func TestRawNode(t *testing.T) {
+	cfg := NewConfig()
+	addRenderTestTags(cfg)
+	cfg.AddBlock("raw")
+
+	root, err := cfg.Compile(`{% raw %}{{ not_a_variable }}{% endraw %}`, parser.SourceLoc{})
+	require.NoError(t, err)
+
+	buf := new(bytes.Buffer)
+	err = Render(root, buf, renderTestBindings, cfg)
+	require.NoError(t, err)
+	require.Equal(t, "{{ not_a_variable }}", buf.String())
+}
+
+func TestUnregisterTag(t *testing.T) {
+	cfg := NewConfig()
+	cfg.AddTag("mytag", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, _ Context) error {
+			_, err := io.WriteString(w, "hello")
+			return err
+		}, nil
+	})
+
+	// tag works before unregistering
+	root, err := cfg.Compile(`{% mytag %}`, parser.SourceLoc{})
+	require.NoError(t, err)
+	buf := new(bytes.Buffer)
+	err = Render(root, buf, renderTestBindings, cfg)
+	require.NoError(t, err)
+	require.Equal(t, "hello", buf.String())
+
+	// unregister the tag
+	cfg.UnregisterTag("mytag")
+
+	// tag should now fail to compile
+	_, err = cfg.Compile(`{% mytag %}`, parser.SourceLoc{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "undefined tag")
+}
+
 func addRenderTestTags(cfg Config) {
 	cfg.AddTag("y", func(string) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, _ Context) error {

@@ -1,6 +1,7 @@
 package values
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -205,6 +206,27 @@ func TestConvert_intToTime(t *testing.T) {
 	v, err = Convert("1152098955", typ)
 	require.NoError(t, err)
 	require.Equal(t, time.Unix(1152098955, 0), v)
+}
+
+func TestConvert_stringToFloat(t *testing.T) {
+	typ := reflect.TypeOf(float64(0))
+	v, err := Convert("3.14", typ)
+	require.NoError(t, err)
+	require.Equal(t, 3.14, v)
+}
+
+func TestConvert_jsonNumberToFloat(t *testing.T) {
+	typ := reflect.TypeOf(float64(0))
+	v, err := Convert(json.Number("2.718"), typ)
+	require.NoError(t, err)
+	require.Equal(t, 2.718, v)
+}
+
+func TestConvert_jsonNumberToInt(t *testing.T) {
+	typ := reflect.TypeOf(int(0))
+	v, err := Convert(json.Number("42"), typ)
+	require.NoError(t, err)
+	require.Equal(t, int(42), v)
 }
 
 func TestMustConvertItem(t *testing.T) {

@@ -14,6 +14,63 @@ import (
 )
 
 func addContextTestTags(s Config) {
+	s.AddTag("test_bindings", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			b := c.Bindings()
+			_, err := fmt.Fprintf(w, "%v", b["x"])
+			return err
+		}, nil
+	})
+	s.AddTag("test_get", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			v := c.Get("x")
+			_, err := fmt.Fprintf(w, "%v", v)
+			return err
+		}, nil
+	})
+	s.AddTag("test_set", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			c.Set("x", 999)
+			_, err := fmt.Fprintf(w, "%v", c.Get("x"))
+			return err
+		}, nil
+	})
+	s.AddBlock("test_inner_string").Compiler(func(bn BlockNode) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			s, err := c.InnerString()
+			if err != nil {
+				return err
+			}
+			_, err = io.WriteString(w, "inner:"+s)
+			return err
+		}, nil
+	})
+	s.AddBlock("test_render_children").Compiler(func(bn BlockNode) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			_, _ = io.WriteString(w, "before:")
+			rerr := c.RenderChildren(w)
+			if rerr != nil {
+				return rerr
+			}
+			_, err := io.WriteString(w, ":after")
+			return err
+		}, nil
+	})
+	s.AddTag("test_set_path", func(string) (func(io.Writer, Context) error, error) {
+		return func(w io.Writer, c Context) error {
+			err := c.SetPath([]string{"page", "url"}, "/about/")
+			if err != nil {
+				return err
+			}
+			v := c.Get("page")
+			m, ok := v.(map[string]any)
+			if !ok {
+				return fmt.Errorf("page is not a map")
+			}
+			_, err = fmt.Fprintf(w, "%v", m["url"])
+			return err
+		}, nil
+	})
 	s.AddTag("test_evaluate_string", func(string) (func(io.Writer, Context) error, error) {
 		return func(w io.Writer, c Context) error {
 			v, err := c.EvaluateString(c.TagArgs())
@@ -93,6 +150,12 @@ var contextTests = []struct{ in, out string }{
 		"rendered shadowed=2; unshadowed=1",
 	},
 	{`{% test_block_sourcefile %}x{% endtest_block_sourcefile %}`, ``},
+	{`{% test_bindings %}`, "123"},
+	{`{% test_get %}`, "123"},
+	{`{% test_set %}`, "999"},
+	{`{% test_inner_string %}hello world{% endtest_inner_string %}`, "inner:hello world"},
+	{`{% test_render_children %}content{% endtest_render_children %}`, "before:content:after"},
+	{`{% test_set_path %}`, "/about/"},
 }
 
 var contextErrorTests = []struct{ in, expect string }{
@@ -140,6 +203,79 @@ func TestContext_errors(t *testing.T) {
 			require.Containsf(t, err.Error(), test.expect, test.in)
 		})
 	}
+}
+
+func TestSetPath(t *testing.T) {
+	cfg := NewConfig()
+	addContextTestTags(cfg)
+
+	t.Run("single path", func(t *testing.T) {
+		cfg.AddTag("sp_single", func(string) (func(io.Writer, Context) error, error) {
+			return func(w io.Writer, c Context) error {
+				err := c.SetPath([]string{"newvar"}, 42)
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprintf(w, "%v", c.Get("newvar"))
+				return err
+			}, nil
+		})
+		root, err := cfg.Compile(`{% sp_single %}`, parser.SourceLoc{})
+		require.NoError(t, err)
+		buf := new(bytes.Buffer)
+		err = Render(root, buf, map[string]any{}, cfg)
+		require.NoError(t, err)
+		require.Equal(t, "42", buf.String())
+	})
+
+	t.Run("intermediate creation", func(t *testing.T) {
+		cfg.AddTag("sp_create", func(string) (func(io.Writer, Context) error, error) {
+			return func(w io.Writer, c Context) error {
+				err := c.SetPath([]string{"a", "b", "c"}, "deep")
+				if err != nil {
+					return err
+				}
+				a := c.Get("a")
+				m1 := a.(map[string]any)
+				m2 := m1["b"].(map[string]any)
+				_, err = fmt.Fprintf(w, "%v", m2["c"])
+				return err
+			}, nil
+		})
+		root, err := cfg.Compile(`{% sp_create %}`, parser.SourceLoc{})
+		require.NoError(t, err)
+		buf := new(bytes.Buffer)
+		err = Render(root, buf, map[string]any{}, cfg)
+		require.NoError(t, err)
+		require.Equal(t, "deep", buf.String())
+	})
+
+	t.Run("error on non-map", func(t *testing.T) {
+		cfg.AddTag("sp_nonmap", func(string) (func(io.Writer, Context) error, error) {
+			return func(w io.Writer, c Context) error {
+				return c.SetPath([]string{"x", "sub"}, "val")
+			}, nil
+		})
+		root, err := cfg.Compile(`{% sp_nonmap %}`, parser.SourceLoc{})
+		require.NoError(t, err)
+		// x=123 (int), so SetPath should fail
+		err = Render(root, io.Discard, map[string]any{"x": 123}, cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "cannot set property on non-object")
+	})
+
+	t.Run("empty path", func(t *testing.T) {
+		cfg.AddTag("sp_empty", func(string) (func(io.Writer, Context) error, error) {
+			return func(w io.Writer, c Context) error {
+				return c.SetPath([]string{}, "val")
+			}, nil
+		})
+		root, err := cfg.Compile(`{% sp_empty %}`, parser.SourceLoc{})
+		require.NoError(t, err)
+		err = Render(root, io.Discard, map[string]any{}, cfg)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "empty path")
+	})
 }
 
 func TestContext_file_not_found_error(t *testing.T) {

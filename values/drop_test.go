@@ -23,6 +23,30 @@ func TestValue_drop(t *testing.T) {
 	require.Equal(t, 7, dv.PropertyValue(ValueOf("size")).Interface())
 }
 
+func TestDrop_Equal(t *testing.T) {
+	dv := ValueOf(testDrop{42})
+	require.True(t, dv.Equal(ValueOf(42)))
+	require.False(t, dv.Equal(ValueOf(99)))
+}
+
+func TestDrop_Less(t *testing.T) {
+	dv := ValueOf(testDrop{10})
+	require.True(t, dv.Less(ValueOf(20)))
+	require.False(t, dv.Less(ValueOf(5)))
+}
+
+func TestDrop_IndexValue(t *testing.T) {
+	dv := ValueOf(testDrop{[]string{"a", "b", "c"}})
+	require.Equal(t, "a", dv.IndexValue(ValueOf(0)).Interface())
+	require.Equal(t, "c", dv.IndexValue(ValueOf(2)).Interface())
+}
+
+func TestDrop_Test(t *testing.T) {
+	require.True(t, ValueOf(testDrop{1}).Test())
+	require.True(t, ValueOf(testDrop{"hello"}).Test())
+	require.False(t, ValueOf(testDrop{nil}).Test())
+}
+
 func TestDrop_Resolve_race(t *testing.T) {
 	d := ValueOf(testDrop{1})
 	values := make(chan int, 2)

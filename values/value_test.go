@@ -158,6 +158,63 @@ func TestValue_Contains(t *testing.T) {
 	require.False(t, msv.Contains(ValueOf(nil)))
 }
 
+func TestNilValue(t *testing.T) {
+	nv := ValueOf(nil)
+
+	t.Run("Equal", func(t *testing.T) {
+		require.True(t, nv.Equal(ValueOf(nil)))
+		require.False(t, nv.Equal(ValueOf(1)))
+	})
+
+	t.Run("Less", func(t *testing.T) {
+		require.False(t, nv.Less(ValueOf(1)))
+	})
+
+	t.Run("IndexValue", func(t *testing.T) {
+		require.Nil(t, nv.IndexValue(ValueOf(0)).Interface())
+	})
+
+	t.Run("Contains", func(t *testing.T) {
+		require.False(t, nv.Contains(ValueOf("x")))
+	})
+
+	t.Run("Int panics", func(t *testing.T) {
+		require.Panics(t, func() { nv.Int() })
+	})
+
+	t.Run("PropertyValue", func(t *testing.T) {
+		require.Nil(t, nv.PropertyValue(ValueOf("size")).Interface())
+	})
+
+	t.Run("Test", func(t *testing.T) {
+		require.False(t, nv.Test())
+	})
+
+	t.Run("Interface", func(t *testing.T) {
+		require.Nil(t, nv.Interface())
+	})
+}
+
+func TestRange(t *testing.T) {
+	r := NewRange(1, 5)
+	require.Equal(t, 5, r.Len())
+	require.Equal(t, 1, r.Index(0))
+	require.Equal(t, 3, r.Index(2))
+	require.Equal(t, 5, r.Index(4))
+
+	r2 := NewRange(0, 0)
+	require.Equal(t, 1, r2.Len())
+	require.Equal(t, 0, r2.Index(0))
+}
+
+func TestMapSliceValue_Interface(t *testing.T) {
+	ms := yaml.MapSlice{{Key: "a", Value: 1}, {Key: "b", Value: 2}}
+	v := ValueOf(ms)
+	result, ok := v.Interface().(yaml.MapSlice)
+	require.True(t, ok)
+	require.Equal(t, ms, result)
+}
+
 func TestValue_PropertyValue_size(t *testing.T) {
 	require.Nil(t, ValueOf(nil).PropertyValue(ValueOf("size")).Interface())
 	require.Nil(t, ValueOf(false).PropertyValue(ValueOf("size")).Interface())

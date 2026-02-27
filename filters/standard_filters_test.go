@@ -216,6 +216,18 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`small_uint64 | minus: 100`, int64(900)},
 	{`small_uint64 | times: 3`, int64(3000)},
 
+	// Test additional int/uint/float type coercion paths
+	{`int8_val | plus: 1`, int64(11)},
+	{`int16_val | plus: 1`, int64(101)},
+	{`int32_val | plus: 1`, int64(1001)},
+	{`int64_val | plus: 1`, int64(10001)},
+	{`uint8_val | plus: 1`, int64(11)},
+	{`uint16_val | plus: 1`, int64(101)},
+	{`uint32_val | plus: 1`, int64(1001)},
+	{`float32_val | plus: 1`, 11.5},
+	{`str_int | plus: 1`, 11.0},
+	{`str_float | plus: 1.0`, 4.5},
+
 	{`3 | modulo: 2`, 1.0},
 	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
@@ -277,6 +289,18 @@ var filterTestBindings = map[string]any{
 	// Test uint types in arithmetic operations (issue #109)
 	"small_uint":   uint(1000),
 	"small_uint64": uint64(1000),
+
+	// Additional int/uint/float types for coercion testing
+	"int8_val":    int8(10),
+	"int16_val":   int16(100),
+	"int32_val":   int32(1000),
+	"int64_val":   int64(10000),
+	"uint8_val":   uint8(10),
+	"uint16_val":  uint16(100),
+	"uint32_val":  uint32(1000),
+	"float32_val": float32(10.5),
+	"str_int":     "10",
+	"str_float":   "3.5",
 
 	// for examples from liquid docs
 	"animals": []string{"zebra", "octopus", "giraffe", "Sally Snake"},

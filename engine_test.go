@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/osteele/liquid/render"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -203,6 +204,66 @@ func TestEngine_LaxFilters(t *testing.T) {
 	out, err = engine.ParseAndRenderString(`{{ "hello" | upcase }}`, emptyBindings)
 	require.NoError(t, err)
 	require.Equal(t, "HELLO", out)
+}
+
+func TestEngine_Delims(t *testing.T) {
+	engine := NewEngine()
+	engine.Delims("<%=", "%>", "<%", "%>")
+
+	out, err := engine.ParseAndRenderString(`<%= x %>`, testBindings)
+	require.NoError(t, err)
+	require.Equal(t, "123", out)
+
+	// standard delimiters should not work
+	out, err = engine.ParseAndRenderString(`{{ x }}`, testBindings)
+	require.NoError(t, err)
+	require.Equal(t, "{{ x }}", out)
+}
+
+func TestEngine_StrictVariables(t *testing.T) {
+	engine := NewEngine()
+	engine.StrictVariables()
+
+	// defined variable works
+	out, err := engine.ParseAndRenderString(`{{ x }}`, testBindings)
+	require.NoError(t, err)
+	require.Equal(t, "123", out)
+
+	// undefined variable causes error
+	_, err = engine.ParseAndRenderString(`{{ undefined_var }}`, testBindings)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "undefined variable")
+}
+
+func TestEngine_EnableJekyllExtensions(t *testing.T) {
+	engine := NewEngine()
+	engine.EnableJekyllExtensions()
+
+	out, err := engine.ParseAndRenderString(
+		`{% assign page.url = "/about/" %}{{ page.url }}`,
+		map[string]any{"page": map[string]any{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "/about/", out)
+}
+
+func TestEngine_SetAutoEscapeReplacer(t *testing.T) {
+	engine := NewEngine()
+	engine.SetAutoEscapeReplacer(render.HtmlEscaper)
+
+	// HTML should be escaped
+	out, err := engine.ParseAndRenderString(`{{ html }}`, map[string]any{
+		"html": "<b>bold</b>",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "&lt;b&gt;bold&lt;/b&gt;", out)
+
+	// safe filter bypasses escaping
+	out, err = engine.ParseAndRenderString(`{{ html | safe }}`, map[string]any{
+		"html": "<b>bold</b>",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "<b>bold</b>", out)
 }
 
 func TestEngine_UnregisterTag(t *testing.T) {
