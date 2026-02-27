@@ -80,7 +80,7 @@ func isClosureInterfaceType(t reflect.Type) bool {
 	return closureType.ConvertibleTo(t) && !interfaceType.ConvertibleTo(t)
 }
 
-func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
+func (ctx *context) ApplyFilter(name string, receiver valueFn, params *filterArgs) (any, error) {
 	filter, ok := ctx.filters[name]
 	if !ok {
 		if !ctx.LaxFilters {
@@ -95,16 +95,26 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 	args := argsBuf[:1]
 	args[0] = receiver(ctx).Interface()
 
-	for i, param := range params {
-		if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
-			expr, err := Parse(param(ctx).Interface().(string))
-			if err != nil {
-				panic(err)
-			}
+	if params != nil {
+		for i, param := range params.positional {
+			if i+1 < fr.Type().NumIn() && isClosureInterfaceType(fr.Type().In(i+1)) {
+				expr, err := Parse(param(ctx).Interface().(string))
+				if err != nil {
+					panic(err)
+				}
 
-			args = append(args, closure{expr, ctx})
-		} else {
-			args = append(args, param(ctx).Interface())
+				args = append(args, closure{expr, ctx})
+			} else {
+				args = append(args, param(ctx).Interface())
+			}
+		}
+
+		if len(params.keyword) > 0 {
+			kwargs := make(map[string]any, len(params.keyword))
+			for _, kw := range params.keyword {
+				kwargs[kw.name] = kw.val(ctx).Interface()
+			}
+			args = append(args, kwargs)
 		}
 	}
 
