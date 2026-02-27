@@ -3,6 +3,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- **32-bit Platform Build**: Fixed build failure on 32-bit platforms (ARM, x86) where `math.MaxInt64` overflowed `uint` in the `isIntegerType` comparison. The `uint` value is now widened to `uint64` before comparing.
+
+### CI
+
+- Added 32-bit build verification (linux/arm, linux/386) to CI pipeline.
+
 ## 1.8.1 (2026-02-27)
 
 ### Performance

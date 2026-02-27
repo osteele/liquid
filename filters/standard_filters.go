@@ -36,10 +36,8 @@ func isIntegerType(v any) bool {
 	case int, int8, int16, int32, int64, uint8, uint16, uint32:
 		return true
 	case uint:
-		// Check if uint value fits in int64 range
-		return val <= math.MaxInt64
+		return uint64(val) <= math.MaxInt64
 	case uint64:
-		// Check if uint64 value fits in int64 range
 		return val <= math.MaxInt64
 	default:
 		return false
