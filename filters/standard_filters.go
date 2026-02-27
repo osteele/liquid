@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/url"
 	"reflect"
+	"strconv"
 	"regexp"
 	"strings"
 	"time"
@@ -74,7 +75,8 @@ func toInt64(v any) int64 {
 	}
 }
 
-// toFloat64 converts a value to float64
+// toFloat64 converts a value to float64.
+// Strings are parsed as floats, matching Ruby Liquid's String#to_f behavior.
 func toFloat64(v any) float64 {
 	switch val := v.(type) {
 	case int:
@@ -101,6 +103,12 @@ func toFloat64(v any) float64 {
 		return float64(val)
 	case float64:
 		return val
+	case string:
+		f, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return 0
+		}
+		return f
 	default:
 		return 0
 	}
