@@ -43,6 +43,10 @@ type Context interface {
 	// RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
 	// RenderFile does not cache the compiled template.
 	RenderFile(string, map[string]any) (string, error)
+	// RenderFileIsolated parses and renders a template with an isolated scope.
+	// Unlike RenderFile, it does not inherit variables from the parent context.
+	// It's used in the implementation of the {% render %} tag.
+	RenderFileIsolated(string, map[string]any) (string, error)
 	// Set updates the value of a variable in the current lexical environment.
 	// It's used in the implementation of the {% assign %} and {% capture %} tags.
 	Set(name string, value any)
@@ -180,6 +184,40 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 	bindings := make(map[string]any, len(c.ctx.bindings)+len(b))
 	maps.Copy(bindings, c.ctx.bindings)
 	maps.Copy(bindings, b)
+
+	buf := new(bytes.Buffer)
+	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// RenderFileIsolated renders a template with an isolated scope (no parent variables).
+// This is used by the {% render %} tag to provide true variable isolation.
+func (c rendererContext) RenderFileIsolated(filename string, b map[string]any) (string, error) {
+	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
+	if err != nil && os.IsNotExist(err) {
+		// Is it cached?
+		if cval, ok := c.ctx.config.Cache[filename]; ok {
+			source = cval
+		} else {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	}
+
+	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	if err != nil {
+		return "", err
+	}
+
+	// Use only the provided bindings (isolated scope - no parent context)
+	bindings := map[string]any{}
+	for k, v := range b {
+		bindings[k] = v
+	}
 
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
