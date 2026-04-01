@@ -6,6 +6,7 @@ package expressions
 import (
 	"fmt"
 	"runtime/debug"
+	"sync"
 
 	"github.com/osteele/liquid/values"
 )
@@ -16,6 +17,10 @@ import (
 type Expression interface {
 	// Evaluate evaluates an expression in a context.
 	Evaluate(ctx Context) (any, error)
+	// Variables returns all variable paths referenced by this expression.
+	// Each path is a slice of segments, e.g. ["customer", "first_name"].
+	// The result is computed lazily and cached after the first call.
+	Variables() [][]string
 }
 
 // A Closure is an expression within a lexical environment.
@@ -45,9 +50,18 @@ func (c closure) Evaluate() (any, error) {
 
 type expression struct {
 	evaluator func(Context) values.Value
+	varsOnce  sync.Once
+	variables [][]string
 }
 
-func (e expression) Evaluate(ctx Context) (out any, err error) {
+func (e *expression) Variables() [][]string {
+	e.varsOnce.Do(func() {
+		e.variables = computeVariables(e.evaluator)
+	})
+	return e.variables
+}
+
+func (e *expression) Evaluate(ctx Context) (out any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			switch e := r.(type) {

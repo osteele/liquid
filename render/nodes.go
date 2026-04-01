@@ -21,6 +21,7 @@ type BlockNode struct {
 	renderer func(io.Writer, Context) error
 	Body     []Node
 	Clauses  []*BlockNode
+	Analysis NodeAnalysis
 }
 
 // RawNode holds the text between the start and end of a raw tag.
@@ -35,6 +36,7 @@ type TagNode struct {
 	parser.Token
 
 	renderer func(io.Writer, Context) error
+	Analysis NodeAnalysis
 }
 
 // TextNode is a text chunk, that is rendered verbatim.
@@ -48,6 +50,10 @@ type ObjectNode struct {
 
 	expr expressions.Expression
 }
+
+// GetExpr returns the expression associated with this object node.
+// Used for static analysis.
+func (n *ObjectNode) GetExpr() expressions.Expression { return n.expr }
 
 // SeqNode is a sequence of nodes.
 type SeqNode struct {

@@ -30,6 +30,15 @@ func AddStandardTags(c *render.Config) {
 	c.AddBlock("raw")
 	c.AddBlock("tablerow").Compiler(loopTagCompiler)
 	c.AddBlock("unless").Clause("else").Compiler(ifTagCompiler(false))
+
+	// static analysis: register analyzers alongside compilers
+	c.AddTagAnalyzer("assign", makeAssignAnalyzer())
+	c.AddBlockAnalyzer("capture", captureBlockAnalyzer)
+	c.AddBlockAnalyzer("for", loopBlockAnalyzer)
+	c.AddBlockAnalyzer("tablerow", loopBlockAnalyzer)
+	c.AddBlockAnalyzer("if", ifBlockAnalyzer())
+	c.AddBlockAnalyzer("unless", ifBlockAnalyzer())
+	c.AddBlockAnalyzer("case", caseBlockAnalyzer)
 }
 
 func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Context) error, error) {

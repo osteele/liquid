@@ -48,6 +48,9 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 
 			node.renderer = r
 		}
+		if analyzer, ok := c.findBlockAnalyzer(n.Name); ok {
+			node.Analysis = analyzer(node)
+		}
 
 		return &node, nil
 	case *parser.ASTRaw:
@@ -66,7 +69,12 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 				return nil, parser.Errorf(n, "%s", err)
 			}
 
-			return &TagNode{n.Token, f}, nil
+			var analysis NodeAnalysis
+			if analyzer, ok := c.findTagAnalyzer(n.Name); ok {
+				analysis = analyzer(n.Args)
+			}
+
+			return &TagNode{n.Token, f, analysis}, nil
 		}
 
 		return nil, parser.Errorf(n, "undefined tag %q", n.Name)

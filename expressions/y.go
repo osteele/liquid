@@ -553,7 +553,7 @@ yydefault:
 			if len(path) == 1 {
 				variable = path[0]
 			}
-			yylex.(*lexer).Assignment = Assignment{Variable: variable, Path: path, ValueFn: &expression{yyDollar[4].f}}
+			yylex.(*lexer).Assignment = Assignment{Variable: variable, Path: path, ValueFn: &expression{evaluator:yyDollar[4].f}}
 		}
 	case 3:
 		yyDollar = yyS[yypt-3 : yypt+1]
@@ -627,7 +627,7 @@ yydefault:
 		yyDollar = yyS[yypt-2 : yypt+1]
 //line expressions.y:83
 		{
-			yyVAL.exprs = append([]Expression{&expression{yyDollar[1].f}}, yyDollar[2].exprs...)
+			yyVAL.exprs = append([]Expression{&expression{evaluator:yyDollar[1].f}}, yyDollar[2].exprs...)
 		}
 	case 15:
 		yyDollar = yyS[yypt-0 : yypt+1]
@@ -639,13 +639,13 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line expressions.y:86
 		{
-			yyVAL.exprs = append([]Expression{&expression{yyDollar[2].f}}, yyDollar[3].exprs...)
+			yyVAL.exprs = append([]Expression{&expression{evaluator:yyDollar[2].f}}, yyDollar[3].exprs...)
 		}
 	case 17:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line expressions.y:87
 		{
-			yyVAL.exprs = append([]Expression{&expression{yyDollar[2].f}}, yyDollar[3].exprs...)
+			yyVAL.exprs = append([]Expression{&expression{evaluator:yyDollar[2].f}}, yyDollar[3].exprs...)
 		}
 	case 18:
 		yyDollar = yyS[yypt-1 : yypt+1]
@@ -662,7 +662,7 @@ yydefault:
 //line expressions.y:98
 		{
 			name, expr, mods := yyDollar[1].name, yyDollar[3].f, yyDollar[4].loopmods
-			yyVAL.loop = Loop{mods, name, &expression{expr}}
+			yyVAL.loop = Loop{mods, name, &expression{evaluator:expr}}
 		}
 	case 20:
 		yyDollar = yyS[yypt-0 : yypt+1]
@@ -688,11 +688,11 @@ yydefault:
 		{
 			switch yyDollar[2].name {
 			case "cols":
-				yyDollar[1].loopmods.Cols = &expression{yyDollar[3].f}
+				yyDollar[1].loopmods.Cols = &expression{evaluator:yyDollar[3].f}
 			case "limit":
-				yyDollar[1].loopmods.Limit = &expression{yyDollar[3].f}
+				yyDollar[1].loopmods.Limit = &expression{evaluator:yyDollar[3].f}
 			case "offset":
-				yyDollar[1].loopmods.Offset = &expression{yyDollar[3].f}
+				yyDollar[1].loopmods.Offset = &expression{evaluator:yyDollar[3].f}
 			default:
 				panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", yyDollar[2].name)))
 			}

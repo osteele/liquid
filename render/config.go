@@ -23,12 +23,40 @@ type Config struct {
 }
 
 type grammar struct {
-	tags      map[string]TagCompiler
-	blockDefs map[string]*blockSyntax
+	tags           map[string]TagCompiler
+	blockDefs      map[string]*blockSyntax
+	tagAnalyzers   map[string]TagAnalyzer
+	blockAnalyzers map[string]BlockAnalyzer
 }
 
 // NewConfig creates a new Settings.
 // TemplateStore is initialized to a FileTemplateStore for backwards compatibility
+// AddTagAnalyzer registers a static analysis function for the named tag.
+func (c *Config) AddTagAnalyzer(name string, a TagAnalyzer) {
+	if c.tagAnalyzers == nil {
+		c.tagAnalyzers = map[string]TagAnalyzer{}
+	}
+	c.tagAnalyzers[name] = a
+}
+
+// AddBlockAnalyzer registers a static analysis function for the named block tag.
+func (c *Config) AddBlockAnalyzer(name string, a BlockAnalyzer) {
+	if c.blockAnalyzers == nil {
+		c.blockAnalyzers = map[string]BlockAnalyzer{}
+	}
+	c.blockAnalyzers[name] = a
+}
+
+func (g grammar) findTagAnalyzer(name string) (TagAnalyzer, bool) {
+	a, ok := g.tagAnalyzers[name]
+	return a, ok
+}
+
+func (g grammar) findBlockAnalyzer(name string) (BlockAnalyzer, bool) {
+	a, ok := g.blockAnalyzers[name]
+	return a, ok
+}
+
 func NewConfig() Config {
 	g := grammar{
 		tags:      map[string]TagCompiler{},
