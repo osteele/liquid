@@ -2,6 +2,7 @@
 package filters
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,11 +10,12 @@ import (
 	"math"
 	"net/url"
 	"reflect"
-	"strconv"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/osteele/tuesday"
 
@@ -389,6 +391,174 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("url_encode", url.QueryEscape)
 	fd.AddFilter("url_decode", url.QueryUnescape)
 
+	// string filters
+	fd.AddFilter("remove_last", func(s, sub string) string {
+		idx := strings.LastIndex(s, sub)
+		if idx < 0 {
+			return s
+		}
+
+		return s[:idx] + s[idx+len(sub):]
+	})
+	fd.AddFilter("replace_last", func(s, old, new string) string {
+		idx := strings.LastIndex(s, old)
+		if idx < 0 {
+			return s
+		}
+
+		return s[:idx] + new + s[idx+len(old):]
+	})
+	fd.AddFilter("normalize_whitespace", func(s string) string {
+		return wsre.ReplaceAllString(s, " ")
+	})
+	fd.AddFilter("number_of_words", func(s string, mode func(string) string) int {
+		m := mode("default")
+		switch m {
+		case "cjk":
+			return countWordsWithCJK(s)
+		case "auto":
+			for _, r := range s {
+				if isCJKRune(r) {
+					return countWordsWithCJK(s)
+				}
+			}
+
+			return len(strings.Fields(s))
+		default:
+			return len(strings.Fields(s))
+		}
+	})
+	fd.AddFilter("array_to_sentence_string", func(a []any, connector func(string) string) string {
+		con := connector("and")
+		strs := make([]string, len(a))
+		for i, v := range a {
+			strs[i] = fmt.Sprint(v)
+		}
+
+		switch len(strs) {
+		case 0:
+			return ""
+		case 1:
+			return strs[0]
+		case 2:
+			return strs[0] + " " + con + " " + strs[1]
+		default:
+			return strings.Join(strs[:len(strs)-1], ", ") + ", " + con + " " + strs[len(strs)-1]
+		}
+	})
+
+	// math filters
+	fd.AddFilter("at_least", func(a, b float64) float64 {
+		return math.Max(a, b)
+	})
+	fd.AddFilter("at_most", func(a, b float64) float64 {
+		return math.Min(a, b)
+	})
+
+	// html/url filters
+	fd.AddFilter("xml_escape", func(s string) string {
+		var buf strings.Builder
+		for _, r := range s {
+			switch r {
+			case '&':
+				buf.WriteString("&amp;")
+			case '<':
+				buf.WriteString("&lt;")
+			case '>':
+				buf.WriteString("&gt;")
+			case '"':
+				buf.WriteString("&#34;")
+			case '\'':
+				buf.WriteString("&#39;")
+			default:
+				buf.WriteRune(r)
+			}
+		}
+
+		return buf.String()
+	})
+	fd.AddFilter("cgi_escape", url.QueryEscape)
+	fd.AddFilter("uri_escape", func(s string) string {
+		var buf strings.Builder
+		for i := 0; i < len(s); {
+			r, size := utf8.DecodeRuneInString(s[i:])
+			if isURISafe(r) {
+				buf.WriteRune(r)
+			} else {
+				for _, b := range []byte(s[i : i+size]) {
+					fmt.Fprintf(&buf, "%%%02X", b)
+				}
+			}
+			i += size
+		}
+
+		return buf.String()
+	})
+	fd.AddFilter("slugify", func(s string, mode func(string) string) string {
+		return slugifyString(s, mode("default"))
+	})
+
+	// base64 filters
+	fd.AddFilter("base64_encode", func(s string) string {
+		return base64.StdEncoding.EncodeToString([]byte(s))
+	})
+	fd.AddFilter("base64_decode", func(s string) (string, error) {
+		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	})
+
+	// type conversion filters
+	fd.AddFilter("to_integer", func(v any) int {
+		switch val := v.(type) {
+		case int:
+			return val
+		case int8:
+			return int(val)
+		case int16:
+			return int(val)
+		case int32:
+			return int(val)
+		case int64:
+			return int(val)
+		case uint:
+			return int(val)
+		case uint8:
+			return int(val)
+		case uint16:
+			return int(val)
+		case uint32:
+			return int(val)
+		case uint64:
+			return int(val)
+		case float32:
+			return int(val)
+		case float64:
+			return int(val)
+		case string:
+			trimmed := strings.TrimSpace(val)
+			if i, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
+				return int(i)
+			}
+			if f, err := strconv.ParseFloat(trimmed, 64); err == nil {
+				return int(f)
+			}
+
+			return 0
+		case bool:
+			if val {
+				return 1
+			}
+
+			return 0
+		default:
+			return 0
+		}
+	})
+
 	// debugging filters
 	// inspect is from Jekyll
 	fd.AddFilter("inspect", func(value any) string {
@@ -479,4 +649,112 @@ func eqItems(a, b any) bool {
 	}
 
 	return reflect.DeepEqual(a, b)
+}
+
+// isCJKRune reports whether r is a CJK (Chinese, Japanese, Korean) character.
+func isCJKRune(r rune) bool {
+	return (r >= 0x4E00 && r <= 0x9FFF) || // CJK Unified Ideographs
+		(r >= 0x3400 && r <= 0x4DBF) || // CJK Extension A
+		(r >= 0x20000 && r <= 0x2A6DF) || // CJK Extension B
+		(r >= 0xAC00 && r <= 0xD7AF) || // Hangul
+		(r >= 0x3040 && r <= 0x309F) || // Hiragana
+		(r >= 0x30A0 && r <= 0x30FF) // Katakana
+}
+
+// countWordsWithCJK counts words treating each CJK character as an individual word.
+func countWordsWithCJK(s string) int {
+	count := 0
+	inWord := false
+
+	for _, r := range s {
+		if isCJKRune(r) {
+			if inWord {
+				count++
+				inWord = false
+			}
+			count++
+		} else if unicode.IsSpace(r) {
+			if inWord {
+				count++
+				inWord = false
+			}
+		} else {
+			inWord = true
+		}
+	}
+
+	if inWord {
+		count++
+	}
+
+	return count
+}
+
+// isURISafe reports whether r should not be percent-encoded in a URI.
+// Matches the behavior of JavaScript's encodeURI().
+func isURISafe(r rune) bool {
+	if (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+		return true
+	}
+
+	switch r {
+	case '-', '_', '.', '!', '~', '*', '\'', '(', ')',
+		';', ',', '/', '?', ':', '@', '&', '=', '+', '$', '#', '[', ']':
+		return true
+	}
+
+	return false
+}
+
+var (
+	slugifyDefaultRe   = regexp.MustCompile(`[^\p{L}\p{N}\-]+`)
+	slugifyASCIIRe     = regexp.MustCompile(`[^a-z0-9\-]+`)
+	slugifyPrettyRe    = regexp.MustCompile(`[^\p{L}\p{N}._~!$&'()*+,;=:@/\-]+`)
+	slugifyMultiHyphRe = regexp.MustCompile(`-{2,}`)
+	slugifyTrimHyphRe  = regexp.MustCompile(`^-+|-+$`)
+)
+
+// latinAccentReplacer maps common accented latin characters to their ASCII equivalents.
+var latinAccentReplacer = strings.NewReplacer(
+	"à", "a", "á", "a", "â", "a", "ã", "a", "ä", "a", "å", "a",
+	"è", "e", "é", "e", "ê", "e", "ë", "e",
+	"ì", "i", "í", "i", "î", "i", "ï", "i",
+	"ò", "o", "ó", "o", "ô", "o", "õ", "o", "ö", "o", "ø", "o",
+	"ù", "u", "ú", "u", "û", "u", "ü", "u",
+	"ý", "y", "ÿ", "y",
+	"ñ", "n", "ç", "c", "ß", "ss",
+	"À", "a", "Á", "a", "Â", "a", "Ã", "a", "Ä", "a", "Å", "a",
+	"È", "e", "É", "e", "Ê", "e", "Ë", "e",
+	"Ì", "i", "Í", "i", "Î", "i", "Ï", "i",
+	"Ò", "o", "Ó", "o", "Ô", "o", "Õ", "o", "Ö", "o", "Ø", "o",
+	"Ù", "u", "Ú", "u", "Û", "u", "Ü", "u",
+	"Ý", "y", "Ñ", "n", "Ç", "c",
+)
+
+// slugifyString normalizes a string to a URL slug according to the given mode.
+// Modes: "default" (unicode-aware), "ascii", "latin" (transliterate accents),
+// "pretty" (preserve common URL chars), "none"/"raw" (lowercase only).
+// Unknown modes fall back to lowercase-only, matching LiquidJS behavior.
+func slugifyString(s, mode string) string {
+	applyHyphens := func(s string, re *regexp.Regexp) string {
+		s = re.ReplaceAllString(s, "-")
+		s = slugifyTrimHyphRe.ReplaceAllString(s, "")
+		s = slugifyMultiHyphRe.ReplaceAllString(s, "-")
+
+		return s
+	}
+
+	switch mode {
+	case "default":
+		return applyHyphens(strings.ToLower(s), slugifyDefaultRe)
+	case "ascii":
+		return applyHyphens(strings.ToLower(s), slugifyASCIIRe)
+	case "latin":
+		return applyHyphens(strings.ToLower(latinAccentReplacer.Replace(s)), slugifyASCIIRe)
+	case "pretty":
+		return applyHyphens(strings.ToLower(s), slugifyPrettyRe)
+	default:
+		// "none", "raw", and any unknown mode: lowercase only, no char replacement.
+		return strings.ToLower(s)
+	}
 }

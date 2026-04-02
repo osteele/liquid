@@ -174,6 +174,69 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"john@liquid.com" | url_encode`, "john%40liquid.com"},
 	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
 
+	// string filters
+	{`"I strained to see the train through the rain" | remove_last: "rain"`, "I strained to see the train through the "},
+	{`"hello world" | remove_last: "l"`, "hello word"},
+	{`"no match" | remove_last: "xyz"`, "no match"},
+	{`"Take my protein pills and put my helmet on" | replace_last: "my", "your"`, "Take my protein pills and put your helmet on"},
+	{`"hello world" | replace_last: "l", "L"`, "hello worLd"},
+	{`"no match" | replace_last: "xyz", "abc"`, "no match"},
+	{`"  hello   world  " | normalize_whitespace`, " hello world "},
+	{"\"hello\nworld\ttab\" | normalize_whitespace", "hello world tab"},
+	{`"one two three" | number_of_words`, 3},
+	{`"" | number_of_words`, 0},
+	{`"   " | number_of_words`, 0},
+	{`"Hello world!" | number_of_words`, 2},
+	{`"你好hello世界world" | number_of_words`, 1},
+	{`"   Hello    world!    " | number_of_words`, 2},
+	{`"hello world" | number_of_words: "cjk"`, 2},
+	{`"你好hello世界world" | number_of_words: "cjk"`, 6},
+	{`"" | number_of_words: "cjk"`, 0},
+	{`"你好こんにちは안녕하세요" | number_of_words: "cjk"`, 12},
+	{`"hello 日本語 world" | number_of_words: "auto"`, 5},
+	{`"hello world" | number_of_words: "auto"`, 2},
+	{`"你好hello世界world" | number_of_words: "auto"`, 6},
+	{`"你好世界" | number_of_words: "auto"`, 4},
+	{`fruits | array_to_sentence_string`, "apples, oranges, peaches, and plums"},
+	{`"a,b" | split: "," | array_to_sentence_string`, "a and b"},
+	{`"a" | split: "," | array_to_sentence_string`, "a"},
+	{`"a,b,c" | split: "," | array_to_sentence_string: "or"`, "a, b, or c"},
+
+	// math filters
+	{`4 | at_least: 5`, 5.0},
+	{`4 | at_least: 3`, 4.0},
+	{`4 | at_most: 5`, 4.0},
+	{`4 | at_most: 3`, 3.0},
+
+	// html/url filters
+	{`"Have you read 'James & the Giant Peach'?" | xml_escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
+	{`'<script>"alert"</script>' | xml_escape`, "&lt;script&gt;&#34;alert&#34;&lt;/script&gt;"},
+	{`"john@liquid.com" | cgi_escape`, "john%40liquid.com"},
+	{`"hello world" | cgi_escape`, "hello+world"},
+	{`"foo, bar; baz?" | cgi_escape`, "foo%2C+bar%3B+baz%3F"},
+	{`"hello world" | uri_escape`, "hello%20world"},
+	{`"http://example.com/?q=foo, \bar?" | uri_escape`, "http://example.com/?q=foo,%20%5Cbar?"},
+	{`"!#$&'()*+,/:;=?@[]" | uri_escape`, "!#$&'()*+,/:;=?@[]"},
+	{`"Hello World" | slugify`, "hello-world"},
+	{`"The _config.yml file" | slugify`, "the-config-yml-file"},
+	{`"The _config.yml file" | slugify: "pretty"`, "the-_config.yml-file"},
+	{`"The _cönfig.yml file" | slugify: "ascii"`, "the-c-nfig-yml-file"},
+	{`"The cönfig.yml file" | slugify: "latin"`, "the-config-yml-file"},
+	{`"The _config.yml file" | slugify: "none"`, "the _config.yml file"},
+	{`"The _config.yml file" | slugify: "raw"`, "the _config.yml file"},
+	{`"Hello World" | slugify: "invalid_mode"`, "hello world"},
+
+	// base64 filters
+	{`"hello" | base64_encode`, "aGVsbG8="},
+	{`"aGVsbG8=" | base64_decode`, "hello"},
+
+	// type conversion filters
+	{`"3.5" | to_integer`, 3},
+	{`3.9 | to_integer`, 3},
+	{`"42" | to_integer`, 42},
+	{`true | to_integer`, 1},
+	{`false | to_integer`, 0},
+
 	// number filters
 	{`-17 | abs`, 17.0},
 	{`4 | abs`, 4.0},
@@ -254,6 +317,7 @@ var filterErrorTests = []struct {
 }{
 	{`20 | divided_by: 's'`, `error applying filter "divided_by" ("invalid divisor: 's'")`},
 	{`20 | divided_by: 0`, `error applying filter "divided_by" ("division by zero")`},
+	{`"not-base64!!!" | base64_decode`, `error applying filter "base64_decode" ("illegal base64 data at input byte 3")`},
 }
 
 var filterTestBindings = map[string]any{
