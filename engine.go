@@ -181,6 +181,22 @@ func (e *Engine) SetAutoEscapeReplacer(replacer render.Replacer) {
 	e.cfg.SetAutoEscapeReplacer(replacer)
 }
 
+// RegisterTagAnalyzer registers a static analysis function for a simple tag previously
+// registered with RegisterTag. The analyzer is invoked during static analysis to
+// determine which variables the tag reads and which it defines in scope.
+//
+// Use render.NodeAnalysis.Arguments to declare variable expressions the tag reads, and
+// render.NodeAnalysis.LocalScope to declare variable names the tag defines.
+func (e *Engine) RegisterTagAnalyzer(name string, a render.TagAnalyzer) {
+	e.cfg.AddTagAnalyzer(name, a)
+}
+
+// RegisterBlockAnalyzer registers a static analysis function for a block tag previously
+// registered with RegisterBlock. The analyzer is invoked during static analysis.
+func (e *Engine) RegisterBlockAnalyzer(name string, a render.BlockAnalyzer) {
+	e.cfg.AddBlockAnalyzer(name, a)
+}
+
 // UnregisterTag removes the named tag definition from the engine's configuration.
 // After calling UnregisterTag the tag will no longer be recognized by subsequent
 // parsing or rendering operations. The call is idempotent — unregistering a tag

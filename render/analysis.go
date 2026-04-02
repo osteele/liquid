@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/parser"
 )
 
 // NodeAnalysis holds static analysis metadata for a compiled node.
@@ -29,6 +30,12 @@ type TagAnalyzer func(args string) NodeAnalysis
 // It receives the already-compiled BlockNode (with Body and Clauses populated).
 type BlockAnalyzer func(node BlockNode) NodeAnalysis
 
+// VariableRef is a variable path paired with the source location where it is referenced.
+type VariableRef struct {
+	Path []string
+	Loc  parser.SourceLoc
+}
+
 // AnalysisResult is the result of static analysis of a compiled template.
 type AnalysisResult struct {
 	// Globals contains variable paths that come from the outer scope (not defined
@@ -36,36 +43,66 @@ type AnalysisResult struct {
 	Globals [][]string
 	// All contains all variable paths referenced in the template, including locals.
 	All [][]string
+
+	// GlobalRefs contains global variable references with source locations.
+	GlobalRefs []VariableRef
+	// AllRefs contains all variable references with source locations.
+	AllRefs []VariableRef
+
+	// Locals contains variable names defined within the template (assign, capture, for, etc.).
+	Locals []string
+
+	// Tags contains the unique tag names used in the template (e.g. "if", "for", "assign").
+	Tags []string
 }
 
 // Analyze performs static analysis on a compiled template tree and returns
 // the set of variable paths referenced by the template.
 func Analyze(root Node) AnalysisResult {
 	locals := map[string]bool{}
-	collectLocals(root, locals)
+	var localList []string
+	collectLocals(root, locals, &localList)
 
 	collector := &analysisCollector{seen: map[string]bool{}}
 	walkForVariables(root, collector)
 
-	all := collector.paths
+	allRefs := collector.refs
+	all := make([][]string, len(allRefs))
+	for i, r := range allRefs {
+		all[i] = r.Path
+	}
 
 	var globals [][]string
-	for _, path := range all {
-		if len(path) > 0 && !locals[path[0]] {
-			globals = append(globals, path)
+	var globalRefs []VariableRef
+	for _, ref := range allRefs {
+		if len(ref.Path) > 0 && !locals[ref.Path[0]] {
+			globals = append(globals, ref.Path)
+			globalRefs = append(globalRefs, ref)
 		}
 	}
 
-	return AnalysisResult{All: all, Globals: globals}
+	tagSeen := map[string]bool{}
+	var tags []string
+	walkForTags(root, tagSeen, &tags)
+
+	return AnalysisResult{
+		All:        all,
+		Globals:    globals,
+		AllRefs:    allRefs,
+		GlobalRefs: globalRefs,
+		Locals:     localList,
+		Tags:       tags,
+	}
 }
 
-// analysisCollector deduplicates variable paths across the full AST walk.
+// analysisCollector deduplicates variable paths across the full AST walk,
+// preserving the source location of the first occurrence of each path.
 type analysisCollector struct {
-	paths [][]string
-	seen  map[string]bool
+	refs []VariableRef
+	seen map[string]bool
 }
 
-func (c *analysisCollector) addPath(path []string) {
+func (c *analysisCollector) addRef(path []string, loc parser.SourceLoc) {
 	if len(path) == 0 {
 		return
 	}
@@ -74,17 +111,17 @@ func (c *analysisCollector) addPath(path []string) {
 		c.seen[key] = true
 		cp := make([]string, len(path))
 		copy(cp, path)
-		c.paths = append(c.paths, cp)
+		c.refs = append(c.refs, VariableRef{Path: cp, Loc: loc})
 	}
 }
 
-func (c *analysisCollector) addFromExpr(expr expressions.Expression) {
+func (c *analysisCollector) addFromExpr(expr expressions.Expression, loc parser.SourceLoc) {
 	for _, path := range expr.Variables() {
-		c.addPath(path)
+		c.addRef(path, loc)
 	}
 }
 
-// walkForVariables traverses the AST collecting all variable references.
+// walkForVariables traverses the AST collecting all variable references with their locations.
 func walkForVariables(node Node, collector *analysisCollector) {
 	switch n := node.(type) {
 	case *SeqNode:
@@ -92,14 +129,14 @@ func walkForVariables(node Node, collector *analysisCollector) {
 			walkForVariables(child, collector)
 		}
 	case *ObjectNode:
-		collector.addFromExpr(n.GetExpr())
+		collector.addFromExpr(n.GetExpr(), n.SourceLoc)
 	case *TagNode:
 		for _, expr := range n.Analysis.Arguments {
-			collector.addFromExpr(expr)
+			collector.addFromExpr(expr, n.SourceLoc)
 		}
 	case *BlockNode:
 		for _, expr := range n.Analysis.Arguments {
-			collector.addFromExpr(expr)
+			collector.addFromExpr(expr, n.SourceLoc)
 		}
 		for _, child := range n.Body {
 			walkForVariables(child, collector)
@@ -112,28 +149,60 @@ func walkForVariables(node Node, collector *analysisCollector) {
 
 // collectLocals traverses the AST collecting all locally-defined variable names.
 // These are names introduced by assign, capture, for (BlockScope), etc.
-func collectLocals(node Node, locals map[string]bool) {
+func collectLocals(node Node, locals map[string]bool, list *[]string) {
+	addLocal := func(name string) {
+		if !locals[name] {
+			locals[name] = true
+			*list = append(*list, name)
+		}
+	}
 	switch n := node.(type) {
 	case *SeqNode:
 		for _, child := range n.Children {
-			collectLocals(child, locals)
+			collectLocals(child, locals, list)
 		}
 	case *TagNode:
 		for _, name := range n.Analysis.LocalScope {
-			locals[name] = true
+			addLocal(name)
 		}
 	case *BlockNode:
 		for _, name := range n.Analysis.LocalScope {
-			locals[name] = true
+			addLocal(name)
 		}
 		for _, name := range n.Analysis.BlockScope {
-			locals[name] = true
+			addLocal(name)
 		}
 		for _, child := range n.Body {
-			collectLocals(child, locals)
+			collectLocals(child, locals, list)
 		}
 		for _, clause := range n.Clauses {
-			collectLocals(clause, locals)
+			collectLocals(clause, locals, list)
+		}
+	}
+}
+
+// walkForTags traverses the AST collecting unique tag names (e.g. "if", "for", "assign").
+func walkForTags(node Node, seen map[string]bool, tags *[]string) {
+	switch n := node.(type) {
+	case *SeqNode:
+		for _, child := range n.Children {
+			walkForTags(child, seen, tags)
+		}
+	case *TagNode:
+		if !seen[n.Name] {
+			seen[n.Name] = true
+			*tags = append(*tags, n.Name)
+		}
+	case *BlockNode:
+		if !seen[n.Name] {
+			seen[n.Name] = true
+			*tags = append(*tags, n.Name)
+		}
+		for _, child := range n.Body {
+			walkForTags(child, seen, tags)
+		}
+		for _, clause := range n.Clauses {
+			walkForTags(clause, seen, tags)
 		}
 	}
 }
