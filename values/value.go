@@ -44,6 +44,10 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	}
 	// interfaces
 	switch v := value.(type) {
+	case *emptyDropValue:
+		return v
+	case *blankDropValue:
+		return v
 	case drop:
 		return &dropWrapper{d: v}
 	case yaml.MapSlice:
@@ -97,7 +101,17 @@ func (v valueEmbed) Test() bool                { return true }
 // A wrapperValue wraps a Go value.
 type wrapperValue struct{ value any }
 
-func (v wrapperValue) Equal(other Value) bool    { return Equal(v.value, other.Interface()) }
+func (v wrapperValue) Equal(other Value) bool {
+	// Symmetric comparison: delegate to EmptyDrop/BlankDrop's own Equal so it
+	// can apply its emptiness/blankness semantics against this value.
+	switch o := other.(type) {
+	case *emptyDropValue:
+		return o.Equal(v)
+	case *blankDropValue:
+		return o.Equal(v)
+	}
+	return Equal(v.value, other.Interface())
+}
 func (v wrapperValue) Less(other Value) bool     { return Less(v.value, other.Interface()) }
 func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
 func (v wrapperValue) Contains(Value) bool       { return false }

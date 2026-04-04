@@ -1,6 +1,7 @@
 package filters
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -380,7 +381,7 @@ var filterErrorTests = []struct {
 	error string
 }{
 	{`20 | divided_by: 's'`, `error applying filter "divided_by" ("invalid divisor: 's'")`},
-	{`20 | divided_by: 0`, `error applying filter "divided_by" ("division by zero")`},
+	{`20 | divided_by: 0`, `error applying filter "divided_by" ("divided by 0")`},
 	{`"not-base64!!!" | base64_decode`, `error applying filter "base64_decode" ("illegal base64 data at input byte 3")`},
 }
 
@@ -564,8 +565,8 @@ func TestSampleFilter(t *testing.T) {
 	cfg := expressions.NewConfig()
 	AddStandardFilters(&cfg)
 	bindings := map[string]any{
-		"fruits": []any{"apples", "oranges", "peaches", "plums"},
-		"empty":  []any{},
+		"fruits":    []any{"apples", "oranges", "peaches", "plums"},
+		"empty_arr": []any{},
 	}
 	context := expressions.NewContext(bindings, cfg)
 
@@ -596,13 +597,13 @@ func TestSampleFilter(t *testing.T) {
 
 	// empty array: nil input returns empty [liquidjs: `{{ nil | sample: 2 }}`]
 	t.Run("empty_array", func(t *testing.T) {
-		actual, err := expressions.EvaluateString(`empty | sample`, context)
+		actual, err := expressions.EvaluateString(`empty_arr | sample`, context)
 		require.NoError(t, err)
 		require.Nil(t, actual)
 	})
 
 	t.Run("empty_array_with_count", func(t *testing.T) {
-		actual, err := expressions.EvaluateString(`empty | sample: 2`, context)
+		actual, err := expressions.EvaluateString(`empty_arr | sample: 2`, context)
 		require.NoError(t, err)
 		require.Equal(t, []any{}, actual)
 	})
@@ -875,4 +876,164 @@ func TestShiftFilterImmutability(t *testing.T) {
 
 	// Original should not be mutated
 	require.Equal(t, []any{"hey", "you"}, original)
+}
+
+// TestZeroDivisionError verifies that divided_by and modulo return a typed ZeroDivisionError.
+func TestZeroDivisionError(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{}
+	context := expressions.NewContext(bindings, cfg)
+
+	t.Run("divided_by_zero_is_ZeroDivisionError", func(t *testing.T) {
+		_, err := expressions.EvaluateString(`20 | divided_by: 0`, context)
+		require.Error(t, err)
+		var zde *ZeroDivisionError
+		require.True(t, errors.As(err, &zde), "expected ZeroDivisionError, got %T: %v", err, err)
+	})
+
+	t.Run("modulo_zero_is_ZeroDivisionError", func(t *testing.T) {
+		_, err := expressions.EvaluateString(`20 | modulo: 0`, context)
+		require.Error(t, err)
+		var zde *ZeroDivisionError
+		require.True(t, errors.As(err, &zde), "expected ZeroDivisionError, got %T: %v", err, err)
+	})
+
+	t.Run("modulo_nonzero_succeeds", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`10 | modulo: 3`, context)
+		require.NoError(t, err)
+		require.Equal(t, 1.0, actual)
+	})
+}
+
+// TestExpFilters contains integration tests for all _exp context-aware filters.
+func TestExpFilters(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	products := []any{
+		map[string]any{"title": "Vacuum", "type": "appliance", "price": 45, "available": true},
+		map[string]any{"title": "Spatula", "type": "kitchen", "price": 10, "available": true},
+		map[string]any{"title": "Television", "type": "appliance", "price": 500, "available": false},
+		map[string]any{"title": "Garlic press", "type": "kitchen", "price": 12, "available": true},
+	}
+	bindings := map[string]any{
+		"products": products,
+		"nums":     []any{1, 2, 3, 4, 5},
+	}
+	ctx := expressions.NewContext(bindings, cfg)
+
+	// where_exp
+	t.Run("where_exp_truthy_property", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.available"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 3)
+	})
+
+	t.Run("where_exp_comparison", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 2)
+		require.Equal(t, "Vacuum", result[0].(map[string]any)["title"])
+		require.Equal(t, "Television", result[1].(map[string]any)["title"])
+	})
+
+	t.Run("where_exp_type_filter", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.type == \"appliance\""`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 2)
+	})
+
+	t.Run("where_exp_empty_result", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.price > 1000"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, []any{}, actual)
+	})
+
+	// reject_exp
+	t.Run("reject_exp_available", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | reject_exp: "p", "p.available"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 1)
+		require.Equal(t, "Television", result[0].(map[string]any)["title"])
+	})
+
+	t.Run("reject_exp_comparison", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`nums | reject_exp: "n", "n > 3"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Equal(t, []any{1, 2, 3}, result)
+	})
+
+	// group_by_exp
+	t.Run("group_by_exp_type", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | group_by_exp: "p", "p.type"`, ctx)
+		require.NoError(t, err)
+		groups := actual.([]any)
+		require.Len(t, groups, 2)
+		g0 := groups[0].(map[string]any)
+		require.Equal(t, "appliance", g0["name"])
+		require.Len(t, g0["items"].([]any), 2)
+		g1 := groups[1].(map[string]any)
+		require.Equal(t, "kitchen", g1["name"])
+		require.Len(t, g1["items"].([]any), 2)
+	})
+
+	// find_exp
+	t.Run("find_exp_first_match", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		item := actual.(map[string]any)
+		require.Equal(t, "Vacuum", item["title"])
+	})
+
+	t.Run("find_exp_no_match", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	// find_index_exp
+	t.Run("find_index_exp_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_index_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, 0, actual)
+	})
+
+	t.Run("find_index_exp_not_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_index_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	t.Run("find_index_exp_second", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`nums | find_index_exp: "n", "n > 3"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, 3, actual)
+	})
+
+	// has_exp
+	t.Run("has_exp_true", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | has_exp: "p", "p.available and p.price < 15"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, true, actual)
+	})
+
+	t.Run("has_exp_false", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | has_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
+
+	t.Run("has_exp_empty_array", func(t *testing.T) {
+		bindings2 := map[string]any{"arr": []any{}}
+		ctx2 := expressions.NewContext(bindings2, cfg)
+		actual, err := expressions.EvaluateString(`arr | has_exp: "x", "x > 1"`, ctx2)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
 }

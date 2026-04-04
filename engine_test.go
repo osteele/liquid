@@ -3,12 +3,15 @@ package liquid
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/osteele/liquid/filters"
+	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 
 	"github.com/stretchr/testify/require"
@@ -24,6 +27,15 @@ var liquidTests = []struct{ in, expected string }{
 	{`{{ "upper" | upcase }}`, "UPPER"},
 }
 
+var echoIntegrationTests = []struct{ in, expected string }{
+	// echo behaves identically to {{ expr }}
+	{`{% echo x %}`, "123"},
+	{`{% echo "hello" | upcase %}`, "HELLO"},
+	{`{% echo x | plus: 1 %}`, "124"},
+	// nil renders as empty string
+	{`{% echo undefined %}`, ""},
+}
+
 var testBindings = map[string]any{
 	"x":  123,
 	"ar": []string{"first", "second", "third"},
@@ -36,6 +48,18 @@ func TestEngine_ParseAndRenderString(t *testing.T) {
 	engine := NewEngine()
 
 	for i, test := range liquidTests {
+		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
+			out, err := engine.ParseAndRenderString(test.in, testBindings)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, out, test.in)
+		})
+	}
+}
+
+func TestEngine_EchoTag(t *testing.T) {
+	engine := NewEngine()
+
+	for i, test := range echoIntegrationTests {
 		t.Run(strconv.Itoa(i+1), func(t *testing.T) {
 			out, err := engine.ParseAndRenderString(test.in, testBindings)
 			require.NoErrorf(t, err, test.in)
@@ -235,6 +259,63 @@ func TestEngine_StrictVariables(t *testing.T) {
 	require.Contains(t, err.Error(), "undefined variable")
 }
 
+func TestParseError_Type(t *testing.T) {
+	engine := NewEngine()
+
+	_, err := engine.ParseString(`{% if unclosed %}`)
+	require.Error(t, err)
+
+	var pe *parser.ParseError
+	require.True(t, errors.As(err, &pe), "expected *parser.ParseError, got %T", err)
+}
+
+func TestRenderError_Type(t *testing.T) {
+	engine := NewEngine()
+	template, parseErr := engine.ParseString(`{{ x | modulo: 0 }}`)
+	require.NoError(t, parseErr)
+
+	_, renderErr := template.RenderString(map[string]any{"x": 10})
+	require.Error(t, renderErr)
+
+	var re *render.RenderError
+	require.True(t, errors.As(renderErr, &re), "expected *render.RenderError, got %T", renderErr)
+}
+
+func TestUndefinedVariableError_Type(t *testing.T) {
+	engine := NewEngine()
+	engine.StrictVariables()
+
+	_, err := engine.ParseAndRenderString(`{{ my_missing_var }}`, map[string]any{})
+	require.Error(t, err)
+
+	var ue *render.UndefinedVariableError
+	require.True(t, errors.As(err, &ue), "expected *render.UndefinedVariableError, got %T", err)
+	require.Equal(t, "my_missing_var", ue.Name)
+	require.Contains(t, err.Error(), "my_missing_var")
+}
+
+func TestZeroDivisionError_Type(t *testing.T) {
+	engine := NewEngine()
+
+	t.Run("divided_by", func(t *testing.T) {
+		template, parseErr := engine.ParseString(`{{ 10 | divided_by: 0 }}`)
+		require.NoError(t, parseErr)
+		_, renderErr := template.RenderString(map[string]any{})
+		require.Error(t, renderErr)
+		var zde *filters.ZeroDivisionError
+		require.True(t, errors.As(renderErr, &zde), "expected *filters.ZeroDivisionError, got %T", renderErr)
+	})
+
+	t.Run("modulo", func(t *testing.T) {
+		template, parseErr := engine.ParseString(`{{ 10 | modulo: 0 }}`)
+		require.NoError(t, parseErr)
+		_, renderErr := template.RenderString(map[string]any{})
+		require.Error(t, renderErr)
+		var zde *filters.ZeroDivisionError
+		require.True(t, errors.As(renderErr, &zde), "expected *filters.ZeroDivisionError, got %T", renderErr)
+	})
+}
+
 func TestEngine_EnableJekyllExtensions(t *testing.T) {
 	engine := NewEngine()
 	engine.EnableJekyllExtensions()
@@ -268,15 +349,15 @@ func TestEngine_SetAutoEscapeReplacer(t *testing.T) {
 
 func TestEngine_UnregisterTag(t *testing.T) {
 	engine := NewEngine()
-	engine.RegisterTag("echo", func(c render.Context) (string, error) {
+	engine.RegisterTag("custom_test_tag", func(c render.Context) (string, error) {
 		return c.TagArgs(), nil
 	})
-	source := `{% echo hello world %}`
+	source := `{% custom_test_tag hello world %}`
 
 	_, err := engine.ParseAndRenderString(source, emptyBindings)
 	require.NoError(t, err)
 
-	engine.UnregisterTag("echo")
+	engine.UnregisterTag("custom_test_tag")
 
 	_, err = engine.ParseAndRenderString(source, emptyBindings)
 	require.Error(t, err)

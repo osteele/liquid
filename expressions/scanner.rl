@@ -2,6 +2,7 @@ package expressions
 
 import (
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -86,8 +87,7 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action String {
 			tok = LITERAL
-			// TODO unescape \x
-			out.val = string(lex.data[lex.ts+1:lex.te-1])
+			out.val = unescapeString(lex.data[lex.ts+1:lex.te-1])
 			fbreak;
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
@@ -97,7 +97,9 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 		int = '-'? digit+ ;
 		float = '-'? digit+ ('.' digit+)? ;
-		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
+		dquote_string = '"' ([^"\\] | '\\' any)* '"' ;
+		squote_string = "'" ([^'\\] | '\\' any)* "'" ;
+		string = dquote_string | squote_string ;
 
 		main := |*
 			# statement selectors, should match constants in parser.go
@@ -114,14 +116,18 @@ func (lex *lexer) Lex(out *yySymType) int {
 			# constants
 			("true" | "false") => Bool;
 			"nil" => { tok = LITERAL; out.val = nil; fbreak; };
+			"empty" => { tok = EMPTY; fbreak; };
+			"blank" => { tok = BLANK; fbreak; };
 
 			# relations
 			"==" => { tok = EQ; fbreak; };
 			"!=" => { tok = NEQ; fbreak; };
+			"<>" => { tok = NEQ; fbreak; };
 			">=" => { tok = GE; fbreak; };
 			"<=" => { tok = LE; fbreak; };
 			"and" => { tok = AND; fbreak; };
 			"or" => { tok = OR; fbreak; };
+			"not" => { tok = NOT; fbreak; };
 			"contains" => { tok = CONTAINS; fbreak; };
 
 			# keywords
@@ -144,6 +150,37 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 func (lex *lexer) Error(e string) {
     // fmt.Println("scan error:", e)
+}
+
+// unescapeString processes backslash escape sequences in a Liquid string literal.
+// The input slice should not include the surrounding quotes.
+func unescapeString(b []byte) string {
+	// Fast path: no backslash at all.
+	if !strings.ContainsRune(string(b), '\\') {
+		return string(b)
+	}
+	out := make([]byte, 0, len(b))
+	for i := 0; i < len(b); i++ {
+		if b[i] == '\\' && i+1 < len(b) {
+			i++
+			switch b[i] {
+			case 'n':
+				out = append(out, '\n')
+			case 'r':
+				out = append(out, '\r')
+			case 't':
+				out = append(out, '\t')
+			case '"', '\'', '\\':
+				out = append(out, b[i])
+			default:
+				// Unknown escapes are kept as-is (backslash + char).
+				out = append(out, '\\', b[i])
+			}
+		} else {
+			out = append(out, b[i])
+		}
+	}
+	return string(out)
 }
 
 func isValidUnicodeIdentifier(s string) bool {

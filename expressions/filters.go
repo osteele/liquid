@@ -31,6 +31,18 @@ func (e FilterError) Error() string {
 	return fmt.Sprintf("error applying filter %q (%q)", e.FilterName, e.Err)
 }
 
+// Unwrap returns the underlying filter error, enabling errors.As and errors.Is
+// to find the root cause (e.g. ZeroDivisionError).
+func (e FilterError) Unwrap() error { return e.Err }
+
+// NamedArg is a keyword argument passed to a filter.
+// For example, in {{ x | default: "foo", allow_false: true }},
+// allow_false: true is represented as NamedArg{Name: "allow_false", Value: true}.
+type NamedArg struct {
+	Name  string
+	Value any
+}
+
 type valueFn func(Context) values.Value
 
 func (c *Config) ensureMapIsCreated() {
@@ -81,6 +93,15 @@ func isClosureInterfaceType(t reflect.Type) bool {
 }
 
 func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
+	// Check context-aware filters first.
+	if fn, ok := ctx.contextFilters[name]; ok {
+		args := make([]any, len(params))
+		for i, p := range params {
+			args[i] = p(ctx).Interface()
+		}
+		return fn(ctx, receiver(ctx).Interface(), args)
+	}
+
 	filter, ok := ctx.filters[name]
 	if !ok {
 		if !ctx.LaxFilters {

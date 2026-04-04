@@ -2,11 +2,11 @@
 package render
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/osteele/liquid/parser"
@@ -86,7 +86,9 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	}
 
 	if value == nil && ctx.config.StrictVariables {
-		return wrapRenderError(errors.New("undefined variable"), n)
+		name := strings.TrimSpace(n.Token.Args)
+		locErr := parser.Errorf(n, "undefined variable %q", name)
+		return &UndefinedVariableError{Name: name, loc: locErr}
 	}
 	if sv, isSafe := value.(values.SafeValue); isSafe {
 		err = writeObject(w, sv.Value)

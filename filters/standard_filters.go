@@ -4,7 +4,6 @@ package filters
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html"
 	"math"
@@ -19,14 +18,20 @@ import (
 
 	"github.com/osteele/tuesday"
 
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/values"
 )
 
-var errDivisionByZero = errors.New("division by zero")
+// ZeroDivisionError is returned by the divided_by and modulo filters when
+// the divisor is zero. Use errors.As to detect this specific condition.
+type ZeroDivisionError struct{}
+
+func (e *ZeroDivisionError) Error() string { return "divided by 0" }
 
 // A FilterDictionary holds filters.
 type FilterDictionary interface {
 	AddFilter(string, any)
+	AddContextFilter(string, expressions.ContextFilterFn)
 }
 
 // Helper functions for type-aware arithmetic operations
@@ -187,6 +192,13 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("shift", shiftFilter)
 	fd.AddFilter("sample", sampleFilter)
 
+	fd.AddContextFilter("where_exp", whereExpFilter)
+	fd.AddContextFilter("reject_exp", rejectExpFilter)
+	fd.AddContextFilter("group_by_exp", groupByExpFilter)
+	fd.AddContextFilter("find_exp", findExpFilter)
+	fd.AddContextFilter("find_index_exp", findIndexExpFilter)
+	fd.AddContextFilter("has_exp", hasExpFilter)
+
 	// date filters
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
 		f := format("%a, %b %d, %y")
@@ -201,7 +213,12 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("floor", func(a float64) int {
 		return int(math.Floor(a))
 	})
-	fd.AddFilter("modulo", math.Mod)
+	fd.AddFilter("modulo", func(a, b float64) (float64, error) {
+		if b == 0 {
+			return 0, &ZeroDivisionError{}
+		}
+		return math.Mod(a, b), nil
+	})
 	fd.AddFilter("minus", func(a, b any) any {
 		// If both operands are integers, perform integer arithmetic
 		if isIntegerType(a) && isIntegerType(b) {
@@ -229,7 +246,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("divided_by", func(a float64, b any) (any, error) {
 		divInt := func(a, b int64) (int64, error) {
 			if b == 0 {
-				return 0, errDivisionByZero
+				return 0, &ZeroDivisionError{}
 			}
 
 			return a / b, nil
@@ -237,7 +254,7 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 
 		divFloat := func(a, b float64) (float64, error) {
 			if b == 0 {
-				return 0, errDivisionByZero
+				return 0, &ZeroDivisionError{}
 			}
 
 			return a / b, nil

@@ -12,6 +12,21 @@ var (
 // Equal returns a bool indicating whether a == b after conversion.
 func Equal(a, b any) bool { //nolint: gocyclo
 	a, b = ToLiquid(a), ToLiquid(b)
+
+	// EmptyDrop / BlankDrop: delegate to the drop's symmetric Equal logic.
+	switch av := a.(type) {
+	case *emptyDropValue:
+		return av.Equal(ValueOf(b))
+	case *blankDropValue:
+		return av.Equal(ValueOf(b))
+	}
+	switch bv := b.(type) {
+	case *emptyDropValue:
+		return bv.Equal(ValueOf(a))
+	case *blankDropValue:
+		return bv.Equal(ValueOf(a))
+	}
+
 	if a == nil || b == nil {
 		return a == b
 	}

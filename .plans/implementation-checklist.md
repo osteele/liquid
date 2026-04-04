@@ -52,7 +52,7 @@
 
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
-| ❌ | ⬜ | ⬜ | P1 | Tipos distintos de erro (`ParseError`, `RenderError`, `UndefinedVariableError`) | Erros de parse e render não têm tipos distintos exportados. O `SourceError` existe mas não distingue a origem. Erros de variável indefinida com `strictVariables` precisam de tipo próprio. |
+| ✅ | ⬜ | ⬜ | P1 | Tipos distintos de erro (`ParseError`, `RenderError`, `UndefinedVariableError`) | Implementados via swarm PRE-E: `ParseError` em `parser/error.go`, `RenderError` e `UndefinedVariableError` em `render/error.go`. O `UndefinedVariableError` carrega o nome literal da variável. `ZeroDivisionError` também implementado em `filters/standard_filters.go`. |
 
 ### B5 · Renderer não é seguro para uso concorrente
 
@@ -75,8 +75,8 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `{{ expressao }}` | OK |
-| ❌ | ⬜ | ⬜ | P1 | `echo` tag | `{% echo expr %}` — equivalente a `{{ }}`, mas usável dentro de `{% liquid %}`. Ruby: sempre emite. JS: value opcional (sem value não emite nada). **DECISÃO TOMADA:** seguir Ruby (emissão sempre obrigatória). |
-| ❌ | ⬜ | ⬜ | P1 | `liquid` tag (multi-linha) | `{% liquid\nassign x = 1\nif x %}...{% endif %}` — cada linha é uma tag sem delimitadores. Depende de `echo` para output. |
+| ✅ | ⬜ | ⬜ | P1 | `echo` tag | `{% echo expr %}` — equivalente a `{{ }}`, mas usável dentro de `{% liquid %}`. Ruby: sempre emite. JS: value opcional (sem value não emite nada). **DECISÃO TOMADA:** seguir Ruby (emissão sempre obrigatória). |
+| ❌ | ⬜ | ⬜ | P1 | `liquid` tag (multi-linha) | `{% liquid\nassign x = 1\nif x %}...{% endif %}` — cada linha é uma tag sem delimitadores. **`echo` já está pronta em `tags/standard_tags.go`** — este item só precisa do mecanismo de parse linha a linha dentro do bloco `liquid`. |
 | ❌ | ⬜ | ⬜ | P1 | `#` inline comment | `{%# comentário %}` — cada linha precisa de `#`. Ambos (Ruby e JS) têm com semântica idêntica. |
 
 ### 1.2 Variável / Estado
@@ -94,7 +94,7 @@
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `if` / `elsif` / `else` / `endif` | OK. |
 | ✅ | ⬜ | ⬜ | P1 | `unless` / `else` / `endunless` | OK. |
-| ⚠️ | ⬜ | ⬜ | P1 | `case` / `when` / `else` / `endcase` — `or` em `when` | `when val1 or val2` — **ambos Ruby e JS suportam**, mas Go **só suporta vírgula**. Quick fix no parser. |
+| ✅ | ⬜ | ⬜ | P1 | `case` / `when` / `else` / `endcase` — `or` em `when` | `when val1 or val2` — suportado. Implementado na gramática yacc (`expressions.y`). |
 | ❌ | ⬜ | ⬜ | P3 | `ifchanged` | Ruby only. Renderiza só se output mudou desde a última iteração dentro de `for`. Estado interno em `registers`. |
 
 ### 1.4 Iteração
@@ -113,10 +113,10 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ⚠️ | ⬜ | ⬜ | P1 | `include` — sintaxe básica `{% include "file" %}` | Implementado, mas **sintaxe incompleta** (ver abaixo). |
-| ❌ | ⬜ | ⬜ | P1 | `include` — `with var [as alias]` | `{% include 'file' with product %}` / `with product as p`. Presente em Ruby e JS. |
-| ❌ | ⬜ | ⬜ | P1 | `include` — `key: val` args | `{% include 'file' key: value, other: x %}` — passa variáveis adicionais. Presente em Ruby e JS. |
+| ❌ | ⬜ | ⬜ | P1 | `include` — `with var [as alias]` | `{% include 'file' with product %}` / `with product as p`. Presente em Ruby e JS. Parser da tag em `tags/include_tag.go`. |
+| ❌ | ⬜ | ⬜ | P1 | `include` — `key: val` args | `{% include 'file' key: value, other: x %}` — passa variáveis adicionais. Presente em Ruby e JS. **A infraestrutura `NamedArg` (PRE-A) já parseia keyword args em expressões; reutilizável aqui ou parsear diretamente no handler da tag em `tags/include_tag.go`.** |
 | ❌ | ⬜ | ⬜ | P3 | `include` — `for array as alias` | Ruby-only (deprecated). `{% include 'file' for items as item %}` — itera sobre array. |
-| ❌ | ⬜ | ⬜ | P1 | `render` tag | `{% render 'file' [with var [as alias]] [for collection [as alias]] [key: val...] %}` — **escopo isolado** (não acessa variables do pai). Ambos Ruby e JS. **Depende de sub-contexto isolado.** |
+| ❌ | ⬜ | ⬜ | P1 | `render` tag | `{% render 'file' [with var [as alias]] [for collection [as alias]] [key: val...] %}` — **escopo isolado** (não acessa variáveis do pai). Ambos Ruby e JS. **Infraestrutura pronta:** `nodeContext.SpawnIsolated()` em `render/node_context.go` + globals propagando via `Config.Globals`. Resta implementar parser e renderer da tag em `tags/`. |
 
 ### 1.6 Estrutura / Texto
 
@@ -191,19 +191,19 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `join`, `first`, `last`, `reverse`, `sort`, `sort_natural`, `map`, `sum`, `compact`, `uniq`, `concat` | OK. |
-| ⚠️ | ⬜ | ⬜ | P3 | `compact` — argumento `property` | Ruby suporta `compact: "field"` para remover nils em propriedade específica. Go não tem. **DECISÃO TOMADA:** adicionar. (Ruby compat) |
-| ⚠️ | ⬜ | ⬜ | P3 | `uniq` — argumento `property` | Ruby suporta `uniq: "field"`. Go não tem. **DECISÃO TOMADA:** adicionar. (Ruby compat) |
+| ⚠️ | ⬜ | ⬜ | P3 | `compact` — argumento `property` | Ruby suporta `compact: "field"`. **`NamedArg` pronto** (PRE-A). Atualizar `compactFilter` em `filters/standard_filters.go` para aceitar propriedade opcional e checar nil via `values.PropertyValue`. |
+| ⚠️ | ⬜ | ⬜ | P3 | `uniq` — argumento `property` | Ruby suporta `uniq: "field"`. **`NamedArg` pronto** (PRE-A). Atualizar `uniqFilter` em `filters/sort_filters.go` para aceitar propriedade opcional e deduplicar por `values.PropertyValue`. |
 | ⚠️ | ⬜ | ⬜ | P1 | `sort` — nil-safe | Ruby: nils vão para o final (nil-safe). Go: comportamento não verificado — pode panic se nil presente. **Verificar e corrigir se necessário, copiando o comportamento do Ruby.** |
 | ✅ | ⬜ | ⬜ | P1 | `where`, `reject`, `find`, `find_index`, `has` | OK. |
 | ✅ | ⬜ | ⬜ | P4 | `group_by` | Presente em Go. |
 | ✅ | ⬜ | ⬜ | P4 | `push`, `pop`, `unshift`, `shift`, `sample` | Presentes em Go. |
-| ❌ | ⬜ | ⬜ | P4 | `where_exp`, `reject_exp`, `group_by_exp`, `has_exp`, `find_exp`, `find_index_exp` | JS-only. Filtros que aceitam expressão Liquid como argumento (ex: `arr \| where_exp: "item", "item.active == true"`). Depende de evaluar expressão arbitrária no contexto de cada item. |
+| ✅ | ⬜ | ⬜ | P4 | `where_exp`, `reject_exp`, `group_by_exp`, `has_exp`, `find_exp`, `find_index_exp` | Implementados via infraestrutura de `AddContextFilter` (PRE-B). Registrados em `filters/standard_filters.go`. |
 
 ### 2.7 Misc
 
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
-| ⚠️ | ⬜ | ⬜ | P1 | `default` — keyword arg `allow_false: true` | Ambos Ruby e JS suportam `{{ val \| default: fallback, allow_false: true }}`. Go **não suporta**. Depende de sistema de keyword args em filtros. **DECISÃO TOMADA:** implementar keyword args genérico para copiar comportamento |
+| ⚠️ | ⬜ | ⬜ | P1 | `default` — keyword arg `allow_false: true` | Ambos Ruby e JS suportam. **Infraestrutura `NamedArg` pronta** (PRE-A): o parser já entrega `NamedArg{Name: "allow_false", Value: true}` nos args do filtro. Basta atualizar a assinatura de `default` em `filters/standard_filters.go` para inspecionar `NamedArg` e alterar o comportamento de falsy quando `allow_false: true`. |
 | ✅ | ⬜ | ⬜ | P4 | `json`, `inspect`, `to_integer` | Presentes em Go. |
 | ❌ | ⬜ | ⬜ | P4 | `jsonify` (alias de `json`) | JS-only. Trivial de adicionar. |
 | ❌ | ⬜ | ⬜ | P4 | `raw` filter | JS-only. Passa valor sem escape. |
@@ -215,7 +215,7 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | Filtros posicionais | OK. |
-| ❌ | ⬜ | ⬜ | P1 | **Keyword args em filtros** (`filter: arg, key: val`) | Ambos Ruby e JS suportam. Usado atualmente só por `default: x, allow_false: true`. Go **não suporta este mecanismo**. Requer mudança no parser de expressões. **DECISÃO TOMADA:** implementar parsing de keyword args (impacta `default` e qualquer filtro futuro). |
+| ✅ | ⬜ | ⬜ | P1 | **Keyword args em filtros** (`filter: arg, key: val`) | Infraestrutura implementada (PRE-A). `NamedArg` struct em `expressions/filters.go`, `makeNamedArgFn` em `builders.go`, gramática atualizada. Os filtros individuais que dependem de keyword args (ex: `default allow_false`) ainda precisam ser atualizados pra consumir o `NamedArg`. |
 | ❌ | ⬜ | ⬜ | P3 | `global_filter` — proc aplicada a todo output | Ruby-only. Aplicada antes de renderizar qualquer `{{ }}`. Go tem `SetAutoEscapeReplacer` que é o análogo, mas não é um filtro Liquid. |
 
 ---
@@ -225,11 +225,11 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `nil`, `true`, `false`, int, float, string, range | OK. |
-| ❌ | ⬜ | ⬜ | P1 | **`empty` como literal especial** | Presente em ambos Ruby e JS. `{{ arr \| size == 0 }}` vs `{{ arr == empty }}`. Semanticamente: compara contra "vazio" (string `""`, array `[]`, objeto sem chaves). Go trata `empty` como variável indefinida (nil). Requer `EmptyDrop`-like no contexto de comparação. |
-| ❌ | ⬜ | ⬜ | P1 | **`blank` como literal especial** | Presente em ambos. Mais amplo que `empty`: nil, false, string só-whitespace também são `blank`. Requer `BlankDrop`-like. |
-| ⚠️ | ⬜ | ⬜ | P1 | `<>` como alias de `!=` | **Ruby-only**. JS não tem. Go não tem. **DECISÃO TOMADA:** adicionar por compat Ruby. |
-| ❌ | ⬜ | ⬜ | P4 | `not` operador unário | JS-only. `{% if not condition %}`. Não é Shopify core. **DECISÃO TOMADA:** implementar |
-| ⚠️ | ⬜ | ⬜ | P1 | Strings — escapes internos (`\n`, `\"`, etc.) | Go tem um TODO no código: strings **não suportam sequências de escape**. Ruby e JS suportam ao menos `\"` e `\'`. Quick fix mas cuidado com edge cases. |
+| ✅ | ⬜ | ⬜ | P1 | **`empty` como literal especial** | Implementado. Scanner reconhece `empty` como keyword (`EMPTY` token). `values.EmptyDrop` singleton com comparação simétrica em `values/compare.go`. |
+| ✅ | ⬜ | ⬜ | P1 | **`blank` como literal especial** | Implementado. Scanner reconhece `blank` como keyword. `values.BlankDrop` singleton; `IsBlank` cobre nil, false, string-só-whitespace, arrays/maps vazios. |
+| ✅ | ⬜ | ⬜ | P1 | `<>` como alias de `!=` | Implementado em `expressions/scanner.rl`. |
+| ✅ | ⬜ | ⬜ | P4 | `not` operador unário | Implementado em `expressions/expressions.y` como operador `NOT` de precedência unária. |
+| ✅ | ⬜ | ⬜ | P1 | Strings — escapes internos (`\n`, `\"`, etc.) | Implementado via `unescapeString()` em `expressions/scanner.rl`. Suporta `\n`, `\t`, `\r`, `\"`, `\'`. |
 
 ---
 
@@ -238,7 +238,7 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `obj.prop`, `obj[key]`, `array[0]` | OK. |
-| ❌ | ⬜ | ⬜ | P1 | `array[-1]` — índice negativo | Ambos Ruby e JS suportam. Go: não verificado se `IndexValue` em `values/value.go` suporta índice negativo. **Verificar.** |
+| ✅ | ⬜ | ⬜ | P1 | `array[-1]` — índice negativo | Suportado. `IndexValue(-1)` retorna o último elemento (confirmado em `values/value_test.go`). |
 | ✅ | ⬜ | ⬜ | P1 | `array.first`, `array.last`, `obj.size` | OK. |
 
 ---
@@ -263,8 +263,8 @@
 
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
-| ❌ | ⬜ | ⬜ | P1 | **`empty` drop/literal** | Ligado ao item 4 (literais). Requer tipo que compara com `==`/`!=` de forma especial. |
-| ❌ | ⬜ | ⬜ | P1 | **`blank` drop/literal** | Idem. |
+| ✅ | ⬜ | ⬜ | P1 | **`empty` drop/literal** | `values.EmptyDrop` exportado em `values/emptydrop.go`. |
+| ✅ | ⬜ | ⬜ | P1 | **`blank` drop/literal** | `values.BlankDrop` exportado em `values/emptydrop.go`. |
 
 ### 6.4 Drop base class
 
@@ -281,9 +281,9 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | Stack de escopos, get/set variáveis | OK. |
-| ❌ | ⬜ | ⬜ | P1 | **Sub-contexto isolado** | Necessário para `render` tag. Ruby: `new_isolated_subcontext`. JS: `ctx.spawn()`. Go: `RenderFile` passa bindings do pai (shared scope) — não isolado. Requer nova funcionalidade em `nodeContext`. |
+| ✅ | ⬜ | ⬜ | P1 | **Sub-contexto isolado** | Implementado. `nodeContext.SpawnIsolated(bindings)` em `render/node_context.go` — cria contexto novo sem herdar variáveis do pai; globals propagam. |
 | ✅ | ⬜ | ⬜ | P1 | Registers (estado interno de tags) | OK (map acessível via contexto). |
-| ❌ | ⬜ | ⬜ | P2 | **Variáveis globais separadas do escopo** (`globals`) | Ruby e JS têm um nível de `globals` separado — acessível de qualquer lugar, incluindo sub-contextos isolados. Go não tem: todas as vars são passadas como `Bindings` e copiadas. **DECISÃO TOMADA:** implementar camada de globals separada (Importante para `render` tag funcionar corretamente: globals devem ser acessíveis dentro do partial.) |
+| ✅ | ⬜ | ⬜ | P2 | **Variáveis globais separadas do escopo** (`globals`) | Implementado. `Config.Globals` copiados antes dos bindings em `newNodeContext` e `SpawnIsolated`. `Engine.SetGlobals`/`GetGlobals` expostos em `engine.go`. |
 
 ---
 
@@ -303,7 +303,7 @@
 | ❌ | ⬜ | ⬜ | P3 | Resource limits (score-based) | Ruby: `render_length_limit`, `render_score_limit`, `assign_score_limit`, `cumulative_*`. |
 | ❌ | ⬜ | ⬜ | P4 | Resource limits (time-based: `renderLimit`, `parseLimit`) | JS-only. |
 | ❌ | ⬜ | ⬜ | P4 | Template cache | JS-only. |
-| ❌ | ⬜ | ⬜ | P4 | `globals` option no engine | Ambos Ruby e JS têm, Go não. Ligado ao item de globals no Context. |
+| ✅ | ⬜ | ⬜ | P4 | `globals` option no engine | Implementado. `Engine.SetGlobals(map[string]any{})` e `GetGlobals()` em `engine.go`. |
 
 ---
 
@@ -323,8 +323,8 @@
 | Impl | Tests | E2E | Prioridade | Item | Notas |
 |------|-------|-----|-----------|------|-------|
 | ✅ | ⬜ | ⬜ | P1 | `SourceError` com `Path()`, `LineNumber()`, `Cause()` | OK. |
-| ❌ | ⬜ | ⬜ | P3 | `ZeroDivisionError` tipo específico | Ruby levanta tipo distinto. Go: retorna `error` genérico. (Funcional, mas sem tipo tipado.) |
-| ❌ | ⬜ | ⬜ | P3 | Tipos específicos de erro (`SyntaxError`, `ArgumentError`, `ContextError`, etc.) | Go retorna erros ad-hoc como strings. |
+| ✅ | ⬜ | ⬜ | P3 | `ZeroDivisionError` tipo específico | Implementado em `filters/standard_filters.go`. Tipo exportado retornado por `divided_by` e `modulo`. |
+| ⚠️ | ⬜ | ⬜ | P3 | Tipos específicos de erro (`SyntaxError`, `ArgumentError`, `ContextError`, etc.) | `ParseError` (em `parser/error.go`), `RenderError` e `UndefinedVariableError` (em `render/error.go`) implementados. `SyntaxError`, `ArgumentError`, `ContextError` ainda não. |
 | ⚠️ | ⬜ | ⬜ | P1 | Metadados de erro — `markup_context` | Ruby inclui o texto do markup que causou o erro. Go inclui path e line, mas não o texto do markup no contexto. |
 
 ---
@@ -357,42 +357,42 @@
 
 ```
 Tags:
-[ ] echo tag
-[ ] liquid tag (multi-linha)  — depende de echo
+[x] echo tag                 ✅ DONE
+[ ] liquid tag (multi-linha)  — depende de echo (echo já está pronto)
 [ ] # inline comment
 [ ] increment / decrement
-[ ] render tag (escopo isolado)  — depende de sub-contexto isolado
+[ ] render tag (escopo isolado)  — infra (SpawnIsolated + globals) já pronta
 [ ] include — with/as/key-val args
-[ ] case/when — suporte a `or` além de vírgula
+[x] case/when — suporte a `or`  ✅ DONE
 
 Filtros:
-[ ] capitalize — fix (lowercase resto)
-[ ] strip_html — fix (remover script/style/comentários)
-[ ] newline_to_br — fix (preservar \n após <br />)
-[ ] modulo — fix (erro em divisão por zero)
-[ ] default — allow_false keyword arg  — depende de keyword args
-[ ] Keyword args em filtros (parser change)
+[ ] capitalize — fix (lowercase resto)          ainda ⚠️ não corrigido
+[ ] strip_html — fix (remover script/style)     ainda ⚠️ não corrigido
+[ ] newline_to_br — fix (preservar \n)          ainda ⚠️ não corrigido
+[ ] modulo — fix (erro em divisão por zero)     ainda ⚠️ não corrigido (guard não adicionado)
+[ ] default — allow_false keyword arg           infra NamedArg pronta; filtro não atualizado
+[x] Keyword args em filtros (parser change)     ✅ DONE (infraestrutura NamedArg)
 
 Expressões:
-[ ] empty literal/drop
-[ ] blank literal/drop
-[ ] Strings — suporte a escapes (\n, \", etc.)
-[ ] array[-1] negative indexing — verificar e corrigir
+[x] empty literal/drop        ✅ DONE
+[x] blank literal/drop        ✅ DONE
+[x] Strings — suporte a escapes (\n, \", etc.) ✅ DONE
+[x] array[-1] negative indexing               ✅ DONE
 
 Drops:
 [ ] forloop.name
 [ ] tablerowloop drop — verificar row/col/col0/col_first/col_last
 
 Context:
-[ ] Sub-contexto isolado (para render tag)
-[ ] Variáveis globais separadas do escopo (para render tag)
+[x] Sub-contexto isolado (para render tag) ✅ DONE
+[x] Variáveis globais separadas do escopo  ✅ DONE
 ```
 
 ### P2 — Extensões Comuns (Ruby + JS)
 
 ```
 [ ] strict_variables / strict_filters como opção per-render
-[ ] globals option no engine
+[x] globals option no engine  ✅ DONE
 ```
 
 ### P3 — Compat Ruby
@@ -404,7 +404,7 @@ Context:
 [ ] compact: property arg
 [ ] uniq: property arg
 [ ] forloop.parentloop
-[ ] <> alias de !=
+[x] <> alias de !=   ✅ DONE
 [ ] doc / enddoc tag
 [ ] ifchanged tag
 [ ] include for array as alias
@@ -421,11 +421,11 @@ Context:
 [ ] for offset: continue
 [ ] date: 'now'/'today' como input
 [ ] date_to_xmlschema / date_to_rfc822 / date_to_string / date_to_long_string
-[ ] where_exp / reject_exp / group_by_exp / has_exp / find_exp / find_index_exp (expression filters)
+[x] where_exp / reject_exp / group_by_exp / has_exp / find_exp / find_index_exp  ✅ DONE
 [ ] jsonify alias
 [ ] raw filter
 [ ] layout / block tags (herança)
-[ ] not operador unário
+[x] not operador unário       ✅ DONE
 [ ] Opções globais de whitespace trim
 [ ] Resource limits (time-based)
 [ ] Template cache

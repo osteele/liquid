@@ -14,6 +14,7 @@ import (
 // AddStandardTags defines the standard Liquid tags.
 func AddStandardTags(c *render.Config) {
 	c.AddTag("assign", makeAssignTag(c))
+	c.AddTag("echo", echoTag)
 	c.AddTag("include", includeTag)
 
 	// blocks
@@ -39,6 +40,23 @@ func AddStandardTags(c *render.Config) {
 	c.AddBlockAnalyzer("if", ifBlockAnalyzer())
 	c.AddBlockAnalyzer("unless", ifBlockAnalyzer())
 	c.AddBlockAnalyzer("case", caseBlockAnalyzer)
+}
+
+func echoTag(source string) (func(io.Writer, render.Context) error, error) {
+	if strings.TrimSpace(source) == "" {
+		return nil, fmt.Errorf("syntax error: echo tag requires an expression")
+	}
+	expr, err := expressions.Parse(source)
+	if err != nil {
+		return nil, err
+	}
+	return func(w io.Writer, ctx render.Context) error {
+		value, err := ctx.Evaluate(expr)
+		if err != nil {
+			return err
+		}
+		return ctx.WriteValue(w, value)
+	}, nil
 }
 
 func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Context) error, error) {

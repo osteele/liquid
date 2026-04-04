@@ -16,9 +16,15 @@ type Locatable interface {
 	SourceText() string
 }
 
-// Errorf creates a parser.Error.
-func Errorf(loc Locatable, format string, a ...any) *sourceLocError { //nolint: golint
-	return &sourceLocError{loc.SourceLocation(), loc.SourceText(), fmt.Sprintf(format, a...), nil}
+// ParseError is a parse-time error with source location information.
+// Use errors.As to check whether a liquid error originates from parsing.
+type ParseError struct {
+	*sourceLocError
+}
+
+// Errorf creates a parser.Error at the given source location.
+func Errorf(loc Locatable, format string, a ...any) *ParseError { //nolint: golint
+	return &ParseError{&sourceLocError{loc.SourceLocation(), loc.SourceText(), fmt.Sprintf(format, a...), nil}}
 }
 
 // WrapError wraps its argument in a parser.Error if this argument is not already a parser.Error and is not locatable.
@@ -54,6 +60,12 @@ type sourceLocError struct {
 }
 
 func (e *sourceLocError) Cause() error {
+	return e.cause
+}
+
+// Unwrap returns the underlying cause of this error, enabling errors.As and errors.Is
+// to walk the error chain (e.g. to find a ZeroDivisionError or UndefinedVariableError).
+func (e *sourceLocError) Unwrap() error {
 	return e.cause
 }
 

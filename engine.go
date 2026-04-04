@@ -79,6 +79,18 @@ func (e *Engine) RegisterTemplateStore(templateStore render.TemplateStore) {
 	e.cfg.TemplateStore = templateStore
 }
 
+// SetGlobals sets variables that are accessible in every rendering context,
+// including isolated sub-contexts created by the {% render %} tag.
+// Scope bindings passed to Render take priority over globals when keys conflict.
+func (e *Engine) SetGlobals(globals map[string]any) {
+	e.cfg.Globals = globals
+}
+
+// GetGlobals returns the engine-level global variables.
+func (e *Engine) GetGlobals() map[string]any {
+	return e.cfg.Globals
+}
+
 // StrictVariables causes the renderer to error when the template contains an undefined variable.
 func (e *Engine) StrictVariables() {
 	e.cfg.StrictVariables = true

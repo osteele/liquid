@@ -46,3 +46,9 @@ func makeObjectPropertyExpr(objFn func(Context) values.Value, name string) func(
 		return objFn(ctx).PropertyValue(index)
 	}
 }
+
+func makeNamedArgFn(name string, valFn valueFn) valueFn {
+	return func(ctx Context) values.Value {
+		return values.ValueOf(NamedArg{Name: name, Value: valFn(ctx).Interface()})
+	}
+}

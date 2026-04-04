@@ -16,6 +16,7 @@ var parseErrorTests = []struct{ in, expected string }{
 	{"{% undefined_tag %}", "undefined tag"},
 	{"{% assign v x y z %}", "syntax error"},
 	{"{% if syntax error %}", `unterminated "if" block`},
+	{"{% echo %}", "syntax error"},
 	// TODO once expression parsing is moved to template parse stage
 	// {"{% if syntax error %}{% endif %}", "syntax error"},
 	// {"{% for a in ar undefined %}{{ a }} {% endfor %}", "TODO"},
@@ -47,6 +48,15 @@ var tagTests = []struct{ in, expected string }{
 
 var tagErrorTests = []struct{ in, expected string }{
 	{`{% assign av = x | undefined_filter %}`, "undefined filter"},
+}
+
+var echoTagTests = []struct{ in, expected string }{
+	// basic expression output — same semantics as {{ expr }}
+	{`{% echo x %}`, "123"},
+	{`{% echo "hello" %}`, "hello"},
+	{`{% echo obj.a %}`, "1"},
+	// nil variable renders as empty string (same as {{ }})
+	{`{% echo undefined %}`, ""},
 }
 
 // this is also used in the other test files
@@ -197,4 +207,21 @@ func TestAssignTag_JekyllExtensions(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestEchoTag(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+
+	for i, test := range echoTagTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, tagTestBindings, config)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
 }

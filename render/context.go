@@ -12,6 +12,7 @@ import (
 	"github.com/osteele/liquid/parser"
 
 	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/values"
 )
 
 // Context provides the rendering context for a tag renderer.
@@ -43,6 +44,11 @@ type Context interface {
 	// RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
 	// RenderFile does not cache the compiled template.
 	RenderFile(string, map[string]any) (string, error)
+	// RenderFileIsolated parses and renders a template in an isolated scope.
+	// Unlike RenderFile, the rendered template cannot access variables from the calling context —
+	// only the explicitly provided bindings are available.
+	// It's used in the implementation of the {% render %} tag.
+	RenderFileIsolated(string, map[string]any) (string, error)
 	// Set updates the value of a variable in the current lexical environment.
 	// It's used in the implementation of the {% assign %} and {% capture %} tags.
 	Set(name string, value any)
@@ -59,6 +65,10 @@ type Context interface {
 	TagName() string
 	// WrapError creates a new error that records the source location from the current context.
 	WrapError(err error) Error
+	// WriteValue writes a value to the writer using the same rendering rules as {{ expr }}.
+	// nil renders as empty string, arrays render as space-joined elements, and autoescape
+	// is applied if configured on the engine.
+	WriteValue(w io.Writer, value any) error
 }
 
 type TemplateStore interface {
@@ -103,6 +113,16 @@ func (c rendererContext) WrapError(err error) Error {
 	default:
 		return wrapRenderError(err, invalidLoc)
 	}
+}
+
+func (c rendererContext) WriteValue(w io.Writer, value any) error {
+	if sv, isSafe := value.(values.SafeValue); isSafe {
+		return writeObject(w, sv.Value)
+	}
+	if replacer := c.ctx.config.escapeReplacer; replacer != nil {
+		w = &replacerWriter{replacer: replacer, w: w}
+	}
+	return writeObject(w, value)
 }
 
 func (c rendererContext) Evaluate(expr expressions.Expression) (out any, err error) {
@@ -183,6 +203,37 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// RenderFileIsolated parses and renders a template in an isolated scope.
+// The rendered template cannot access variables from the calling context —
+// only the explicitly provided bindings are available.
+// This is used by the {% render %} tag.
+func (c rendererContext) RenderFileIsolated(filename string, b map[string]any) (string, error) {
+	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		// Is it cached?
+		if cval, ok := c.ctx.config.Cache[filename]; ok {
+			source = cval
+		} else {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	}
+
+	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	if err != nil {
+		return "", err
+	}
+
+	// Only use passed bindings; do not inherit parent scope.
+	buf := new(bytes.Buffer)
+	if err := Render(root, buf, b, c.ctx.config); err != nil {
 		return "", err
 	}
 

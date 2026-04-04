@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/values"
 )
 
@@ -293,4 +294,226 @@ func sampleFilter(array []any, count func(int) int) any {
 	}
 
 	return result[:n]
+}
+
+// toAnySlice converts any slice/array value to []any using reflection.
+// Returns nil, false if value is not a slice or array.
+func toAnySlice(value any) ([]any, bool) {
+	if value == nil {
+		return nil, false
+	}
+	rv := reflect.ValueOf(value)
+	if rv.Kind() != reflect.Slice && rv.Kind() != reflect.Array {
+		return nil, false
+	}
+	items := make([]any, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		items[i] = rv.Index(i).Interface()
+	}
+	return items, true
+}
+
+// parseExpArgs extracts and validates the varName/exprStr pair from _exp filter args.
+func parseExpArgs(filterName string, args []any) (varName, exprStr string, err error) {
+	if len(args) < 2 {
+		return "", "", fmt.Errorf("%s requires two arguments: variable name and expression", filterName)
+	}
+	varName, ok1 := args[0].(string)
+	exprStr, ok2 := args[1].(string)
+	if !ok1 || !ok2 {
+		return "", "", fmt.Errorf("%s: arguments must be strings", filterName)
+	}
+	return varName, exprStr, nil
+}
+
+// whereExpFilter keeps items where the expression evaluates to truthy.
+func whereExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("where_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return []any{}, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]any, 0, len(items))
+	for _, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		if values.ValueOf(v).Test() {
+			result = append(result, el)
+		}
+	}
+	return result, nil
+}
+
+// rejectExpFilter keeps items where the expression evaluates to falsy.
+func rejectExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("reject_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return []any{}, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]any, 0, len(items))
+	for _, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		if !values.ValueOf(v).Test() {
+			result = append(result, el)
+		}
+	}
+	return result, nil
+}
+
+// groupByExpFilter groups items by the value returned by the expression.
+// Returns [{name: val, items: [...]}, ...] preserving insertion order.
+func groupByExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("group_by_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return []any{}, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+
+	type group struct {
+		name  any
+		items []any
+	}
+	var groups []group
+	index := map[any]int{}
+
+	for _, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		key := v
+		if key != nil && !reflect.TypeOf(key).Comparable() {
+			key = fmt.Sprint(key)
+		}
+		if idx, ok := index[key]; ok {
+			groups[idx].items = append(groups[idx].items, el)
+		} else {
+			index[key] = len(groups)
+			groups = append(groups, group{name: v, items: []any{el}})
+		}
+	}
+
+	result := make([]any, len(groups))
+	for i, g := range groups {
+		result[i] = map[string]any{"name": g.name, "items": g.items}
+	}
+	return result, nil
+}
+
+// findExpFilter returns the first item where the expression evaluates to truthy, or nil.
+func findExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("find_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return nil, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+	for _, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		if values.ValueOf(v).Test() {
+			return el, nil
+		}
+	}
+	return nil, nil
+}
+
+// findIndexExpFilter returns the 0-based index of the first item where the expression is truthy.
+// Returns nil if no item matches.
+func findIndexExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("find_index_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return nil, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+	for i, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		if values.ValueOf(v).Test() {
+			return i, nil
+		}
+	}
+	return nil, nil
+}
+
+// hasExpFilter returns true if any item in the array satisfies the expression.
+func hasExpFilter(ctx expressions.Context, value any, args []any) (any, error) {
+	varName, exprStr, err := parseExpArgs("has_exp", args)
+	if err != nil {
+		return nil, err
+	}
+	items, ok := toAnySlice(value)
+	if !ok {
+		return false, nil
+	}
+	expr, err := expressions.Parse(exprStr)
+	if err != nil {
+		return nil, err
+	}
+	for _, el := range items {
+		child := ctx.Clone()
+		child.Set(varName, el)
+		v, err := expr.Evaluate(child)
+		if err != nil {
+			return nil, err
+		}
+		if values.ValueOf(v).Test() {
+			return true, nil
+		}
+	}
+	return false, nil
 }

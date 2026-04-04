@@ -13,6 +13,12 @@ type Config struct {
 	StrictVariables bool
 	TemplateStore   TemplateStore
 
+	// Globals are variables that are accessible in every rendering context,
+	// including isolated sub-contexts created by the {% render %} tag.
+	// They have lower priority than scope bindings: if a key exists in both,
+	// the scope binding wins.
+	Globals map[string]any
+
 	escapeReplacer Replacer
 
 	// JekyllExtensions enables Jekyll-specific extensions to Liquid.
