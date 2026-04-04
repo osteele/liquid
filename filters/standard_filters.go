@@ -174,6 +174,18 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return a[len(a)-1]
 	})
 	fd.AddFilter("uniq", uniqFilter)
+	fd.AddFilter("where", whereFilter)
+	fd.AddFilter("reject", rejectFilter)
+	fd.AddFilter("group_by", groupByFilter)
+	fd.AddFilter("find", findFilter)
+	fd.AddFilter("find_index", findIndexFilter)
+	fd.AddFilter("has", hasFilter)
+	fd.AddFilter("sum", sumFilter)
+	fd.AddFilter("push", pushFilter)
+	fd.AddFilter("unshift", unshiftFilter)
+	fd.AddFilter("pop", popFilter)
+	fd.AddFilter("shift", shiftFilter)
+	fd.AddFilter("sample", sampleFilter)
 
 	// date filters
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
