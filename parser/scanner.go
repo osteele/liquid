@@ -46,19 +46,28 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 		source := data[ts:te]
 		switch {
 		case data[ts:ts+len(delims[0])] == delims[0]:
-			if source[2] == '-' {
+			leftTrim := source[2] == '-'
+			rightTrim := source[len(source)-3] == '-'
+			if leftTrim {
 				tokens = append(tokens, Token{
 					Type: TrimLeftTokenType,
 				})
+			}
+
+			// When the only captured content is the trim marker itself (e.g. {{-}} or {{- -}}),
+			// treat the expression as empty so it renders nothing rather than producing a parse error.
+			args := data[m[2]:m[3]]
+			if args == "-" && (leftTrim || rightTrim) {
+				args = ""
 			}
 
 			tokens = append(tokens, Token{
 				Type:      ObjTokenType,
 				SourceLoc: loc,
 				Source:    source,
-				Args:      data[m[2]:m[3]],
+				Args:      args,
 			})
-			if source[len(source)-3] == '-' {
+			if rightTrim {
 				tokens = append(tokens, Token{
 					Type: TrimRightTokenType,
 				})
@@ -119,10 +128,22 @@ func formTokenMatcher(delims []string) *regexp.Regexp {
 		}
 	}
 
+	// Build the same exclusion pattern for the OUTPUT right delimiter (delims[1], e.g. "}}").
+	// This prevents the lazy content group from matching across an intermediate closing delimiter,
+	// which would otherwise cause adjacent {{-}} tokens to merge into a single (broken) match.
+	outputExclusion := make([]string, 0, len(delims[1]))
+	for idx, val := range delims[1] {
+		oe := "[^" + string(val) + "]"
+		if idx > 0 {
+			oe = delims[1][0:idx] + oe
+		}
+		outputExclusion = append(outputExclusion, oe)
+	}
+
 	tokenMatcher := regexp.MustCompile(
-		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*#(?:(?:%v)*)-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
-			// QuoteMeta will escape any of these that are regex commands
-			regexp.QuoteMeta(delims[0]), regexp.QuoteMeta(delims[1]),
+		fmt.Sprintf(`%s-?\s*((?:%v)+?)\s*-?%s|%s-?\s*#(?:(?:%v)*)-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
+			// Output token: content must not contain the closing delimiter (outputExclusion).
+			regexp.QuoteMeta(delims[0]), strings.Join(outputExclusion, "|"), regexp.QuoteMeta(delims[1]),
 			// Inline comment alternative: {%#...%} or {%- # ...%} — optional whitespace between trim marker and #.
 			// No capturing groups so existing group indices are unchanged.
 			regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),

@@ -89,6 +89,14 @@ func TestEngine_FrozenAfterParse(t *testing.T) {
 		{"SetTrimOutputRight", func(e *Engine) { e.SetTrimOutputRight(true) }},
 		{"SetGlobalFilter", func(e *Engine) { e.SetGlobalFilter(func(v any) (any, error) { return v, nil }) }},
 		{"SetExceptionHandler", func(e *Engine) { e.SetExceptionHandler(func(err error) string { return "" }) }},
+		{"SetAutoEscapeReplacer", func(e *Engine) { e.SetAutoEscapeReplacer(render.HtmlEscaper) }},
+		{"RegisterTemplateStore", func(e *Engine) { e.RegisterTemplateStore(nil) }},
+		{"RegisterTagAnalyzer", func(e *Engine) {
+			e.RegisterTagAnalyzer("x", func(args string) render.NodeAnalysis { return render.NodeAnalysis{} })
+		}},
+		{"RegisterBlockAnalyzer", func(e *Engine) {
+			e.RegisterBlockAnalyzer("x", func(n render.BlockNode) render.NodeAnalysis { return render.NodeAnalysis{} })
+		}},
 		{"Delims", func(e *Engine) { e.Delims("[[", "]]", "{%", "%}") }},
 		// Note: UnregisterTag is intentionally excluded — it supports post-use hot-reload scenarios.
 	}
@@ -218,16 +226,14 @@ func TestConcurrent_StatefulTagsAreIsolated(t *testing.T) {
 
 		var wg sync.WaitGroup
 		for range concurrentGoroutines {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+			wg.Go(func() {
 				for range concurrentIters {
 					got, err := tpl.RenderString(Bindings{})
 					assert.NoError(t, err)
 					// Isolated call: always 0,1,2 not some accumulated value
 					assert.Equal(t, "012", got)
 				}
-			}()
+			})
 		}
 		wg.Wait()
 	})
@@ -356,7 +362,7 @@ func TestConcurrent_CacheRace(t *testing.T) {
 			defer wg.Done()
 			if i%2 == 0 {
 				// Writer: update the cached source concurrently.
-				src := []byte(fmt.Sprintf("cached-v%d", i))
+				src := fmt.Appendf(nil, "cached-v%d", i)
 				_, err := engine.ParseTemplateAndCache(src, "tpl.html", 1)
 				assert.NoError(t, err)
 			} else {
@@ -386,16 +392,14 @@ func TestConcurrentE2E_DecrementIsolated(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range concurrentGoroutines {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range concurrentIters {
 				got, err := tpl.RenderString(Bindings{})
 				assert.NoError(t, err)
 				// Isolated call: always -1,-2,-3 (never any other value)
 				assert.Equal(t, "-1-2-3", got)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -412,15 +416,13 @@ func TestConcurrentE2E_CycleIsolated(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range concurrentGoroutines {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range concurrentIters {
 				got, err := tpl.RenderString(Bindings{})
 				assert.NoError(t, err)
 				assert.Equal(t, "one two three one", got)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -463,9 +465,7 @@ func TestConcurrentE2E_ForOffsetContinueIsolated(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range concurrentGoroutines {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			items := []any{10, 20, 30, 40, 50}
 			for range concurrentIters {
 				got, err := tpl.RenderString(Bindings{"items": items})
@@ -473,7 +473,7 @@ func TestConcurrentE2E_ForOffsetContinueIsolated(t *testing.T) {
 				// First loop: 10,20,30  — second loop: 40,50,
 				assert.Equal(t, "10,20,30,40,50,", got)
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }
@@ -575,15 +575,13 @@ func TestConcurrentE2E_StrictVariablesErrorIsolated(t *testing.T) {
 
 	// The other half render the undefined-variable template.
 	for range concurrentGoroutines / 2 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			for range concurrentIters {
 				_, err := tplBad.RenderString(Bindings{}, WithStrictVariables())
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "ghost")
 			}
-		}()
+		})
 	}
 
 	wg.Wait()

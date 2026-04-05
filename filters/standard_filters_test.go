@@ -397,8 +397,8 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`str_int | plus: 1`, 11.0},
 	{`str_float | plus: 1.0`, 4.5},
 
-	{`3 | modulo: 2`, 1.0},
-	{`24 | modulo: 7`, 3.0},
+	{`3 | modulo: 2`, int64(1)},
+	{`24 | modulo: 7`, int64(3)},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
 	{`16 | divided_by: 4`, int64(4)},
@@ -975,7 +975,7 @@ func TestZeroDivisionError(t *testing.T) {
 	t.Run("modulo_nonzero_succeeds", func(t *testing.T) {
 		actual, err := expressions.EvaluateString(`10 | modulo: 3`, context)
 		require.NoError(t, err)
-		require.Equal(t, 1.0, actual)
+		require.Equal(t, int64(1), actual)
 	})
 }
 

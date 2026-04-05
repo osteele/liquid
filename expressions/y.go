@@ -108,83 +108,91 @@ var yyExca = [...]int8{
 
 const yyPrivate = 57344
 
-const yyLast = 136
+const yyLast = 170
 
 var yyAct = [...]int8{
-	10, 54, 49, 22, 2, 9, 30, 27, 48, 50,
-	11, 12, 91, 28, 86, 50, 39, 56, 53, 44,
-	40, 51, 41, 42, 46, 11, 12, 29, 13, 14,
-	55, 31, 59, 60, 61, 62, 63, 64, 65, 66,
-	15, 43, 52, 13, 14, 11, 12, 45, 69, 17,
-	18, 25, 70, 73, 71, 15, 74, 75, 72, 77,
-	8, 30, 20, 13, 14, 11, 12, 68, 79, 3,
-	4, 5, 6, 81, 82, 15, 84, 85, 30, 23,
-	8, 17, 18, 13, 14, 1, 31, 90, 83, 87,
-	92, 30, 93, 30, 24, 15, 32, 33, 36, 37,
-	19, 30, 47, 31, 38, 67, 32, 33, 36, 37,
-	35, 34, 17, 18, 38, 21, 31, 26, 31, 78,
-	35, 34, 76, 80, 17, 18, 31, 88, 89, 57,
-	58, 7, 0, 0, 0, 16,
+	10, 57, 52, 23, 2, 9, 92, 28, 18, 19,
+	51, 53, 53, 29, 11, 12, 41, 42, 56, 18,
+	19, 43, 54, 44, 45, 49, 73, 47, 31, 8,
+	86, 30, 13, 14, 63, 64, 65, 66, 67, 68,
+	69, 70, 15, 55, 16, 32, 48, 31, 62, 46,
+	26, 74, 21, 33, 84, 75, 78, 76, 24, 79,
+	80, 77, 82, 1, 32, 89, 31, 18, 19, 25,
+	11, 12, 33, 85, 3, 4, 5, 6, 87, 88,
+	20, 90, 91, 32, 93, 8, 95, 96, 13, 14,
+	50, 33, 22, 97, 94, 27, 31, 99, 15, 100,
+	16, 34, 35, 38, 39, 11, 12, 98, 81, 40,
+	72, 7, 31, 32, 0, 37, 36, 34, 35, 38,
+	39, 33, 0, 13, 14, 40, 11, 12, 83, 32,
+	0, 37, 36, 15, 0, 16, 31, 33, 31, 11,
+	12, 18, 19, 0, 13, 14, 0, 59, 60, 61,
+	0, 0, 17, 32, 15, 32, 16, 13, 14, 0,
+	58, 33, 0, 33, 71, 0, 0, 15, 0, 16,
 }
 
 var yyPact = [...]int16{
-	61, -1000, 107, 57, 75, 46, 21, -1000, 41, 2,
-	94, -1000, -1000, -1000, -1000, 41, -1000, 41, 41, 12,
-	40, -4, -22, -1000, -7, 26, -10, -1, -1000, 124,
-	-1000, 21, 21, 21, 21, 21, 21, 21, 21, 84,
-	32, 64, 64, 41, -1000, -1000, -1000, -1000, 75, -1000,
-	75, -1000, 21, -1000, -1000, 21, 21, -1000, 21, 86,
-	71, 71, 71, 71, 71, 71, 71, 21, -1000, 95,
-	-16, -16, 2, 71, -1, -1, -17, 71, -1000, 54,
-	-1000, -1000, -1000, 122, -1000, -1000, 6, -1000, -1000, 21,
-	71, 21, 71, 71,
+	66, -1000, 124, 47, 54, 45, 135, -1000, 10, 6,
+	105, -1000, -1000, -1000, -1000, 135, 10, -1000, 10, 10,
+	20, 39, -3, -20, -1000, -6, 27, -10, 129, -1000,
+	143, -1000, 43, 135, 135, 135, 135, 135, 135, 135,
+	135, 131, 89, -9, 50, 50, 10, -1000, -1000, -1000,
+	-1000, 54, -1000, 54, -1000, 135, -1000, -1000, 135, 135,
+	-1000, 122, -1000, 21, 40, 40, 40, 40, 40, 40,
+	40, -1000, 135, -1000, 2, -19, -19, 6, 40, 129,
+	129, -25, 40, 135, -1000, 59, -1000, -1000, -1000, 81,
+	-1000, -1000, 101, 40, -1000, -1000, 135, 40, 135, 40,
+	40,
 }
 
-var yyPgo = [...]uint8{
-	0, 0, 131, 5, 4, 122, 117, 1, 115, 102,
-	2, 100, 94, 88, 3, 85,
+var yyPgo = [...]int8{
+	0, 0, 111, 5, 4, 108, 95, 1, 92, 90,
+	2, 80, 69, 65, 3, 63,
 }
 
 var yyR1 = [...]int8{
 	0, 15, 15, 15, 15, 15, 11, 11, 11, 8,
 	9, 9, 10, 10, 6, 7, 7, 7, 14, 12,
 	13, 13, 13, 1, 1, 1, 1, 1, 1, 1,
-	1, 3, 3, 3, 5, 5, 5, 2, 2, 2,
-	2, 2, 2, 2, 2, 4, 4, 4, 4,
+	1, 1, 1, 3, 3, 3, 5, 5, 5, 5,
+	2, 2, 2, 2, 2, 2, 2, 2, 4, 4,
+	4, 4,
 }
 
 var yyR2 = [...]int8{
 	0, 2, 5, 3, 3, 3, 1, 2, 2, 2,
 	3, 1, 0, 3, 2, 0, 3, 3, 1, 4,
-	0, 2, 3, 1, 1, 1, 1, 2, 4, 5,
-	3, 1, 3, 4, 1, 3, 4, 1, 3, 3,
-	3, 3, 3, 3, 3, 1, 2, 3, 3,
+	0, 2, 3, 1, 1, 1, 1, 2, 3, 4,
+	3, 5, 3, 1, 3, 4, 1, 2, 3, 4,
+	1, 3, 3, 3, 3, 3, 3, 3, 1, 2,
+	3, 3,
 }
 
 var yyChk = [...]int16{
 	-1000, -15, -4, 8, 9, 10, 11, -2, 19, -3,
-	-1, 4, 5, 22, 23, 34, 28, 17, 18, -11,
-	5, -8, -14, 4, -12, 5, -6, -1, -4, 25,
-	7, 32, 12, 13, 27, 26, 14, 15, 20, -1,
-	-4, -4, -4, 29, 7, 7, 28, -9, 30, -10,
-	31, 28, 16, 28, -7, 31, 18, 5, 6, -1,
-	-1, -1, -1, -1, -1, -1, -1, 21, 35, -4,
-	-14, -14, -3, -1, -1, -1, -5, -1, 33, -1,
-	28, -10, -10, -13, -7, -7, 31, 35, 5, 6,
-	-1, 6, -1, -1,
+	-1, 4, 5, 22, 23, 32, 34, 28, 17, 18,
+	-11, 5, -8, -14, 4, -12, 5, -6, -1, -4,
+	25, 7, 24, 32, 12, 13, 27, 26, 14, 15,
+	20, -1, -1, -4, -4, -4, 29, 7, 7, 28,
+	-9, 30, -10, 31, 28, 16, 28, -7, 31, 18,
+	5, 6, 5, -1, -1, -1, -1, -1, -1, -1,
+	-1, 33, 21, 35, -4, -14, -14, -3, -1, -1,
+	-1, -5, -1, 6, 33, -1, 28, -10, -10, -13,
+	-7, -7, 31, -1, 35, 5, 6, -1, 6, -1,
+	-1,
 }
 
 var yyDef = [...]int8{
-	0, -2, 0, 0, 0, 0, 0, 45, 0, 37,
-	31, 23, 24, 25, 26, 0, 1, 0, 0, 0,
-	6, 0, 12, 18, 0, 0, 0, 15, 46, 0,
-	27, 0, 0, 0, 0, 0, 0, 0, 0, 31,
-	0, 47, 48, 0, 8, 7, 3, 9, 0, 11,
-	0, 4, 0, 5, 14, 0, 0, 32, 0, 0,
-	38, 39, 40, 41, 42, 43, 44, 0, 30, 0,
-	12, 12, 20, 31, 15, 15, 33, 34, 28, 0,
-	2, 10, 13, 19, 16, 17, 0, 29, 21, 0,
-	35, 0, 22, 36,
+	0, -2, 0, 0, 0, 0, 0, 48, 0, 40,
+	33, 23, 24, 25, 26, 0, 0, 1, 0, 0,
+	0, 6, 0, 12, 18, 0, 0, 0, 15, 49,
+	0, 27, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 33, 0, 50, 51, 0, 8, 7, 3,
+	9, 0, 11, 0, 4, 0, 5, 14, 0, 0,
+	34, 0, 28, 0, 41, 42, 43, 44, 45, 46,
+	47, 30, 0, 32, 0, 12, 12, 20, 33, 15,
+	15, 35, 36, 0, 29, 0, 2, 10, 13, 19,
+	16, 17, 0, 37, 31, 21, 0, 38, 0, 22,
+	39,
 }
 
 var yyTok1 = [...]int8{
@@ -743,56 +751,74 @@ yydefault:
 			yyVAL.f = makeObjectPropertyExpr(yyDollar[1].f, yyDollar[2].name)
 		}
 	case 28:
-		yyDollar = yyS[yypt-4 : yypt+1]
+		yyDollar = yyS[yypt-3 : yypt+1]
 //line expressions.y:138
 		{
-			yyVAL.f = makeIndexExpr(yyDollar[1].f, yyDollar[3].f)
+			yyVAL.f = makeObjectPropertyExpr(yyDollar[1].f, yyDollar[3].name)
 		}
 	case 29:
-		yyDollar = yyS[yypt-5 : yypt+1]
+		yyDollar = yyS[yypt-4 : yypt+1]
 //line expressions.y:139
 		{
-			yyVAL.f = makeRangeExpr(yyDollar[2].f, yyDollar[4].f)
+			yyVAL.f = makeIndexExpr(yyDollar[1].f, yyDollar[3].f)
 		}
 	case 30:
 		yyDollar = yyS[yypt-3 : yypt+1]
 //line expressions.y:140
 		{
-			yyVAL.f = yyDollar[2].f
+			yyVAL.f = makeVariableIndirectionExpr(yyDollar[2].f)
+		}
+	case 31:
+		yyDollar = yyS[yypt-5 : yypt+1]
+//line expressions.y:141
+		{
+			yyVAL.f = makeRangeExpr(yyDollar[2].f, yyDollar[4].f)
 		}
 	case 32:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:145
+//line expressions.y:142
+		{
+			yyVAL.f = yyDollar[2].f
+		}
+	case 34:
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line expressions.y:147
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, nil)
 		}
-	case 33:
+	case 35:
 		yyDollar = yyS[yypt-4 : yypt+1]
-//line expressions.y:146
+//line expressions.y:148
 		{
 			yyVAL.f = makeFilter(yyDollar[1].f, yyDollar[3].name, yyDollar[4].filter_params)
 		}
-	case 34:
+	case 36:
 		yyDollar = yyS[yypt-1 : yypt+1]
-//line expressions.y:150
+//line expressions.y:152
 		{
 			yyVAL.filter_params = []valueFn{yyDollar[1].f}
 		}
-	case 35:
-		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:152
+	case 37:
+		yyDollar = yyS[yypt-2 : yypt+1]
+//line expressions.y:153
 		{
-			yyVAL.filter_params = append(yyDollar[1].filter_params, yyDollar[3].f)
-		}
-	case 36:
-		yyDollar = yyS[yypt-4 : yypt+1]
-//line expressions.y:154
-		{
-			yyVAL.filter_params = append(yyDollar[1].filter_params, makeNamedArgFn(yyDollar[3].name, yyDollar[4].f))
+			yyVAL.filter_params = []valueFn{makeNamedArgFn(yyDollar[1].name, yyDollar[2].f)}
 		}
 	case 38:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:158
+//line expressions.y:155
+		{
+			yyVAL.filter_params = append(yyDollar[1].filter_params, yyDollar[3].f)
+		}
+	case 39:
+		yyDollar = yyS[yypt-4 : yypt+1]
+//line expressions.y:157
+		{
+			yyVAL.filter_params = append(yyDollar[1].filter_params, makeNamedArgFn(yyDollar[3].name, yyDollar[4].f))
+		}
+	case 41:
+		yyDollar = yyS[yypt-3 : yypt+1]
+//line expressions.y:161
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -800,9 +826,9 @@ yydefault:
 				return values.ValueOf(a.Equal(b))
 			}
 		}
-	case 39:
+	case 42:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:165
+//line expressions.y:168
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -810,9 +836,9 @@ yydefault:
 				return values.ValueOf(!a.Equal(b))
 			}
 		}
-	case 40:
+	case 43:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:172
+//line expressions.y:175
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -820,9 +846,9 @@ yydefault:
 				return values.ValueOf(b.Less(a))
 			}
 		}
-	case 41:
+	case 44:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:179
+//line expressions.y:182
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -830,9 +856,9 @@ yydefault:
 				return values.ValueOf(a.Less(b))
 			}
 		}
-	case 42:
+	case 45:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:186
+//line expressions.y:189
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -840,9 +866,9 @@ yydefault:
 				return values.ValueOf(b.Less(a) || a.Equal(b))
 			}
 		}
-	case 43:
+	case 46:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:193
+//line expressions.y:196
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
@@ -850,33 +876,33 @@ yydefault:
 				return values.ValueOf(a.Less(b) || a.Equal(b))
 			}
 		}
-	case 44:
+	case 47:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:200
+//line expressions.y:203
 		{
 			yyVAL.f = makeContainsExpr(yyDollar[1].f, yyDollar[3].f)
 		}
-	case 46:
+	case 49:
 		yyDollar = yyS[yypt-2 : yypt+1]
-//line expressions.y:205
+//line expressions.y:208
 		{
 			fa := yyDollar[2].f
 			yyVAL.f = func(ctx Context) values.Value {
 				return values.ValueOf(!fa(ctx).Test())
 			}
 		}
-	case 47:
+	case 50:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:211
+//line expressions.y:214
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
 			}
 		}
-	case 48:
+	case 51:
 		yyDollar = yyS[yypt-3 : yypt+1]
-//line expressions.y:217
+//line expressions.y:220
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {

@@ -11,6 +11,9 @@ package liquid_test
 //   - LiquidJS:    test/integration/drop/blank-drop.spec.ts
 //
 // Covers checklist section 4: Expressões / Literais.
+// Added in second pass (2026-04):
+//   - 4.10 Range contains operator (JS expression.spec.ts)
+//   - 4.11 nil/null with ordering operators (Ruby statements_test.rb)
 
 import (
 	"testing"
@@ -593,5 +596,111 @@ func TestPortedLiterals_OperatorExpressions(t *testing.T) {
 
 	t.Run("non-empty array not equal empty", func(t *testing.T) {
 		check(` {% if array == empty %} true {% else %} false {% endif %} `, map[string]any{"array": []any{1, 2, 3}}, "  false  ")
+	})
+}
+
+// ── 4.10 Range `contains` operator ───────────────────────────────────────────
+// Sources: LiquidJS src/render/expression.spec.ts ('should return true for "(1..5) contains 3"' etc.)
+//          Ruby     test/unit/condition_unit_test.rb (contains checks, implicit range membership)
+
+func TestPortedLiterals_RangeContains(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	check := func(src string, bindings map[string]any, want string) {
+		t.Helper()
+		require.Equal(t, want, renderExpr(t, eng, src, bindings))
+	}
+
+	// LiquidJS: 'should return true for "(1..5) contains 3"'
+	t.Run("range contains included value", func(t *testing.T) {
+		check(`{% if (1..5) contains 3 %}yes{% else %}no{% endif %}`, nil, "yes")
+	})
+
+	// LiquidJS: 'should return false for "(1..5) contains 6"'
+	t.Run("range does not contain out-of-range value", func(t *testing.T) {
+		check(`{% if (1..5) contains 6 %}yes{% else %}no{% endif %}`, nil, "no")
+	})
+
+	// Range contains lower bound (inclusive)
+	t.Run("range contains lower bound", func(t *testing.T) {
+		check(`{% if (1..5) contains 1 %}yes{% else %}no{% endif %}`, nil, "yes")
+	})
+
+	// Range contains upper bound (inclusive)
+	t.Run("range contains upper bound", func(t *testing.T) {
+		check(`{% if (1..5) contains 5 %}yes{% else %}no{% endif %}`, nil, "yes")
+	})
+
+	// Range does not contain value just below lower bound
+	t.Run("range does not contain value below lower bound", func(t *testing.T) {
+		check(`{% if (1..5) contains 0 %}yes{% else %}no{% endif %}`, nil, "no")
+	})
+
+	// Range with variable end
+	t.Run("range contains with variable bound", func(t *testing.T) {
+		check(`{% if (1..n) contains 4 %}yes{% else %}no{% endif %}`, map[string]any{"n": 5}, "yes")
+	})
+
+	// Range in for loop with contains-like filtering — a for loop over range
+	t.Run("range in for loop iterates all values", func(t *testing.T) {
+		check(`{% for i in (1..3) %}{{ i }}{% endfor %}`, nil, "123")
+	})
+}
+
+// ── 4.11 nil/null with ordering operators ─────────────────────────────────────
+// Source: Ruby test/integration/tags/statements_test.rb (test_zero_lq_or_equal_one_involving_nil)
+
+func TestPortedLiterals_NilOrdering(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	check := func(src string, want string) {
+		t.Helper()
+		require.Equal(t, want, renderExpr(t, eng, src, nil))
+	}
+
+	// Ruby: test_zero_lq_or_equal_one_involving_nil
+	// "{% if null <= 0 %} true {% else %} false {% endif %}" => "  false  "
+	t.Run("null <= 0 is false", func(t *testing.T) {
+		check(` {% if null <= 0 %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	// Ruby: "{% if 0 <= null %} true {% else %} false {% endif %}" => "  false  "
+	t.Run("0 <= null is false", func(t *testing.T) {
+		check(` {% if 0 <= null %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	// Nil with less-than ordering
+	t.Run("null < 0 is false", func(t *testing.T) {
+		check(` {% if null < 0 %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	t.Run("0 < null is false", func(t *testing.T) {
+		check(` {% if 0 < null %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	// Nil with greater-than ordering
+	t.Run("null > 0 is false", func(t *testing.T) {
+		check(` {% if null > 0 %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	t.Run("0 > null is false", func(t *testing.T) {
+		check(` {% if 0 > null %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	t.Run("null >= 0 is false", func(t *testing.T) {
+		check(` {% if null >= 0 %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	t.Run("0 >= null is false", func(t *testing.T) {
+		check(` {% if 0 >= null %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	// nil (Go keyword, same as null in Liquid)
+	t.Run("nil <= 0 is false", func(t *testing.T) {
+		check(` {% if nil <= 0 %} true {% else %} false {% endif %} `, "  false  ")
+	})
+
+	t.Run("0 <= nil is false", func(t *testing.T) {
+		check(` {% if 0 <= nil %} true {% else %} false {% endif %} `, "  false  ")
 	})
 }

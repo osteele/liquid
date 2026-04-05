@@ -51,6 +51,10 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 				rawTag.Slices = append(rawTag.Slices, tok.Source)
 			}
 		case tok.Type == ObjTokenType:
+			if tok.Args == "" {
+				// Empty expression (e.g. from {{-}} where - is a trim marker only); outputs nothing.
+				break
+			}
 			expr, err := expressions.Parse(tok.Args)
 			if err != nil {
 				return nil, WrapError(err, tok)
@@ -66,7 +70,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
-			case tok.Name == "comment" || tok.Name == "doc":
+				case tok.Name == "comment" || tok.Name == "doc":
 					inComment = true
 				case tok.Name == "raw":
 					inRaw = true

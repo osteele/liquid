@@ -149,6 +149,148 @@ func TestDropMethodMissing_missingKeyReturnsEmpty(t *testing.T) {
 	require.Equal(t, "", out)
 }
 
+// ---------------------------------------------------------------------------
+// Base Drop interface (ToLiquid) and struct drop behaviour
+// Ported from:
+//   - Ruby Liquid: test/integration/drop_test.rb
+//     (test_text_drop, test_text_array_drop, test_access_context_from_drop,
+//      test_drop_does_only_respond_to_whitelisted_methods)
+//   - LiquidJS: test/integration/drop/drop.spec.ts
+//     (method output, method in condition, missing property, return types)
+// ---------------------------------------------------------------------------
+
+// rubyTextDrop mirrors Ruby Liquid's ProductDrop::TextDrop.
+// It is a plain struct drop (no ToLiquid) — its exported methods are exposed
+// directly as template properties via reflection.
+type rubyTextDrop struct{}
+
+func (d rubyTextDrop) Text() string    { return "text1" }
+func (d rubyTextDrop) Array() []string { return []string{"text1", "text2"} }
+
+// rubyProductDrop mirrors Ruby Liquid's ProductDrop.
+// It implements Drop so ToLiquid() wraps the inner struct.
+type rubyProductDrop struct{}
+
+func (d rubyProductDrop) ToLiquid() any {
+	return struct{ Texts rubyTextDrop }{Texts: rubyTextDrop{}}
+}
+
+func TestDrop_nestedDropPropertyAccess(t *testing.T) {
+	// Ruby: test_text_drop — {{ product.texts.text }} should return "text1"
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(
+		` {{ product.Texts.Text }} `,
+		map[string]any{"product": rubyProductDrop{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, " text1 ", out)
+}
+
+func TestDrop_nestedDropArrayIteration(t *testing.T) {
+	// Ruby: test_text_array_drop — iterate array property of nested drop
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(
+		`{% for text in product.Texts.Array %} {{text}} {% endfor %}`,
+		map[string]any{"product": rubyProductDrop{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, " text1  text2 ", out)
+}
+
+// simpleFuncDrop mirrors JS CustomDrop that exposes a public method.
+// It does NOT implement Drop — it is a struct drop exposed via reflection.
+type simpleFuncDrop struct{}
+
+func (d simpleFuncDrop) GetName() string { return "GET NAME" }
+
+func TestDrop_methodCallableAsProperty(t *testing.T) {
+	// JS: should call corresponding method when output — {{obj.GetName}} = "GET NAME"
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{obj.GetName}}`, map[string]any{"obj": simpleFuncDrop{}})
+	require.NoError(t, err)
+	require.Equal(t, "GET NAME", out)
+}
+
+func TestDrop_methodUsableInCondition(t *testing.T) {
+	// JS: should call corresponding method when expression evaluates
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(
+		`{% if obj.GetName == "GET NAME" %}true{% endif %}`,
+		map[string]any{"obj": simpleFuncDrop{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "true", out)
+}
+
+func TestDrop_unknownFieldReturnsEmpty(t *testing.T) {
+	// JS: should output empty string if not exist — {{obj.foo}} = ""
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{obj.foo}}`, map[string]any{"obj": simpleFuncDrop{}})
+	require.NoError(t, err)
+	require.Equal(t, "", out)
+}
+
+// varTypeDrop mirrors JS DynamicTypeDrop: MissingMethod returns various types.
+type varTypeDrop struct{}
+
+func (d varTypeDrop) MissingMethod(key string) any {
+	switch key {
+	case "number":
+		return 42
+	case "str":
+		return "foo"
+	case "bool":
+		return true
+	case "arr":
+		return []int{1, 2, 3}
+	case "obj":
+		return map[string]any{"foo": "bar"}
+	}
+	return nil
+}
+
+func TestDropMethodMissing_variousReturnTypes(t *testing.T) {
+	// JS: should support returning supported value types from liquidMethodMissing
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(
+		`{{obj.number}} {{obj.str}} {{obj.bool}} {{obj.arr | first}} {{obj.obj.foo}}`,
+		map[string]any{"obj": varTypeDrop{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "42 foo true 1 bar", out)
+}
+
+// loopIndexDrop mirrors Ruby's ContextDrop.loop_pos by reading forloop.index
+// from the rendering scope. It implements ContextDrop so it receives the active
+// rendering context via SetContext before any property is accessed.
+type loopIndexDrop struct{ ctx DropRenderContext }
+
+func (d *loopIndexDrop) SetContext(ctx DropRenderContext) { d.ctx = ctx }
+func (d *loopIndexDrop) LoopPos() any {
+	if d.ctx == nil {
+		return nil
+	}
+	if fl, ok := d.ctx.Get("forloop").(map[string]any); ok {
+		return fl["index"]
+	}
+	return nil
+}
+
+func TestDrop_contextDropReadsForloopIndex(t *testing.T) {
+	// Ruby: test_access_context_from_drop
+	// {% for a in dummy %}{{ context.loop_pos }}{% endfor %} should output "123"
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(
+		`{% for a in dummy %}{{ context.LoopPos }}{% endfor %}`,
+		map[string]any{
+			"context": &loopIndexDrop{},
+			"dummy":   []int{1, 2, 3},
+		},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "123", out)
+}
+
 func TestDropMethodMissing_usableInCondition(t *testing.T) {
 	engine := NewEngine()
 	bindings := map[string]any{

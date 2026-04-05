@@ -116,7 +116,7 @@ func TestPortedErrors_SyntaxError_Alias(t *testing.T) {
 func TestPortedErrors_ArgumentError_FilterReturnsIt(t *testing.T) {
 	engine := NewEngine()
 	// Register a filter that raises an ArgumentError
-	engine.RegisterFilter("bad_args", func(n interface{}) (interface{}, error) {
+	engine.RegisterFilter("bad_args", func(n any) (any, error) {
 		return nil, render.NewArgumentError("invalid argument supplied")
 	})
 
@@ -274,7 +274,7 @@ func TestPortedErrors_ErrorChain_ZeroDivision(t *testing.T) {
 // ArgumentError through RenderError.
 func TestPortedErrors_ErrorChain_ArgumentError(t *testing.T) {
 	engine := NewEngine()
-	engine.RegisterFilter("chain_test_arg", func(n interface{}) (interface{}, error) {
+	engine.RegisterFilter("chain_test_arg", func(n any) (any, error) {
 		return nil, render.NewArgumentError("bad arg")
 	})
 
@@ -340,6 +340,204 @@ func TestPortedErrors_ParseError_NoPath(t *testing.T) {
 	require.Equal(t, 2, err.LineNumber())
 	// Source text should appear as the location context
 	require.Contains(t, err.Error(), `{{ product.price | divided_by: 0 }}`)
+}
+
+// ── 10.1 Line numbers with whitespace-trim markers ────────────────────────────
+
+// TestPortedErrors_ParseError_LineNumber_WhitespaceTrim verifies that using
+// the whitespace-trim markers ({%- -%}) does NOT shift reported line numbers.
+// Ruby: test_with_line_numbers_adds_numbers_to_parser_errors_with_whitespace_trim
+//
+//	assert_match_syntax_error(/Liquid syntax error \(line 3\)/, source)
+//
+// The source has `{%- "cat" | foobar -%}` on line 3. It must still report
+// "line 3" regardless of the trim dashes.
+func TestPortedErrors_ParseError_LineNumber_WhitespaceTrim(t *testing.T) {
+	engine := NewEngine()
+
+	// "cat" is a literal, not a value that can be piped into an unknown tag context,
+	// and "foobar" is an unknown filter — this should produce a parse/render error on line 3.
+	src := "foobar\n\n{%- assign x = 1 -%}\n{%- nosuchtagxyz -%}\n\nbla"
+	_, err := engine.ParseString(src)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Liquid syntax error")
+	require.Contains(t, err.Error(), "line 4",
+		"trim markers must not shift line numbers: got %q", err.Error())
+}
+
+// TestPortedErrors_ParseError_LineNumber_WhitespaceTrimSimple validates the
+// exact Ruby test case: tag on line 3 with trim markers still reports line 3.
+// Ruby: foobar\n\n{%- "cat" | foobar -%}\n\nbla  → "Liquid syntax error (line 3)"
+func TestPortedErrors_ParseError_LineNumber_WhitespaceTrimSimple(t *testing.T) {
+	engine := NewEngine()
+
+	// Use the unknown-tag variant since Go's expression errors are parse-time
+	src := "foobar\n\n{%- nosuchtagxyz -%}\n\nbla"
+	_, err := engine.ParseString(src)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "Liquid syntax error")
+	require.Contains(t, err.Error(), "line 3",
+		"trim markers must not shift line numbers: got %q", err.Error())
+}
+
+// ── 10.3 Unrecognized operator ────────────────────────────────────────────────
+
+// TestPortedErrors_UnrecognizedOperator_IsSyntaxError documents that the `=!`
+// operator (invalid in both Ruby strict mode and Go) produces a ParseError.
+// Ruby: test_unrecognized_operator (strict) — raises SyntaxError
+// Go always produces a ParseError for malformed expressions regardless of mode.
+func TestPortedErrors_UnrecognizedOperator_IsSyntaxError(t *testing.T) {
+	engine := NewEngine()
+
+	_, err := engine.ParseString(`{% if 1 =! 2 %}ok{% endif %}`)
+	require.Error(t, err, "=! is not a valid operator and should cause an error")
+	// In Go, this is always a parse-time error
+	var pe *parser.ParseError
+	require.True(t, errors.As(err, &pe), "expected *parser.ParseError, got %T: %v", err, err)
+	require.Contains(t, err.Error(), "Liquid syntax error")
+}
+
+// ── 10.3 SyntaxError raised from a Drop ──────────────────────────────────────
+
+// TestPortedErrors_Drop_SyntaxErrorSurfacesCorrectly confirms that when a Drop
+// raises a SyntaxError (parser.ParseError), the error is detectable via errors.As
+// and carries the correct prefix.
+// Ruby: test_syntax — template renders ' Liquid syntax error: syntax error '
+// In Go, this is tested by a custom tag that returns a *parser.ParseError.
+func TestPortedErrors_Drop_SyntaxErrorSurfacesCorrectly(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterFilter("raise_syntax_err", func(v any) (any, error) {
+		// Simulate a drop that raises SyntaxError — return a *parser.ParseError
+		// (which is also *parser.SyntaxError via type alias)
+		tok := parser.Token{
+			SourceLoc: parser.SourceLoc{LineNo: 1},
+			Source:    `{{ errors.syntax_error }}`,
+		}
+		return nil, parser.Errorf(&tok, "syntax error")
+	})
+
+	_, err := engine.ParseAndRenderString(`{{ "x" | raise_syntax_err }}`, map[string]any{})
+	require.Error(t, err)
+
+	// Must be detectable as SyntaxError (= ParseError alias)
+	var se *parser.SyntaxError
+	require.True(t, errors.As(err, &se), "expected *parser.SyntaxError in error chain, got %T: %v", err, err)
+}
+
+// ── JS: RenderError from a plain-error filter ────────────────────────────────
+
+// TestPortedErrors_FilterPlainError_WrappedInRenderError verifies that a filter
+// returning a plain (non-ArgumentError) error is still wrapped in *render.RenderError.
+// JS: "should throw RenderError when filter throws"
+func TestPortedErrors_FilterPlainError_WrappedInRenderError(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterFilter("throwing_filter", func(v any) (any, error) {
+		return nil, errors.New("intended filter error")
+	})
+
+	_, err := engine.ParseAndRenderString(`{{ "hello" | throwing_filter }}`, map[string]any{})
+	require.Error(t, err)
+
+	var re *render.RenderError
+	require.True(t, errors.As(err, &re), "plain error from filter must be wrapped in *render.RenderError, got %T: %v", err, err)
+	require.Contains(t, err.Error(), "intended filter error")
+	require.Contains(t, err.Error(), "Liquid error")
+}
+
+// ── JS: ParseError for unknown tag ───────────────────────────────────────────
+
+// TestPortedErrors_UnknownTag_IsParseError verifies that referencing an
+// unregistered tag name produces a *parser.ParseError.
+// JS: "should throw ParseError when tag not exist"
+//
+//	await expect(engine.parseAndRender('{% a %}')).rejects.toMatchObject({
+//	    name: 'ParseError',
+//	    message: expect.stringContaining('tag "a" not found')
+//	})
+func TestPortedErrors_UnknownTag_IsParseError(t *testing.T) {
+	engine := NewEngine()
+
+	_, err := engine.ParseString(`{% nosuchtagatall %}`)
+	require.Error(t, err)
+
+	var pe *parser.ParseError
+	require.True(t, errors.As(err, &pe), "unknown tag must produce *parser.ParseError, got %T: %v", err, err)
+	require.Contains(t, err.Error(), "Liquid syntax error")
+}
+
+// TestPortedErrors_UnknownTag_MultiLine_CorrectLine verifies the line number is
+// correct when an unknown tag appears mid-template.
+// JS: "should throw ParseError when tag not found" (multi-line test)
+//
+//	src = '{%if true%}\naaa{%endif%}\n{% -a %}\n3'  → ParseError on line 3
+func TestPortedErrors_UnknownTag_MultiLine_CorrectLine(t *testing.T) {
+	engine := NewEngine()
+
+	src := "{%if true%}\naaa{%endif%}\n{% nosuchtagmultiline %}\n3"
+	_, err := engine.ParseString(src)
+	require.Error(t, err)
+
+	var pe *parser.ParseError
+	require.True(t, errors.As(err, &pe), "expected *parser.ParseError, got %T", err)
+	require.Contains(t, err.Error(), "line 3")
+}
+
+// ── JS: RenderError from a tag renderer ──────────────────────────────────────
+
+// TestPortedErrors_TagPlainError_WrappedInRenderError verifies that a tag
+// returning a plain error from its renderer is wrapped in *render.RenderError.
+// JS: "should throw RenderError when tag throws"
+func TestPortedErrors_TagPlainError_WrappedInRenderError(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterTag("throwing_tag", func(c render.Context) (string, error) {
+		return "", errors.New("intended tag error")
+	})
+
+	_, err := engine.ParseAndRenderString(`{% throwing_tag %}`, map[string]any{})
+	require.Error(t, err)
+
+	var re *render.RenderError
+	require.True(t, errors.As(err, &re), "plain error from tag must be wrapped in *render.RenderError, got %T: %v", err, err)
+	require.Contains(t, err.Error(), "intended tag error")
+	require.Contains(t, err.Error(), "Liquid error")
+}
+
+// ── 10.1 UndefinedVariableError — strict mode prefix ────────────────────────
+
+// TestPortedErrors_UndefinedVariable_LiquidErrorPrefix verifies that strict-mode
+// UndefinedVariableError uses the "Liquid error" prefix, not "Liquid syntax error".
+// JS: "should throw RenderError when variable not defined" →
+//
+//	name: 'UndefinedVariableError', message: 'undefined variable: a, line:1, col:3'
+//
+// Ruby: undefined variable errors are render-time (not parse-time) errors.
+func TestPortedErrors_UndefinedVariable_LiquidErrorPrefix(t *testing.T) {
+	engine := NewEngine()
+	engine.StrictVariables()
+
+	_, err := engine.ParseAndRenderString(`{{ undefined_var }}`, map[string]any{})
+	require.Error(t, err)
+
+	var ue *render.UndefinedVariableError
+	require.True(t, errors.As(err, &ue), "expected *render.UndefinedVariableError")
+
+	// UndefinedVariableError is a render-time error
+	require.Contains(t, err.Error(), "Liquid error")
+	require.NotContains(t, err.Error(), "Liquid syntax error")
+	require.Contains(t, err.Error(), "undefined_var")
+}
+
+// TestPortedErrors_UndefinedVariable_NoError_DefaultMode documents that
+// by default (non-strict), undefined variables produce empty output, not errors.
+// JS: "should not throw when variable undefined by default"
+//
+//	const html = await engine.parseAndRender('X{{a}}Y')
+//	return expect(html).toBe('XY')
+func TestPortedErrors_UndefinedVariable_NoError_DefaultMode(t *testing.T) {
+	engine := NewEngine() // default: non-strict
+	out, err := engine.ParseAndRenderString(`X{{ a }}Y`, map[string]any{})
+	require.NoError(t, err, "undefined variable must not error in default mode")
+	require.Equal(t, "XY", out)
 }
 
 // ── Integration: parse errors should NOT contain "Liquid error" ───────────────

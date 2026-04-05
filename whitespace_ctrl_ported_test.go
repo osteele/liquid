@@ -353,3 +353,9 @@ func TestWhitespaceCtrl_Greedy_False(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "\n a \nharttle ", out)
 }
+
+// test_trim_blank – Ruby: {{-}} trims both surrounding spaces (single - acts as both trim markers).
+// Source: trim_mode_test.rb#test_trim_blank
+func TestWhitespaceCtrl_TrimBlank(t *testing.T) {
+	require.Equal(t, "foobar", renderWS(t, "foo {{-}} bar"))
+}

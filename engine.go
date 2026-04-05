@@ -259,7 +259,15 @@ func (e *Engine) ParseAndRenderString(source string, b Bindings, opts ...RenderO
 // stands for the corresponding default: objectLeft = {{, objectRight = }}, tagLeft = {% , tagRight = %}
 func (e *Engine) Delims(objectLeft, objectRight, tagLeft, tagRight string) *Engine {
 	e.checkNotFrozen("Delims")
-	e.cfg.Delims = []string{objectLeft, objectRight, tagLeft, tagRight}
+	// Empty strings fall back to the standard defaults.
+	defaults := []string{"{{", "}}", "{%", "%}"}
+	delims := []string{objectLeft, objectRight, tagLeft, tagRight}
+	for i, d := range delims {
+		if d == "" {
+			delims[i] = defaults[i]
+		}
+	}
+	e.cfg.Delims = delims
 	return e
 }
 

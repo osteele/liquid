@@ -21,6 +21,10 @@ type NodeAnalysis struct {
 	// BlockScope lists variable names added to the scope for this node's BODY only.
 	// Analogous to LiquidJS tag.blockScope(). E.g. the loop variable in for.
 	BlockScope []string
+
+	// ChildNodes holds compiled sub-trees that should be included in static analysis.
+	// Used by composite tags like {% liquid %} that compile inner templates at parse time.
+	ChildNodes []Node
 }
 
 // TagAnalyzer provides static analysis metadata for a simple tag.
@@ -134,6 +138,9 @@ func walkForVariables(node Node, collector *analysisCollector) {
 		for _, expr := range n.Analysis.Arguments {
 			collector.addFromExpr(expr, n.SourceLoc)
 		}
+		for _, child := range n.Analysis.ChildNodes {
+			walkForVariables(child, collector)
+		}
 	case *BlockNode:
 		for _, expr := range n.Analysis.Arguments {
 			collector.addFromExpr(expr, n.SourceLoc)
@@ -165,6 +172,9 @@ func collectLocals(node Node, locals map[string]bool, list *[]string) {
 		for _, name := range n.Analysis.LocalScope {
 			addLocal(name)
 		}
+		for _, child := range n.Analysis.ChildNodes {
+			collectLocals(child, locals, list)
+		}
 	case *BlockNode:
 		for _, name := range n.Analysis.LocalScope {
 			addLocal(name)
@@ -192,6 +202,9 @@ func walkForTags(node Node, seen map[string]bool, tags *[]string) {
 		if !seen[n.Name] {
 			seen[n.Name] = true
 			*tags = append(*tags, n.Name)
+		}
+		for _, child := range n.Analysis.ChildNodes {
+			walkForTags(child, seen, tags)
 		}
 	case *BlockNode:
 		if !seen[n.Name] {

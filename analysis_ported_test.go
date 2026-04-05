@@ -7,6 +7,7 @@ package liquid
 //   - LiquidJS:    src/template/analysis.spec.ts
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -1071,6 +1072,375 @@ func TestAnalysis_EdgeCases(t *testing.T) {
 		}
 		if !found {
 			t.Errorf("expected [page title] in globals, got %v", globals)
+		}
+	})
+}
+
+// ── Ruby Liquid: ParseTreeVisitor — missing tests ───────────────────────────
+// Source: test/unit/parse_tree_visitor_test.rb
+// Tests not covered in TestRubyLiquid_ParseTreeVisitor above.
+
+func TestRubyLiquid_ParseTreeVisitorExtra(t *testing.T) {
+	engine := NewEngine()
+
+	globalSegments := func(t *testing.T, src string) [][]string {
+		t.Helper()
+		tpl, parseErr := engine.ParseString(src)
+		if parseErr != nil {
+			t.Fatalf("ParseString(%q): %v", src, parseErr)
+		}
+		segs, analyzeErr := engine.GlobalVariableSegments(tpl)
+		if analyzeErr != nil {
+			t.Fatalf("GlobalVariableSegments: %v", analyzeErr)
+		}
+		return segs
+	}
+
+	// test_dynamic_variable: {{ test[inlookup] }}
+	// Ruby: IndexValue records base path AND the key variable.
+	t.Run("dynamic variable bracket notation", func(t *testing.T) {
+		got := globalSegments(t, `{{ test[inlookup] }}`)
+		// Both "test" (base object) and "inlookup" (dynamic index) should appear.
+		roots := make(map[string]bool)
+		for _, seg := range got {
+			if len(seg) > 0 {
+				roots[seg[0]] = true
+			}
+		}
+		if !roots["test"] {
+			t.Errorf("expected 'test' in globals, got %v", got)
+		}
+		if !roots["inlookup"] {
+			t.Errorf("expected 'inlookup' in globals, got %v", got)
+		}
+	})
+
+	// test_echo: {% echo test %}
+	t.Run("echo tag", func(t *testing.T) {
+		got := globalSegments(t, `{% echo test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_for_limit: {% for x in (1..5) limit: test %}
+	t.Run("for limit variable", func(t *testing.T) {
+		got := globalSegments(t, `{% for x in (1..5) limit: test %}{% endfor %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_for_offset: {% for x in (1..5) offset: test %}
+	t.Run("for offset variable", func(t *testing.T) {
+		got := globalSegments(t, `{% for x in (1..5) offset: test %}{% endfor %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_tablerow_limit: {% tablerow x in (1..5) limit: test %}
+	t.Run("tablerow limit variable", func(t *testing.T) {
+		got := globalSegments(t, `{% tablerow x in (1..5) limit: test %}{% endtablerow %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_tablerow_offset: {% tablerow x in (1..5) offset: test %}
+	t.Run("tablerow offset variable", func(t *testing.T) {
+		got := globalSegments(t, `{% tablerow x in (1..5) offset: test %}{% endtablerow %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_include: {% include test %} — dynamic filename from variable
+	t.Run("include with dynamic filename variable", func(t *testing.T) {
+		got := globalSegments(t, `{% include test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_include_with: {% include "hai" with test %}
+	t.Run("include with 'with' variable", func(t *testing.T) {
+		got := globalSegments(t, `{% include "hai" with test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_include_for: {% include "hai" for test %}
+	t.Run("include with 'for' variable", func(t *testing.T) {
+		got := globalSegments(t, `{% include "hai" for test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_render_with: {% render "hai" with test %}
+	t.Run("render with 'with' variable", func(t *testing.T) {
+		got := globalSegments(t, `{% render "hai" with test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// test_render_for: {% render "hai" for test %}
+	t.Run("render with 'for' variable", func(t *testing.T) {
+		got := globalSegments(t, `{% render "hai" for test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+}
+
+// ── LiquidJS: variables.spec.ts — missing tests ──────────────────────────────
+// Source: test/integration/static_analysis/variables.spec.ts
+
+func TestLiquidJS_VariableAnalysisExtra(t *testing.T) {
+	engine := NewEngine()
+
+	// "should report variables in filter keyword arguments"
+	// {{ a | default: b, allow_false: c }} — c is a named keyword arg value
+	t.Run("filter keyword arg variables", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{{ a | default: b, allow_false: c }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"a"}, {"b"}, {"c"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// "should detect when a variable is in scope" — whole-template analysis
+	// Go uses whole-template (flow-insensitive) analysis: if a variable is assigned
+	// anywhere in the template, it's treated as local everywhere. This differs from
+	// LiquidJS which does flow-sensitive analysis (tracking use before assign).
+	// Our behavior: {{ a }}{% assign a = "foo" %}{{ a }} → a is local, not global.
+	t.Run("variable scope detection - assign makes var local everywhere", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{{ a }}{% assign a = "foo" %}{{ a }}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		// In Go's whole-template analysis, once a is assigned, it is local everywhere.
+		for _, seg := range globals {
+			if len(seg) == 1 && seg[0] == "a" {
+				t.Errorf("expected 'a' to be local (assigned later), but found in globals: %v", globals)
+			}
+		}
+	})
+
+	// "should report variables from decrement tags" — decrement creates a local counter
+	// Per LiquidJS spec, {% decrement a %} introduces a as a locally-defined name.
+	t.Run("decrement creates local", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% decrement a %}`)
+		analysis, err := engine.Analyze(tpl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		localsSet := map[string]bool{}
+		for _, l := range analysis.Locals {
+			localsSet[l] = true
+		}
+		if !localsSet["a"] {
+			t.Errorf("expected a in Locals for decrement, got %v", analysis.Locals)
+		}
+		// No global variables expected
+		if len(analysis.Globals) != 0 {
+			t.Errorf("expected no globals for decrement, got %v", analysis.Globals)
+		}
+	})
+
+	// "should report variables from increment tags" — increment creates a local counter
+	t.Run("increment creates local", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% increment a %}`)
+		analysis, err := engine.Analyze(tpl)
+		if err != nil {
+			t.Fatal(err)
+		}
+		localsSet := map[string]bool{}
+		for _, l := range analysis.Locals {
+			localsSet[l] = true
+		}
+		if !localsSet["a"] {
+			t.Errorf("expected a in Locals for increment, got %v", analysis.Locals)
+		}
+		if len(analysis.Globals) != 0 {
+			t.Errorf("expected no globals for increment, got %v", analysis.Globals)
+		}
+	})
+
+	// "should report variables from echo tags"
+	// {% echo x | default: y, allow_false: z %} — x, y, z are all variables
+	t.Run("echo tag variables with filter kwargs", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% echo x | default: y, allow_false: z %}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"x"}, {"y"}, {"z"}}
+		if !segmentsEqual(globals, want) {
+			t.Errorf("got %v, want %v", globals, want)
+		}
+	})
+
+	// "should report variables from for tags" — for with limit as variable
+	// {% for x in (1..y) limit: a %}
+	t.Run("for tags with limit variable", func(t *testing.T) {
+		src := `{% for x in (1..y) limit: a %}{{ x }}{% endfor %}`
+		tpl, _ := engine.ParseString(src)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		// y and a are global; x is the loop variable (local)
+		wantGlobals := [][]string{{"y"}, {"a"}}
+		if !segmentsEqual(globals, wantGlobals) {
+			t.Errorf("globals: got %v, want %v", globals, wantGlobals)
+		}
+		// x appears in all variables
+		foundX := false
+		for _, seg := range all {
+			if len(seg) == 1 && seg[0] == "x" {
+				foundX = true
+			}
+		}
+		if !foundX {
+			t.Errorf("expected x in all variables, got %v", all)
+		}
+	})
+
+	// "should report variables from liquid tags"
+	// {% liquid
+	//   if product.title
+	//     echo foo | upcase
+	//   else
+	//     echo "product-1" | upcase
+	//   endif
+	//   for i in (0..5)
+	//     echo i
+	// endfor %}
+	t.Run("liquid tag inner variables", func(t *testing.T) {
+		src := "{% liquid\n  if product.title\n    echo foo | upcase\n  else\n    echo \"product-1\" | upcase\n  endif\n  for i in (0..5)\n    echo i\nendfor %}"
+		tpl, parseErr := engine.ParseString(src)
+		if parseErr != nil {
+			t.Fatalf("ParseString: %v", parseErr)
+		}
+		globals, analyzeErr := engine.GlobalVariableSegments(tpl)
+		if analyzeErr != nil {
+			t.Fatal(analyzeErr)
+		}
+		all, analyzeErr2 := engine.VariableSegments(tpl)
+		if analyzeErr2 != nil {
+			t.Fatal(analyzeErr2)
+		}
+
+		// product.title and foo should be globals
+		globalMap := map[string]bool{}
+		for _, seg := range globals {
+			globalMap[strings.Join(seg, ".")] = true
+		}
+		if !globalMap["product.title"] {
+			t.Errorf("expected product.title in globals, got %v", globals)
+		}
+		if !globalMap["foo"] {
+			t.Errorf("expected foo in globals, got %v", globals)
+		}
+
+		// i is the for loop variable — should be in all variables
+		allMap := map[string]bool{}
+		for _, seg := range all {
+			allMap[strings.Join(seg, ".")] = true
+		}
+		if !allMap["i"] {
+			t.Errorf("expected i in all variables, got %v", all)
+		}
+		// i is local (block scope), so NOT in globals
+		if globalMap["i"] {
+			t.Errorf("i should not be in globals, got %v", globals)
+		}
+	})
+
+	// "should report variables from tablerow tags"
+	// {% tablerow x in y.z cols:2 %}{{ x | append: a }}{% endtablerow %}
+	t.Run("tablerow variables — globals and loop var local", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% tablerow x in y.z cols:2 %}{{ x | append: a }}{% endtablerow %}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		// y.z is the collection and a is a filter arg — both global
+		// x is the loop variable — local
+		wantGlobals := [][]string{{"y", "z"}, {"a"}}
+		if !segmentsEqual(globals, wantGlobals) {
+			t.Errorf("globals: got %v, want %v", globals, wantGlobals)
+		}
+
+		// x appears in all variables
+		foundX := false
+		for _, seg := range all {
+			if len(seg) == 1 && seg[0] == "x" {
+				foundX = true
+			}
+		}
+		if !foundX {
+			t.Errorf("expected x in all variables, got %v", all)
+		}
+	})
+
+	// "should report variables from unless tags" — unless with else
+	// Note: Go Liquid does not support elsif inside unless (Ruby/JS LiquidJS do not
+	// either in standard mode). Only else is supported inside unless.
+	t.Run("unless with else variables", func(t *testing.T) {
+		src := "{% unless x %}{{ a }}{% else %}{{ c }}{% endunless %}"
+		tpl, parseErr := engine.ParseString(src)
+		if parseErr != nil {
+			t.Fatal(parseErr)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"x"}, {"a"}, {"c"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	// "should report variables from include/render with key-value arguments"
+	t.Run("include key-value args", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% include "file" x: foo, y: bar %}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+		// foo and bar are variable references in kv values
+		roots := map[string]bool{}
+		for _, seg := range got {
+			if len(seg) > 0 {
+				roots[seg[0]] = true
+			}
+		}
+		if !roots["foo"] {
+			t.Errorf("expected foo in globals, got %v", got)
+		}
+		if !roots["bar"] {
+			t.Errorf("expected bar in globals, got %v", got)
+		}
+	})
+
+	t.Run("render key-value args", func(t *testing.T) {
+		tpl, _ := engine.ParseString(`{% render "file" x: foo, y: bar %}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+		roots := map[string]bool{}
+		for _, seg := range got {
+			if len(seg) > 0 {
+				roots[seg[0]] = true
+			}
+		}
+		if !roots["foo"] {
+			t.Errorf("expected foo in globals, got %v", got)
+		}
+		if !roots["bar"] {
+			t.Errorf("expected bar in globals, got %v", got)
 		}
 	})
 }

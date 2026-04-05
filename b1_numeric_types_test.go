@@ -31,7 +31,6 @@ func TestB1_AllNumericNonZeroAreTruthy(t *testing.T) {
 		float32(1), float64(1),
 	}
 	for _, v := range nonZeros {
-		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			out := renderNumeric(t, `{% if x %}yes{% endif %}`, map[string]any{"x": v})
 			require.Equal(t, "yes", out)
@@ -48,7 +47,6 @@ func TestB1_AllNumericZerosAreTruthy(t *testing.T) {
 		float32(0), float64(0),
 	}
 	for _, v := range zeros {
-		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			out := renderNumeric(t, `{% if x %}yes{% else %}no{% endif %}`, map[string]any{"x": v})
 			require.Equal(t, "yes", out, "%T(0) should be truthy in Liquid", v)
@@ -65,7 +63,6 @@ func TestB1_NumericEquality_ZeroComparisons(t *testing.T) {
 		float32(0), float64(0),
 	}
 	for _, v := range zeros {
-		v := v
 		t.Run(fmt.Sprintf("%T_eq_intlit", v), func(t *testing.T) {
 			out := renderNumeric(t, `{% if x == 0 %}yes{% else %}no{% endif %}`, map[string]any{"x": v})
 			require.Equal(t, "yes", out, "%T(0) should == literal 0", v)
@@ -82,7 +79,6 @@ func TestB1_NumericInequality_NonZeroVsZero(t *testing.T) {
 		float32(5), float64(5),
 	}
 	for _, v := range nonZeros {
-		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			out := renderNumeric(t, `{% if x != 0 %}yes{% else %}no{% endif %}`, map[string]any{"x": v})
 			require.Equal(t, "yes", out, "%T(5) should satisfy != 0", v)
@@ -109,7 +105,6 @@ func TestB1_CrossTypeEquality(t *testing.T) {
 		{uint64(0), float64(0)},
 	}
 	for _, p := range equalPairs {
-		p := p
 		name := fmt.Sprintf("%T(%v) == %T(%v)", p.a, p.a, p.b, p.b)
 		t.Run(name, func(t *testing.T) {
 			out := renderNumeric(t, `{% if a == b %}yes{% else %}no{% endif %}`,
@@ -137,7 +132,6 @@ func TestB1_CrossTypeLessThan(t *testing.T) {
 		{"uint < float32", uint(3), float32(5.5)},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			out := renderNumeric(t, `{% if a < b %}yes{% else %}no{% endif %}`,
 				map[string]any{"a": tc.a, "b": tc.b})
@@ -159,7 +153,6 @@ func TestB1_CrossTypeGreaterThan(t *testing.T) {
 		{"uint64 > float64", uint64(5), float64(3.5)},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			out := renderNumeric(t, `{% if a > b %}yes{% else %}no{% endif %}`,
 				map[string]any{"a": tc.a, "b": tc.b})
@@ -180,7 +173,6 @@ func TestB1_CrossTypeLessOrEqual(t *testing.T) {
 		{int(3), uint(5)},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T(%v) <= %T(%v)", tc.a, tc.a, tc.b, tc.b), func(t *testing.T) {
 			out := renderNumeric(t, `{% if a <= b %}yes{% else %}no{% endif %}`,
 				map[string]any{"a": tc.a, "b": tc.b})
@@ -203,7 +195,6 @@ func TestB1_NegativeIntLessThanUint(t *testing.T) {
 		{int64(-1), uint64(math.MaxUint64 / 2)},
 	}
 	for _, tc := range negVsUints {
-		tc := tc
 		t.Run(fmt.Sprintf("%T(%v) < %T(%v)", tc.neg, tc.neg, tc.pos, tc.pos), func(t *testing.T) {
 			out := renderNumeric(t, `{% if neg < pos %}yes{% else %}no{% endif %}`,
 				map[string]any{"neg": tc.neg, "pos": tc.pos})
@@ -257,7 +248,6 @@ func TestB1_FilterArithmeticOnUintTypes(t *testing.T) {
 		{`{{ x | plus: 1 }}`, uintptr(5), "6"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T_%s", tc.x, tc.tpl), func(t *testing.T) {
 			out := renderNumeric(t, tc.tpl, map[string]any{"x": tc.x})
 			require.Equal(t, tc.expected, out)
@@ -287,7 +277,6 @@ func TestB1_AllNumericTypesRenderCorrectly(t *testing.T) {
 		{float64(3.5), "3.5"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T", tc.v), func(t *testing.T) {
 			out := renderNumeric(t, `{{ x }}`, map[string]any{"x": tc.v})
 			require.Equal(t, tc.expected, out)
@@ -309,7 +298,6 @@ func TestB1_AssignAndCompareUintVariable(t *testing.T) {
 		{uint(0), "equal"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T(%v)", tc.x, tc.x), func(t *testing.T) {
 			tpl := `{% if x > 3 %}greater{% elsif x == 0 %}equal{% else %}less{% endif %}`
 			out := renderNumeric(t, tpl, map[string]any{"x": tc.x})
@@ -334,7 +322,6 @@ func TestB1_CrossTypeGreaterOrEqual(t *testing.T) {
 		{uint32(10), int32(10)},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T(%v) >= %T(%v)", tc.a, tc.a, tc.b, tc.b), func(t *testing.T) {
 			out := renderNumeric(t, `{% if a >= b %}yes{% else %}no{% endif %}`,
 				map[string]any{"a": tc.a, "b": tc.b})
@@ -351,7 +338,6 @@ func TestB1_UnlessWithUintTypes(t *testing.T) {
 		uint(1), uint8(2), uint16(3), uint32(4), uint64(5), uintptr(6),
 	}
 	for _, v := range nonZeros {
-		v := v
 		t.Run(fmt.Sprintf("%T(%v)", v, v), func(t *testing.T) {
 			out := renderNumeric(t,
 				`{% unless x == 0 %}yes{% else %}no{% endunless %}`,
@@ -362,7 +348,6 @@ func TestB1_UnlessWithUintTypes(t *testing.T) {
 	// unless x != 0 → body executes when x == 0 (all zero uints)
 	zeros := []any{uint(0), uint8(0), uint16(0), uint32(0), uint64(0), uintptr(0)}
 	for _, v := range zeros {
-		v := v
 		t.Run(fmt.Sprintf("%T(0)_is_zero", v), func(t *testing.T) {
 			out := renderNumeric(t,
 				`{% unless x != 0 %}zero{% else %}nonzero{% endunless %}`,
@@ -390,7 +375,6 @@ func TestB1_CaseWhenWithUintTypes(t *testing.T) {
 	}
 	tpl := `{% case x %}{% when 1 %}one{% when 2 %}two{% when 3 %}three{% else %}other{% endcase %}`
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T(%v)", tc.x, tc.x), func(t *testing.T) {
 			out := renderNumeric(t, tpl, map[string]any{"x": tc.x})
 			require.Equal(t, tc.expected, out)
@@ -439,7 +423,6 @@ func TestB1_CompoundConditionsWithMixedTypes(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			out := renderNumeric(t, tc.tpl, tc.bindings)
 			require.Equal(t, tc.expected, out)
@@ -485,7 +468,6 @@ func TestB1_StructFieldsWithUintTypes(t *testing.T) {
 		{"UintPtr", `{% if obj.UintPtr == 10 %}yes{% else %}no{% endif %}`, `{% if obj.UintPtr > 5 %}yes{% else %}no{% endif %}`},
 	}
 	for _, tc := range fieldTests {
-		tc := tc
 		t.Run(tc.field+"_eq", func(t *testing.T) {
 			out := renderNumeric(t, tc.tplEq, map[string]any{"obj": data})
 			require.Equal(t, "yes", out)
@@ -554,7 +536,6 @@ func TestB1_MathFiltersOnAllIntTypes(t *testing.T) {
 		{`{{ x | floor }}`, float64(5.0), "5"},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(fmt.Sprintf("%T_%s", tc.x, tc.tpl), func(t *testing.T) {
 			out := renderNumeric(t, tc.tpl, map[string]any{"x": tc.x})
 			require.Equal(t, tc.expected, out)
@@ -604,7 +585,6 @@ func TestB1_ChainedFiltersMixedTypes(t *testing.T) {
 		},
 	}
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			out := renderNumeric(t, tc.tpl, tc.bindings)
 			require.Equal(t, tc.expected, out)
@@ -653,7 +633,6 @@ func TestB1_ArrayIndexWithUintVariable(t *testing.T) {
 	arr := []string{"zero", "one", "two", "three"}
 	idxTypes := []any{uint(2), uint8(2), uint16(2), uint32(2), uint64(2), uintptr(2)}
 	for _, idx := range idxTypes {
-		idx := idx
 		t.Run(fmt.Sprintf("%T", idx), func(t *testing.T) {
 			out := renderNumeric(t,
 				`{{ arr[i] }}`,
@@ -753,7 +732,6 @@ func TestB1_FloatPrecisionComparisons(t *testing.T) {
 		},
 	}
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.desc, func(t *testing.T) {
 			out := renderNumeric(t, tc.tpl, tc.bindings)
 			require.Equal(t, tc.expected, out)
@@ -833,7 +811,6 @@ func TestB1_UnsupportedTypes_AreTruthy(t *testing.T) {
 		{"func", fn},
 	}
 	for _, tc := range truthy {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			out := renderUnsafeNoError(t,
 				`{% if x %}yes{% else %}no{% endif %}`,

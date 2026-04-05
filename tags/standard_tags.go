@@ -44,9 +44,15 @@ func AddStandardTags(c *render.Config) {
 
 	// static analysis: register analyzers alongside compilers
 	c.AddTagAnalyzer("assign", makeAssignAnalyzer())
+	c.AddTagAnalyzer("echo", makeEchoAnalyzer())
+	c.AddTagAnalyzer("increment", makeIncrementAnalyzer())
+	c.AddTagAnalyzer("decrement", makeDecrementAnalyzer())
+	c.AddTagAnalyzer("include", makeIncludeAnalyzer())
+	c.AddTagAnalyzer("render", makeRenderAnalyzer())
+	c.AddTagAnalyzer("liquid", makeLiquidAnalyzer(c))
 	c.AddBlockAnalyzer("capture", captureBlockAnalyzer)
-	c.AddBlockAnalyzer("for", loopBlockAnalyzer)
-	c.AddBlockAnalyzer("tablerow", loopBlockAnalyzer)
+	c.AddBlockAnalyzer("for", loopBlockAnalyzerFull)
+	c.AddBlockAnalyzer("tablerow", loopBlockAnalyzerFull)
 	c.AddBlockAnalyzer("if", ifBlockAnalyzer())
 	c.AddBlockAnalyzer("unless", ifBlockAnalyzer())
 	c.AddBlockAnalyzer("case", caseBlockAnalyzer)
@@ -102,6 +108,11 @@ func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Cont
 
 func captureTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
 	varname := strings.TrimSpace(node.Args)
+	// Strip surrounding quotes: {% capture 'var' %} and {% capture "var" %} are both valid.
+	if len(varname) >= 2 && ((varname[0] == '\'' && varname[len(varname)-1] == '\'') ||
+		(varname[0] == '"' && varname[len(varname)-1] == '"')) {
+		varname = varname[1 : len(varname)-1]
+	}
 	if varname == "" || strings.ContainsAny(varname, " \t") {
 		return nil, fmt.Errorf("syntax error: capture tag requires exactly one variable name, got %q", node.Args)
 	}

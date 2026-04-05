@@ -192,7 +192,7 @@ func TestEngine_ParseTemplateAndCache(t *testing.T) {
 type MockTemplateStore struct{}
 
 func (tl *MockTemplateStore) ReadTemplate(filename string) ([]byte, error) {
-	template := []byte(fmt.Sprintf("Message Text: {{ message.Text }} from: %v.", filename))
+	template := fmt.Appendf(nil, "Message Text: {{ message.Text }} from: %v.", filename)
 	return template, nil
 }
 

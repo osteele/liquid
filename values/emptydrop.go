@@ -5,6 +5,17 @@ import (
 	"strings"
 )
 
+// LiquidSentinel is implemented exclusively by EmptyDrop and BlankDrop.
+// Tagging these special singletons with this interface lets the expression
+// evaluator preserve their identity through the evaluation pipeline (instead
+// of discarding it via .Interface()), enabling correct case/when comparisons.
+//
+// The unexported method prevents external packages from accidentally
+// implementing this interface (sealed interface pattern).
+type LiquidSentinel interface {
+	liquidSentinel()
+}
+
 // emptyDropValue is the singleton type for the `empty` literal in Liquid.
 // A value compares equal to empty if it is an empty string, empty array, or
 // empty map (but not nil or false).
@@ -14,6 +25,9 @@ type emptyDropValue struct{}
 // A value compares equal to blank if it is nil, false, an empty or
 // whitespace-only string, an empty array, or an empty map.
 type blankDropValue struct{}
+
+func (e *emptyDropValue) liquidSentinel() {}
+func (b *blankDropValue) liquidSentinel() {}
 
 // EmptyDrop is the singleton for the `empty` keyword.
 // After PRE-A lands, the scanner will resolve the `empty` literal directly to

@@ -3,6 +3,7 @@ package liquid
 import (
 	"reflect"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/osteele/liquid/render"
@@ -517,14 +518,14 @@ func segmentsEqual(a, b [][]string) bool {
 		return false
 	}
 	key := func(s []string) string {
-		result := ""
+		var result strings.Builder
 		for i, seg := range s {
 			if i > 0 {
-				result += "\x00"
+				result.WriteString("\x00")
 			}
-			result += seg
+			result.WriteString(seg)
 		}
-		return result
+		return result.String()
 	}
 	aKeys := make([]string, len(a))
 	bKeys := make([]string, len(b))

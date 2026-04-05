@@ -3,6 +3,7 @@ package liquid
 import (
 	"strings"
 
+	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 )
@@ -48,6 +49,27 @@ type StaticAnalysis struct {
 
 	// Filters is reserved for future use; currently always nil.
 	Filters []string
+}
+
+// Expression is a compiled Liquid expression that can evaluate variable references.
+// It is used when implementing custom tag/block analyzers via RegisterTagAnalyzer
+// and RegisterBlockAnalyzer — pass it in NodeAnalysis.Arguments so the static
+// analysis engine can walk its variable references.
+type Expression = expressions.Expression
+
+// ParseExpression parses a Liquid expression string into an Expression that can be
+// used with RegisterTagAnalyzer / RegisterBlockAnalyzer. Returns an error if the
+// expression contains a syntax error.
+//
+// Example:
+//
+//	e.RegisterTagAnalyzer("my_tag", func(args string) render.NodeAnalysis {
+//	    expr, err := ParseExpression(args)
+//	    if err != nil { return render.NodeAnalysis{} }
+//	    return render.NodeAnalysis{Arguments: []Expression{expr}}
+//	})
+func ParseExpression(source string) (Expression, error) {
+	return expressions.Parse(source)
 }
 
 // ── Engine methods ────────────────────────────────────────────────────────────

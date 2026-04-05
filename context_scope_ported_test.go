@@ -9,6 +9,7 @@ package liquid_test
 import (
 	"fmt"
 	"io"
+	"maps"
 	"testing"
 
 	"github.com/osteele/liquid"
@@ -72,6 +73,13 @@ var scopeTests = []struct {
 	{`{{ products["tags"][0] }}`, "deepsnow"},
 	{`{{ products["tags"].first }}`, "deepsnow"},
 
+	// full bracket chain access on product
+	// Ruby: test_access_hashes_with_hash_notation (extended)
+	{`{{ product["variants"][0]["title"] }}`, "draft151cm"},
+	{`{{ product["variants"][1]["title"] }}`, "element151cm"},
+	{`{{ product["variants"].first["title"] }}`, "draft151cm"},
+	{`{{ product["variants"].last["title"] }}`, "element151cm"},
+
 	// first in middle of call chain
 	// Ruby: test_first_can_appear_in_middle_of_callchain
 	{`{{ product.variants[0].title }}`, "draft151cm"},
@@ -95,6 +103,62 @@ var scopeTests = []struct {
 	// Ruby: test_strings
 	{`{{ "hello!" }}`, "hello!"},
 	{`{{ 'hello!' }}`, "hello!"},
+
+	// Hash-to-array transition: hash whose value is a sub-array
+	// Ruby: test_hash_to_array_transition
+	{`{{ colors.Blue[0] }}`, "003366"},
+	{`{{ colors.Red[3] }}`, "FF9999"},
+
+	// Array size (#length_query for array)
+	// Ruby: test_length_query
+	{`{% if seq4.size == 4 %}true{% endif %}`, "true"},
+
+	// Map size (#length_query for hash)
+	{`{% if map4.size == 4 %}true{% endif %}`, "true"},
+
+	// Explicit 'size' key in a hash overrides the computed size
+	// Ruby: test_length_query (third case)
+	{`{% if explicit_size.size == 1000 %}true{% endif %}`, "true"},
+
+	// Hyphenated variable name
+	// Ruby: test_hyphenated_variable
+	{`{{ oh-my }}`, "godz"},
+
+	// Hash-notation is array-index for arrays, but NOT for bracket-string lookup
+	// Array: array.first works, array["first"] is nil
+	// Ruby: test_hash_notation_only_for_hash_access
+	{`{{ numbers_arr.first }}`, "1"},
+	{`{% if numbers_arr["first"] == nil %}pass{% endif %}`, "pass"},
+	{`{{ hash_first["first"] }}`, "Hello"},
+
+	// Dynamic property access via variable key
+	// Ruby: test_access_hashes_with_hash_access_variables
+	{`{{ products[var].first }}`, "deepsnow"},
+	{`{{ products[nested.var].last }}`, "freestyle"},
+
+	// String size (JS: should return string length)
+	// LiquidJS: ctx.get(['foo', 'size']) → 3
+	{`{{ str.size }}`, "5"},
+
+	// Array size via .size on named variable
+	{`{{ test.size }}`, "2"},
+}
+
+// scopeTestBindingsExtra holds the extra bindings needed by the new scope tests.
+var scopeTestBindingsExtra = map[string]any{
+	"colors": map[string]any{
+		"Blue": []string{"003366", "336699", "6699CC", "99CCFF"},
+		"Red":  []string{"660000", "993333", "CC6666", "FF9999"},
+	},
+	"seq4":          []int{1, 2, 3, 4},
+	"map4":          map[string]int{"a": 1, "b": 2, "c": 3, "d": 4},
+	"explicit_size": map[string]any{"a": 1, "size": 1000},
+	"oh-my":         "godz",
+	"numbers_arr":   []int{1, 2, 3, 4, 5},
+	"hash_first":    map[string]any{"first": "Hello"},
+	"var":           "tags",
+	// NOTE: "nested" is intentionally omitted here; the base scopeTestBindings already
+	// defines "nested" with a "test" key; we add the "var" key to the merged map in the test.
 }
 
 var scopeTestBindings = map[string]any{
@@ -107,6 +171,8 @@ var scopeTestBindings = map[string]any{
 	"numbers":    []int{1, 2, 3, 4, 5},
 	"nested": map[string]any{
 		"test": []int{1, 2, 3, 4, 5},
+		// "var" is needed for: {{ products[nested.var].last }}
+		"var": "tags",
 	},
 	"arr_of_obj": []map[string]any{
 		{"test": "worked"},
@@ -127,12 +193,22 @@ var scopeTestBindings = map[string]any{
 	"expect_float": 100.00,
 }
 
+// scopeTestAllBindings merges scopeTestBindings with scopeTestBindingsExtra.
+// The merged map is used by TestScopeStack_GetSet.
+func scopeTestAllBindings() map[string]any {
+	merged := make(map[string]any, len(scopeTestBindings)+len(scopeTestBindingsExtra))
+	maps.Copy(merged, scopeTestBindings)
+	maps.Copy(merged, scopeTestBindingsExtra)
+	return merged
+}
+
 func TestScopeStack_GetSet(t *testing.T) {
 	engine := liquid.NewEngine()
+	bindings := scopeTestAllBindings()
 
 	for i, test := range scopeTests {
 		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
-			out, err := engine.ParseAndRenderString(test.in, scopeTestBindings)
+			out, err := engine.ParseAndRenderString(test.in, bindings)
 			require.NoErrorf(t, err, "template: %s", test.in)
 			require.Equalf(t, test.expected, out, "template: %s", test.in)
 		})

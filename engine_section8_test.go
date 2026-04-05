@@ -5,14 +5,17 @@ package liquid
 //   - LiquidJS: test/integration/liquid/strict.spec.ts
 //   - LiquidJS: test/integration/liquid/liquid.spec.ts (globals, strictVariables render option)
 //   - Ruby Liquid: test/integration/template_test.rb (strict_variables, strict_filters, exception_renderer per render)
+//   - Ruby Liquid: template.rb apply_options_to_context (global_filter: per render)
 
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/osteele/liquid/render"
 	"github.com/stretchr/testify/require"
 )
 
@@ -625,13 +628,338 @@ func TestEngine_EnableCache_concurrencySafe(t *testing.T) {
 
 	var wg sync.WaitGroup
 	for range 20 {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			out, err := engine.ParseAndRenderString(`{{ x }}`, Bindings{"x": "ok"})
 			require.NoError(t, err)
 			require.Equal(t, "ok", out)
-		}()
+		})
 	}
 	wg.Wait()
+}
+
+// ── WithGlobalFilter (per-render global filter) ───────────────────────────────
+
+// Source: Ruby template.rb apply_options_to_context — global_filter: per render
+// WithGlobalFilter transforms every {{ expr }} output in this render call only.
+func TestWithGlobalFilter_transforms_output(t *testing.T) {
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{ name }}`, Bindings{"name": "alice"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return "[" + s + "]", nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	require.Equal(t, "[alice]", out)
+}
+
+// WithGlobalFilter applies to every output node in the template
+func TestWithGlobalFilter_applies_to_all_outputs(t *testing.T) {
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{ a }} {{ b }}`, Bindings{"a": "foo", "b": "bar"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return s + "!", nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	require.Equal(t, "foo! bar!", out)
+}
+
+// WithGlobalFilter: filter does not affect literal text, only {{ }} nodes
+func TestWithGlobalFilter_only_affects_expression_nodes(t *testing.T) {
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`hello {{ name }} world`, Bindings{"name": "alice"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return "[" + s + "]", nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	// "hello" and "world" are literal text and are unchanged; only "alice" goes through filter
+	require.Equal(t, "hello [alice] world", out)
+}
+
+// WithGlobalFilter: propagates errors from the filter function
+func TestWithGlobalFilter_propagates_filter_error(t *testing.T) {
+	engine := NewEngine()
+	_, err := engine.ParseAndRenderString(`{{ name }}`, Bindings{"name": "alice"},
+		WithGlobalFilter(func(v any) (any, error) {
+			return nil, fmt.Errorf("global filter error")
+		}),
+	)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "global filter error")
+}
+
+// WithGlobalFilter: per-render option overrides engine-level SetGlobalFilter
+// Source: Ruby global_filter: per-render option takes precedence
+func TestWithGlobalFilter_overrides_engine_global_filter(t *testing.T) {
+	engine := NewEngine()
+	engine.SetGlobalFilter(func(v any) (any, error) {
+		if s, ok := v.(string); ok {
+			return "engine:" + s, nil
+		}
+		return v, nil
+	})
+
+	// Per-render filter overrides engine-level filter
+	out, err := engine.ParseAndRenderString(`{{ x }}`, Bindings{"x": "hello"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return "render:" + s, nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	require.Equal(t, "render:hello", out)
+}
+
+// WithGlobalFilter: does not persist across calls on the same template
+func TestWithGlobalFilter_does_not_persist(t *testing.T) {
+	engine := NewEngine()
+	tpl, err := engine.ParseString(`{{ x }}`)
+	require.NoError(t, err)
+
+	// First call with global filter
+	out1, err1 := tpl.RenderString(Bindings{"x": "hello"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return "[" + s + "]", nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err1)
+	require.Equal(t, "[hello]", out1)
+
+	// Second call without global filter — no transformation
+	out2, err2 := tpl.RenderString(Bindings{"x": "hello"})
+	require.NoError(t, err2)
+	require.Equal(t, "hello", out2)
+}
+
+// WithGlobalFilter: nil values pass through unchanged
+func TestWithGlobalFilter_nil_value_passthrough(t *testing.T) {
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{ undefined_var }}`, Bindings{},
+		WithGlobalFilter(func(v any) (any, error) {
+			if v == nil {
+				return nil, nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	require.Equal(t, "", out) // nil renders as empty string
+}
+
+// WithGlobalFilter: works with filters in the pipeline (global filter runs after per-node filters)
+func TestWithGlobalFilter_applied_after_per_node_filters(t *testing.T) {
+	engine := NewEngine()
+	out, err := engine.ParseAndRenderString(`{{ name | upcase }}`, Bindings{"name": "alice"},
+		WithGlobalFilter(func(v any) (any, error) {
+			if s, ok := v.(string); ok {
+				return "[" + s + "]", nil
+			}
+			return v, nil
+		}),
+	)
+	require.NoError(t, err)
+	// upcase runs first (ALICE), then global filter wraps it: [ALICE]
+	require.Equal(t, "[ALICE]", out)
+}
+
+// ── NewBasicEngine ─────────────────────────────────────────────────────────────
+
+// NewBasicEngine creates an engine without standard filters or tags.
+// Custom tags/filters must be registered explicitly.
+func TestNewBasicEngine_no_standard_filters(t *testing.T) {
+	engine := NewBasicEngine()
+	// Standard filters like upcase should not be available
+	_, err := engine.ParseAndRenderString(`{{ "hello" | upcase }}`, Bindings{})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "undefined filter")
+}
+
+// NewBasicEngine: standard variable lookup still works
+func TestNewBasicEngine_variable_lookup_works(t *testing.T) {
+	engine := NewBasicEngine()
+	out, err := engine.ParseAndRenderString(`{{ x }}`, Bindings{"x": "hello"})
+	require.NoError(t, err)
+	require.Equal(t, "hello", out)
+}
+
+// NewBasicEngine: standard tags like if/for are NOT available
+func TestNewBasicEngine_no_standard_tags(t *testing.T) {
+	engine := NewBasicEngine()
+	_, err := engine.ParseString(`{% if true %}yes{% endif %}`)
+	require.Error(t, err)
+}
+
+// NewBasicEngine: custom filters can be registered
+func TestNewBasicEngine_custom_filter_works(t *testing.T) {
+	engine := NewBasicEngine()
+	engine.RegisterFilter("shout", func(v string) string { return v + "!" })
+
+	out, err := engine.ParseAndRenderString(`{{ x | shout }}`, Bindings{"x": "hello"})
+	require.NoError(t, err)
+	require.Equal(t, "hello!", out)
+}
+
+// ── EnableJekyllExtensions ────────────────────────────────────────────────────
+
+// EnableJekyllExtensions: dot notation in assign tag
+func TestEngine_EnableJekyllExtensions_dot_assign(t *testing.T) {
+	engine := NewEngine()
+	engine.EnableJekyllExtensions()
+
+	out, err := engine.ParseAndRenderString(
+		`{% assign page.title = "Hello" %}{{ page.title }}`,
+		Bindings{"page": map[string]any{}},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "Hello", out)
+}
+
+// Without EnableJekyllExtensions, dot notation in assign produces a parse error
+func TestEngine_WithoutJekyllExtensions_dot_assign_errors(t *testing.T) {
+	engine := NewEngine()
+	// Without Jekyll extensions, `{% assign page.title = ... %}` is invalid syntax
+	_, err := engine.ParseString(`{% assign page.title = "Hello" %}`)
+	require.Error(t, err)
+}
+
+// EnableJekyllExtensions: standard Liquid assign still works
+func TestEngine_EnableJekyllExtensions_standard_assign_still_works(t *testing.T) {
+	engine := NewEngine()
+	engine.EnableJekyllExtensions()
+
+	out, err := engine.ParseAndRenderString(
+		`{% assign title = "World" %}{{ title }}`,
+		Bindings{},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "World", out)
+}
+
+// ── RegisterTag / RegisterBlock / RegisterFilter (combined) ───────────────────
+
+// RegisterTag: custom tag renders correctly
+func TestEngine_RegisterTag_custom_tag(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterTag("shout", func(ctx render.Context) (string, error) {
+		return "SHOUT!", nil
+	})
+
+	out, err := engine.ParseAndRenderString(`{% shout %}`, Bindings{})
+	require.NoError(t, err)
+	require.Equal(t, "SHOUT!", out)
+}
+
+// RegisterBlock: custom block tag renders correctly
+func TestEngine_RegisterBlock_custom_block(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterBlock("wrap", func(ctx render.Context) (string, error) {
+		inner, err := ctx.InnerString()
+		if err != nil {
+			return "", err
+		}
+		return "[" + inner + "]", nil
+	})
+
+	out, err := engine.ParseAndRenderString(`{% wrap %}hello{% endwrap %}`, Bindings{})
+	require.NoError(t, err)
+	require.Equal(t, "[hello]", out)
+}
+
+// UnregisterTag: makes a previously registered tag produce an error
+func TestEngine_UnregisterTag_makes_tag_unknown(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterTag("mytag", func(ctx render.Context) (string, error) { return "ok", nil })
+
+	// Parse once to freeze engine
+	_, err := engine.ParseString(`{{ x }}`)
+	require.NoError(t, err)
+
+	// Unregister the tag
+	engine.UnregisterTag("mytag")
+
+	// Now parsing or rendering with mytag should fail
+	_, err = engine.ParseString(`{% mytag %}`)
+	require.Error(t, err)
+}
+
+// UnregisterTag: idempotent — unregistering an unknown tag is a no-op
+func TestEngine_UnregisterTag_idempotent(t *testing.T) {
+	engine := NewEngine()
+	require.NotPanics(t, func() {
+		engine.UnregisterTag("nonexistent_tag")
+	})
+}
+
+// ── RegisterTemplateStore ──────────────────────────────────────────────────────
+
+// RegisterTemplateStore: includes use the store to load templates
+func TestEngine_RegisterTemplateStore_basic(t *testing.T) {
+	engine := NewEngine()
+	engine.RegisterTemplateStore(&memStore{templates: map[string]string{
+		"greeting.liquid": "Hello, {{ name }}!",
+	}})
+
+	out, err := engine.ParseAndRenderString(`{% include "greeting.liquid" %}`, Bindings{"name": "World"})
+	require.NoError(t, err)
+	require.Equal(t, "Hello, World!", out)
+}
+
+// memStore is a simple in-memory TemplateStore for testing.
+type memStore struct {
+	templates map[string]string
+}
+
+func (s *memStore) ReadTemplate(name string) ([]byte, error) {
+	if content, ok := s.templates[name]; ok {
+		return []byte(content), nil
+	}
+	return nil, fmt.Errorf("template not found: %s", name)
+}
+
+// ── Custom Delimiters ────────────────────────────────────────────────────────
+
+// Delims: sets custom tag and output delimiters
+func TestEngine_Delims_custom_delimiters(t *testing.T) {
+	engine := NewEngine()
+	engine.Delims("[[", "]]", "[%", "%]")
+
+	out, err := engine.ParseAndRenderString(`[[ x ]] [% if true %]yes[% endif %]`, Bindings{"x": "hello"})
+	require.NoError(t, err)
+	require.Equal(t, "hello yes", out)
+}
+
+// Delims: standard delimiters no longer recognized
+func TestEngine_Delims_standard_delimiters_no_longer_work(t *testing.T) {
+	engine := NewEngine()
+	engine.Delims("<%=", "%>", "<%", "%>")
+
+	// Standard Liquid delimiters should be treated as literal text
+	out, err := engine.ParseAndRenderString(`{{ x }}`, Bindings{"x": "hello"})
+	require.NoError(t, err)
+	require.Equal(t, "{{ x }}", out)
+}
+
+// Delims: empty string restores the default for that position
+func TestEngine_Delims_empty_string_uses_default(t *testing.T) {
+	engine := NewEngine()
+	engine.Delims("", "", "", "") // all defaults
+
+	out, err := engine.ParseAndRenderString(`{{ x }}`, Bindings{"x": "hello"})
+	require.NoError(t, err)
+	require.Equal(t, "hello", out)
 }

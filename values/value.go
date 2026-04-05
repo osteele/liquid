@@ -53,6 +53,8 @@ func ValueOf(value any) Value { //nolint: gocyclo
 		return &dropWrapper{d: v}
 	case yaml.MapSlice:
 		return mapSliceValue{slice: v}
+	case Range:
+		return rangeValue{wrapperValue{value}}
 	case Value:
 		return v
 	}

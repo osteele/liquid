@@ -135,7 +135,9 @@ expr:
 | EMPTY { $$ = func(_ Context) values.Value { return values.EmptyDrop } }
 | BLANK { $$ = func(_ Context) values.Value { return values.BlankDrop } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
+| expr '.' IDENTIFIER { $$ = makeObjectPropertyExpr($1, $3) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
+| '[' expr ']' { $$ = makeVariableIndirectionExpr($2) }
 | '(' expr DOTDOT expr ')' { $$ = makeRangeExpr($2, $4) }
 | '(' cond ')' { $$ = $2 }
 ;
@@ -148,6 +150,7 @@ filtered:
 
 filter_params:
   expr { $$ = []valueFn{$1} }
+| KEYWORD expr { $$ = []valueFn{makeNamedArgFn($1, $2)} }
 | filter_params ',' expr
   { $$ = append($1, $3) }
 | filter_params ',' KEYWORD expr

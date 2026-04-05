@@ -81,7 +81,13 @@ func (e *expression) Evaluate(ctx Context) (out any, err error) {
 		}
 	}()
 
-	return e.evaluator(ctx).Interface(), nil
+	v := e.evaluator(ctx)
+	// Preserve EmptyDrop/BlankDrop sentinel identity through the evaluation
+	// pipeline so that comparisons like case/when empty or case/when blank work.
+	if _, ok := v.(values.LiquidSentinel); ok {
+		return v, nil
+	}
+	return v.Interface(), nil
 }
 
 // rethrownError is for use in a re-thrown error from panic recovery.

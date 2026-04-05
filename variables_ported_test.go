@@ -2,13 +2,16 @@ package liquid_test
 
 // Ported variable-access tests from:
 //   - Ruby Liquid: test/integration/variable_test.rb
-//   - LiquidJS:    test/e2e/issues.spec.ts  (issue #259, #486)
+//   - LiquidJS:    test/e2e/issues.spec.ts  (issue #259, #486, #643, #655)
 //   - LiquidJS:    test/integration/liquid/liquid.spec.ts
 //
 // Covers checklist section 5 — Acesso a Variáveis:
 //   5a. obj.prop, obj[key], array[0]
 //   5b. array[-1] — negative indexing
 //   5c. array.first, array.last, obj.size
+//   5d. {{ [key] }}  — dynamic variable lookup (Ruby)
+//   5e. {{ test . test }} — dot with spaces (Ruby)
+//   5f. {{ ["Key"].sub }} — top-level bracket + dot (LiquidJS #643)
 
 import (
 	"testing"
@@ -341,4 +344,102 @@ func TestVariables_FirstLastEquivalence(t *testing.T) {
 	last1, err := eng.ParseAndRenderString(`{{ arr[2] }}`, bindings)
 	require.NoError(t, err)
 	require.Equal(t, last0, last1)
+}
+
+// ── 5d. {{ [key] }} — dynamic variable lookup (Ruby) ─────────────────────────
+
+// Ruby: test_dynamic_find_var / test_raw_value_variable
+func TestVariables_DynamicFindVar(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{{ [key] }}`, map[string]any{"key": "foo", "foo": "bar"})
+	require.NoError(t, err)
+	require.Equal(t, "bar", out)
+}
+
+// Ruby: test_dynamic_find_var_with_drop — nested indirection
+func TestVariables_DynamicFindVarNested(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	// {{ [list[settings.zero]] }} — uses the result of list[0] as the var name
+	out, err := eng.ParseAndRenderString(`{{ [list[0]] }}`, map[string]any{
+		"list": []string{"foo"},
+		"foo":  "bar",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "bar", out)
+}
+
+// Ruby: test_double_nested_variable_lookup — bracket chain
+func TestVariables_DoubleNestedLookup(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	// {{ list[list[0]]["foo"] }} — uses result of list[0] (=1) as index into list
+	out, err := eng.ParseAndRenderString(`{{ list[list[0]]["foo"] }}`, map[string]any{
+		"list": []any{1, map[string]any{"foo": "bar"}},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "bar", out)
+}
+
+// ── 5e. dot with spaces (Ruby) ────────────────────────────────────────────────
+
+// Ruby: test_hash_scoping — dot with surrounding whitespace
+func TestVariables_DotWithSpaces(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	// {{ test . test }} — spaces around the dot
+	out, err := eng.ParseAndRenderString(`{{ test . test }}`, map[string]any{
+		"test": map[string]any{"test": "worked"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "worked", out)
+}
+
+// ── 5f. Top-level bracket + dot (LiquidJS #643) ───────────────────────────────
+
+// LiquidJS issue #643 — {{ ["Key String with Spaces"].subpropertyKey }}
+func TestVariables_BracketRootPlusDot(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{{ ["Key String with Spaces"].subpropertyKey }}`, map[string]any{
+		"Key String with Spaces": map[string]any{"subpropertyKey": "FOO"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "FOO", out)
+}
+
+// LiquidJS issue #655 — Unicode variable names
+func TestVariables_UnicodeVariableName(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{{ÜLKE}}`, map[string]any{"ÜLKE": "Türkiye"})
+	require.NoError(t, err)
+	require.Equal(t, "Türkiye", out)
+}
+
+// Ruby: using blank/empty as variable names
+func TestVariables_BlankAsVariableName(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{% assign foo = blank %}{{ foo }}`, nil)
+	require.NoError(t, err)
+	require.Equal(t, "", out)
+}
+
+func TestVariables_EmptyAsVariableName(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{% assign foo = empty %}{{ foo }}`, nil)
+	require.NoError(t, err)
+	require.Equal(t, "", out)
+}
+
+// Ruby: nested array like [[nil]] should render as empty string
+func TestVariables_NestedArrayRenders(t *testing.T) {
+	eng := liquid.NewEngine()
+
+	out, err := eng.ParseAndRenderString(`{{ foo }}`, map[string]any{"foo": [][]any{{nil}}})
+	require.NoError(t, err)
+	require.Equal(t, "", out)
 }

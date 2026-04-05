@@ -9,6 +9,7 @@ package liquid
 
 import (
 	"context"
+	"maps"
 
 	"github.com/osteele/liquid/render"
 	"github.com/osteele/liquid/tags"
@@ -75,12 +76,8 @@ func WithGlobals(globals map[string]any) RenderOption {
 			return
 		}
 		merged := make(map[string]any, len(c.Globals)+len(globals))
-		for k, v := range c.Globals {
-			merged[k] = v
-		}
-		for k, v := range globals {
-			merged[k] = v
-		}
+		maps.Copy(merged, c.Globals)
+		maps.Copy(merged, globals)
 		c.Globals = merged
 	}
 }
@@ -123,5 +120,25 @@ func WithContext(ctx context.Context) RenderOption {
 func WithSizeLimit(n int64) RenderOption {
 	return func(c *render.Config) {
 		c.SizeLimit = n
+	}
+}
+
+// WithGlobalFilter registers a function that is applied to the evaluated value of
+// every {{ expression }} for this render call, overriding any engine-level global
+// filter set via Engine.SetGlobalFilter.
+//
+// This mirrors Ruby Liquid's global_filter: render option.
+//
+// Example:
+//
+//	out, err := tpl.RenderString(vars, WithGlobalFilter(func(v any) (any, error) {
+//	    if s, ok := v.(string); ok {
+//	        return strings.ToUpper(s), nil
+//	    }
+//	    return v, nil
+//	}))
+func WithGlobalFilter(fn func(any) (any, error)) RenderOption {
+	return func(c *render.Config) {
+		c.SetGlobalFilter(fn)
 	}
 }

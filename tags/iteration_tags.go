@@ -117,6 +117,10 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 
 		iter := makeIterator(val)
 		if iter == nil {
+			// Collection is nil or non-iterable: render else branch if present.
+			if len(node.Clauses) == 1 && node.Clauses[0].Name == "else" {
+				return ctx.RenderBlock(w, node.Clauses[0])
+			}
 			return nil
 		}
 
@@ -132,12 +136,9 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			// Resume from the position where the previous loop left off.
 			continueOffset, _ := ctx.Get(continueKey).(int)
 
-			// Apply reversed first (same order as applyLoopModifiers).
-			if stmt.Loop.Reversed {
-				iter = reverseWrapper{iter}
-			}
-
-			// Apply the continuation offset.
+			// Ruby behavior: apply continue-offset first, then limit, then reversed.
+			// The continue offset is always an absolute index into the original
+			// (non-reversed) collection.
 			if continueOffset >= iter.Len() {
 				ctx.Set(continueKey, continueOffset) // cursor stays at end
 				return nil                           // collection exhausted
@@ -164,12 +165,14 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 					iter = limitWrapper{iter, limit}
 				}
 			}
-		} else {
-			// Normal path: apply modifiers and track the starting offset.
+
+			// Apply reversed last (Ruby behavior: offset → limit → reversed).
 			if stmt.Loop.Reversed {
 				iter = reverseWrapper{iter}
 			}
-
+		} else {
+			// Normal path: Ruby behavior is always offset → limit → reversed,
+			// regardless of the order the modifiers appear in the template.
 			if stmt.Loop.Offset != nil {
 				ov, err := ctx.Evaluate(stmt.Loop.Offset)
 				if err != nil {
@@ -201,6 +204,11 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 				if limit >= 0 {
 					iter = limitWrapper{iter, limit}
 				}
+			}
+
+			// Apply reversed last (Ruby behavior: offset → limit → reversed).
+			if stmt.Loop.Reversed {
+				iter = reverseWrapper{iter}
 			}
 		}
 

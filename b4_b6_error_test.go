@@ -155,7 +155,7 @@ func TestB4_RenderError_Prefix(t *testing.T) {
 	}
 
 	// Register a filter that always fails.
-	eng.RegisterFilter("bad", func(v interface{}) (interface{}, error) {
+	eng.RegisterFilter("bad", func(v any) (any, error) {
 		return nil, render.NewArgumentError("always fails")
 	})
 

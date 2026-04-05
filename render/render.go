@@ -220,6 +220,10 @@ func writeObject(w io.Writer, value any) error {
 	if value == nil {
 		return nil
 	}
+	// EmptyDrop and BlankDrop always render as an empty string.
+	if _, ok := value.(values.LiquidSentinel); ok {
+		return nil
+	}
 
 	switch value := value.(type) {
 	case string:

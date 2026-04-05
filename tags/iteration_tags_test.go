@@ -37,17 +37,15 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array offset: offset %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array offset: loopmods.offset %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array offset: loopmods["offset"] %}{{ a }}.{% endfor %}`, "second.third."},
-	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
+	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "first."},
 	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array limit: 0 %}{{ a }}.{% else %}ELSE{% endfor %}`, "ELSE"},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 10 %}{{ a }}.{% endfor %}`, ""},
-	// Combining multiple modifiers (issue #6)
-	// Note: In this implementation, modifiers are always applied in the order: reversed -> offset -> limit
-	// The order they appear in the template syntax does not matter.
-	// This differs from Ruby Shopify Liquid where syntax order matters and reversed only works when placed first.
-	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
-	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "second.first."}, // same result - syntax order doesn't matter
+	// Combining multiple modifiers — Ruby behavior: offset → limit → reversed (always, regardless of syntax order).
+	// This matches Ruby Shopify Liquid: offset/limit slice first, reversed applied last.
+	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "third.second."},
+	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "third.second."}, // same result - syntax order doesn't matter
 	{`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
 	{`{% for a in array offset:1 limit:1 %}{{ a }}.{% endfor %}`, "second."}, // same result
 	{`{% for a in array reversed limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
@@ -225,7 +223,7 @@ var forloopMetaTests = []struct{ in, expected string }{
 	{`{% for a in array %}{{ forloop.name }}{% endfor %}`, "a-arraya-arraya-array"},
 	{`{% for item in array %}{{ forloop.name }}.{% endfor %}`, "item-array.item-array.item-array."},
 	// forloop.parentloop is nil in a non-nested loop (renders as empty)
-	{`{% for a in array %}{{ forloop.parentloop }}.{% endfor %}`, "...", /* first iteration */},
+	{`{% for a in array %}{{ forloop.parentloop }}.{% endfor %}`, "..." /* first iteration */},
 	// forloop.parentloop is set in nested loops
 	{
 		`{% for i in array %}{% for j in array %}{{ forloop.parentloop.index }},{% endfor %}{% endfor %}`,

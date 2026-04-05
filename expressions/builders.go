@@ -52,3 +52,17 @@ func makeNamedArgFn(name string, valFn valueFn) valueFn {
 		return values.ValueOf(NamedArg{Name: name, Value: valFn(ctx).Interface()})
 	}
 }
+
+// makeVariableIndirectionExpr implements the Ruby `{{ [varname] }}` syntax:
+// it evaluates the inner expression to a string and uses that string as the
+// variable name to look up in the context.
+func makeVariableIndirectionExpr(keyFn func(Context) values.Value) func(Context) values.Value {
+	return func(ctx Context) values.Value {
+		key := keyFn(ctx)
+		name, ok := key.Interface().(string)
+		if !ok {
+			return values.ValueOf(nil)
+		}
+		return values.ValueOf(ctx.Get(name))
+	}
+}

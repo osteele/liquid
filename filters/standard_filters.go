@@ -193,20 +193,45 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("reverse", reverseFilter)
 	fd.AddFilter("sort", sortFilter)
 	// https://shopify.github.io/liquid/ does not demonstrate first and last as filters,
-	// but https://help.shopify.com/themes/liquid/filters/array-filters does
-	fd.AddFilter("first", func(a []any) any {
-		if len(a) == 0 {
+	// but https://help.shopify.com/themes/liquid/filters/array-filters does.
+	// Ruby and JS also support strings: first/last returns the first/last Unicode character.
+	fd.AddFilter("first", func(v any) any {
+		if s, ok := v.(string); ok {
+			if s == "" {
+				return ""
+			}
+			r, _ := utf8.DecodeRuneInString(s)
+			return string(r)
+		}
+		var slice []any
+		a, err := values.Convert(v, reflect.TypeOf(slice))
+		if err != nil {
 			return nil
 		}
-
-		return a[0]
+		arr, _ := a.([]any)
+		if len(arr) == 0 {
+			return nil
+		}
+		return arr[0]
 	})
-	fd.AddFilter("last", func(a []any) any {
-		if len(a) == 0 {
+	fd.AddFilter("last", func(v any) any {
+		if s, ok := v.(string); ok {
+			if s == "" {
+				return ""
+			}
+			runes := []rune(s)
+			return string(runes[len(runes)-1])
+		}
+		var slice []any
+		a, err := values.Convert(v, reflect.TypeOf(slice))
+		if err != nil {
 			return nil
 		}
-
-		return a[len(a)-1]
+		arr, _ := a.([]any)
+		if len(arr) == 0 {
+			return nil
+		}
+		return arr[len(arr)-1]
 	})
 	fd.AddFilter("uniq", func(a []any, property func(string) string) []any {
 		prop := property("")
@@ -247,7 +272,14 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddContextFilter("has_exp", hasExpFilter)
 
 	// date filters
-	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
+	fd.AddFilter("date", func(v any, format func(string) string) (any, error) {
+		if v == nil {
+			return nil, nil
+		}
+		t, ok := parseToTime(v)
+		if !ok {
+			return "", nil
+		}
 		f := format("%a, %b %d, %y")
 		return tuesday.Strftime(f, t)
 	})
@@ -282,11 +314,103 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("floor", func(a float64) int {
 		return int(math.Floor(a))
 	})
-	fd.AddFilter("modulo", func(a, b float64) (float64, error) {
-		if b == 0 {
-			return 0, &ZeroDivisionError{}
+	fd.AddFilter("modulo", func(rawA, b any) (any, error) {
+		// modulo semantics (Ruby/Shopify Liquid compatible):
+		//   • Both operands are integer types → floored integer modulo.
+		//   • Either operand is a float or string → floored float modulo.
+		// Ruby's % operator uses floor modulo (result has same sign as divisor).
+		// Go's % operator and math.Mod use truncated modulo (same sign as dividend),
+		// so we adjust the result when the signs differ.
+		modInt := func(a, b int64) (int64, error) {
+			if b == 0 {
+				return 0, &ZeroDivisionError{}
+			}
+			result := a % b
+			// floor modulo: adjust sign to match divisor
+			if result != 0 && (result > 0) != (b > 0) {
+				result += b
+			}
+			return result, nil
 		}
-		return math.Mod(a, b), nil
+		modFloat := func(a, b float64) (float64, error) {
+			if b == 0 {
+				return 0, &ZeroDivisionError{}
+			}
+			result := math.Mod(a, b)
+			// floor modulo: adjust sign to match divisor
+			if result != 0 && math.Signbit(result) != math.Signbit(b) {
+				result += b
+			}
+			return result, nil
+		}
+
+		aIsInt := isIntegerType(rawA)
+
+		switch q := b.(type) {
+		case int:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case int8:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case int16:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case int32:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case int64:
+			if aIsInt {
+				return modInt(toInt64(rawA), q)
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uint8:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uint16:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uint32:
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uint: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uint64: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case uintptr: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			if aIsInt {
+				return modInt(toInt64(rawA), int64(q))
+			}
+			return modFloat(toFloat64(rawA), float64(q))
+		case float32:
+			return modFloat(toFloat64(rawA), float64(q))
+		case float64:
+			return modFloat(toFloat64(rawA), q)
+		case string:
+			return modFloat(toFloat64(rawA), toFloat64(q))
+		default:
+			return nil, fmt.Errorf("invalid modulus: '%v'", b)
+		}
 	})
 	fd.AddFilter("minus", func(a, b any) any {
 		// If both operands are integers, perform integer arithmetic
@@ -312,7 +436,15 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		// Otherwise, perform float arithmetic
 		return toFloat64(a) * toFloat64(b)
 	})
-	fd.AddFilter("divided_by", func(a float64, b any) (any, error) {
+	fd.AddFilter("divided_by", func(rawA, b any) (any, error) {
+		// divided_by semantics (Ruby/Shopify Liquid compatible):
+		//   • Both operands are integer types → floor (integer) division.
+		//   • Either operand is a float → float division.
+		// The filter parameter rawA is declared as `any` so that we can
+		// distinguish between integer literals (e.g. `2`) and float literals
+		// (e.g. `2.0`).  When registered as `func(float64, any)` the original
+		// int vs. float distinction was lost because the conversion always
+		// produced float64.
 		divInt := func(a, b int64) (int64, error) {
 			if b == 0 {
 				return 0, &ZeroDivisionError{}
@@ -328,33 +460,69 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 
 			return a / b, nil
 		}
+
+		aIsInt := isIntegerType(rawA)
+
 		switch q := b.(type) {
 		case int:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case int8:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case int16:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case int32:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case int64:
-			return divInt(int64(a), q)
+			if aIsInt {
+				return divInt(toInt64(rawA), q)
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uint8:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uint16:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uint32:
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uint: //nolint:gosec // G115: safe for values <= math.MaxInt64
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uint64: //nolint:gosec // G115: safe for values <= math.MaxInt64
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case uintptr: //nolint:gosec // G115: safe for values <= math.MaxInt64
-			return divInt(int64(a), int64(q))
+			if aIsInt {
+				return divInt(toInt64(rawA), int64(q))
+			}
+			return divFloat(toFloat64(rawA), float64(q))
 		case float32:
-			return divFloat(a, float64(q))
+			return divFloat(toFloat64(rawA), float64(q))
 		case float64:
-			return divFloat(a, q)
+			return divFloat(toFloat64(rawA), q)
 		default:
 			return nil, fmt.Errorf("invalid divisor: '%v'", b)
 		}
@@ -389,6 +557,10 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return html.EscapeString(html.UnescapeString(s))
 	})
 	fd.AddFilter("newline_to_br", func(s string) string {
+		// Normalize Windows line endings (\r\n) to Unix (\n) first,
+		// then convert all \n to <br />\n — matching Ruby/JS behaviour.
+		s = strings.ReplaceAll(s, "\r\n", "\n")
+		s = strings.ReplaceAll(s, "\r", "\n")
 		return strings.ReplaceAll(s, "\n", "<br />\n")
 	})
 	fd.AddFilter("prepend", func(s, prefix string) string {
@@ -415,6 +587,9 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 			// Work on runes, not chars
 			runes := []rune(s)
 			n := length(1)
+			if n < 0 {
+				n = 0
+			}
 			if start < 0 {
 				start = len(runes) + start
 				if start < 0 {
@@ -458,6 +633,9 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("split", splitFilter)
 	fd.AddFilter("strip_html", stripHTMLFilter)
 	fd.AddFilter("strip_newlines", func(s string) string {
+		// Remove \r\n (Windows), \r (old Mac), and \n (Unix) — matching Ruby/JS.
+		s = strings.ReplaceAll(s, "\r\n", "")
+		s = strings.ReplaceAll(s, "\r", "")
 		return strings.ReplaceAll(s, "\n", "")
 	})
 	fd.AddFilter("strip", func(s string, chars func(string) string) string {
@@ -484,22 +662,37 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("truncate", func(s string, length func(int) int, ellipsis func(string) string) string {
 		n := length(50)
 		el := ellipsis("...")
-		// runes aren't bytes; don't use slice
-		re := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
-
-		return re.ReplaceAllString(s, `$1`+el)
+		// Ruby/JS: if n <= len(el), return the full ellipsis (e.g. truncate: 0 => "...").
+		erunes := []rune(el)
+		if n <= len(erunes) {
+			return el
+		}
+		// If the string already fits within the limit, return it unchanged.
+		srunes := []rune(s)
+		if len(srunes) <= n {
+			return s
+		}
+		// Take first (n - len(el)) runes, then append ellipsis.
+		return string(srunes[:n-len(erunes)]) + el
 	})
 	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
 		el := ellipsis("...")
 		n := length(15)
-		re := regexp.MustCompile(fmt.Sprintf(`^(?:\s*\S+){%d}`, n))
-
-		m := re.FindString(s)
-		if m == "" {
+		// n < 1 behaves like n = 1 (Ruby/JS: truncate to 1 word)
+		if n < 1 {
+			n = 1
+		}
+		// Count words first: if the string has <= n words, return it unchanged.
+		// We cannot rely solely on the regex because Go's RE2 allows backtracking
+		// across word boundaries (e.g. {4} on "one two three" still matches via
+		// splitting the last word), giving false positives.
+		words := strings.Fields(s)
+		if len(words) <= n {
 			return s
 		}
-
-		return m + el
+		// There are more than n words: join the first n words with single spaces
+		// (matches Ruby behaviour which normalises internal whitespace).
+		return strings.Join(words[:n], " ") + el
 	})
 	fd.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)
