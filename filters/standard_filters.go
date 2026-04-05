@@ -48,6 +48,9 @@ func isIntegerType(v any) bool {
 	case uint64:
 		// Check if uint64 value fits in int64 range
 		return val <= math.MaxInt64
+	case uintptr:
+		// Check if uintptr value fits in int64 range
+		return val <= math.MaxInt64
 	default:
 		return false
 	}
@@ -76,6 +79,8 @@ func toInt64(v any) int64 {
 	case uint:
 		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
 	case uint64:
+		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
+	case uintptr:
 		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
 	default:
 		return 0
@@ -106,6 +111,8 @@ func toFloat64(v any) float64 {
 		return float64(val)
 	case uint64:
 		return float64(val)
+	case uintptr:
+		return float64(val)
 	case float32:
 		return float64(val)
 	case float64:
@@ -124,8 +131,20 @@ func toFloat64(v any) float64 {
 // AddStandardFilters defines the standard Liquid filters.
 func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	// value filters
-	fd.AddFilter("default", func(value, defaultValue any) any {
-		if value == nil || value == false || values.IsEmpty(value) {
+	fd.AddFilter("default", func(value, defaultValue any, kwargs ...any) any {
+		allowFalse := false
+		for _, kw := range kwargs {
+			if na, ok := kw.(expressions.NamedArg); ok && na.Name == "allow_false" {
+				if b, ok := na.Value.(bool); ok {
+					allowFalse = b
+				}
+			}
+		}
+		isFalsy := value == nil || values.IsEmpty(value)
+		if !allowFalse {
+			isFalsy = isFalsy || value == false
+		}
+		if isFalsy {
 			value = defaultValue
 		}
 
@@ -135,12 +154,23 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		result, _ := json.Marshal(a)
 		return result
 	})
+	fd.AddFilter("jsonify", func(a any) any {
+		result, _ := json.Marshal(a)
+		return result
+	})
 
 	// array filters
-	fd.AddFilter("compact", func(a []any) (result []any) {
+	fd.AddFilter("compact", func(a []any, property func(string) string) (result []any) {
+		prop := property("")
 		for _, item := range a {
-			if item != nil {
-				result = append(result, item)
+			if prop == "" {
+				if item != nil {
+					result = append(result, item)
+				}
+			} else {
+				if getPropertyValue(item, prop) != nil {
+					result = append(result, item)
+				}
 			}
 		}
 
@@ -178,7 +208,24 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 
 		return a[len(a)-1]
 	})
-	fd.AddFilter("uniq", uniqFilter)
+	fd.AddFilter("uniq", func(a []any, property func(string) string) []any {
+		prop := property("")
+		if prop == "" {
+			return uniqFilter(a)
+		}
+		// property-based uniq: deduplicate by property value
+		seen := map[string]bool{}
+		var result []any
+		for _, item := range a {
+			pv := getPropertyValue(item, prop)
+			pvKey := fmt.Sprintf("%T|%v", pv, pv)
+			if !seen[pvKey] {
+				seen[pvKey] = true
+				result = append(result, item)
+			}
+		}
+		return result
+	})
 	fd.AddFilter("where", whereFilter)
 	fd.AddFilter("reject", rejectFilter)
 	fd.AddFilter("group_by", groupByFilter)
@@ -203,6 +250,28 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
 		f := format("%a, %b %d, %y")
 		return tuesday.Strftime(f, t)
+	})
+	fd.AddFilter("date_to_xmlschema", func(v any) string {
+		t, ok := parseToTime(v)
+		if !ok {
+			return fmt.Sprint(v)
+		}
+		result, _ := tuesday.Strftime("%Y-%m-%dT%H:%M:%S%:z", t)
+		return result
+	})
+	fd.AddFilter("date_to_rfc822", func(v any) string {
+		t, ok := parseToTime(v)
+		if !ok {
+			return fmt.Sprint(v)
+		}
+		result, _ := tuesday.Strftime("%a, %d %b %Y %H:%M:%S %z", t)
+		return result
+	})
+	fd.AddFilter("date_to_string", func(v any, typ func(string) string, style func(string) string) string {
+		return formatJekyllDate(v, "%b", typ(""), style(""))
+	})
+	fd.AddFilter("date_to_long_string", func(v any, typ func(string) string, style func(string) string) string {
+		return formatJekyllDate(v, "%B", typ(""), style(""))
 	})
 
 	// number filters
@@ -276,6 +345,12 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 			return divInt(int64(a), int64(q))
 		case uint32:
 			return divInt(int64(a), int64(q))
+		case uint: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			return divInt(int64(a), int64(q))
+		case uint64: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			return divInt(int64(a), int64(q))
+		case uintptr: //nolint:gosec // G115: safe for values <= math.MaxInt64
+			return divInt(int64(a), int64(q))
 		case float32:
 			return divFloat(a, float64(q))
 		case float64:
@@ -298,22 +373,23 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
-	fd.AddFilter("capitalize", func(s, suffix string) string {
-		if len(s) == 0 {
+	fd.AddFilter("capitalize", func(s string) string {
+		if s == "" {
 			return s
 		}
-
-		return strings.ToUpper(s[:1]) + s[1:]
+		r, size := utf8.DecodeRuneInString(s)
+		return string(unicode.ToUpper(r)) + strings.ToLower(s[size:])
 	})
 	fd.AddFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
 	})
 	fd.AddFilter("escape", html.EscapeString)
+	fd.AddFilter("h", html.EscapeString)
 	fd.AddFilter("escape_once", func(s, suffix string) string {
 		return html.EscapeString(html.UnescapeString(s))
 	})
 	fd.AddFilter("newline_to_br", func(s string) string {
-		return strings.ReplaceAll(s, "\n", "<br />")
+		return strings.ReplaceAll(s, "\n", "<br />\n")
 	})
 	fd.AddFilter("prepend", func(s, prefix string) string {
 		return prefix + s
@@ -380,19 +456,30 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return nil
 	})
 	fd.AddFilter("split", splitFilter)
-	fd.AddFilter("strip_html", func(s string) string {
-		// TODO this probably isn't sufficient
-		return regexp.MustCompile(`<.*?>`).ReplaceAllString(s, "")
-	})
+	fd.AddFilter("strip_html", stripHTMLFilter)
 	fd.AddFilter("strip_newlines", func(s string) string {
 		return strings.ReplaceAll(s, "\n", "")
 	})
-	fd.AddFilter("strip", strings.TrimSpace)
-	fd.AddFilter("lstrip", func(s string) string {
+	fd.AddFilter("strip", func(s string, chars func(string) string) string {
+		if c := chars(""); c != "" {
+			return strings.Trim(s, c)
+		}
+		return strings.TrimSpace(s)
+	})
+	fd.AddFilter("lstrip", func(s string, chars func(string) string) string {
+		if c := chars(""); c != "" {
+			return strings.TrimLeft(s, c)
+		}
 		return strings.TrimLeftFunc(s, unicode.IsSpace)
 	})
-	fd.AddFilter("rstrip", func(s string) string {
+	fd.AddFilter("rstrip", func(s string, chars func(string) string) string {
+		if c := chars(""); c != "" {
+			return strings.TrimRight(s, c)
+		}
 		return strings.TrimRightFunc(s, unicode.IsSpace)
+	})
+	fd.AddFilter("squish", func(s string) string {
+		return strings.TrimSpace(wsre.ReplaceAllString(s, " "))
 	})
 	fd.AddFilter("truncate", func(s string, length func(int) int, ellipsis func(string) string) string {
 		n := length(50)
@@ -485,6 +572,12 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	})
 
 	// html/url filters
+	// raw marks a value as safe, bypassing autoescape. Mirrors LiquidJS's | raw filter.
+	// When autoescape is disabled (the default), raw wraps in SafeValue, which
+	// is immediately transparent at render time — effectively a no-op.
+	fd.AddFilter("raw", func(v any) values.SafeValue {
+		return values.SafeValue{Value: v}
+	})
 	fd.AddFilter("xml_escape", func(s string) string {
 		var buf strings.Builder
 		for _, r := range s {
@@ -533,6 +626,17 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	})
 	fd.AddFilter("base64_decode", func(s string) (string, error) {
 		b, err := base64.StdEncoding.DecodeString(s)
+		if err != nil {
+			return "", err
+		}
+
+		return string(b), nil
+	})
+	fd.AddFilter("base64_url_safe_encode", func(s string) string {
+		return base64.URLEncoding.EncodeToString([]byte(s))
+	})
+	fd.AddFilter("base64_url_safe_decode", func(s string) (string, error) {
+		b, err := base64.URLEncoding.DecodeString(s)
 		if err != nil {
 			return "", err
 		}
@@ -626,6 +730,19 @@ func reverseFilter(a []any) any {
 }
 
 var wsre = regexp.MustCompile(`[[:space:]]+`)
+
+var (
+	stripHTMLScriptStyleRe = regexp.MustCompile(`(?is)<(script|style)[^>]*>.*?</(script|style)>`)
+	stripHTMLCommentRe     = regexp.MustCompile(`(?s)<!--.*?-->`)
+	stripHTMLTagRe         = regexp.MustCompile(`<[^>]*>`)
+)
+
+func stripHTMLFilter(s string) string {
+	s = stripHTMLScriptStyleRe.ReplaceAllString(s, "")
+	s = stripHTMLCommentRe.ReplaceAllString(s, "")
+	s = stripHTMLTagRe.ReplaceAllString(s, "")
+	return s
+}
 
 func splitFilter(s, sep string) any {
 	result := strings.Split(s, sep)
@@ -759,6 +876,72 @@ var latinAccentReplacer = strings.NewReplacer(
 	"Ù", "u", "Ú", "u", "Û", "u", "Ü", "u",
 	"Ý", "y", "Ñ", "n", "Ç", "c",
 )
+
+// parseToTime converts a Liquid date value (string, time.Time, or int64 unix
+// timestamp) to time.Time. Returns (t, true) on success, (zero, false) on failure.
+func parseToTime(v any) (time.Time, bool) {
+	switch t := v.(type) {
+	case time.Time:
+		return t, true
+	case string:
+		parsed, err := values.ParseDate(t)
+		if err != nil {
+			return time.Time{}, false
+		}
+		return parsed, true
+	default:
+		rv := reflect.ValueOf(v)
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			return time.Unix(rv.Int(), 0), true
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			return time.Unix(int64(rv.Uint()), 0), true
+		case reflect.Float32, reflect.Float64:
+			return time.Unix(int64(rv.Float()), 0), true
+		default:
+			return time.Time{}, false
+		}
+	}
+}
+
+// ordinalSuffix returns the ordinal suffix for a day number (1→"st", 2→"nd", etc.).
+func ordinalSuffix(n int) string {
+	switch {
+	case n >= 11 && n <= 13:
+		return "th"
+	case n%10 == 1:
+		return "st"
+	case n%10 == 2:
+		return "nd"
+	case n%10 == 3:
+		return "rd"
+	default:
+		return "th"
+	}
+}
+
+// formatJekyllDate formats a date in Jekyll's date_to_string / date_to_long_string style.
+// monthFmt is the strftime token for the month (%b abbreviated, %B full).
+// typeArg is "" for the default DD Mon YYYY format or "ordinal" for ordinal day.
+// styleArg is "" (UK: 7th Nov 2008) or "US" (Nov 7th, 2008).
+func formatJekyllDate(v any, monthFmt, typeArg, styleArg string) string {
+	t, ok := parseToTime(v)
+	if !ok {
+		return fmt.Sprint(v)
+	}
+	if typeArg == "ordinal" {
+		day := t.Day()
+		suffix := ordinalSuffix(day)
+		month, _ := tuesday.Strftime(monthFmt, t)
+		year := t.Year()
+		if styleArg == "US" {
+			return fmt.Sprintf("%s %d%s, %d", month, day, suffix, year)
+		}
+		return fmt.Sprintf("%d%s %s %d", day, suffix, month, year)
+	}
+	result, _ := tuesday.Strftime("%d "+monthFmt+" %Y", t)
+	return result
+}
 
 // slugifyString normalizes a string to a URL slug according to the given mode.
 // Modes: "default" (unicode-aware), "ascii", "latin" (transliterate accents),

@@ -89,7 +89,7 @@ func TestMain(t *testing.T) {
 	main()
 	require.True(t, exitCalled)
 	require.Equal(t, 1, exitCode)
-	require.Equal(t, "Liquid error: undefined variable \"TARGET\"\n", buf.String())
+	require.Equal(t, "Liquid error (line 1): undefined variable \"TARGET\" in {{ TARGET }}\n", buf.String())
 
 	exitCode = 0
 	os.Args = []string{"liquid", "testdata/source.liquid"}

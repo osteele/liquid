@@ -16,7 +16,7 @@ func sortFilter(array []any, key any) []any {
 	if key == nil {
 		values.Sort(result)
 	} else {
-		values.SortByProperty(result, fmt.Sprint(key), true)
+		values.SortByProperty(result, fmt.Sprint(key), false)
 	}
 
 	return result

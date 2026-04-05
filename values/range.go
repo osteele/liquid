@@ -1,5 +1,7 @@
 package values
 
+import "fmt"
+
 // A Range is the range of integers from b to e inclusive.
 type Range struct {
 	b, e int
@@ -8,6 +10,11 @@ type Range struct {
 // NewRange returns a new Range
 func NewRange(b, e int) Range {
 	return Range{b, e}
+}
+
+// String renders a Range as "start..end", matching Ruby Liquid output.
+func (r Range) String() string {
+	return fmt.Sprintf("%d..%d", r.b, r.e)
 }
 
 // Len is in the iteration interface

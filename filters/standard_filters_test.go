@@ -3,6 +3,7 @@ package filters
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +31,14 @@ var filterTests = []struct {
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
 	{`fruits | default: 2.99 | join`, "apples oranges peaches plums"},
+
+	// default filter — allow_false: true keyword arg [ruby: standardfilters_test.rb; js: misc.spec.ts]
+	{`false | default: 2.99, allow_false: true`, false},
+	{`nil | default: 2.99, allow_false: true`, 2.99},
+	{`"" | default: 2.99, allow_false: true`, 2.99},
+	{`empty_array | default: 2.99, allow_false: true`, 2.99},
+	{`true | default: 2.99, allow_false: true`, true},
+	{`4.99 | default: 2.99, allow_false: true`, 4.99},
 	{`"string" | json`, "\"string\""},
 	{`true | json`, "true"},
 	{`1 | json`, "1"},
@@ -42,7 +51,7 @@ var filterTests = []struct {
 	{`",John, Paul, George, Ringo" | split: ", " | join: " and "`, ",John and Paul and George and Ringo"},
 	{`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo,"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
-	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
+	{`sort_prop | sort: "weight" | inspect`, `[{"weight":1},{"weight":3},{"weight":5},{"weight":null}]`},
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
 	{`fruits | first`, "apples"},
 	{`fruits | last`, "plums"},
@@ -83,6 +92,16 @@ var filterTests = []struct {
 	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
 	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
 
+	// date_to_string filter [js: test/integration/filters/date.spec.ts]
+	{`"2008-11-07T13:07:54-08:00" | date_to_string`, "07 Nov 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_string: "ordinal", "US"`, "Nov 7th, 2008"},
+	{`"hello" | date_to_string: "ordinal", "US"`, "hello"},
+
+	// date_to_long_string filter [js: test/integration/filters/date.spec.ts]
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string`, "07 November 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string: "ordinal", "US"`, "November 7th, 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string: "ordinal"`, "7th November 2008"},
+
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
@@ -96,11 +115,12 @@ var filterTests = []struct {
 	{`"website.com" | append: "/index.html"`, "website.com/index.html"},
 	{`"title" | capitalize`, "Title"},
 	{`"my great title" | capitalize`, "My great title"},
+	{`"MY GREAT TITLE" | capitalize`, "My great title"},
 	{`"" | capitalize`, ""},
 	{`"Parker Moore" | downcase`, "parker moore"},
 	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 	{`"1 < 2 & 3" | escape_once`, "1 &lt; 2 &amp; 3"},
-	{`string_with_newlines | newline_to_br`, "<br />Hello<br />there<br />"},
+	{`string_with_newlines | newline_to_br`, "<br />\nHello<br />\nthere<br />\n"},
 	{`"1 &lt; 2 &amp; 3" | escape_once`, "1 &lt; 2 &amp; 3"},
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
@@ -151,6 +171,13 @@ Liquid" | slice: 2, 4`, "quid"},
 	{"'a \t b' | split: ' ' | join: '-'", "a-b"},
 
 	{`"Have <em>you</em> read <strong>Ulysses</strong>?" | strip_html`, "Have you read Ulysses?"},
+	// strip_html: script and style blocks (with content) are removed [ruby: standard_filter_test.rb]
+	{`"<script>alert('xss')</script>Hello" | strip_html`, "Hello"},
+	{`"<SCRIPT>alert('xss')</SCRIPT>World" | strip_html`, "World"},
+	{`"<style>.foo { color: red; }</style>Content" | strip_html`, "Content"},
+	// strip_html: HTML comments are removed [ruby: standard_filter_test.rb]
+	{`"<!-- comment -->Hello" | strip_html`, "Hello"},
+	{`"A<!-- c -->B<!-- d -->C" | strip_html`, "ABC"},
 	{`string_with_newlines | strip_newlines`, "Hellothere"},
 
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
@@ -170,6 +197,15 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
 	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
 	{`"          So much room for activities!          " | rstrip`, "          So much room for activities!"},
+	// strip/lstrip/rstrip with chars argument [liquidjs]
+	{`"abcHello Worldabc" | strip: "abc"`, "Hello World"},
+	{`"abcHello World" | lstrip: "abc"`, "Hello World"},
+	{`"Hello Worldabc" | rstrip: "abc"`, "Hello World"},
+	// squish: strip + collapse internal whitespace [ruby]
+	{`"  Hello   World  " | squish`, "Hello World"},
+	{"\"  Hello\\n\\tWorld  \" | squish", "Hello World"},
+	// h: alias for escape [ruby]
+	{`"Have you read 'James & the Giant Peach'?" | h`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 
 	{`"%27Stop%21%27+said+Fred" | url_decode`, "'Stop!' said Fred"},
 	{`"john@liquid.com" | url_encode`, "john%40liquid.com"},
@@ -291,9 +327,14 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"The _config.yml file" | slugify: "raw"`, "the _config.yml file"},
 	{`"Hello World" | slugify: "invalid_mode"`, "hello world"},
 
-	// base64 filters
+	// base64 filters [ruby: standard_filter_test.rb]
 	{`"hello" | base64_encode`, "aGVsbG8="},
 	{`"aGVsbG8=" | base64_decode`, "hello"},
+	{`"hello" | base64_url_safe_encode`, "aGVsbG8="},
+	{`"aGVsbG8=" | base64_url_safe_decode`, "hello"},
+	// base64 url-safe uses - and _ instead of + and /
+	{`"Man" | base64_url_safe_encode`, "TWFu"},
+	{`"TWFu" | base64_url_safe_decode`, "Man"},
 
 	// type conversion filters
 	{`"3.5" | to_integer`, 3},
@@ -374,6 +415,25 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+
+	// jsonify: alias for json [liquidjs]
+	{`"string" | jsonify`, "\"string\""},
+	{`true | jsonify`, "true"},
+	{`1 | jsonify`, "1"},
+
+	// default: allow_false keyword arg [ruby: standard_filter_test.rb, liquidjs]
+	{`false | default: 2.99, allow_false: true`, false},
+	{`nil | default: 2.99, allow_false: true`, 2.99},
+	{`"" | default: 2.99, allow_false: true`, 2.99},
+
+	// compact with property argument [ruby: standard_filter_test.rb]
+	{`compact_with_nil_prop | compact: "prop" | map: "name" | join`, `a b`},
+
+	// uniq with property argument [ruby: standard_filter_test.rb]
+	{`dup_prop_objects | uniq: "name" | map: "name" | join`, `a b`},
+
+	// sort nil-last [ruby: standard_filter_test.rb]
+	{`sort_prop | sort: "weight" | map: "weight" | last`, nil},
 }
 
 var filterErrorTests = []struct {
@@ -383,6 +443,7 @@ var filterErrorTests = []struct {
 	{`20 | divided_by: 's'`, `error applying filter "divided_by" ("invalid divisor: 's'")`},
 	{`20 | divided_by: 0`, `error applying filter "divided_by" ("divided by 0")`},
 	{`"not-base64!!!" | base64_decode`, `error applying filter "base64_decode" ("illegal base64 data at input byte 3")`},
+	{`"not-base64" | base64_url_safe_decode`, `error applying filter "base64_url_safe_decode" ("illegal base64 data at input byte 8")`},
 }
 
 var filterTestBindings = map[string]any{
@@ -517,6 +578,18 @@ var filterTestBindings = map[string]any{
 		map[string]any{"quantity": 1},
 		map[string]any{"quantity": 2, "weight": 3},
 		map[string]any{"weight": 4},
+	},
+	// compact with property arg test data [ruby]
+	"compact_with_nil_prop": []any{
+		map[string]any{"name": "a", "prop": "value"},
+		map[string]any{"name": "b", "prop": "value"},
+		map[string]any{"name": "c"},
+	},
+	// uniq with property arg test data [ruby]
+	"dup_prop_objects": []any{
+		map[string]any{"name": "a"},
+		map[string]any{"name": "a"},
+		map[string]any{"name": "b"},
 	},
 }
 
@@ -1036,4 +1109,88 @@ func TestExpFilters(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, false, actual)
 	})
+}
+
+// TestDateToXmlschema verifies the date_to_xmlschema filter.
+// Ported from LiquidJS: test/integration/filters/date.spec.ts — filters/date_to_xmlschema
+func TestDateToXmlschema(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	tests := []struct {
+		in      string
+		pattern string // regexp pattern to match
+		exact   string // if non-empty, exact match expected
+	}{
+		{
+			// Date with explicit UTC-8 timezone — output preserves it.
+			in:    `"2008-11-07T13:07:54-08:00" | date_to_xmlschema`,
+			exact: "2008-11-07T13:07:54-08:00",
+		},
+		{
+			// Date without timezone → system-local offset appended.
+			in:      `"1990-10-15T23:00:00" | date_to_xmlschema`,
+			pattern: `^1990-10-15T23:00:00[+-]\d{2}:\d{2}$`,
+		},
+		{
+			// Invalid date → returned unchanged.
+			in:    `"not-a-date" | date_to_xmlschema`,
+			exact: "not-a-date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			ctx := expressions.NewContext(map[string]any{}, cfg)
+			actual, err := expressions.EvaluateString(tt.in, ctx)
+			require.NoError(t, err)
+			if tt.exact != "" {
+				require.Equal(t, tt.exact, actual)
+			} else {
+				require.Regexp(t, regexp.MustCompile(tt.pattern), actual)
+			}
+		})
+	}
+}
+
+// TestDateToRfc822 verifies the date_to_rfc822 filter.
+// Ported from LiquidJS: test/integration/filters/date.spec.ts — filters/date_to_rfc822
+func TestDateToRfc822(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	tests := []struct {
+		in      string
+		pattern string
+		exact   string
+	}{
+		{
+			// Date with explicit UTC-8 timezone.
+			in:    `"2008-11-07T13:07:54-08:00" | date_to_rfc822`,
+			exact: "Fri, 07 Nov 2008 13:07:54 -0800",
+		},
+		{
+			// Date without timezone → system's local offset.
+			in:      `"1990-10-15T23:00:00" | date_to_rfc822`,
+			pattern: `^Mon, 15 Oct 1990 23:00:00 [+-]\d{4}$`,
+		},
+		{
+			// Invalid date → returned unchanged.
+			in:    `"not-a-date" | date_to_rfc822`,
+			exact: "not-a-date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			ctx := expressions.NewContext(map[string]any{}, cfg)
+			actual, err := expressions.EvaluateString(tt.in, ctx)
+			require.NoError(t, err)
+			if tt.exact != "" {
+				require.Equal(t, tt.exact, actual)
+			} else {
+				require.Regexp(t, regexp.MustCompile(tt.pattern), actual)
+			}
+		})
+	}
 }

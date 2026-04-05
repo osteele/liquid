@@ -1,6 +1,9 @@
 package render
 
 import (
+	"context"
+	"sync"
+
 	"github.com/osteele/liquid/parser"
 )
 
@@ -9,7 +12,7 @@ type Config struct {
 	parser.Config
 	grammar
 
-	Cache           map[string][]byte
+	Cache           sync.Map // key: string, value: []byte — safe for concurrent use
 	StrictVariables bool
 	TemplateStore   TemplateStore
 
@@ -21,11 +24,57 @@ type Config struct {
 
 	escapeReplacer Replacer
 
+	// globalFilter is a function applied to the value of every {{ }} expression
+	// before it is written to the output. Analogous to Ruby's global_filter option.
+	globalFilter func(any) (any, error)
+
 	// JekyllExtensions enables Jekyll-specific extensions to Liquid.
 	// When true, allows dot notation in assign tags (e.g., {% assign page.canonical_url = value %})
 	// This is not part of the Shopify Liquid standard but is used in Jekyll and Gojekyll.
 	// Default: false (strict Shopify Liquid compatibility)
 	JekyllExtensions bool
+
+	// TrimTagLeft, when true, automatically trims whitespace to the left of every
+	// {% tag %} and block open/close tag, as if each had a {%- prefix.
+	TrimTagLeft bool
+
+	// TrimTagRight, when true, automatically trims whitespace to the right of every
+	// {% tag %} and block open/close tag, as if each had a -%} suffix.
+	TrimTagRight bool
+
+	// TrimOutputLeft, when true, automatically trims whitespace to the left of every
+	// {{ output }} expression, as if each had a {{- prefix.
+	TrimOutputLeft bool
+
+	// TrimOutputRight, when true, automatically trims whitespace to the right of every
+	// {{ output }} expression, as if each had a -}} suffix.
+	TrimOutputRight bool
+
+	// Greedy controls whether whitespace trimming removes all consecutive blank
+	// characters including newlines (true, the default), or only trims inline
+	// blanks (space/tab) plus at most one newline (false).
+	Greedy bool
+
+	// SizeLimit, when positive, caps the total number of bytes written to the
+	// render output. A render that would exceed this limit fails with an error.
+	SizeLimit int64
+
+	// Context is an optional Go context.Context that can be used to cancel a
+	// render in-flight (e.g. for per-request timeouts). When set, each node
+	// render checks for cancellation before proceeding.
+	Context context.Context
+
+	// ExceptionHandler, when non-nil, is called for each render-time error
+	// encountered during node evaluation. The function receives the error and
+	// returns a string to emit in place of the failed node. Returning an empty
+	// string suppresses the node output. This is analogous to Ruby Liquid's
+	// exception_renderer option.
+	ExceptionHandler func(error) string
+
+	// LaxTags, when true, silently ignores unknown tags instead of raising a
+	// parse error. Only the render-path skips unknown tags; analysis still
+	// treats them as no-ops.
+	LaxTags bool
 }
 
 type grammar struct {
@@ -69,15 +118,27 @@ func NewConfig() Config {
 		blockDefs: map[string]*blockSyntax{},
 	}
 
-	return Config{
+	cfg := Config{
 		Config:        parser.NewConfig(g),
 		grammar:       g,
-		Cache:         map[string][]byte{},
 		TemplateStore: &FileTemplateStore{},
+		Greedy:        true,
 	}
+	// Register "raw" unconditionally — it is a LiquidJS-standard filter that marks
+	// a value as safe (skips autoescape). When autoescape is off it is a no-op.
+	cfg.AddSafeFilter()
+	return cfg
 }
 
 func (c *Config) SetAutoEscapeReplacer(replacer Replacer) {
 	c.escapeReplacer = replacer
 	c.AddSafeFilter()
+}
+
+// SetGlobalFilter sets a function that is applied to the evaluated value of every
+// {{ expression }} before it is written to the output. This is analogous to Ruby
+// Liquid's global_filter option. The function receives the evaluated value and
+// returns a transformed value or an error.
+func (c *Config) SetGlobalFilter(fn func(any) (any, error)) {
+	c.globalFilter = fn
 }

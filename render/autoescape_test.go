@@ -73,6 +73,32 @@ func TestRenderEscapeFilter(t *testing.T) {
 			"<a><b>",
 		)
 	})
+
+	// raw filter — equivalent alias for safe, from LiquidJS.
+	// Ported from LiquidJS: test/integration/liquid/output-escape.spec.ts
+	//   "should skip escape for output with filter '| raw'"
+	t.Run("raw filter skips autoescape", func(t *testing.T) {
+		f(t,
+			`{{ input | raw }}`,
+			map[string]interface{}{
+				"input": "<script>doGoodStuff()</script>",
+			},
+			"<script>doGoodStuff()</script>",
+		)
+	})
+
+	t.Run("raw filter no-op without autoescape", func(t *testing.T) {
+		// When autoescape is not configured, raw is a no-op (still renders correctly).
+		buf.Reset()
+		cfg2 := NewConfig()
+		root, err := cfg2.Compile(`{{ input | raw }}`, parser.SourceLoc{})
+		require.NoError(t, err)
+		err = Render(root, buf, map[string]interface{}{
+			"input": "<em>safe</em>",
+		}, cfg2)
+		require.NoError(t, err)
+		require.Equal(t, "<em>safe</em>", buf.String())
+	})
 }
 
 // TestReplacerWriterIOContract verifies that replacerWriter.Write correctly

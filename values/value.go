@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -161,15 +162,21 @@ func (av arrayValue) IndexValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
 
 	var n int
-	switch ix := iv.Interface().(type) {
-	case int:
-		n = ix
-	case float32:
-		// Ruby array indexing truncates floats
-		n = int(ix)
-	case float64:
-		n = int(ix)
-	default:
+	raw := iv.Interface()
+	rv := reflect.ValueOf(raw)
+	if rv.IsValid() {
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			n = int(rv.Int())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			n = int(rv.Uint()) //nolint:gosec // G115: array indexes are never near MaxUint64
+		case reflect.Float32, reflect.Float64:
+			// Ruby array indexing truncates floats
+			n = int(rv.Float())
+		default:
+			return nilValue
+		}
+	} else {
 		return nilValue
 	}
 
@@ -259,7 +266,7 @@ func (sv stringValue) Contains(substr Value) bool {
 
 func (sv stringValue) PropertyValue(iv Value) Value {
 	if iv.Interface() == sizeKey {
-		return ValueOf(len(sv.value.(string)))
+		return ValueOf(utf8.RuneCountInString(sv.value.(string)))
 	}
 
 	return nilValue

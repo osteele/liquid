@@ -347,6 +347,45 @@ func TestEngine_SetAutoEscapeReplacer(t *testing.T) {
 	require.Equal(t, "<b>bold</b>", out)
 }
 
+func TestEngine_SetGlobalFilter(t *testing.T) {
+	// global_filter applies a function to every {{ expression }} output [ruby: global_filter option]
+	engine := NewEngine()
+	engine.SetGlobalFilter(func(v any) (any, error) {
+		if s, ok := v.(string); ok {
+			return strings.ToUpper(s), nil
+		}
+		return v, nil
+	})
+
+	// string values are transformed
+	out, err := engine.ParseAndRenderString(`{{ name }}`, map[string]any{"name": "world"})
+	require.NoError(t, err)
+	require.Equal(t, "WORLD", out)
+
+	// non-string values pass through untouched
+	out, err = engine.ParseAndRenderString(`{{ count }}`, map[string]any{"count": 42})
+	require.NoError(t, err)
+	require.Equal(t, "42", out)
+
+	// nil values pass through (rendered as empty)
+	out, err = engine.ParseAndRenderString(`{{ missing }}`, emptyBindings)
+	require.NoError(t, err)
+	require.Equal(t, "", out)
+
+	// filter is applied after Liquid filter chain
+	out, err = engine.ParseAndRenderString(`{{ name | prepend: "hello " }}`, map[string]any{"name": "world"})
+	require.NoError(t, err)
+	require.Equal(t, "HELLO WORLD", out)
+
+	// filter error propagates as a render error
+	errorEngine := NewEngine()
+	errorEngine.SetGlobalFilter(func(v any) (any, error) {
+		return nil, fmt.Errorf("global filter error")
+	})
+	_, err = errorEngine.ParseAndRenderString(`{{ name }}`, map[string]any{"name": "world"})
+	require.Error(t, err)
+}
+
 func TestEngine_UnregisterTag(t *testing.T) {
 	engine := NewEngine()
 	engine.RegisterTag("custom_test_tag", func(c render.Context) (string, error) {

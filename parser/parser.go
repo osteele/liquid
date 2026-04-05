@@ -41,7 +41,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 		// needn't match each other e.g. {%comment%}{%if%}{%endcomment%}
 		// TODO is this true?
 		case inComment:
-			if tok.Type == TagTokenType && tok.Name == "endcomment" {
+			if tok.Type == TagTokenType && (tok.Name == "endcomment" || tok.Name == "enddoc") {
 				inComment = false
 			}
 		case inRaw:
@@ -66,7 +66,7 @@ func (c *Config) parseTokens(tokens []Token) (ASTNode, Error) { //nolint: gocycl
 
 			if cs, ok := g.BlockSyntax(tok.Name); ok {
 				switch {
-				case tok.Name == "comment":
+			case tok.Name == "comment" || tok.Name == "doc":
 					inComment = true
 				case tok.Name == "raw":
 					inRaw = true

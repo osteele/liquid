@@ -72,7 +72,7 @@ func (c *Config) AddSafeFilter() {
 	// Reading from a nil map is safe; delay allocation until we need to write.
 	if c.filters["safe"] == nil {
 		c.ensureMapIsCreated()
-		c.filters["safe"] = func(in interface{}) interface{} {
+		safeFilter := func(in interface{}) interface{} {
 			if in, alreadySafe := in.(values.SafeValue); alreadySafe {
 				return in
 			}
@@ -80,6 +80,9 @@ func (c *Config) AddSafeFilter() {
 				Value: in,
 			}
 		}
+		c.filters["safe"] = safeFilter
+		// "raw" is the LiquidJS-compatible alias for "safe". Both skip autoescape.
+		c.filters["raw"] = safeFilter
 	}
 }
 

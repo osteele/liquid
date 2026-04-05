@@ -104,6 +104,20 @@ func (c rendererContext) Errorf(format string, a ...any) Error {
 	}
 }
 
+// sourceLoc returns the source location of the current node, preferring tag
+// nodes over block nodes. Returns a zero SourceLoc when neither is set.
+func (c rendererContext) sourceLoc() parser.SourceLoc {
+	if c.node != nil {
+		return c.node.SourceLoc
+	}
+
+	if c.cn != nil {
+		return c.cn.SourceLoc
+	}
+
+	return parser.SourceLoc{}
+}
+
 func (c rendererContext) WrapError(err error) Error {
 	switch {
 	case c.node != nil:
@@ -183,8 +197,8 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
-		if cval, ok := c.ctx.config.Cache[filename]; ok {
-			source = cval
+		if cval, ok := c.ctx.config.Cache.Load(filename); ok {
+			source = cval.([]byte)
 		} else {
 			return "", err
 		}
@@ -192,7 +206,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 		return "", err
 	}
 
-	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	root, err := c.ctx.config.Compile(string(source), c.sourceLoc())
 	if err != nil {
 		return "", err
 	}
@@ -217,8 +231,8 @@ func (c rendererContext) RenderFileIsolated(filename string, b map[string]any) (
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
-		if cval, ok := c.ctx.config.Cache[filename]; ok {
-			source = cval
+		if cval, ok := c.ctx.config.Cache.Load(filename); ok {
+			source = cval.([]byte)
 		} else {
 			return "", err
 		}
@@ -226,7 +240,7 @@ func (c rendererContext) RenderFileIsolated(filename string, b map[string]any) (
 		return "", err
 	}
 
-	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	root, err := c.ctx.config.Compile(string(source), c.sourceLoc())
 	if err != nil {
 		return "", err
 	}

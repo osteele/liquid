@@ -6,13 +6,37 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"regexp"
 	"sort"
+	"strings"
 
 	yaml "gopkg.in/yaml.v2"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/render"
 )
+
+// offsetContinueRE matches "offset: continue" (with optional whitespace) in a loop arg string.
+var offsetContinueRE = regexp.MustCompile(`\boffset\s*:\s*continue\b`)
+
+// toLoopInt converts any Go numeric type to int for use as a loop limit or
+// offset. Returns (n, true) on success, (0, false) if the value is not numeric.
+func toLoopInt(v any) (int, bool) {
+	if v == nil {
+		return 0, false
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return int(rv.Int()), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return int(rv.Uint()), true //nolint:gosec // G115: loop bounds are never near MaxUint64
+	case reflect.Float32, reflect.Float64:
+		return int(rv.Float()), true
+	default:
+		return 0, false
+	}
+}
 
 // An IterationKeyedMap is a map that yields its keys, instead of (key, value) pairs, when iterated.
 type IterationKeyedMap map[string]any
@@ -69,7 +93,17 @@ func cycleTag(args string) (func(io.Writer, render.Context) error, error) {
 }
 
 func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) error, error) {
-	stmt, err := expressions.ParseStatement(expressions.LoopStatementSelector, node.Args)
+	// Detect and strip "offset: continue" before passing to the expression parser,
+	// because "continue" would otherwise be interpreted as a variable lookup.
+	rawArgs := node.Args
+	isOffsetContinue := false
+
+	if offsetContinueRE.MatchString(rawArgs) {
+		rawArgs = strings.TrimSpace(offsetContinueRE.ReplaceAllString(rawArgs, ""))
+		isOffsetContinue = true
+	}
+
+	stmt, err := expressions.ParseStatement(expressions.LoopStatementSelector, rawArgs)
 	if err != nil {
 		return nil, err
 	}
@@ -86,10 +120,94 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			return nil
 		}
 
-		iter, err = applyLoopModifiers(stmt.Loop, ctx, iter)
-		if err != nil {
-			return err
+		// continueKey is used to remember where a loop over a given collection
+		// ended, so a subsequent {% for ... offset:continue %} can resume.
+		continueKey := "\x00for_continue_" + loopName(node.Args, stmt.Loop.Variable)
+
+		// effectiveStart tracks the absolute start index into the (possibly
+		// reversed) collection; used to advance the continue cursor.
+		effectiveStart := 0
+
+		if isOffsetContinue {
+			// Resume from the position where the previous loop left off.
+			continueOffset, _ := ctx.Get(continueKey).(int)
+
+			// Apply reversed first (same order as applyLoopModifiers).
+			if stmt.Loop.Reversed {
+				iter = reverseWrapper{iter}
+			}
+
+			// Apply the continuation offset.
+			if continueOffset >= iter.Len() {
+				ctx.Set(continueKey, continueOffset) // cursor stays at end
+				return nil                           // collection exhausted
+			}
+
+			effectiveStart = continueOffset
+			if continueOffset > 0 {
+				iter = offsetWrapper{iter, continueOffset}
+			}
+
+			// Apply limit if present.
+			if stmt.Loop.Limit != nil {
+				lval, err := ctx.Evaluate(stmt.Loop.Limit)
+				if err != nil {
+					return err
+				}
+
+				limit, ok := toLoopInt(lval)
+				if !ok {
+					return ctx.Errorf("loop limit must be an integer")
+				}
+
+				if limit >= 0 && limit < iter.Len() {
+					iter = limitWrapper{iter, limit}
+				}
+			}
+		} else {
+			// Normal path: apply modifiers and track the starting offset.
+			if stmt.Loop.Reversed {
+				iter = reverseWrapper{iter}
+			}
+
+			if stmt.Loop.Offset != nil {
+				ov, err := ctx.Evaluate(stmt.Loop.Offset)
+				if err != nil {
+					return err
+				}
+
+				offset, ok := toLoopInt(ov)
+				if !ok {
+					return ctx.Errorf("loop offset must be an integer")
+				}
+
+				if offset > 0 {
+					effectiveStart = offset
+					iter = offsetWrapper{iter, offset}
+				}
+			}
+
+			if stmt.Loop.Limit != nil {
+				lval, err := ctx.Evaluate(stmt.Loop.Limit)
+				if err != nil {
+					return err
+				}
+
+				limit, ok := toLoopInt(lval)
+				if !ok {
+					return ctx.Errorf("loop limit must be an integer")
+				}
+
+				if limit >= 0 {
+					iter = limitWrapper{iter, limit}
+				}
+			}
 		}
+
+		// Always record the next position so a later offset:continue loop can
+		// resume correctly. We store before rendering so that a {% break %} still
+		// advances the cursor (matches LiquidJS behaviour).
+		ctx.Set(continueKey, effectiveStart+iter.Len())
 
 		if len(node.Clauses) > 1 {
 			return errors.New("for loops accept at most one else clause")
@@ -99,14 +217,33 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			return ctx.RenderBlock(w, node.Clauses[0])
 		}
 
-		return loopRenderer{stmt.Loop, node.Name}.render(iter, w, ctx)
+		return loopRenderer{stmt.Loop, node.Name, loopName(node.Args, stmt.Loop.Variable)}.render(iter, w, ctx)
 	}, nil
+}
+
+// loopName returns the "variable-collection" string for forloop.name.
+// Args is the raw tag argument string, e.g. "a in array limit:2".
+func loopName(args, variable string) string {
+	const inKw = " in "
+	idx := strings.Index(args, inKw)
+	if idx < 0 {
+		return variable + "-"
+	}
+	rest := strings.TrimSpace(args[idx+len(inKw):])
+	// Extract the collection token: everything up to the first space (for
+	// simple identifiers and range literals like "(1..5)"), which is
+	// sufficient for the common Shopify use-case.
+	if i := strings.IndexByte(rest, ' '); i > 0 {
+		return variable + "-" + rest[:i]
+	}
+	return variable + "-" + rest
 }
 
 type loopRenderer struct {
 	expressions.Loop
 
-	tagName string
+	tagName     string
+	forloopName string
 }
 
 func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) error {
@@ -117,23 +254,38 @@ func (loop loopRenderer) render(iter iterable, w io.Writer, ctx render.Context) 
 	}
 
 	// shallow-bind the loop variables; restore on exit
+	parentLoopVal := ctx.Get(forloopVarName)
 	defer func(index, forloop any) {
 		ctx.Set(forloopVarName, index)
 		ctx.Set(loop.Variable, forloop)
-	}(ctx.Get(forloopVarName), ctx.Get(loop.Variable))
+	}(parentLoopVal, ctx.Get(loop.Variable))
 
 	cycleMap := map[string]int{}
 	// Pre-allocate the forloop map once and reuse it across iterations.
 	forloopMap := map[string]any{
-		"first":   false,
-		"last":    false,
-		"index":   0,
-		"index0":  0,
-		"rindex":  0,
-		"rindex0": 0,
-		"length":  0,
-		".cycles": cycleMap,
+		"first":      false,
+		"last":       false,
+		"index":      0,
+		"index0":     0,
+		"rindex":     0,
+		"rindex0":    0,
+		"length":     0,
+		"name":       loop.forloopName,
+		"parentloop": parentLoopVal,
+		".cycles":    cycleMap,
 	}
+
+	// For tablerow loops, determine effective columns for forloop metadata.
+	var tablerowCols int
+	if td, ok := decorator.(tableRowDecorator); ok {
+		tablerowCols = int(td)
+		forloopMap["col"] = 1
+		forloopMap["col0"] = 0
+		forloopMap["col_first"] = true
+		forloopMap["col_last"] = false
+		forloopMap["row"] = 1
+	}
+
 	ctx.Set(forloopVarName, forloopMap)
 
 loop:
@@ -147,6 +299,14 @@ loop:
 		forloopMap["rindex"] = l - i
 		forloopMap["rindex0"] = l - i - 1
 		forloopMap["length"] = l
+		if tablerowCols > 0 {
+			col0 := i % tablerowCols
+			forloopMap["col"] = col0 + 1
+			forloopMap["col0"] = col0
+			forloopMap["col_first"] = col0 == 0
+			forloopMap["col_last"] = col0+1 == tablerowCols || i+1 == l
+			forloopMap["row"] = i/tablerowCols + 1
+		}
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
 		decorator.after(w, i, l)
@@ -242,7 +402,7 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 			return nil, err
 		}
 
-		offset, ok := val.(int)
+		offset, ok := toLoopInt(val)
 		if !ok {
 			return nil, ctx.Errorf("loop offset must be an integer")
 		}
@@ -258,7 +418,7 @@ func applyLoopModifiers(loop expressions.Loop, ctx render.Context, iter iterable
 			return nil, err
 		}
 
-		limit, ok := val.(int)
+		limit, ok := toLoopInt(val)
 		if !ok {
 			return nil, ctx.Errorf("loop limit must be an integer")
 		}
@@ -352,4 +512,3 @@ type reverseWrapper struct {
 
 func (w reverseWrapper) Len() int        { return w.i.Len() }
 func (w reverseWrapper) Index(i int) any { return w.i.Index(w.i.Len() - 1 - i) }
-

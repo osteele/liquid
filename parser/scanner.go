@@ -70,17 +70,23 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 				})
 			}
 
-			tok := Token{
-				Type:      TagTokenType,
-				SourceLoc: loc,
-				Source:    source,
-				Name:      data[m[4]:m[5]],
-			}
-			if m[6] > 0 {
-				tok.Args = data[m[6]:m[7]]
+			// m[4] < 0 means the (\w+) tag-name group didn't match.
+			// This happens for inline comments: {%# ... %} where '#' is not \w.
+			// In that case we emit only trim markers (if any) but no tag token.
+			if m[4] >= 0 {
+				tok := Token{
+					Type:      TagTokenType,
+					SourceLoc: loc,
+					Source:    source,
+					Name:      data[m[4]:m[5]],
+				}
+				if m[6] > 0 {
+					tok.Args = data[m[6]:m[7]]
+				}
+
+				tokens = append(tokens, tok)
 			}
 
-			tokens = append(tokens, tok)
 			if source[len(source)-3] == '-' {
 				tokens = append(tokens, Token{
 					Type: TrimRightTokenType,
@@ -114,9 +120,12 @@ func formTokenMatcher(delims []string) *regexp.Regexp {
 	}
 
 	tokenMatcher := regexp.MustCompile(
-		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
+		fmt.Sprintf(`%s-?\s*(.+?)\s*-?%s|%s-?\s*#(?:(?:%v)*)-?%s|%s-?\s*(\w+)(?:\s+((?:%v)+?))?\s*-?%s`,
 			// QuoteMeta will escape any of these that are regex commands
 			regexp.QuoteMeta(delims[0]), regexp.QuoteMeta(delims[1]),
+			// Inline comment alternative: {%#...%} or {%- # ...%} — optional whitespace between trim marker and #.
+			// No capturing groups so existing group indices are unchanged.
+			regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),
 			regexp.QuoteMeta(delims[2]), strings.Join(exclusion, "|"), regexp.QuoteMeta(delims[3]),
 		),
 	)

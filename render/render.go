@@ -6,7 +6,6 @@ import (
 	"io"
 	"reflect"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/osteele/liquid/parser"
@@ -14,17 +13,36 @@ import (
 	"github.com/osteele/liquid/values"
 )
 
+// sizeLimitWriter wraps an io.Writer and stops writing once the byte limit is reached.
+type sizeLimitWriter struct {
+	w     io.Writer
+	limit int64
+	total int64
+}
+
+func (s *sizeLimitWriter) Write(p []byte) (int, error) {
+	s.total += int64(len(p))
+	if s.total > s.limit {
+		return 0, fmt.Errorf("render size limit of %d bytes exceeded", s.limit)
+	}
+	return s.w.Write(p)
+}
+
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
-	tw := trimWriter{w: w}
+	var out io.Writer = w
+	if c.SizeLimit > 0 {
+		out = &sizeLimitWriter{w: w, limit: c.SizeLimit}
+	}
+	tw := trimWriter{w: out}
 
 	err := node.render(&tw, newNodeContext(vars, c))
 	if err != nil {
 		return err
 	}
 
-	if _, err := tw.Flush(); err != nil {
-		panic(err)
+	if _, flushErr := tw.Flush(); flushErr != nil {
+		return &RenderError{parser.WrapError(flushErr, invalidLoc)}
 	}
 
 	return nil
@@ -38,14 +56,25 @@ func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	}
 
 	for _, n := range seq {
+		if ctx := c.config.Context; ctx != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return &RenderError{parser.WrapError(ctxErr, invalidLoc)}
+			}
+		}
 		err := n.render(tw, c)
 		if err != nil {
+			if h := c.config.ExceptionHandler; h != nil {
+				if _, writeErr := io.WriteString(tw, h(err)); writeErr != nil {
+					return wrapRenderError(writeErr, n)
+				}
+				continue
+			}
 			return err
 		}
 	}
 
-	if _, err := tw.Flush(); err != nil {
-		panic(err)
+	if _, flushErr := tw.Flush(); flushErr != nil {
+		return &RenderError{parser.WrapError(flushErr, invalidLoc)}
 	}
 
 	return nil
@@ -65,6 +94,13 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 
 	err := renderer(w, rendererContext{ctx, nil, n})
 
+	// Annotate UndefinedVariableError with the innermost enclosing block tag
+	// source, but only the first time (innermost wins over outer blocks).
+	if uve, ok := err.(*UndefinedVariableError); ok && uve.BlockContext == "" {
+		uve.BlockContext = n.Source
+		uve.BlockLine = n.SourceLoc.LineNo
+	}
+
 	return wrapRenderError(err, n)
 }
 
@@ -80,16 +116,36 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 }
 
 func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
+	// StrictVariables: check before evaluation so that undefined root
+	// variables are caught even when a filter chain transforms nil → "".
+	// We look for the presence of the root variable name in the bindings map
+	// (key-existence, not value-truthiness) so that an explicit nil binding
+	// still counts as "defined".
+	if ctx.config.StrictVariables {
+		vars := n.expr.Variables()
+		if len(vars) > 0 && len(vars[0]) > 0 {
+			root := vars[0][0]
+			if _, exists := ctx.bindings[root]; !exists {
+				// Name is the root variable name only (e.g. "user", not "user.name"),
+				// matching Ruby Liquid's behaviour for dotted-path access.
+				locErr := parser.Errorf(n, "undefined variable %q", root)
+				return &UndefinedVariableError{Name: root, loc: locErr}
+			}
+		}
+	}
+
 	value, err := ctx.Evaluate(n.expr)
 	if err != nil {
 		return wrapRenderError(err, n)
 	}
 
-	if value == nil && ctx.config.StrictVariables {
-		name := strings.TrimSpace(n.Token.Args)
-		locErr := parser.Errorf(n, "undefined variable %q", name)
-		return &UndefinedVariableError{Name: name, loc: locErr}
+	if gf := ctx.config.globalFilter; gf != nil {
+		value, err = gf(value)
+		if err != nil {
+			return wrapRenderError(err, n)
+		}
 	}
+
 	if sv, isSafe := value.(values.SafeValue); isSafe {
 		err = writeObject(w, sv.Value)
 	} else {
@@ -113,8 +169,19 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 
 func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
 	for _, c := range n.Children {
+		if ctxVal := ctx.config.Context; ctxVal != nil {
+			if ctxErr := ctxVal.Err(); ctxErr != nil {
+				return &RenderError{parser.WrapError(ctxErr, invalidLoc)}
+			}
+		}
 		err := c.render(w, ctx)
 		if err != nil {
+			if h := ctx.config.ExceptionHandler; h != nil {
+				if _, writeErr := io.WriteString(w, h(err)); writeErr != nil {
+					return wrapRenderError(writeErr, n)
+				}
+				continue
+			}
 			return err
 		}
 	}
@@ -134,11 +201,17 @@ func (n *TextNode) render(w *trimWriter, _ nodeContext) Error {
 
 func (n *TrimNode) render(w *trimWriter, _ nodeContext) Error {
 	if n.TrimDirection == parser.Left {
-		return wrapRenderError(w.TrimLeft(), n)
-	} else {
-		w.TrimRight()
-		return nil
+		if n.Greedy {
+			return wrapRenderError(w.TrimLeft(), n)
+		}
+		return wrapRenderError(w.TrimLeftNonGreedy(), n)
 	}
+	if n.Greedy {
+		w.TrimRight()
+	} else {
+		w.TrimRightNonGreedy()
+	}
+	return nil
 }
 
 // writeObject writes a value used in an object node

@@ -66,6 +66,7 @@ type SeqNode struct {
 type TrimNode struct {
 	sourcelessNode
 	parser.TrimDirection
+	Greedy bool // true = trim all whitespace; false = inline blanks + at most one newline
 }
 
 // FIXME requiring this is a bad design

@@ -23,6 +23,7 @@ var dateLayouts = []string{
 	// ISO 8601
 	"2006-01-02T15:04:05-07:00", // this is also XML Schema
 	"2006-01-02T15:04:05Z",
+	"2006-01-02T15:04:05", // ISO 8601 without timezone
 	"2006-01-02",
 	"20060102T150405Z",
 
@@ -47,7 +48,7 @@ var dateLayouts = []string{
 
 // ParseDate tries a few heuristics to parse a date from a string
 func ParseDate(s string) (time.Time, error) {
-	if s == "now" {
+	if s == "now" || s == "today" {
 		return time.Now(), nil
 	}
 

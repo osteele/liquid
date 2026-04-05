@@ -39,8 +39,7 @@ func init() {
 %token ASSIGN CYCLE LOOP WHEN
 %token EQ NEQ GE LE IN AND OR NOT CONTAINS DOTDOT
 %token EMPTY BLANK
-%left OR
-%left AND
+%right AND OR
 %right NOT
 %left '.' '|'
 %left '<' '>'
@@ -209,13 +208,13 @@ cond:
 		return values.ValueOf(!fa(ctx).Test())
 	}
 }
-| cond AND rel {
+| cond AND cond {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
 	}
 }
-| cond OR rel {
+| cond OR cond {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
