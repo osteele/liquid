@@ -274,7 +274,7 @@ func TestRenderAudit_Result_RO02_forLoopLinearized(t *testing.T) {
 		t.Fatalf("expected >= 4 expressions, got %d", len(result.Expressions))
 	}
 	// Variables come first (body traces from iterations).
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		if result.Expressions[i].Kind != liquid.KindVariable {
 			t.Errorf("Expressions[%d].Kind=%q, want variable", i, result.Expressions[i].Kind)
 		}

@@ -389,7 +389,7 @@ func TestRenderAudit_Variable_VP06_threeFilterChain(t *testing.T) {
 		t.Fatalf("Pipeline len=%d, want 3", len(v.Variable.Pipeline))
 	}
 	// Each step's Output should equal the next step's Input.
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		if v.Variable.Pipeline[i].Output != v.Variable.Pipeline[i+1].Input {
 			t.Errorf("pipeline chain broken between step %d and %d", i, i+1)
 		}
