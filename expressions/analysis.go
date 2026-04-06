@@ -53,8 +53,9 @@ func computeVariables(evaluator func(Context) values.Value) [][]string {
 // trackingContext is an expressions.Context that records variable accesses.
 // It is internal to the expressions package and used only by computeVariables.
 type trackingContext struct {
-	collector *variableCollector
-	bindings  map[string]any
+	collector   *variableCollector
+	bindings    map[string]any
+	filterNames []string // recorded filter names, set when filter-tracking is active
 }
 
 func (tc *trackingContext) Get(name string) any {
@@ -75,7 +76,10 @@ func (tc *trackingContext) Clone() Context {
 
 // ApplyFilter evaluates the receiver and params to trigger path recording,
 // then returns nil (filters are not applied during static analysis).
-func (tc *trackingContext) ApplyFilter(_ string, receiver valueFn, params []valueFn) (any, error) {
+func (tc *trackingContext) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
+	if tc.filterNames != nil {
+		tc.filterNames = append(tc.filterNames, name)
+	}
 	v := receiver(tc)
 	if tv, ok := v.(*trackingValue); ok {
 		tv.record()
@@ -95,7 +99,7 @@ var untrackable = &trackingValue{}
 
 // trackingValue is a values.Value that records property access chains.
 type trackingValue struct {
-	path      []string          // accumulated path segments, e.g. ["customer", "first_name"]
+	path      []string           // accumulated path segments, e.g. ["customer", "first_name"]
 	collector *variableCollector // nil for untrackable sentinel
 }
 
@@ -174,4 +178,31 @@ func (tv *trackingValue) IndexValue(key values.Value) values.Value {
 		ktv.record()
 	}
 	return untrackable
+}
+
+// computeFilters runs an expression evaluator with a tracking context to collect
+// all filter names referenced by the expression. Panics are swallowed.
+func computeFilters(evaluator func(Context) values.Value) []string {
+	tc := &trackingContext{
+		collector:   newVariableCollector(),
+		bindings:    map[string]any{},
+		filterNames: []string{},
+	}
+	func() {
+		defer func() { recover() }() //nolint:errcheck
+		evaluator(tc)
+	}()
+	if len(tc.filterNames) == 0 {
+		return nil
+	}
+	return tc.filterNames
+}
+
+// FilterNames returns the names of all filters used in the expression.
+// Returns nil if the expression does not have an accessible evaluator.
+func FilterNames(e Expression) []string {
+	if ex, ok := e.(*expression); ok {
+		return computeFilters(ex.evaluator)
+	}
+	return nil
 }

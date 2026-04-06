@@ -162,42 +162,66 @@ rel:
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Equal(b))
+		result := a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("==", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr NEQ expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(!a.Equal(b))
+		result := !a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("!=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr '>' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(b.Less(a))
+		result := b.Less(a)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook(">", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr '<' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Less(b))
+		result := a.Less(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("<", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr GE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(b.Less(a) || a.Equal(b))
+		result := b.Less(a) || a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook(">=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr LE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Less(b) || a.Equal(b))
+		result := a.Less(b) || a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("<=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr CONTAINS expr { $$ = makeContainsExpr($1, $3) }
@@ -214,13 +238,31 @@ cond:
 | cond AND cond {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
+		if c, ok := ctx.(*context); ok {
+			c.callGroupBeginHook()
+		}
+		a := fa(ctx)
+		b := fb(ctx)
+		result := a.Test() && b.Test()
+		if c, ok := ctx.(*context); ok {
+			c.callGroupEndHook("and", result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | cond OR cond {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
+		if c, ok := ctx.(*context); ok {
+			c.callGroupBeginHook()
+		}
+		a := fa(ctx)
+		b := fb(ctx)
+		result := a.Test() || b.Test()
+		if c, ok := ctx.(*context); ok {
+			c.callGroupEndHook("or", result)
+		}
+		return values.ValueOf(result)
 	}
 }
 ;

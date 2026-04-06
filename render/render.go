@@ -6,6 +6,7 @@ import (
 	"io"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/osteele/liquid/parser"
@@ -129,14 +130,66 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 				// Name is the root variable name only (e.g. "user", not "user.name"),
 				// matching Ruby Liquid's behaviour for dotted-path access.
 				locErr := parser.Errorf(n, "undefined variable %q", root)
-				return &UndefinedVariableError{Name: root, loc: locErr}
+				uve := &UndefinedVariableError{Name: root, loc: locErr}
+				if audit := ctx.config.Audit; audit != nil {
+					if audit.OnError != nil {
+						audit.OnError(n.SourceLoc, n.EndLoc, n.Source, uve)
+					}
+					if audit.OnObject != nil && !audit.suppressInner {
+						parts := vars[0]
+						audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, strings.Join(parts, "."), parts, nil, nil, audit.depth, uve)
+					}
+				}
+				return uve
 			}
 		}
 	}
 
+	// Set up filter pipeline capture if audit is active.
+	var auditPipeline []FilterStep
+	if audit := ctx.config.Audit; audit != nil && !audit.suppressInner {
+		audit.filterTarget = &auditPipeline
+		audit.currentLocStart = n.SourceLoc
+		audit.currentLocEnd = n.EndLoc
+		audit.currentLocSource = n.Source
+	}
+
 	value, err := ctx.Evaluate(n.expr)
+
+	if audit := ctx.config.Audit; audit != nil {
+		audit.filterTarget = nil
+		audit.currentLocStart = parser.SourceLoc{}
+		audit.currentLocEnd = parser.SourceLoc{}
+		audit.currentLocSource = ""
+	}
+
 	if err != nil {
+		if audit := ctx.config.Audit; audit != nil && audit.OnError != nil {
+			audit.OnError(n.SourceLoc, n.EndLoc, n.Source, err)
+		}
+		// Emit OnObject even on error (with nil value) so the audit layer can
+		// record the Expression with Error populated.
+		if audit := ctx.config.Audit; audit != nil && audit.OnObject != nil && !audit.suppressInner {
+			vars := n.expr.Variables()
+			name, parts := "", []string{}
+			if len(vars) > 0 && len(vars[0]) > 0 {
+				parts = vars[0]
+				name = strings.Join(parts, ".")
+			}
+			audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, name, parts, nil, auditPipeline, audit.depth, err)
+		}
 		return wrapRenderError(err, n)
+	}
+
+	// Emit audit event for this object node (no error case).
+	if audit := ctx.config.Audit; audit != nil && audit.OnObject != nil && !audit.suppressInner {
+		vars := n.expr.Variables()
+		name, parts := "", []string{}
+		if len(vars) > 0 && len(vars[0]) > 0 {
+			parts = vars[0]
+			name = strings.Join(parts, ".")
+		}
+		audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, name, parts, value, auditPipeline, audit.depth, nil)
 	}
 
 	if gf := ctx.config.globalFilter; gf != nil {

@@ -15,7 +15,12 @@ func makeRangeExpr(startFn, endFn func(Context) values.Value) func(Context) valu
 
 func makeContainsExpr(e1, e2 func(Context) values.Value) func(Context) values.Value {
 	return func(ctx Context) values.Value {
-		return values.ValueOf(e1(ctx).Contains(e2(ctx)))
+		a, b := e1(ctx), e2(ctx)
+		result := a.Contains(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("contains", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 
@@ -43,7 +48,16 @@ func makeObjectPropertyExpr(objFn func(Context) values.Value, name string) func(
 	index := values.ValueOf(name)
 
 	return func(ctx Context) values.Value {
-		return objFn(ctx).PropertyValue(index)
+		obj := objFn(ctx)
+		// Detect nil-dereference: property access on a nil intermediate.
+		// Only checked in real evaluation contexts (not during static analysis),
+		// identified by the context being a *context rather than *trackingContext.
+		if c, ok := ctx.(*context); ok {
+			if obj.Interface() == nil {
+				c.callNilDereferenceHook("nil", name)
+			}
+		}
+		return obj.PropertyValue(index)
 	}
 }
 

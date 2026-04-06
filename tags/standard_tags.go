@@ -88,18 +88,43 @@ func makeAssignTag(cfg *render.Config) func(string) (func(io.Writer, render.Cont
 		}
 
 		return func(w io.Writer, ctx render.Context) error {
+			hooks := ctx.AuditHooks()
+
+			// Capture filter pipeline for audit if active.
+			var auditPipeline []render.FilterStep
+			if hooks != nil && hooks.OnAssignment != nil {
+				hooks.SetFilterTarget(&auditPipeline)
+			}
+
 			value, err := ctx.Evaluate(stmt.ValueFn)
+
+			if hooks != nil {
+				hooks.SetFilterTarget(nil)
+			}
+
 			if err != nil {
 				return err
 			}
 
 			// Use Path if available (dot notation), otherwise fall back to Variable (simple assignment)
 			if len(stmt.Path) > 1 {
-				return ctx.SetPath(stmt.Path, value)
+				if setErr := ctx.SetPath(stmt.Path, value); setErr != nil {
+					return setErr
+				}
+			} else {
+				// Simple assignment (backward compatibility and standard mode)
+				ctx.Set(stmt.Assignment.Variable, value)
 			}
 
-			// Simple assignment (backward compatibility and standard mode)
-			ctx.Set(stmt.Assignment.Variable, value)
+			// Emit audit event.
+			if hooks != nil && hooks.OnAssignment != nil {
+				start, end := ctx.TagLoc()
+				hooks.OnAssignment(
+					start, end, source,
+					stmt.Assignment.Variable, stmt.Path, value, auditPipeline,
+					hooks.Depth(),
+				)
+			}
 
 			return nil
 		}, nil
@@ -124,6 +149,11 @@ func captureTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) 
 		}
 
 		ctx.Set(varname, s)
+
+		// Emit audit event.
+		if hooks := ctx.AuditHooks(); hooks != nil && hooks.OnCapture != nil {
+			hooks.OnCapture(node.SourceLoc, node.EndLoc, node.Source, varname, s, hooks.Depth())
+		}
 
 		return nil
 	}, nil

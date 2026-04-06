@@ -4,13 +4,12 @@
 
 package expressions
 
-import __yyfmt__ "fmt"
-
-//line expressions.y:3
 import (
 	"fmt"
+	__yyfmt__ "fmt"
+
 	"github.com/osteele/liquid/values"
-)
+) //line expressions.y:3
 
 func init() {
 	// This allows adding and removing references to fmt in the rules below,
@@ -823,7 +822,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(a.Equal(b))
+				result := a.Equal(b)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook("==", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 42:
@@ -833,7 +836,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(!a.Equal(b))
+				result := !a.Equal(b)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook("!=", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 43:
@@ -843,7 +850,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(b.Less(a))
+				result := b.Less(a)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook(">", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 44:
@@ -853,7 +864,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(a.Less(b))
+				result := a.Less(b)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook("<", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 45:
@@ -863,7 +878,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(b.Less(a) || a.Equal(b))
+				result := b.Less(a) || a.Equal(b)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook(">=", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 46:
@@ -873,7 +892,11 @@ yydefault:
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
 				a, b := fa(ctx), fb(ctx)
-				return values.ValueOf(a.Less(b) || a.Equal(b))
+				result := a.Less(b) || a.Equal(b)
+				if c, ok := ctx.(*context); ok {
+					c.callComparisonHook("<=", a, b, result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 47:
@@ -897,7 +920,16 @@ yydefault:
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
-				return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
+				if c, ok := ctx.(*context); ok {
+					c.callGroupBeginHook()
+				}
+				a := fa(ctx)
+				b := fb(ctx)
+				result := a.Test() && b.Test()
+				if c, ok := ctx.(*context); ok {
+					c.callGroupEndHook("and", result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	case 51:
@@ -906,7 +938,16 @@ yydefault:
 		{
 			fa, fb := yyDollar[1].f, yyDollar[3].f
 			yyVAL.f = func(ctx Context) values.Value {
-				return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
+				if c, ok := ctx.(*context); ok {
+					c.callGroupBeginHook()
+				}
+				a := fa(ctx)
+				b := fb(ctx)
+				result := a.Test() || b.Test()
+				if c, ok := ctx.(*context); ok {
+					c.callGroupEndHook("or", result)
+				}
+				return values.ValueOf(result)
 			}
 		}
 	}

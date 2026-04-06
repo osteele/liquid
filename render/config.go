@@ -59,6 +59,11 @@ type Config struct {
 	// render output. A render that would exceed this limit fails with an error.
 	SizeLimit int64
 
+	// Audit, when non-nil, activates render audit/trace collection.
+	// Hook functions in the struct are called as the template is rendered.
+	// Must not be shared between concurrent renders.
+	Audit *AuditHooks
+
 	// Context is an optional Go context.Context that can be used to cancel a
 	// render in-flight (e.g. for per-request timeouts). When set, each node
 	// render checks for cancellation before proceeding.

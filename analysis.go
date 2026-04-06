@@ -51,13 +51,13 @@ type StaticAnalysis struct {
 	Filters []string
 }
 
-// Expression is a compiled Liquid expression that can evaluate variable references.
+// CompiledExpression is a compiled Liquid expression that can evaluate variable references.
 // It is used when implementing custom tag/block analyzers via RegisterTagAnalyzer
 // and RegisterBlockAnalyzer — pass it in NodeAnalysis.Arguments so the static
 // analysis engine can walk its variable references.
-type Expression = expressions.Expression
+type CompiledExpression = expressions.Expression
 
-// ParseExpression parses a Liquid expression string into an Expression that can be
+// ParseExpression parses a Liquid expression string into a CompiledExpression that can be
 // used with RegisterTagAnalyzer / RegisterBlockAnalyzer. Returns an error if the
 // expression contains a syntax error.
 //
@@ -66,9 +66,9 @@ type Expression = expressions.Expression
 //	e.RegisterTagAnalyzer("my_tag", func(args string) render.NodeAnalysis {
 //	    expr, err := ParseExpression(args)
 //	    if err != nil { return render.NodeAnalysis{} }
-//	    return render.NodeAnalysis{Arguments: []Expression{expr}}
+//	    return render.NodeAnalysis{Arguments: []CompiledExpression{expr}}
 //	})
-func ParseExpression(source string) (Expression, error) {
+func ParseExpression(source string) (CompiledExpression, error) {
 	return expressions.Parse(source)
 }
 

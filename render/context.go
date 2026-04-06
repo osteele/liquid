@@ -69,6 +69,14 @@ type Context interface {
 	// nil renders as empty string, arrays render as space-joined elements, and autoescape
 	// is applied if configured on the engine.
 	WriteValue(w io.Writer, value any) error
+	// AuditHooks returns the active render audit hooks, or nil when no audit is in progress.
+	// Used internally by tag renderers to emit audit trace events.
+	AuditHooks() *AuditHooks
+	// TagLoc returns the source start and end locations of the current tag node.
+	// For block tags the block's SourceLoc/EndLoc are returned.
+	// Returns zero values when called outside a tag renderer.
+	// Used internally by tag renderers to report source locations in audit events.
+	TagLoc() (start, end parser.SourceLoc)
 }
 
 type TemplateStore interface {
@@ -179,17 +187,42 @@ func (c rendererContext) ExpandTagArg() (string, error) {
 	return args, nil
 }
 
-// RenderBlock renders a node.
+// AuditHooks returns the active render audit hooks, or nil if no audit is active.
+func (c rendererContext) AuditHooks() *AuditHooks {
+	return c.ctx.config.Audit
+}
+
+// TagLoc returns the source start and end locations of the current tag or block node.
+func (c rendererContext) TagLoc() (start, end parser.SourceLoc) {
+	if c.node != nil {
+		return c.node.SourceLoc, c.node.EndLoc
+	}
+	if c.cn != nil {
+		return c.cn.SourceLoc, c.cn.EndLoc
+	}
+	return parser.SourceLoc{}, parser.SourceLoc{}
+}
+
+// RenderBlock renders a node. When audit is active, depth is incremented for
+// the duration of the block body so inner expressions get the correct depth.
 func (c rendererContext) RenderBlock(w io.Writer, b *BlockNode) error {
+	if audit := c.ctx.config.Audit; audit != nil {
+		audit.depth++
+		defer func() { audit.depth-- }()
+	}
 	return c.ctx.RenderSequence(w, b.Body)
 }
 
-// RenderChildren renders the current node's children.
+// RenderChildren renders the current node's children. When audit is active,
+// depth is incremented for the duration so inner expressions get the correct depth.
 func (c rendererContext) RenderChildren(w io.Writer) Error {
 	if c.cn == nil {
 		return nil
 	}
-
+	if audit := c.ctx.config.Audit; audit != nil {
+		audit.depth++
+		defer func() { audit.depth-- }()
+	}
 	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 

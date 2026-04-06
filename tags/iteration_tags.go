@@ -118,6 +118,15 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 		iter := makeIterator(val)
 		if iter == nil {
 			// Collection is nil or non-iterable: render else branch if present.
+			// Emit a not-iterable warning when the value is non-nil (nil is
+			// intentional; non-nil means the template author made a mistake).
+			if val != nil && val != false {
+				if hooks := ctx.AuditHooks(); hooks != nil {
+					coll := collectionName(node.Args)
+					hooks.EmitWarning(node.SourceLoc, node.EndLoc, node.Source, "not-iterable",
+						fmt.Sprintf("%q is %T; for loop iterates zero times", coll, val))
+				}
+			}
 			if len(node.Clauses) == 1 && node.Clauses[0].Name == "else" {
 				return ctx.RenderBlock(w, node.Clauses[0])
 			}
@@ -225,7 +234,32 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 			return ctx.RenderBlock(w, node.Clauses[0])
 		}
 
-		return loopRenderer{stmt.Loop, node.Name, loopName(node.Args, stmt.Loop.Variable)}.render(iter, w, ctx)
+		lr := loopRenderer{stmt.Loop, node.Name, loopName(node.Args, stmt.Loop.Variable)}
+
+		// Save audit state for nested-loop correctness, then reset for this loop.
+		hooks := ctx.AuditHooks()
+		savedIterCount := 0
+		savedSuppressInner := false
+		if hooks != nil {
+			savedIterCount = hooks.IterCount()
+			savedSuppressInner = hooks.SuppressInner()
+			hooks.ResetIterState()
+		}
+
+		renderErr := lr.render(iter, w, ctx)
+
+		// Emit audit event AFTER rendering so TracedCount reflects reality.
+		if hooks != nil && hooks.OnIteration != nil {
+			iterInfo := buildAuditIterInfo(stmt.Loop, node.Args, iter, isOffsetContinue, effectiveStart, hooks)
+			hooks.OnIteration(node.SourceLoc, node.EndLoc, node.Source, iterInfo, hooks.Depth())
+		}
+
+		// Restore outer loop's iteration tracking state.
+		if hooks != nil {
+			hooks.RestoreIterState(savedIterCount, savedSuppressInner)
+		}
+
+		return renderErr
 	}, nil
 }
 
@@ -245,6 +279,63 @@ func loopName(args, variable string) string {
 		return variable + "-" + rest[:i]
 	}
 	return variable + "-" + rest
+}
+
+// collectionName extracts the collection name from a loop arg string.
+// e.g. "item in products limit:5" → "products"
+func collectionName(args string) string {
+	const inKw = " in "
+	idx := strings.Index(args, inKw)
+	if idx < 0 {
+		return ""
+	}
+	rest := strings.TrimSpace(args[idx+len(inKw):])
+	if i := strings.IndexByte(rest, ' '); i > 0 {
+		return rest[:i]
+	}
+	return rest
+}
+
+// buildAuditIterInfo assembles an AuditIterInfo from loop metadata.
+// hooks may be nil.
+func buildAuditIterInfo(loop expressions.Loop, args string, iter iterable, isOffsetContinue bool, effectiveStart int, hooks *render.AuditHooks) render.AuditIterInfo {
+	origLen := iter.Len()
+
+	var limitPtr *int
+	var offsetPtr *int
+
+	if loop.Offset != nil || isOffsetContinue {
+		off := effectiveStart
+		offsetPtr = &off
+	}
+
+	effectiveLen := origLen
+	truncated := loop.Limit != nil
+
+	if truncated {
+		v := effectiveLen
+		limitPtr = &v
+	}
+
+	// TracedCount = how many iterations had their inner hooks actually called.
+	tracedCount := origLen
+	if hooks != nil {
+		tracedCount = hooks.IterCount()
+		if hooks.MaxIterItems > 0 && origLen > hooks.MaxIterItems {
+			truncated = true
+		}
+	}
+
+	return render.AuditIterInfo{
+		Variable:    loop.Variable,
+		Collection:  collectionName(args),
+		Length:      effectiveLen,
+		Limit:       limitPtr,
+		Offset:      offsetPtr,
+		Reversed:    loop.Reversed,
+		Truncated:   truncated,
+		TracedCount: tracedCount,
+	}
 }
 
 type loopRenderer struct {
@@ -315,6 +406,17 @@ loop:
 			forloopMap["col_last"] = col0+1 == tablerowCols || i+1 == l
 			forloopMap["row"] = i/tablerowCols + 1
 		}
+
+		// Audit: count this iteration and suppress inner hooks if limit reached.
+		if auditHooks := ctx.AuditHooks(); auditHooks != nil {
+			if auditHooks.MaxIterItems > 0 && auditHooks.IterCount() >= auditHooks.MaxIterItems {
+				auditHooks.SetSuppressInner(true)
+			} else {
+				// Count only iterations that are actually traced.
+				auditHooks.IncrIterCount()
+			}
+		}
+
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
 		decorator.after(w, i, l)

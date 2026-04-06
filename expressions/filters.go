@@ -87,8 +87,8 @@ func (c *Config) AddSafeFilter() {
 }
 
 var (
-	closureType   = reflect.TypeOf(closure{})
-	interfaceType = reflect.TypeOf([]any{}).Elem()
+	closureType   = reflect.TypeFor[closure]()
+	interfaceType = reflect.TypeFor[[]any]().Elem()
 )
 
 func isClosureInterfaceType(t reflect.Type) bool {
@@ -98,11 +98,16 @@ func isClosureInterfaceType(t reflect.Type) bool {
 func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
 	// Check context-aware filters first.
 	if fn, ok := ctx.contextFilters[name]; ok {
+		inputVal := receiver(ctx).Interface()
 		args := make([]any, len(params))
 		for i, p := range params {
 			args[i] = p(ctx).Interface()
 		}
-		return fn(ctx, receiver(ctx).Interface(), args)
+		result, err := fn(ctx, inputVal, args)
+		if err == nil && ctx.FilterHook != nil {
+			ctx.FilterHook(name, inputVal, args, result)
+		}
+		return result, err
 	}
 
 	filter, ok := ctx.filters[name]
@@ -141,10 +146,17 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 		return nil, err
 	}
 
-	switch out := out.(type) {
+	var result any
+	switch v := out.(type) {
 	case []byte:
-		return string(out), nil
+		result = string(v)
 	default:
-		return out, nil
+		result = out
 	}
+
+	if ctx.FilterHook != nil {
+		ctx.FilterHook(name, args[0], args[1:], result)
+	}
+
+	return result, nil
 }
