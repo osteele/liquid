@@ -1,495 +1,495 @@
-# Go Liquid — Mapeamento Completo de Features
+# Go Liquid — Complete Feature Mapping
 
-> Referência extraída diretamente do código-fonte em `c:\Users\joca\github.com\joaqu1m\liquid`.
-> Organizada seguindo a mesma estrutura do `ruby-liquid-reference.md` para facilitar comparação.
-> Todos os caminhos de arquivo são relativos à raiz do repositório.
+> Reference extracted directly from the source code in `c:\Users\joca\github.com\joaqu1m\liquid`.
+> Organized following the same structure as `ruby-liquid-reference.md` for easy comparison.
+> All file paths are relative to the repository root.
 
 ---
 
 ## Tags
 
-### Tags de output / expressão
+### Output / Expression tags
 
-| Tag | Sintaxe | Notas |
-|-----|---------|-------|
-| `{{ }}` | `{{ expressao }}` | Output de variável ou expressão com filtros. Tipo: `ObjTokenType` → `ObjectNode`. |
-
-> **Ausentes:** `echo`, `liquid` (multi-linha), `#` (inline comment)
-
----
-
-### Tags de variável / estado
-
-| Tag | Tipo | Sintaxe | Notas |
-|-----|------|---------|-------|
-| `assign` | simple tag | `{% assign var = expr %}` | Avalia expressão, define variável no escopo. Com `EnableJekyllExtensions()`, suporta dot notation: `{% assign page.prop = expr %}` (`Path []string`). Tem analyzer que reporta `LocalScope` + `Arguments`. |
-| `capture` | block tag | `{% capture varname %}...{% endcapture %}` | Renderiza body como string, atribui à variável. Requer exatamente um nome de variável. Tem analyzer que reporta `LocalScope`. |
-
-> **Ausentes:** `increment`, `decrement`
-
----
-
-### Tags condicionais
-
-| Tag | Sub-tags | Notas |
-|-----|----------|-------|
-| `if` | `elsif`, `else` | Operadores: `==`, `!=`, `<>` (via NEQ), `<`, `>`, `<=`, `>=`, `contains`, `and`, `or`. Truthy: não `nil` e não `false`. Tem static analyzer. |
-| `unless` | `else` | Inverte condição inicial via `Not(expr)`. Usa o mesmo compilador (`ifTagCompiler(false)`). Tem o mesmo analyzer que `if`. |
-| `case` | `when`, `else` | Avalia expressão `case`, compara com `values.Equal()`. `when` suporta múltiplos valores separados por **vírgula**. Tem static analyzer. |
-
-> **Ausente:** `ifchanged`
-
-> **Nota sobre `case`/`when`:** Valores separados por `or` na cláusula `when` do Ruby não são suportados — apenas vírgula (`,`).
-
----
-
-### Tags de iteração
-
-| Tag | Opções | Notas |
+| Tag | Syntax | Notes |
 |-----|--------|-------|
-| `for` | `reversed`, `limit: n`, `offset: n`, range `(a..b)` | Sub-tag `else` (quando coleção vazia). Cria objeto `forloop`. Suporta `break`/`continue`. Iteração sobre array, range, map. Tem static analyzer (`BlockScope` para var de loop, `Arguments` para expr da coleção). |
-| `break` | — | Retorna sentinel `errLoopBreak`. Só válido dentro de `for`/`tablerow`. |
-| `continue` | — | Retorna sentinel `errLoopContinueLoop`. Só válido dentro de `for`/`tablerow`. |
-| `tablerow` | `cols: n`, `limit: n`, `offset: n`, range `(a..b)` | Mesma engine de loop que `for`. Gera HTML de tabela: `<tr class="rowN">...<td class="colN">...</td></tr>`. Cria mesmo objeto `forloop`. |
-| `cycle` | nome opcional: `{% cycle "name": v1, v2 %}` | Deve estar dentro de `for`. Lê `forloop[".cycles"]` para rastrear posição por grupo. Prefixo de grupo com `:`. |
+| `{{ }}` | `{{ expression }}` | Variable or expression output with filters. Type: `ObjTokenType` → `ObjectNode`. |
+
+> **Absent:** `echo`, `liquid` (multi-line), `#` (inline comment)
 
 ---
 
-### Objeto `forloop` (criado por `for` e `tablerow`)
+### Variable / State tags
 
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `forloop.first` | bool | `true` na primeira iteração |
-| `forloop.last` | bool | `true` na última iteração |
-| `forloop.index` | int | Índice 1-based |
-| `forloop.index0` | int | Índice 0-based |
-| `forloop.rindex` | int | Índice reverso 1-based |
-| `forloop.rindex0` | int | Índice reverso 0-based |
-| `forloop.length` | int | Total de iterações |
-| `.cycles` (interno) | map | Rastreia posição dos grupos de `cycle` |
+| Tag | Type | Syntax | Notes |
+|-----|------|--------|-------|
+| `assign` | simple tag | `{% assign var = expr %}` | Evaluates expression, sets variable in scope. With `EnableJekyllExtensions()`, supports dot notation: `{% assign page.prop = expr %}` (`Path []string`). Has analyzer that reports `LocalScope` + `Arguments`. |
+| `capture` | block tag | `{% capture varname %}...{% endcapture %}` | Renders body as string, assigns to variable. Requires exactly one variable name. Has analyzer that reports `LocalScope`. |
 
-> **Ausente vs Ruby:** `forloop.parentloop`, `forloop.name`
+> **Absent:** `increment`, `decrement`
 
 ---
 
-### Tags de inclusão de templates
+### Conditional tags
 
-| Tag | Sintaxe | Escopo | Notas |
-|-----|---------|--------|-------|
-| `include` | `{% include "filename" %}` | **Compartilhado** (bindings do pai são passados + sobrescritos por vars adicionais) | Resolve path relativo ao `SourceFile()`. Usa `TemplateStore.ReadTemplate()`. Implementado em `tags/include_tag.go`. |
+| Tag | Sub-tags | Notes |
+|-----|----------|-------|
+| `if` | `elsif`, `else` | Operators: `==`, `!=`, `<>` (via NEQ), `<`, `>`, `<=`, `>=`, `contains`, `and`, `or`. Truthy: not `nil` and not `false`. Has static analyzer. |
+| `unless` | `else` | Inverts initial condition via `Not(expr)`. Uses the same compiler (`ifTagCompiler(false)`). Has the same analyzer as `if`. |
+| `case` | `when`, `else` | Evaluates `case` expression, compares with `values.Equal()`. `when` supports multiple values separated by **comma**. Has static analyzer. |
 
-> **Ausente:** `render` (escopo isolado)
+> **Absent:** `ifchanged`
+
+> **Note on `case`/`when`:** Values separated by `or` in Ruby's `when` clause are not supported — only comma (`,`).
 
 ---
 
-### Tags de texto / estrutura
+### Iteration tags
 
-| Tag | Sintaxe | Notas |
+| Tag | Options | Notes |
 |-----|---------|-------|
-| `raw` | `{% raw %}...{% endraw %}` | Output literal, bypassa renderização. Parser seta `inRaw = true`. Tipo AST: `ASTRaw` → `RawNode`. |
-| `comment` | `{% comment %}...{% endcomment %}` | Parser seta `inComment = true`, pula todos os tokens até `endcomment`. Tags internas não precisam ser balanceadas. |
-
-> **Ausentes:** `#` (inline comment), `liquid` (multi-linha), `doc`, `echo`
+| `for` | `reversed`, `limit: n`, `offset: n`, range `(a..b)` | Sub-tag `else` (when collection empty). Creates `forloop` object. Supports `break`/`continue`. Iterates over array, range, map. Has static analyzer (`BlockScope` for loop var, `Arguments` for collection expr). |
+| `break` | — | Returns sentinel `errLoopBreak`. Only valid inside `for`/`tablerow`. |
+| `continue` | — | Returns sentinel `errLoopContinueLoop`. Only valid inside `for`/`tablerow`. |
+| `tablerow` | `cols: n`, `limit: n`, `offset: n`, range `(a..b)` | Same loop engine as `for`. Generates table HTML: `<tr class="rowN">...<td class="colN">...</td></tr>`. Creates same `forloop` object. |
+| `cycle` | optional name: `{% cycle "name": v1, v2 %}` | Must be inside `for`. Reads `forloop[".cycles"]` to track position per group. Group prefix with `:`. |
 
 ---
 
-## Filtros
+### `forloop` object (created by `for` and `tablerow`)
 
-### String (24 filtros)
+| Field | Type | Description |
+|-------|------|-------------|
+| `forloop.first` | bool | `true` on first iteration |
+| `forloop.last` | bool | `true` on last iteration |
+| `forloop.index` | int | 1-based index |
+| `forloop.index0` | int | 0-based index |
+| `forloop.rindex` | int | 1-based reverse index |
+| `forloop.rindex0` | int | 0-based reverse index |
+| `forloop.length` | int | Total iterations |
+| `.cycles` (internal) | map | Tracks position of `cycle` groups |
 
-| Filtro | Assinatura | Notas |
+> **Absent vs Ruby:** `forloop.parentloop`, `forloop.name`
+
+---
+
+### Template inclusion tags
+
+| Tag | Syntax | Scope | Notes |
+|-----|--------|-------|-------|
+| `include` | `{% include "filename" %}` | **Shared** (parent bindings are passed + overridden by additional vars) | Resolves path relative to `SourceFile()`. Uses `TemplateStore.ReadTemplate()`. Implemented in `tags/include_tag.go`. |
+
+> **Absent:** `render` (isolated scope)
+
+---
+
+### Text / Structure tags
+
+| Tag | Syntax | Notes |
+|-----|--------|-------|
+| `raw` | `{% raw %}...{% endraw %}` | Literal output, bypasses rendering. Parser sets `inRaw = true`. AST type: `ASTRaw` → `RawNode`. |
+| `comment` | `{% comment %}...{% endcomment %}` | Parser sets `inComment = true`, skips all tokens until `endcomment`. Internal tags do not need to be balanced. |
+
+> **Absent:** `#` (inline comment), `liquid` (multi-line), `doc`, `echo`
+
+---
+
+## Filters
+
+### String (24 filters)
+
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `append` | `string \| append: suffix` | Concatena no final |
-| `prepend` | `string \| prepend: prefix` | Concatena no início |
+| `append` | `string \| append: suffix` | Concatenates at end |
+| `prepend` | `string \| prepend: prefix` | Concatenates at beginning |
 | `upcase` | `string \| upcase` | |
 | `downcase` | `string \| downcase` | |
-| `capitalize` | `string \| capitalize` | Maiúscula na primeira letra; string vazia inalterada |
-| `escape` | `string \| escape` | HTML escape usando `html.EscapeString` |
-| `escape_once` | `string \| escape_once` | Desescapa primeiro, depois escapa — evita duplo escape |
+| `capitalize` | `string \| capitalize` | Uppercase first letter; empty string unchanged |
+| `escape` | `string \| escape` | HTML escape using `html.EscapeString` |
+| `escape_once` | `string \| escape_once` | Unescapes first, then escapes — avoids double escaping |
 | `strip` | `string \| strip` | `strings.TrimSpace` |
-| `lstrip` | `string \| lstrip` | Remove whitespace à esquerda (via `unicode.IsSpace`) |
-| `rstrip` | `string \| rstrip` | Remove whitespace à direita |
-| `newline_to_br` | `string \| newline_to_br` | Converte `\n` em `<br />` |
-| `strip_html` | `string \| strip_html` | Remove tags HTML via regex `<.*?>` (pode ser insuficiente para casos complexos) |
-| `strip_newlines` | `string \| strip_newlines` | Remove todos os `\n` e `\r\n` |
+| `lstrip` | `string \| lstrip` | Removes whitespace on the left (via `unicode.IsSpace`) |
+| `rstrip` | `string \| rstrip` | Removes whitespace on the right |
+| `newline_to_br` | `string \| newline_to_br` | Converts `\n` to `<br />` |
+| `strip_html` | `string \| strip_html` | Removes HTML tags via regex `<.*?>` (may be insufficient for complex cases) |
+| `strip_newlines` | `string \| strip_newlines` | Removes all `\n` and `\r\n` |
 | `truncate` | `string \| truncate[: n[, ellipsis]]` | Default: n=50, ellipsis=`"..."`. Rune-aware. |
 | `truncatewords` | `string \| truncatewords[: n[, ellipsis]]` | Default: n=15, ellipsis=`"..."` |
-| `split` | `string \| split: sep` | Retorna array; separador espaço é especial (split em runs de whitespace); trailing empty strings removidas |
+| `split` | `string \| split: sep` | Returns array; space separator is special (split on whitespace runs); trailing empty strings removed |
 | `replace` | `string \| replace: old, new` | `strings.ReplaceAll` |
-| `replace_first` | `string \| replace_first: old, new` | Substitui só a primeira |
-| `replace_last` | `string \| replace_last: old, new` | Substitui só a última (via `strings.LastIndex`) |
-| `remove` | `string \| remove: sub` | Remove todas as ocorrências |
-| `remove_first` | `string \| remove_first: sub` | Remove só a primeira |
-| `remove_last` | `string \| remove_last: sub` | Remove só a última |
-| `normalize_whitespace` | `string \| normalize_whitespace` | Colapsa runs de whitespace em um espaço (**Jekyll extension**) |
-| `number_of_words` | `string \| number_of_words[: mode]` | Conta palavras. Modos: `"default"`, `"cjk"`, `"auto"` (**Jekyll extension**) |
+| `replace_first` | `string \| replace_first: old, new` | Replaces only the first |
+| `replace_last` | `string \| replace_last: old, new` | Replaces only the last (via `strings.LastIndex`) |
+| `remove` | `string \| remove: sub` | Removes all occurrences |
+| `remove_first` | `string \| remove_first: sub` | Removes only the first |
+| `remove_last` | `string \| remove_last: sub` | Removes only the last |
+| `normalize_whitespace` | `string \| normalize_whitespace` | Collapses whitespace runs to a single space (**Jekyll extension**) |
+| `number_of_words` | `string \| number_of_words[: mode]` | Counts words. Modes: `"default"`, `"cjk"`, `"auto"` (**Jekyll extension**) |
 
-> **Ausente vs Ruby:** `squish` (Ruby colapsa + stripa; o equivalente aqui é `normalize_whitespace` mas sem strip automático)
+> **Absent vs Ruby:** `squish` (Ruby collapses + strips; the equivalent here is `normalize_whitespace` but without automatic strip)
 
 ---
 
-### Array (22 filtros)
+### Array (22 filters)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `size` | `array \| size` | Também funciona em strings (rune count) e maps. Retorna 0 para outros tipos. |
-| `first` | `array \| first` | Retorna nil para array vazio |
-| `last` | `array \| last` | Retorna nil para array vazio |
-| `join` | `array \| join[: glue]` | Default glue `" "`. Pula itens nil. |
-| `reverse` | `array \| reverse` | Retorna novo array |
-| `sort` | `array \| sort[: key]` | Crescente; suporta sort por chave de mapa/struct. Definido em `filters/sort_filters.go`. |
-| `sort_natural` | `array \| sort_natural[: key]` | Case-insensitive; suporta chave. |
-| `uniq` | `array \| uniq` | Remove duplicatas. O(1) para tipos comparáveis, O(n²) fallback. |
-| `compact` | `array \| compact` | Remove nils |
-| `map` | `array \| map: property` | Extrai propriedade de cada item |
-| `concat` | `array \| concat: outro_array` | Combina dois arrays (não deduplica) |
-| `where` | `array \| where: prop[, valor]` | Filtra onde property == valor; sem valor = truthy. `filters/array_filters.go`. |
-| `reject` | `array \| reject: prop[, valor]` | Inverso de `where`; sem valor = falsy |
-| `find` | `array \| find: prop[, valor]` | Primeiro item que satisfaz; retorna nil se não encontrado |
-| `find_index` | `array \| find_index: prop[, valor]` | Índice 0-based do primeiro match; nil se não encontrado |
-| `has` | `array \| has: prop[, valor]` | Retorna bool; `true` se algum item satisfaz |
-| `sum` | `array \| sum[: property]` | Soma numérica; preserva tipo int se sem floats; parseia strings; pula não-numéricos |
-| `slice` | `array \| slice: start[, length]` | Fatia de array ou string. Suporta start negativo (do final). Rune-aware para strings. Funciona em `string`, `[]byte`, slices. |
-| `group_by` | `array \| group_by: property` | Agrupa por valor de propriedade; retorna `[{"name": ..., "items": [...]}]` |
-| `push` | `array \| push: element` | Adiciona ao final, retorna novo array |
-| `unshift` | `array \| unshift: element` | Adiciona ao início, retorna novo array |
-| `pop` | `array \| pop` | Remove último elemento, retorna novo array |
-| `shift` | `array \| shift` | Remove primeiro elemento, retorna novo array |
-| `sample` | `array \| sample[: n]` | Retorna n elementos aleatórios. Se n=1, retorna elemento único; senão array. |
+| `size` | `array \| size` | Also works on strings (rune count) and maps. Returns 0 for other types. |
+| `first` | `array \| first` | Returns nil for empty array |
+| `last` | `array \| last` | Returns nil for empty array |
+| `join` | `array \| join[: glue]` | Default glue `" "`. Skips nil items. |
+| `reverse` | `array \| reverse` | Returns new array |
+| `sort` | `array \| sort[: key]` | Ascending; supports sort by map/struct key. Defined in `filters/sort_filters.go`. |
+| `sort_natural` | `array \| sort_natural[: key]` | Case-insensitive; supports key. |
+| `uniq` | `array \| uniq` | Removes duplicates. O(1) for comparable types, O(n²) fallback. |
+| `compact` | `array \| compact` | Removes nils |
+| `map` | `array \| map: property` | Extracts property from each item |
+| `concat` | `array \| concat: other_array` | Combines two arrays (no dedup) |
+| `where` | `array \| where: prop[, value]` | Filters where property == value; without value = truthy. `filters/array_filters.go`. |
+| `reject` | `array \| reject: prop[, value]` | Inverse of `where`; without value = falsy |
+| `find` | `array \| find: prop[, value]` | First item that satisfies; returns nil if not found |
+| `find_index` | `array \| find_index: prop[, value]` | 0-based index of first match; nil if not found |
+| `has` | `array \| has: prop[, value]` | Returns bool; `true` if any item satisfies |
+| `sum` | `array \| sum[: property]` | Numeric sum; preserves int type if no floats; parses strings; skips non-numeric |
+| `slice` | `array \| slice: start[, length]` | Array or string slice. Supports negative start (from end). Rune-aware for strings. Works on `string`, `[]byte`, slices. |
+| `group_by` | `array \| group_by: property` | Groups by property value; returns `[{"name": ..., "items": [...]}]` |
+| `push` | `array \| push: element` | Adds at end, returns new array |
+| `unshift` | `array \| unshift: element` | Adds at beginning, returns new array |
+| `pop` | `array \| pop` | Removes last element, returns new array |
+| `shift` | `array \| shift` | Removes first element, returns new array |
+| `sample` | `array \| sample[: n]` | Returns n random elements. If n=1, returns single element; otherwise array. |
 
-> **Nota:** `push`, `unshift`, `pop`, `shift`, `sample`, `group_by` são extensões não presentes no Liquid Ruby standard.
+> **Note:** `push`, `unshift`, `pop`, `shift`, `sample`, `group_by` are extensions not present in standard Ruby Liquid.
 
 ---
 
-### Matemática (11 filtros)
+### Math (11 filters)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
 | `abs` | `number \| abs` | `math.Abs` (float64) |
-| `plus` | `number \| plus: n` | Preserva tipo int se ambos são int |
-| `minus` | `number \| minus: n` | Preserva tipo int se ambos são int |
-| `times` | `number \| times: n` | Preserva tipo int se ambos são int |
-| `divided_by` | `number \| divided_by: n` | Divisão inteira se divisor é int; float se float; retorna erro em divisão por zero |
+| `plus` | `number \| plus: n` | Preserves int type if both are int |
+| `minus` | `number \| minus: n` | Preserves int type if both are int |
+| `times` | `number \| times: n` | Preserves int type if both are int |
+| `divided_by` | `number \| divided_by: n` | Integer division if divisor is int; float if float; returns error on division by zero |
 | `modulo` | `number \| modulo: n` | `math.Mod` (float) |
-| `round` | `number \| round[: casas]` | Default 0 casas decimais |
+| `round` | `number \| round[: decimals]` | Default 0 decimal places |
 | `ceil` | `number \| ceil` | |
 | `floor` | `number \| floor` | |
-| `at_least` | `number \| at_least: n` | `max(input, n)` — clamp mínimo |
-| `at_most` | `number \| at_most: n` | `min(input, n)` — clamp máximo |
+| `at_least` | `number \| at_least: n` | `max(input, n)` — minimum clamp |
+| `at_most` | `number \| at_most: n` | `min(input, n)` — maximum clamp |
 
 ---
 
-### Data (1 filtro)
+### Date (1 filter)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `date` | `date \| date[: format]` | Formato strftime via biblioteca `tuesday`. Default `"%a, %b %d, %y"`. Suporta múltiplos formatos de parse (ANSIC, RFC3339, ISO 8601, Ruby, etc.). |
+| `date` | `date \| date[: format]` | strftime format via `tuesday` library. Default `"%a, %b %d, %y"`. Supports multiple parse formats (ANSIC, RFC3339, ISO 8601, Ruby, etc.). |
 
-**Formatos de parse aceitos:** `ANSIC`, `UnixDate`, `RubyDate`, `RFC822`, `RFC822Z`, `RFC850`, `RFC1123`, `RFC1123Z`, `RFC3339`, ISO 8601, `"2006-01-02"`, entre outros. Ver `values/parsedate.go`.
+**Accepted parse formats:** `ANSIC`, `UnixDate`, `RubyDate`, `RFC822`, `RFC822Z`, `RFC850`, `RFC1123`, `RFC1123Z`, `RFC3339`, ISO 8601, `"2006-01-02"`, among others. See `values/parsedate.go`.
 
 ---
 
-### HTML / URL / Encoding (8 filtros)
+### HTML / URL / Encoding (8 filters)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
 | `url_encode` | `string \| url_encode` | `url.QueryEscape` |
-| `url_decode` | `string \| url_decode` | `url.QueryUnescape`; retorna erro em input inválido |
-| `base64_encode` | `string \| base64_encode` | Base64 encoding padrão |
-| `base64_decode` | `string \| base64_decode` | Base64 decode padrão; retorna erro em input inválido |
-| `xml_escape` | `string \| xml_escape` | Escapa `& < > " '` |
+| `url_decode` | `string \| url_decode` | `url.QueryUnescape`; returns error on invalid input |
+| `base64_encode` | `string \| base64_encode` | Standard Base64 encoding |
+| `base64_decode` | `string \| base64_decode` | Standard Base64 decode; returns error on invalid input |
+| `xml_escape` | `string \| xml_escape` | Escapes `& < > " '` |
 | `cgi_escape` | `string \| cgi_escape` | `url.QueryEscape` (**Jekyll extension**) |
-| `uri_escape` | `string \| uri_escape` | URI-encode preservando chars seguros (equiv. a `encodeURI()` do JS). (**Jekyll extension**) |
-| `slugify` | `string \| slugify[: mode]` | Converte para slug URL. Modos: `"default"` (unicode), `"ascii"`, `"latin"` (transliterate acentos), `"pretty"` (preserva chars de URL), `"none"`/`"raw"` (só lowercase). (**Jekyll extension**) |
+| `uri_escape` | `string \| uri_escape` | URI-encode preserving safe chars (equiv. to JS `encodeURI()`). (**Jekyll extension**) |
+| `slugify` | `string \| slugify[: mode]` | Converts to URL slug. Modes: `"default"` (unicode), `"ascii"`, `"latin"` (transliterate accents), `"pretty"` (preserves URL chars), `"none"`/`"raw"` (lowercase only). (**Jekyll extension**) |
 
-> **Ausentes vs Ruby:** `base64_url_safe_encode`, `base64_url_safe_decode`
+> **Absent vs Ruby:** `base64_url_safe_encode`, `base64_url_safe_decode`
 
 ---
 
-### Valor / Tipo (4 filtros)
+### Value / Type (4 filters)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `default` | `var \| default: val` | Retorna default se valor é nil, false, ou empty string/array |
-| `json` | `var \| json` | Serializa para JSON via `json.Marshal` |
-| `to_integer` | `var \| to_integer` | Converte para int; handles int/float/string/bool (true=1, false=0) |
-| `array_to_sentence_string` | `array \| array_to_sentence_string[: connector]` | Une array como frase inglesa: `"a, b, and c"`. Default connector `"and"`. (**Jekyll extension**) |
+| `default` | `var \| default: val` | Returns default if value is nil, false, or empty string/array |
+| `json` | `var \| json` | Serializes to JSON via `json.Marshal` |
+| `to_integer` | `var \| to_integer` | Converts to int; handles int/float/string/bool (true=1, false=0) |
+| `array_to_sentence_string` | `array \| array_to_sentence_string[: connector]` | Joins array as English sentence: `"a, b, and c"`. Default connector `"and"`. (**Jekyll extension**) |
 
-> **Nota vs Ruby:** `default` nesta implementação **não** suporta keyword argument `allow_false: true`.
+> **Note vs Ruby:** `default` in this implementation does **not** support keyword argument `allow_false: true`.
 
 ---
 
-### Debug (2 filtros)
+### Debug (2 filters)
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `inspect` | `var \| inspect` | JSON ou `%#v`. (**Jekyll extension**) |
-| `type` | `var \| type` | Retorna nome do tipo Go (`%T`). (**extensão proprietária**) |
+| `inspect` | `var \| inspect` | JSON or `%#v`. (**Jekyll extension**) |
+| `type` | `var \| type` | Returns Go type name (`%T`). (**proprietary extension**) |
 
 ---
 
-## Sistema de Filtros
+## Filter System
 
-| Feature | Descrição |
-|---------|-----------|
-| Filtros posicionais | `{{ val \| filter: arg1, arg2 }}` |
-| `AddFilter(name, fn)` | Registra função Go como filtro. Fn deve ter ≥1 entrada e 1 ou 2 saídas (2ª se presente: `error`). |
-| `LaxFilters()` | Engine method. Silenciamente passa input quando filtro é desconhecido (comportamento Shopify). Default: filtro desconhecido é erro. |
-| `UndefinedFilter` | Tipo de erro no package `expressions`. String com nome do filtro. |
-| `FilterError` | Tipo de erro em `expressions`. Contém `FilterName string` e `Err error`. |
-| `safe` filter | Registrado automaticamente por `SetAutoEscapeReplacer()`. Marca valor como seguro para não escapar no auto-escape. |
-| **Sem keyword args** | `allow_false: true` do Ruby **não é suportado** — filtros não recebem hash de kwargs. |
+| Feature | Description |
+|---------|-------------|
+| Positional filters | `{{ val \| filter: arg1, arg2 }}` |
+| `AddFilter(name, fn)` | Registers Go function as filter. Fn must have ≥1 input and 1 or 2 outputs (2nd if present: `error`). |
+| `LaxFilters()` | Engine method. Silently passes input when filter is unknown (Shopify behavior). Default: unknown filter is an error. |
+| `UndefinedFilter` | Error type in `expressions` package. String with filter name. |
+| `FilterError` | Error type in `expressions`. Contains `FilterName string` and `Err error`. |
+| `safe` filter | Registered automatically by `SetAutoEscapeReplacer()`. Marks value as safe to avoid escaping in auto-escape. |
+| **No keyword args** | Ruby's `allow_false: true` is **not supported** — filters do not receive a kwargs hash. |
 
 ---
 
-## Expressões e Operadores
+## Expressions and Operators
 
-### Literais
+### Literals
 
-| Literal | Exemplo | Notas |
+| Literal | Example | Notes |
 |---------|---------|-------|
 | nil | `nil` | Token: `LITERAL` → `nil` |
 | boolean | `true`, `false` | Token: `LITERAL` → `bool` |
-| inteiro | `42`, `-1` | `strconv.ParseInt`, Go type: `int` |
+| integer | `42`, `-1` | `strconv.ParseInt`, Go type: `int` |
 | float | `3.14`, `-0.5` | `strconv.ParseFloat`, Go type: `float64` |
-| string | `"texto"` ou `'texto'` | **Sem suporte a escapes dentro de strings** (TODO no código) |
-| range | `(1..10)` | Tipo `values.Range`; suporta variáveis: `(a..b)` |
+| string | `"text"` or `'text'` | **No escape support inside strings** (TODO in code) |
+| range | `(1..10)` | Type `values.Range`; supports variables: `(a..b)` |
 
-> **Ausentes vs Ruby:** `blank`, `empty` como literais comparáveis. Nesta impl, `blank` e `empty` são apenas identificadores tratados como variáveis não definidas (nil).
+> **Absent vs Ruby:** `blank`, `empty` as comparable literals. In this impl, `blank` and `empty` are just identifiers treated as undefined variables (nil).
 
-### Operadores de comparação
+### Comparison operators
 
-| Operador | Token | Comportamento |
-|----------|-------|--------------|
-| `==` | `EQ` | `values.Equal()` — nil-safe, suporta int/float/string/bool |
+| Operator | Token | Behavior |
+|----------|-------|----------|
+| `==` | `EQ` | `values.Equal()` — nil-safe, supports int/float/string/bool |
 | `!=` | `NEQ` | `!values.Equal()` |
-| `<>` | `NEQ` | Alias de `!=` (mesmo token no scanner) |
+| `<>` | `NEQ` | Alias for `!=` (same token in scanner) |
 | `<` | `'<'` | `values.Less()` |
-| `>` | `'>'` | `values.Less()` invertido |
+| `>` | `'>'` | `values.Less()` inverted |
 | `<=` | `LE` | `Less || Equal` |
 | `>=` | `GE` | `Less(b,a) || Equal` |
 | `contains` | `CONTAINS` | String: `strings.Contains`; Array: `reflect` search; Map: key lookup |
 
-### Operadores booleanos
+### Boolean operators
 
-| Operador | Token | Comportamento |
-|----------|-------|--------------|
-| `and` | `AND` | `fa.Test() && fb.Test()` — sem curto-circuito real, ambos avaliados |
+| Operator | Token | Behavior |
+|----------|-------|----------|
+| `and` | `AND` | `fa.Test() && fb.Test()` — no true short-circuit, both evaluated |
 | `or` | `OR` | `fa.Test() \|\| fb.Test()` |
 
 ### Truthiness
 
-| Valor | Truthy? |
+| Value | Truthy? |
 |-------|---------|
 | `false` | falsy |
 | `nil` | falsy |
 | `0` | **truthy** |
 | `""` | **truthy** |
 | `[]` | **truthy** |
-| qualquer outro | truthy |
+| any other | truthy |
 
-Implementado via `Value.Test()` em `values/value.go`.
+Implemented via `Value.Test()` in `values/value.go`.
 
-### Acesso a variáveis
+### Variable access
 
-| Sintaxe | Descrição |
-|---------|-----------|
-| `variavel` | Lookup em `ctx.Get(name)` → `values.ToLiquid(bindings[name])` |
+| Syntax | Description |
+|--------|-------------|
+| `variable` | Lookup in `ctx.Get(name)` → `values.ToLiquid(bindings[name])` |
 | `obj.prop` | Token `PROPERTY` → `makeObjectPropertyExpr()` |
 | `obj[key]` | Expr `[expr]` → `makeIndexExpr()` |
-| `array[0]` | Índice inteiro via `IndexValue()` |
-| `array.first`, `array.last` | Propriedades especiais em `arrayValue.PropertyValue()` |
-| `array.size`, `hash.size` | Propriedade `size` retorna comprimento |
-| `forloop.index`, etc. | Propriedades do objeto forloop (map em Go) |
+| `array[0]` | Integer index via `IndexValue()` |
+| `array.first`, `array.last` | Special properties in `arrayValue.PropertyValue()` |
+| `array.size`, `hash.size` | Property `size` returns length |
+| `forloop.index`, etc. | Properties of the forloop object (map in Go) |
 
-### Identificadores
+### Identifiers
 
-- Suportam Unicode (letras, dígitos, `_`, `-` exceto no primeiro caractere)
-- Podem terminar com `?` (predicados estilo Ruby)
+- Support Unicode (letters, digits, `_`, `-` except as first character)
+- Can end with `?` (Ruby-style predicates)
 
 ---
 
-## Drops (protocolo de objetos customizados)
+## Drops (custom object protocol)
 
-### Interface `Drop` (`liquid.Drop`)
+### `Drop` interface (`liquid.Drop`)
 
-| Feature | Descrição |
-|---------|-----------|
-| `Drop` interface | Definida em `liquid/drops.go`: `ToLiquid() any` |
-| `FromDrop(object any) any` | Função pública: se `object` implementa `Drop`, retorna `object.ToLiquid()`; senão retorna o próprio objeto |
-| Resolução lazy | `dropWrapper` em `values/drop.go` usa `sync.Once` — `ToLiquid()` é chamado apenas na primeira avaliação |
-| `values.ToLiquid(value)` | Converte objeto para Liquid se implementa a interface interna `drop` |
+| Feature | Description |
+|---------|-------------|
+| `Drop` interface | Defined in `liquid/drops.go`: `ToLiquid() any` |
+| `FromDrop(object any) any` | Public function: if `object` implements `Drop`, returns `object.ToLiquid()`; otherwise returns the object itself |
+| Lazy resolution | `dropWrapper` in `values/drop.go` uses `sync.Once` — `ToLiquid()` is called only on first evaluation |
+| `values.ToLiquid(value)` | Converts object to Liquid if it implements the internal `drop` interface |
 
-> **Ausente vs Ruby:** Não há `Drop` base class com `liquid_method_missing`, `invokable_methods`, blacklist, `context=`, `key?`. O protocolo Go é apenas `ToLiquid() any`.
+> **Absent vs Ruby:** No `Drop` base class with `liquid_method_missing`, `invokable_methods`, blacklist, `context=`, `key?`. The Go protocol is only `ToLiquid() any`.
 
 ### `IterationKeyedMap` (`tags.IterationKeyedMap`)
 
-| Feature | Descrição |
-|---------|-----------|
-| `IterationKeyedMap` | Tipo público: `map[string]any`. Quando iterdado em `for`, yield são as **keys** (não pares key/value). |
-| `liquid.IterationKeyedMap(m)` | Função helper pública para criar o wrapper |
+| Feature | Description |
+|---------|-------------|
+| `IterationKeyedMap` | Public type: `map[string]any`. When iterated in `for`, yields are the **keys** (not key/value pairs). |
+| `liquid.IterationKeyedMap(m)` | Public helper function to create the wrapper |
 
-### `yaml.MapSlice` (suporte interno)
+### `yaml.MapSlice` (internal support)
 
-| Feature | Descrição |
-|---------|-----------|
-| `yaml.MapSlice` | Tipo `gopkg.in/yaml.v2.MapSlice`. Iteração em `for` preserva ordem de inserção. Lookup por chave via `mapSliceValue`. |
+| Feature | Description |
+|---------|-------------|
+| `yaml.MapSlice` | Type `gopkg.in/yaml.v2.MapSlice`. Iteration in `for` preserves insertion order. Key lookup via `mapSliceValue`. |
 
 ### `values.SafeValue`
 
-| Feature | Descrição |
-|---------|-----------|
-| `SafeValue{Value: v}` | Tipo em `values/value.go`. Marca valor como seguro para auto-escape. Usado pelo filtro `safe`. |
+| Feature | Description |
+|---------|-------------|
+| `SafeValue{Value: v}` | Type in `values/value.go`. Marks value as safe for auto-escape. Used by `safe` filter. |
 
 ---
 
-## Acesso a Structs pelo template
+## Struct access from templates
 
-Go structs são acessíveis via PropertyValue (via reflection):
-- Campos exportados mapeados por nome
-- Métodos exportados mapeados por nome
-- `structValue.PropertyValue()` em `values/structvalue.go`
+Go structs are accessible via PropertyValue (via reflection):
+- Exported fields mapped by name
+- Exported methods mapped by name
+- `structValue.PropertyValue()` in `values/structvalue.go`
 
 ---
 
-## Erros
+## Errors
 
 ### `SourceError` / `parser.Error` / `render.Error`
 
-| Interface | Métodos | Notas |
+| Interface | Methods | Notes |
 |-----------|---------|-------|
-| `liquid.SourceError` | `Error() string`, `Cause() error`, `Path() string`, `LineNumber() int` | Interface pública. Retornada por `ParseTemplate`, `Render`, etc. |
-| `parser.Error` | Mesmos métodos | Interface interna; compatível com `SourceError` |
-| `render.Error` | Mesmos métodos | Interface interna |
+| `liquid.SourceError` | `Error() string`, `Cause() error`, `Path() string`, `LineNumber() int` | Public interface. Returned by `ParseTemplate`, `Render`, etc. |
+| `parser.Error` | Same methods | Internal interface; compatible with `SourceError` |
+| `render.Error` | Same methods | Internal interface |
 
-A implementação concreta é `parser.sourceLocError`:
-- `Error()` formata como `"Liquid error (line N): mensagem in caminho"`
-- `Cause()` retorna o erro original
-- `Path()` retorna pathname do template
-- `LineNumber()` retorna número de linha
+The concrete implementation is `parser.sourceLocError`:
+- `Error()` formats as `"Liquid error (line N): message in path"`
+- `Cause()` returns the original error
+- `Path()` returns template pathname
+- `LineNumber()` returns line number
 
-### Tipos de erro em `expressions`
+### Error types in `expressions`
 
-| Tipo | Descrição |
-|------|-----------|
-| `InterpreterError` | `string` — erro de interpretação de expressão (input inválido) |
-| `UndefinedFilter` | `string` — filtro não definido |
-| `FilterError` | struct com `FilterName string`, `Err error` — erro ao aplicar filtro |
-| `values.TypeError` | `string` — erro de conversão de tipo |
+| Type | Description |
+|------|-------------|
+| `InterpreterError` | `string` — expression interpretation error (invalid input) |
+| `UndefinedFilter` | `string` — filter not defined |
+| `FilterError` | struct with `FilterName string`, `Err error` — error applying filter |
+| `values.TypeError` | `string` — type conversion error |
 
-> **Ausentes vs Ruby:** Não há tipos distintos de erro para `SyntaxError`, `ArgumentError`, `ContextError`, `FileSystemError`, `MemoryError`, `ZeroDivisionError`, `UndefinedVariable`, `UndefinedDropMethod`, `MethodOverrideError`, `DisabledError`, `TemplateEncodingError`, etc.
+> **Absent vs Ruby:** No distinct error types for `SyntaxError`, `ArgumentError`, `ContextError`, `FileSystemError`, `MemoryError`, `ZeroDivisionError`, `UndefinedVariable`, `UndefinedDropMethod`, `MethodOverrideError`, `DisabledError`, `TemplateEncodingError`, etc.
 
 ---
 
-## Engine — API Pública
+## Engine — Public API
 
-### Criação
+### Creation
 
-| Função | Descrição |
-|--------|-----------|
-| `liquid.NewEngine() *Engine` | Engine completo com filtros e tags padrão |
-| `liquid.NewBasicEngine() *Engine` | Engine sem filtros/tags padrão |
+| Function | Description |
+|----------|-------------|
+| `liquid.NewEngine() *Engine` | Full engine with default filters and tags |
+| `liquid.NewBasicEngine() *Engine` | Engine without default filters/tags |
 
 ### Parse
 
-| Método | Assinatura | Descrição |
-|--------|-----------|-----------|
-| `ParseTemplate` | `(source []byte) (*Template, SourceError)` | Parse básico |
-| `ParseString` | `(source string) (*Template, SourceError)` | Wrapper de string |
-| `ParseTemplateLocation` | `(source []byte, path string, line int) (*Template, SourceError)` | Parse com localização para erros e `include` |
-| `ParseTemplateAndCache` | `(source []byte, path string, line int) (*Template, SourceError)` | Parse + cache interno (`cfg.Cache[path]`) |
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `ParseTemplate` | `(source []byte) (*Template, SourceError)` | Basic parse |
+| `ParseString` | `(source string) (*Template, SourceError)` | String wrapper |
+| `ParseTemplateLocation` | `(source []byte, path string, line int) (*Template, SourceError)` | Parse with location for errors and `include` |
+| `ParseTemplateAndCache` | `(source []byte, path string, line int) (*Template, SourceError)` | Parse + internal cache (`cfg.Cache[path]`) |
 
-### Parse + Render combinados
+### Combined Parse + Render
 
-| Método | Assinatura | Descrição |
-|--------|-----------|-----------|
+| Method | Signature | Description |
+|--------|-----------|-------------|
 | `ParseAndRender` | `(source []byte, b Bindings) ([]byte, SourceError)` | |
-| `ParseAndFRender` | `(w io.Writer, source []byte, b Bindings) SourceError` | Render direto em writer |
+| `ParseAndFRender` | `(w io.Writer, source []byte, b Bindings) SourceError` | Render directly to writer |
 | `ParseAndRenderString` | `(source string, b Bindings) (string, SourceError)` | |
 
-### Configuração
+### Configuration
 
-| Método | Descrição |
-|--------|-----------|
-| `StrictVariables()` | Variável undefined produz erro |
-| `LaxFilters()` | Filtro undefined passa o input silenciosamente |
-| `EnableJekyllExtensions()` | Habilita dot notation em `assign` (`page.prop = valor`) |
-| `Delims(objL, objR, tagL, tagR string) *Engine` | Customiza delimitadores. Empty string = default. |
-| `SetAutoEscapeReplacer(replacer Replacer)` | Habilita auto-escape. Registra filtro `safe` automaticamente. |
+| Method | Description |
+|--------|-------------|
+| `StrictVariables()` | Undefined variable produces error |
+| `LaxFilters()` | Undefined filter silently passes input |
+| `EnableJekyllExtensions()` | Enables dot notation in `assign` (`page.prop = value`) |
+| `Delims(objL, objR, tagL, tagR string) *Engine` | Customizes delimiters. Empty string = default. |
+| `SetAutoEscapeReplacer(replacer Replacer)` | Enables auto-escape. Registers `safe` filter automatically. |
 
-### Registro de extensões
+### Extension registration
 
-| Método | Descrição |
-|--------|-----------|
-| `RegisterTag(name string, td Renderer)` | Registra tag simples. `Renderer = func(render.Context) (string, error)`. |
-| `RegisterBlock(name string, td Renderer)` | Registra tag de bloco. |
-| `RegisterFilter(name string, fn any)` | Registra filtro. Fn: ≥1 input, 1 ou 2 outputs (2ª = error). |
-| `RegisterTemplateStore(ts render.TemplateStore)` | Substitui TemplateStore (fonte de arquivos para `include`). |
-| `RegisterTagAnalyzer(name, a TagAnalyzer)` | Registra analyzer para tag customizada. |
-| `RegisterBlockAnalyzer(name, a BlockAnalyzer)` | Registra analyzer para block tag customizado. |
-| `UnregisterTag(name string)` | Remove tag pelo nome (idempotente). |
+| Method | Description |
+|--------|-------------|
+| `RegisterTag(name string, td Renderer)` | Registers simple tag. `Renderer = func(render.Context) (string, error)`. |
+| `RegisterBlock(name string, td Renderer)` | Registers block tag. |
+| `RegisterFilter(name string, fn any)` | Registers filter. Fn: ≥1 input, 1 or 2 outputs (2nd = error). |
+| `RegisterTemplateStore(ts render.TemplateStore)` | Replaces TemplateStore (file source for `include`). |
+| `RegisterTagAnalyzer(name, a TagAnalyzer)` | Registers analyzer for custom tag. |
+| `RegisterBlockAnalyzer(name, a BlockAnalyzer)` | Registers analyzer for custom block tag. |
+| `UnregisterTag(name string)` | Removes tag by name (idempotent). |
 
-### Análise estática
+### Static analysis
 
-| Método | Retorno | Descrição |
-|--------|---------|-----------|
-| `GlobalVariableSegments(t)` | `([]VariableSegment, error)` | Paths de vars globais |
-| `VariableSegments(t)` | `([]VariableSegment, error)` | Paths de todas as vars |
-| `GlobalVariables(t)` | `([]string, error)` | Nomes únicos raiz das vars globais |
-| `Variables(t)` | `([]string, error)` | Nomes únicos raiz de todas as vars |
-| `GlobalFullVariables(t)` | `([]Variable, error)` | Refs globais com path + localização |
-| `FullVariables(t)` | `([]Variable, error)` | Todas as refs com path + localização + flag `Global` |
-| `Analyze(t)` | `(*StaticAnalysis, error)` | Análise completa: vars, globals, locals, tags |
-| `ParseAndAnalyze(source)` | `(*Template, *StaticAnalysis, error)` | Parse + análise em um passo |
+| Method | Return | Description |
+|--------|--------|-------------|
+| `GlobalVariableSegments(t)` | `([]VariableSegment, error)` | Global variable paths |
+| `VariableSegments(t)` | `([]VariableSegment, error)` | All variable paths |
+| `GlobalVariables(t)` | `([]string, error)` | Unique root names of global vars |
+| `Variables(t)` | `([]string, error)` | Unique root names of all vars |
+| `GlobalFullVariables(t)` | `([]Variable, error)` | Global refs with path + location |
+| `FullVariables(t)` | `([]Variable, error)` | All refs with path + location + `Global` flag |
+| `Analyze(t)` | `(*StaticAnalysis, error)` | Full analysis: vars, globals, locals, tags |
+| `ParseAndAnalyze(source)` | `(*Template, *StaticAnalysis, error)` | Parse + analysis in one step |
 
 ---
 
-## Template — API Pública
+## Template — Public API
 
 ### Render
 
-| Método | Assinatura | Descrição |
-|--------|-----------|-----------|
-| `Render` | `(vars Bindings) ([]byte, SourceError)` | Render completo para bytes |
-| `FRender` | `(w io.Writer, vars Bindings) SourceError` | Render direto em writer |
-| `RenderString` | `(b Bindings) (string, SourceError)` | Wrapper de string |
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `Render` | `(vars Bindings) ([]byte, SourceError)` | Full render to bytes |
+| `FRender` | `(w io.Writer, vars Bindings) SourceError` | Render directly to writer |
+| `RenderString` | `(b Bindings) (string, SourceError)` | String wrapper |
 
 ### AST
 
-| Método | Retorno | Descrição |
-|--------|---------|-----------|
-| `GetRoot()` | `render.Node` | Retorna nó raiz da parse tree |
+| Method | Return | Description |
+|--------|--------|-------------|
+| `GetRoot()` | `render.Node` | Returns root node of the parse tree |
 
-### Análise estática (métodos no Template)
+### Static analysis (methods on Template)
 
-Mesmos que no Engine, mas como métodos conveniência diretamente no `*Template`:
+Same as on Engine, but as convenience methods directly on `*Template`:
 
 `GlobalVariableSegments()`, `VariableSegments()`, `GlobalVariables()`, `Variables()`, `GlobalFullVariables()`, `FullVariables()`, `Analyze()`
 
 ---
 
-## Tipos Públicos
+## Public Types
 
 ### `liquid.Bindings`
 
 ```go
 type Bindings map[string]any
 ```
-Alias de documentação para `map[string]any`.
+Documentation alias for `map[string]any`.
 
 ### `liquid.Renderer`
 
 ```go
 type Renderer func(render.Context) (string, error)
 ```
-Tipo para definição de tags customizadas.
+Type for custom tag definitions.
 
 ### `liquid.VariableSegment`
 
 ```go
 type VariableSegment = []string
 ```
-Caminho para variável como slice de segments.
+Path to variable as a segment slice.
 
 ### `liquid.Variable`
 
@@ -500,7 +500,7 @@ type Variable struct {
     Global   bool
 }
 ```
-Com método `String() string` retornando path com pontos.
+With method `String() string` returning dot-separated path.
 
 ### `liquid.StaticAnalysis`
 
@@ -510,7 +510,7 @@ type StaticAnalysis struct {
     Globals   []Variable
     Locals    []string
     Tags      []string
-    Filters   []string // sempre nil por enquanto
+    Filters   []string // always nil for now
 }
 ```
 
@@ -535,290 +535,89 @@ type SourceError interface {
 
 ---
 
-## Análise Estática (render.NodeAnalysis / render.AnalysisResult)
+## Static Analysis (render.NodeAnalysis / render.AnalysisResult)
 
-| Tipo/Feature | Descrição |
-|-------------|-----------|
+| Type/Feature | Description |
+|-------------|-------------|
 | `render.NodeAnalysis` | `Arguments []Expression`, `LocalScope []string`, `BlockScope []string` |
 | `render.TagAnalyzer` | `func(args string) NodeAnalysis` |
 | `render.BlockAnalyzer` | `func(node BlockNode) NodeAnalysis` |
 | `render.VariableRef` | `Path []string`, `Loc parser.SourceLoc` |
 | `render.AnalysisResult` | `Globals`, `All`, `GlobalRefs`, `AllRefs`, `Locals`, `Tags` |
-| `render.Analyze(root Node)` | Função principal de análise; percorre AST coletando variáveis, locals, tags |
-| `expressions.Expression.Variables()` | Retorna `[][]string` com paths de variáveis da expressão (lazy, cacheado) |
+| `render.Analyze(root Node)` | Main analysis function; traverses AST collecting variables, locals, tags |
+| `expressions.Expression.Variables()` | Returns `[][]string` with expression variable paths (lazy, cached) |
 
-Tags padrão com analyzers: `assign` (LocalScope + Arguments), `capture` (LocalScope), `if`/`unless`/`case` (Arguments), `for`/`tablerow` (BlockScope + Arguments).
+Standard tags with analyzers: `assign` (LocalScope + Arguments), `capture` (LocalScope), `if`/`unless`/`case` (Arguments), `for`/`tablerow` (BlockScope + Arguments).
 
 ---
 
-## Context de Render (`render.Context` interface)
+## Render Context (`render.Context` interface)
 
-Interface pública para implementadores de tags customizadas:
+Public interface for custom tag implementors:
 
-| Método | Descrição |
-|--------|-----------|
-| `Bindings() map[string]any` | Ambiente léxico atual completo |
-| `Get(name string) any` | Obtém variável do ambiente atual |
-| `Set(name string, value any)` | Define variável no ambiente atual |
-| `SetPath(path []string, value any) error` | Define variável em path aninhado (usado por assign com dot notation) |
-| `Evaluate(expr expressions.Expression) (any, error)` | Avalia expressão compilada |
-| `EvaluateString(source string) (any, error)` | Compila e avalia string de expressão |
-| `ExpandTagArg() (string, error)` | Renderiza argumento da tag como template Liquid (para Jekyll `{% include {{ var }} %}`) |
-| `InnerString() (string, error)` | Renderiza body do bloco atual como string (para `capture`, `highlight`) |
-| `RenderBlock(w io.Writer, b *BlockNode) error` | Renderiza BlockNode |
-| `RenderChildren(w io.Writer) Error` | Renderiza filhos do nó atual |
-| `RenderFile(filename string, b map[string]any) (string, error)` | Parseia + renderiza arquivo externo (usado por `include`) |
-| `SourceFile() string` | Path do template atual (para `include` relativo) |
-| `TagArgs() string` | Texto dos argumentos da tag atual |
-| `TagName() string` | Nome da tag atual |
-| `Errorf(format, a...) Error` | Cria erro com localização da fonte |
-| `WrapError(err error) Error` | Envolve erro com localização |
+| Method | Description |
+|--------|-------------|
+| `Bindings() map[string]any` | Current full lexical environment |
+| `Get(name string) any` | Gets variable from current environment |
+| `Set(name string, value any)` | Sets variable in current environment |
+| `SetPath(path []string, value any) error` | Sets variable at nested path (used by assign with dot notation) |
+| `Evaluate(expr expressions.Expression) (any, error)` | Evaluates compiled expression |
+| `EvaluateString(source string) (any, error)` | Compiles and evaluates expression string |
+| `ExpandTagArg() (string, error)` | Renders current tag argument as Liquid template (for Jekyll `{% include {{ var }} %}`) |
+| `InnerString() (string, error)` | Renders current block body as string (for `capture`, `highlight`) |
+| `RenderBlock(w io.Writer, b *BlockNode) error` | Renders a BlockNode |
+| `RenderChildren(w io.Writer) Error` | Renders current node's children |
+| `RenderFile(filename string, b map[string]any) (string, error)` | Parses + renders external file (used by `include`) |
+| `SourceFile() string` | Current template path (for relative `include`) |
+| `TagArgs() string` | Text of current tag's arguments |
+| `TagName() string` | Current tag name |
+| `Errorf(format, a...) Error` | Creates error with source location |
+| `WrapError(err error) Error` | Wraps error with location |
 
 ---
 
 ## TemplateStore (file system)
 
-| Interface/Tipo | Descrição |
-|----------------|-----------|
+| Interface/Type | Description |
+|----------------|-------------|
 | `render.TemplateStore` interface | `ReadTemplate(name string) ([]byte, error)` |
-| `render.FileTemplateStore{}` | Implementação padrão; usa `os.ReadFile(filename)` diretamente |
-| `Engine.RegisterTemplateStore(ts)` | Substitui a implementação padrão |
-| Cache interno (`cfg.Cache`) | `map[string][]byte`; populado por `ParseTemplateAndCache()`; consultado por `include` quando arquivo não encontrado no disco |
+| `render.FileTemplateStore{}` | Default implementation; uses `os.ReadFile(filename)` directly |
+| `Engine.RegisterTemplateStore(ts)` | Replaces the default implementation |
+| Internal cache (`cfg.Cache`) | `map[string][]byte`; populated by `ParseTemplateAndCache()`; consulted by `include` when file not found on disk |
 
 ---
 
 ## Auto-escape
 
-| Feature | Descrição |
-|---------|-----------|
+| Feature | Description |
+|---------|-------------|
 | `render.Replacer` interface | `WriteString(io.Writer, string) (int, error)` |
-| `render.HtmlEscaper` | `strings.NewReplacer` para `& ' < > "` |
-| `Engine.SetAutoEscapeReplacer(r)` | Habilita auto-escape globalmente no engine; registra filtro `safe` |
-| `safe` filter | Marca valor como `values.SafeValue{}` para pular auto-escape |
-| `values.SafeValue` | Struct `{ Value any }` — wrapper de tipo seguro |
+| `render.HtmlEscaper` | `strings.NewReplacer` for `& ' < > "` |
+| `Engine.SetAutoEscapeReplacer(r)` | Enables auto-escape globally in engine; registers `safe` filter |
+| `safe` filter | Marks value as `values.SafeValue{}` to skip auto-escape |
+| `values.SafeValue` | Struct `{ Value any }` — type-safe wrapper |
 
 ---
 
 ## Whitespace Control (Trimmer)
 
-| Marcador | Efeito |
-|----------|--------|
-| `{%-` | Remove whitespace antes da tag (TrimLeft) |
-| `-%}` | Remove whitespace depois da tag (TrimRight) |
-| `{{-` | Remove whitespace antes do output |
-| `-}}` | Remove whitespace depois do output |
+| Marker | Effect |
+|--------|--------|
+| `{%-` | Removes whitespace before tag (TrimLeft) |
+| `-%}` | Removes whitespace after tag (TrimRight) |
+| `{{-` | Removes whitespace before output |
+| `-}}` | Removes whitespace after output |
 
-Implementado via `render.trimWriter` em `render/trimwriter.go`.  
+Implemented via `render.trimWriter` in `render/trimwriter.go`.  
 AST: `ASTTrim` (parser) → `TrimNode` (render).
 
 ---
 
-## Delimitadores Customizados
+## Custom Delimiters
 
 ```go
 engine.Delims("{{", "}}", "{%", "%}")
 ```
-- Pode ser chamado antes de qualquer `Parse*`.
-- Empty string = usa default.
-- Regexps compilados e cacheados por combinação de delimitadores.
-- Implementado em `parser/scanner.go`.
-
----
-
-## Configuração interna (`render.Config`)
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `StrictVariables` | `bool` | Variável undefined vira erro |
-| `LaxFilters` | `bool` | Filtro undefined passa o input |
-| `JekyllExtensions` | `bool` | Habilita dot notation em assign |
-| `TemplateStore` | `TemplateStore` | Fonte de templates para `include` |
-| `Cache` | `map[string][]byte` | Cache de templates parseados/cached |
-| `escapeReplacer` | `Replacer` | Para auto-escape |
-| `Delims` | `[]string` | Delimitadores customizados |
-
----
-
-## Configuração interna (`expressions.Config`)
-
-| Campo | Tipo | Descrição |
-|-------|------|-----------|
-| `filters` | `map[string]any` | Mapa de filtros registrados |
-| `LaxFilters` | `bool` | Propagado de `render.Config` |
-
----
-
-## Parser — Tokens e AST
-
-### Tipos de token (`parser.TokenType`)
-
-| Tipo | Valor | Descrição |
-|------|-------|-----------|
-| `TextTokenType` | 0 | Texto fora de `{{ }}` e `{% %}` |
-| `TagTokenType` | 1 | Tag `{% ... %}` |
-| `ObjTokenType` | 2 | Object `{{ ... }}` |
-| `TrimLeftTokenType` | 3 | Marcador `-` esquerdo |
-| `TrimRightTokenType` | 4 | Marcador `-` direito |
-
-### Tipos de nó AST (parser)
-
-`ASTBlock`, `ASTRaw`, `ASTTag`, `ASTText`, `ASTObject`, `ASTSeq`, `ASTTrim`
-
-### Tipos de nó de render
-
-| Tipo | Descrição |
-|------|-----------|
-| `Node` (interface) | `SourceLocation()`, `SourceText()`, `render(*trimWriter, nodeContext)` |
-| `BlockNode` | `{% tag %}...{% endtag %}`. Tem `Body []Node`, `Clauses []*BlockNode`, `Analysis NodeAnalysis` |
-| `RawNode` | Conteúdo de `{% raw %}` |
-| `TagNode` | Tag simples. Tem `Analysis NodeAnalysis` |
-| `TextNode` | Texto literal |
-| `ObjectNode` | `{{ expr }}`. Tem método `GetExpr() expressions.Expression` |
-| `SeqNode` | Sequência de nós filhos |
-| `TrimNode` | Marcador de trim |
-
-### `parser.SourceLoc`
-
-```go
-type SourceLoc struct {
-    Pathname string
-    LineNo   int
-}
-```
-
----
-
-## Tipos de Expressão (`expressions`)
-
-### Interface `Expression`
-
-```go
-type Expression interface {
-    Evaluate(ctx Context) (any, error)
-    Variables() [][]string  // lazy + cacheado
-}
-```
-
-### Interface `Closure`
-
-```go
-type Closure interface {
-    Bind(name string, value any) Closure
-    Evaluate() (any, error)
-}
-```
-
-### Tipos de statement (para tags)
-
-| Tipo | Campos | Usado por |
-|------|--------|-----------|
-| `Assignment` | `Variable string`, `Path []string`, `ValueFn Expression` | `assign` |
-| `Cycle` | `Group string`, `Values []string` | `cycle` |
-| `Loop` | `Variable string`, `Expr Expression`, + `loopModifiers` | `for`, `tablerow` |
-| `loopModifiers` | `Limit Expression`, `Offset Expression`, `Cols Expression`, `Reversed bool` | `for`, `tablerow` |
-| `When` | `Exprs []Expression` | `when` |
-
----
-
-## CLI (`cmd/liquid`)
-
-| Feature | Descrição |
-|---------|-----------|
-| Entrada | Arquivo como argumento ou stdin |
-| `--env` flag | Bind de variáveis de ambiente como bindings |
-| `--strict` flag | Habilita `StrictVariables` |
-| `--lax-filters` flag | Habilita `LaxFilters` |
-| Saída | stdout |
-| Erros | stderr + exit code 1 |
-
----
-
-## Extensões Jekyll (`EnableJekyllExtensions()`)
-
-Ativadas via `Engine.EnableJekyllExtensions()`:
-
-| Feature | Descrição |
-|---------|-----------|
-| Dot notation em `assign` | `{% assign page.canonical_url = value %}` |
-
-Filtros Jekyll (sempre disponíveis, mesmo sem EnableJekyllExtensions):
-
-`normalize_whitespace`, `number_of_words`, `cgi_escape`, `uri_escape`, `slugify`, `inspect`, `array_to_sentence_string`
-
----
-
-## Values — Sistema de Tipos
-
-### Tipos Go mapeados
-
-| Go type | Liquid behavior |
-|---------|----------------|
-| `nil` (pointer nulo, interface nil) | nil value |
-| `bool` | boolean value |
-| `int`, `int8`, ..., `int64` | numeric, preserva tipo |
-| `float32`, `float64` | numeric float |
-| `string` | string value, rune-aware em size/slice |
-| `[]T` (slice/array) | array value |
-| `map[K]V` | map value, iteração como pares `{key, value}` |
-| `IterationKeyedMap` | map value, iteração como apenas keys |
-| `yaml.MapSlice` | ordered map, preserva ordem |
-| struct | property access via reflection |
-| pointer para struct | unwrapped |
-| `Drop` (ToLiquid) | lazy resolved |
-| `values.SafeValue` | passa por auto-escape |
-
-### Funções públicas de `values`
-
-| Função | Descrição |
-|--------|-----------|
-| `ValueOf(value any) Value` | Wraps Go value em Liquid Value |
-| `ToLiquid(value any) any` | Converte Drop via ToLiquid() |
-| `Equal(a, b any) bool` | Comparação Liquid-aware |
-| `Less(a, b any) bool` | Comparação Liquid-aware |
-| `Length(value any) int` | Comprimento de string (runes) ou array |
-| `IsEmpty(value any) bool` | Vazio: nil, string "", array/map len=0, bool false |
-| `NewRange(b, e int) Range` | Cria range inclusivo `[b..e]` |
-| `Sort(data []any)` | Sort genérico |
-| `SortByProperty(data []any, key string, nilFirst bool)` | Sort por propriedade |
-| `ParseDate(s string) (time.Time, error)` | Parse de data em múltiplos formatos |
-| `Convert(value any, typ reflect.Type) (any, error)` | Conversão de tipo |
-
----
-
-## Recursos Ausentes vs Ruby Liquid
-
-> Resumo rápido dos itens que estão no Ruby mas não nesta implementação Go.
-> Para planejamento de features futuras.
-
-| Item | Grupo |
-|------|-------|
-| `echo` tag | Tags |
-| `liquid` tag (multi-linha) | Tags |
-| `#` inline comment | Tags |
-| `increment` / `decrement` | Tags |
-| `render` tag (escopo isolado) | Tags |
-| `doc` tag | Tags |
-| `ifchanged` tag | Tags |
-| Sub-contexto isolado para `render` | Context |
-| Filter keyword arguments (`allow_false: true`) | Filtros |
-| `squish` filtro | Filtros |
-| `base64_url_safe_encode` / `base64_url_safe_decode` | Filtros |
-| `blank` / `empty` como literais com semântica Ruby | Expressões |
-| `<>` não é alias de `!=` no scanner (verificar) | Expressões |
-| `case`/`when` com `or` separando valores | Tags |
-| `forloop.parentloop` | Drops |
-| `forloop.name` | Drops |
-| Drop base class com `liquid_method_missing` | Drops |
-| Drop `context=` injection | Drops |
-| `strict_variables` como opção por-render (não por-engine) | Config |
-| `strict_filters` como opção por-render | Config |
-| `global_filter` (proc aplicada a todo output) | Config |
-| Error modes `:lax`, `:warn`, `:strict`, `:strict2` | Config |
-| Resource limits (render_score, assign_score, etc.) | Config |
-| Profiler | Observabilidade |
-| `template.errors` array | Template API |
-| `template.warnings` array | Template API |
-| `template.name` | Template API |
-| Disableable tags / Disabler mixin | Tags |
-| `TemplateEncodingError` | Erros |
-| `cumulative_render_score_limit` | Resource limits |
+- Can be called before any `Parse*`.
+- Empty string = uses default.
+- Regexps compiled and cached by delimiter combination.

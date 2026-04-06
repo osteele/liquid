@@ -2,7 +2,7 @@ package liquid
 
 // Intensive test suite for:
 //
-//   B4 — Tipos distintos de erro: ParseError, RenderError, UndefinedVariableError,
+//   B4 — Distinct error types: ParseError, RenderError, UndefinedVariableError,
 //         ZeroDivisionError, ArgumentError, ContextError.
 //
 //   B6 — Markup-context preserved when errors bubble up through block tags.
@@ -749,18 +749,18 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 	}
 
 	cases := []tc{
-		// ── Variações de whitespace no {{ expr }} ────────────────────────────
+		// ── Whitespace variants in {{ expr }} ─────────────────────────────────
 		{"no_spaces", `{{ghost}}`, nil, "ghost", 1},
 		{"normal_spaces", `{{ ghost }}`, nil, "ghost", 1},
 		{"extra_spaces", `{{   ghost   }}`, nil, "ghost", 1},
 		{"tab_inside", "{{ \tghost\t }}", nil, "ghost", 1},
 
-		// ── Com filtro — var raiz deve ser identificada, não o pipeline todo ──
+		// ── With filter — root var must be identified, not the whole pipeline ──
 		{"with_one_filter", `{{ ghost | upcase }}`, nil, "ghost", 1},
 		{"with_two_filters", `{{ ghost | upcase | strip }}`, nil, "ghost", 1},
 		{"with_arg_filter", `{{ ghost | truncate: 10 }}`, nil, "ghost", 1},
 
-		// ── Dentro de if — mesma linha vs multi-linha ─────────────────────────
+		// ── Inside if — same line vs multi-line ───────────────────────────────
 		{"if_same_line",
 			`{% if true %}{{ ghost }}{% endif %}`, nil, "ghost", 1},
 		{"if_next_line",
@@ -774,7 +774,7 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 		{"if_many_lines_before",
 			"a\nb\nc\n{% if true %}\n  {{ ghost }}\n{% endif %}", nil, "ghost", 5},
 
-		// ── Dentro de for ─────────────────────────────────────────────────────
+		// ── Inside for ─────────────────────────────────────────────────────────
 		{"for_same_line",
 			`{% for i in arr %}{{ ghost }}{% endfor %}`,
 			map[string]any{"arr": []int{1}}, "ghost", 1},
@@ -785,7 +785,7 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 			"{% for i in arr %}\n  {{ ghost }}\n{% endfor %}",
 			map[string]any{"arr": []int{1}}, "ghost", 2},
 
-		// ── Propriedades aninhadas ────────────────────────────────────────────
+		// ── Nested properties ──────────────────────────────────────────────────
 		// For dotted paths (user.name), Name is the ROOT variable only ("user"),
 		// matching Ruby Liquid behaviour: the undefined thing is "user", not the path.
 		{"dotted_property", `{{ user.name }}`, nil, "user", 1},
@@ -793,7 +793,7 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 		{"dotted_multiline_if",
 			"{% if true %}\n{{ user.name }}\n{% endif %}", nil, "user", 2},
 
-		// ── Template "completo" numa linha (caso original do usuário) ─────────
+		// ── "Full" template in one line (original user case) ───────────────────
 		{"long_single_line",
 			`text {% if true %}more {{ ghost }} end{% endif %} after`, nil, "ghost", 1},
 		{"entire_template_indented",

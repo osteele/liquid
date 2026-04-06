@@ -1,8 +1,8 @@
 package liquid_test
 
-// S5 — Acesso a Variáveis: testes E2E intensivos
+// S5 — Variable Access: intensive E2E tests
 //
-// Cobre o tópico 5 do implementation-checklist:
+// Covers topic 5 of the implementation-checklist:
 //
 //   5a. obj.prop, obj[key], array[0]
 //   5b. array[-1] — negative indexing
@@ -11,8 +11,8 @@ package liquid_test
 //   5e. {{ test . test }} — dot with surrounding whitespace (Ruby)
 //   5f. {{ ["Key"].sub }} — top-level bracket + dot (LiquidJS #643)
 //
-// Objetivo: cobrir todos os edge cases de forma que qualquer regressão no
-// pipeline binding→parser→evaluator→render seja detectada imediatamente.
+// Goal: cover all edge cases so that any regression in the
+// binding→parser→evaluator→render pipeline is detected immediately.
 
 import (
 	"fmt"

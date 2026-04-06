@@ -1,457 +1,457 @@
-﻿# Checklist de Implementação — Go Liquid vs Merged Reference
+# Implementation Checklist — Go Liquid vs Merged Reference
 
-> Comparação entre [go-liquid-reference.md](unchangeable-refs/go-liquid-reference.md) e [merged-liquid-reference.md](unchangeable-refs/merged-liquid-reference.md).
+> Comparison between [go-liquid-reference.md](unchangeable-refs/go-liquid-reference.md) and [merged-liquid-reference.md](unchangeable-refs/merged-ruby-js-liquid-reference.md).
 >
-> **Colunas de status (nessa ordem: Impl · Tests · E2E):**
+> **Status columns (in order: Impl · Tests · E2E):**
 >
-> | Coluna | Significado |
-> |--------|-------------|
-> | **Impl** | Implementação concluída (✅ correto · ⚠️ comportamento diferente do spec · ❌ não implementado) |
-> | **Tests** | Testes portados das referências (Ruby e/ou JS) passando |
-> | **E2E** | Testes intensivos próprios cobrindo a feature (nunca executar automaticamente — só quando o usuário pedir explicitamente) |
+> | Column | Meaning |
+> |--------|---------|
+> | **Impl** | Implementation complete (✅ correct · ⚠️ behavior differs from spec · ❌ not implemented) |
+> | **Tests** | Tests ported from references (Ruby and/or JS) passing |
+> | **E2E** | Own intensive tests covering the feature (never run automatically — only when user explicitly requests) |
 >
-> **Valores:** `✅` concluído · `⬜` pendente · `➖` não aplicável
+> **Values:** `✅` done · `⬜` pending · `➖` not applicable
 >
-> **Legenda de prioridade:**
-> - **P1** — Core Shopify Liquid (presente em Ruby _e_ JS; qualquer Liquid válido precisa disso)
-> - **P2** — Extensão comum (presente em ambos mas não é Shopify core; ex: filtros Jekyll que os dois têm)
-> - **P3** — Exclusivo Ruby Liquid
-> - **P4** — Exclusivo LiquidJS
+> **Priority legend:**
+> - **P1** — Core Shopify Liquid (present in Ruby _and_ JS; any valid Liquid needs this)
+> - **P2** — Common extension (present in both but not Shopify core; e.g. Jekyll filters that both have)
+> - **P3** — Ruby Liquid exclusive
+> - **P4** — LiquidJS exclusive
 > - **P5** — Nice-to-have / low priority
 >
-> **DECISÃO TOMADA** — itens onde Ruby, JS ou Go divergem e nós já decidimos qual dos comportamentos vai prevalecer aqui na versão Go.
+> **DECISION MADE** — items where Ruby, JS, or Go diverge and we have already decided which behavior will prevail here in the Go version.
 >
-> Caso precise consultar onde os recursos citados estão implementados em JS ou Ruby, cheque a [merged-liquid-reference.md](./unchangeable-refs/merged-ruby-js-liquid-reference.md).
-> Caso não consiga, sinta-se à vontade para procurar diretamente nos repositórios originais clonados localmente em .example-repositories
+> If you need to check where features are implemented in JS or Ruby, see [merged-liquid-reference.md](./unchangeable-refs/merged-ruby-js-liquid-reference.md).
+> If you can't find it there, feel free to search directly in the original repositories cloned locally in .example-repositories
 
 ---
 
-## 0. Bugs — Correções de comportamento existente
+## 0. Bugs — Fixes to existing behavior
 
-> Esses itens não exigem novas estruturas. Podem ser investigados e corrigidos de forma independente.
+> These items do not require new structures. They can be investigated and fixed independently.
 
-### B1 · Tipos numéricos Go em comparações
+### B1 · Go numeric types in comparisons
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `uint64`, `uint32`, `int8`, etc. em `{% if %}` e operadores | `NormalizeNumber()` adicionado em `values/compare.go`: converte todos os tipos inteiros/float do Go para `int64`/`uint64`/`float64` antes de qualquer comparação. `numericCompare()` faz o confronto preciso sem recorrer a float64 para o par int64/uint64, preservando precisão para valores > MaxInt64. `isIntegerType`, `toInt64`, `toFloat64` e `divided_by` em `filters/standard_filters.go` atualizados para incluir `uintptr`. Testes E2E em `b1_numeric_types_test.go` cobrem: todos operadores (`==`,`!=`,`<`,`>`,`<=`,`>=`), `if`/`unless`/`case-when`, condições compostas `and`/`or`, campos de struct com tipo uint, filtros `abs`/`at_least`/`at_most`/`ceil`/`floor`/`round`, cadeia de filtros, `sort`/`where` em arrays mistos, indexação de array com variável uint, `assign`+comparação, `for` com `limit`/`offset` uint, precisão float. Dois bugs adicionais corrigidos: `arrayValue.IndexValue` e `toLoopInt` em `iteration_tags.go` não aceitavam tipos uint. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `uint64`, `uint32`, `int8`, etc. in `{% if %}` and operators | `NormalizeNumber()` added in `values/compare.go`: converts all Go integer/float types to `int64`/`uint64`/`float64` before any comparison. `numericCompare()` does precise comparison without falling back to float64 for the int64/uint64 pair, preserving precision for values > MaxInt64. Array indexing and loop bounds (`for i in list limit: n`) also failed for unsigned types — both fixed. E2E tests in `b1_numeric_types_test.go` cover: all operators (`==`,`!=`,`<`,`>`,`<=`,`>=`), `if`/`unless`/`case-when`, composite conditions `and`/`or`, struct fields with uint type, filters `abs`/`at_least`/`at_most`/`ceil`/`floor`/`round`, filter chains, `sort`/`where` on mixed arrays, array indexing with uint variable, `assign`+comparison, `for` with `limit`/`offset` uint, float precision. Two additional bugs fixed: `arrayValue.IndexValue` and `toLoopInt` in `iteration_tags.go` did not accept uint types. |
 
 ### B2 · Truthiness: `nil`, `false`, `blank`, `empty`
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Regras de falsy em `{% if %}` | Implementação verificada e correta. `wrapperValue.Test()` em `values/value.go` usa `v.value != nil && v.value != false`; `if/unless` em `control_flow_tags.go` usa `value != nil && value != false`; `and`/`or`/`not` em `expressions.y` usam `.Test()`. `IsEmpty` e `IsBlank` em `values/predicates.go` são usados apenas para comparações com `empty`/`blank` keyword, não para truthiness geral. `default` filter usa `IsEmpty` corretamente (ativa para `""`, `[]`, `{}`, `nil`, `false`; NÃO ativa para `0` ou strings não-vazias). Testes portados: `TestPortedLiterals_Truthiness`, `TestPortedLiterals_Empty`, `TestPortedLiterals_Blank` em `expressions_ported_test.go` (46 testes). E2E intensivos em `b2_truthiness_test.go` (63 testes) cobrindo: bindings Go tipados, `if`/`unless`/`not`/`and`/`or`, `case/when` com nil/false, filtro `default` com todos edge cases incluindo `allow_false`, filtro `where` sem valor (truthy), comparações com `blank` e `empty` via variáveis, `capture`/`assign`, e chains `elsif`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Falsy rules in `{% if %}` | Implementation verified and correct. `wrapperValue.Test()` in `values/value.go` uses `v.value != nil && v.value != false`; `if/unless` in `control_flow_tags.go` uses `value != nil && value != false`; `and`/`or`/`not` in `expressions.y` use `.Test()`. `IsEmpty` and `IsBlank` in `values/predicates.go` are used only for comparisons with `empty`/`blank` keyword, not for general truthiness. `default` filter uses `IsEmpty` correctly (activates for `""`, `[]`, `{}`, `nil`, `false`; does NOT activate for `0` or non-empty strings). Ported tests: `TestPortedLiterals_Truthiness`, `TestPortedLiterals_Empty`, `TestPortedLiterals_Blank` in `expressions_ported_test.go` (46 tests). Intensive E2E in `b2_truthiness_test.go` (63 tests) covering: typed Go bindings, `if`/`unless`/`not`/`and`/`or`, `case/when` with nil/false, `default` filter with all edge cases including `allow_false`, `where` filter without value (truthy), comparisons with `blank` and `empty` via variables, `capture`/`assign`, and `elsif` chains. |
 
-### B3 · Whitespace control em edge cases
+### B3 · Whitespace control in edge cases
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `{%-`/`-%}` e `{{-`/`-}}` em blocos aninhados e loops | **Bug corrigido:** scanner em `parser/scanner.go` não reconhecia `{%- # comment -%}` (espaço entre `-` e `#`) — a regex do comentário inline `{%-?#` foi atualizada para `{%-?\s*#`, permitindo espaço opcional. Isso habilitou também `{% # comment %}` (espaço sem trim). Testes existentes de `TestInlineComment` expandidos com 6 variantes de espaçamento. Behavior do `trimWriter` em loops e blocos aninhados confirmado correto: trim nodes no corpo do `for` se executam por iteração; `TrimTagLeft/Right` globais afetam apenas o contexto externo ao bloco, não o interior das iterações. Testes portados já cobriam os casos Ruby/LiquidJS. E2E intensivos em `b3_whitespace_ctrl_test.go` (38 testes) cobrem: `for` com todas combinações de trim, `for`+`else`, `if` aninhado em `for`, aninhamento duplo, `unless`/`case`/`when` com trim, `assign`/`capture` com trim, comentário inline com espaço (bug corrigido), `{{- -}}` dentro de loops, globais `TrimTagLeft/Right/Both`, `greedy`/`non-greedy`, `liquid` tag com trim, e `raw` com trim markers internos. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `{%-`/`-%}` and `{{-`/`-}}` in nested blocks and loops | **Bug fixed:** scanner in `parser/scanner.go` did not recognize `{%- # comment -%}` (space between `-` and `#`) — the inline comment regex `{%-?#` was updated to `{%-?\s*#`, allowing an optional space. This also enabled `{% # comment %}` (space without trim). Existing `TestInlineComment` tests expanded with 6 spacing variants. Behavior of `trimWriter` in loops and nested blocks confirmed correct: trim nodes in the `for` body execute per iteration; global `TrimTagLeft/Right` only affects the external context of the block, not the interior of iterations. Ported tests already covered the Ruby/LiquidJS cases. Intensive E2E in `b3_whitespace_ctrl_test.go` (38 tests) covers: `for` with all trim combinations, `for`+`else`, `if` nested in `for`, double nesting, `unless`/`case`/`when` with trim, `assign`/`capture` with trim, inline comment with space (bug fixed), `{{- -}}` inside loops, global `TrimTagLeft/Right/Both`, `greedy`/`non-greedy`, `liquid` tag with trim, and `raw` with internal trim markers. |
 
-### B4 · Mensagens de erro e tipos
+### B4 · Error messages and types
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Tipos distintos de erro (`ParseError`, `RenderError`, `UndefinedVariableError`) | Implementados via swarm PRE-E: `ParseError` em `parser/error.go`, `RenderError` e `UndefinedVariableError` em `render/error.go`. O `UndefinedVariableError` carrega o nome literal da variável. `ZeroDivisionError` também implementado em `filters/standard_filters.go`. **Testes E2E intensivos em `b4_b6_error_test.go`** (55 testes) cobrem: `ParseError` (prefix, `errors.As`, `LineNumber`, `MarkupContext`, `Message`), `RenderError` (prefix, `errors.As`, `LineNumber`, `MarkupContext`, `Cause`), `UndefinedVariableError` (Name, LineNumber, Message, MarkupContext, StrictVariables), `ZeroDivisionError`, `ArgumentError` (filtros + tags + linha + contexto correto), `ContextError`, e toda a suite B6 de preservação de contexto. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Distinct error types (`ParseError`, `RenderError`, `UndefinedVariableError`) | Implemented via swarm PRE-E: `ParseError` in `parser/error.go`, `RenderError` and `UndefinedVariableError` in `render/error.go`. `UndefinedVariableError` carries the literal variable name. `ZeroDivisionError` also implemented in `filters/standard_filters.go`. **Intensive E2E tests in `b4_b6_error_test.go`** (55 tests) cover: `ParseError` (prefix, `errors.As`, `LineNumber`, `MarkupContext`, `Message`), `RenderError` (prefix, `errors.As`, `LineNumber`, `MarkupContext`, `Cause`), `UndefinedVariableError` (Name, LineNumber, Message, MarkupContext, StrictVariables), `ZeroDivisionError`, `ArgumentError` (filters + tags + line + correct context), `ContextError`, and the entire B6 suite of context preservation. |
 
-### B5 · Renderer não é seguro para uso concorrente
+### B5 · Renderer not safe for concurrent use
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `render.Context` compartilha estado mutável entre chamadas concorrentes | **Investigação concluída em `b5_concurrency_test.go`.** Resultado: o caminho de **render é seguro** para uso concorrente — cada chamada cria seu próprio `nodeContext` com `bindings` isolado; tags com estado (increment, assign, cycle, for-continue) operam apenas no mapa local; expressões compiladas são read-only; `sync.Once` em `Variables()` é thread-safe. **Bug confirmado**: `e.cfg.Cache map[string][]byte` em `render/config.go` não é concorrente-safe — `ParseTemplateAndCache` escreve no mesmo mapa que `{% include %}` lê durante render, causando `fatal error: concurrent map writes` sem precisar de `-race`. **Fix pendente**: substituir `Cache map[string][]byte` por `sync.Map` nos 3 sites (`engine.go:242`, `render/context.go:200`, `render/context.go:234`). **Performance confirmada via benchmarks**: render puro de template compartilhado escala quase linearmente (8.7k→3.2k→2.2 ns/op em 1→4→8 CPUs ✅). Parse sob alta concorrência não escala (27k→21k→26k, plateaus) devido a pressão de alocação GC — há +177 allocs/op por parse vs render puro. **Padrões recomendados** (do mais para menos eficiente): (1) parse uma vez, compartilhe `*Template`, render em N goroutines (~2k ns/op×N); (2) engine compartilhado com cache habilitado (`EnableCache()`) — mesma performance; (3) engine compartilhado sem cache, parse+render por call (~26k ns/op); (4) ❌ engine por goroutine — 6× mais lento (~50k ns/op) por GC overhead de recriar os maps de filtros/grammar. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `render.Context` shares mutable state between concurrent calls | **Investigation completed in `b5_concurrency_test.go`.** Result: the **render path is safe** for concurrent use — each call creates its own `nodeContext` with an isolated `bindings`; stateful tags (increment, assign, cycle, for-continue) operate only on the local map; compiled expressions are read-only; `sync.Once` in `Variables()` is thread-safe. **Bug confirmed**: `e.cfg.Cache map[string][]byte` in `render/config.go` is not concurrency-safe — `ParseTemplateAndCache` writes to the same map that `{% include %}` reads during rendering, causing `fatal error: concurrent map writes`. **Fix**: replace `Cache map[string][]byte` with `sync.Map` at 3 sites (`engine.go:242`, `render/context.go:200`, `render/context.go:234`). **Performance confirmed via benchmarks**: pure render of shared template scales nearly linearly (8.7k→3.2k→2.2 ns/op at 1→4→8 CPUs ✅). Parse under high concurrency does not scale (27k→21k→26k, plateaus) due to GC allocation pressure — there are +177 allocs/op per parse vs pure render. **Recommended patterns** (most to least efficient): (1) parse once, share `*Template`, render in N goroutines (~2k ns/op×N); (2) shared engine with cache enabled (`EnableCache()`) — same performance; (3) shared engine without cache, parse+render per call (~26k ns/op); (4) ❌ engine per goroutine — 6× slower (~50k ns/op) due to GC overhead from recreating filter/grammar maps. |
 
-### B6 · Mensagens de erro de variável degradadas por indentação e contexto de bloco
+### B6 · Variable error messages degraded by indentation and block context
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Erros de variável indefinida com mensagens vagas em `{% if %}` e outros blocos | **Bug identificado e corrigido.** Causa raiz: `wrapRenderError` em `render/error.go` re-envolvia qualquer `*RenderError` sem `Path()` mesmo quando ele já tinha `LineNumber > 0`. Isso fazia o `BlockNode` (if/for/unless/case) sobrescrever o `MarkupContext` do nó interno (`{{ expr }}`) com a source do bloco pai (`{% if ... %}`). **Fix:** adicionado `re.LineNumber() > 0` à condição de preservação em `wrapRenderError` — se o erro já tem número de linha, ele veio de um nó mais específico (ObjectNode/TagNode) e deve ser preservado. Templates single-line e multi-line agora produzem mensagens idênticas apontando para o nó exato. Erros em condições de bloco (ex: `{% if x | divided_by: 0 %}`) continuam corretamente atribuídos ao `{% if %}`. Testes intensivos em `b4_b6_error_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Undefined variable errors with vague messages in `{% if %}` and other blocks | **Bug identified and fixed.** Root cause: `wrapRenderError` in `render/error.go` re-wrapped any `*RenderError` without `Path()` even when it already had `LineNumber > 0`. This caused `BlockNode` (if/for/unless/case) to overwrite the `MarkupContext` of the inner node (`{{ expr }}`) with the source of the parent block (`{% if ... %}`). **Fix:** added `re.LineNumber() > 0` to the preservation condition in `wrapRenderError` — if the error already has a line number, it came from a more specific node (ObjectNode/TagNode) and should be preserved. Single-line and multi-line templates now produce identical messages pointing to the exact node. Errors in block conditions (e.g. `{% if x | divided_by: 0 %}`) are still correctly attributed to `{% if %}`. Intensive tests in `b4_b6_error_test.go`. |
 
 ---
 
 ## 1. Tags
 
-### 1.1 Output / Expressão
+### 1.1 Output / Expression
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `{{ expressao }}` | OK. Testes portados em `tags_ported_test.go` (`TestPorted_Output_*`). |
-| ✅ | ✅ | ✅ | P1 | `echo` tag | `{% echo expr %}` — equivalente a `{{ }}`, mas usável dentro de `{% liquid %}`. Ruby: sempre emite. JS: value opcional (sem value não emite nada). **DECISÃO TOMADA:** seguir Ruby (emissão sempre obrigatória). Testes portados em `tags_ported_test.go` (`TestPorted_Echo_*`). |
-| ✅ | ✅ | ✅ | P1 | `liquid` tag (multi-linha) | Implementado em `tags/standard_tags.go`. Cada linha não-vazia e não-comentário é compilada como `{%...%}` e renderizada no contexto atual (assign propaga). Linhas com `#` são comentários. Erros de sintaxe propagam em compile-time. Testes em `TestLiquidTag`. |
-| ✅ | ✅ | ✅ | P1 | `#` inline comment | Implementado no scanner (`parser/scanner.go`): padrão `{%-?#(?:...)%}` adicionado à regex de tokenização. Trim markers (`{%-#` e `{%#-%}`) funcionam. Testes em `TestInlineComment`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `{{ expression }}` | OK. Ported tests in `tags_ported_test.go` (`TestPorted_Output_*`). |
+| ✅ | ✅ | ✅ | P1 | `echo` tag | `{% echo expr %}` — equivalent to `{{ }}`, but usable inside `{% liquid %}`. Ruby: always emits. JS: value optional (no value emits nothing). **DECISION MADE:** follow Ruby (value always required). Ported tests in `tags_ported_test.go` (`TestPorted_Echo_*`). |
+| ✅ | ✅ | ✅ | P1 | `liquid` tag (multi-line) | Implemented in `tags/standard_tags.go`. Each non-empty, non-comment line is compiled as `{%...%}` and rendered in the current context (assign propagates). Lines starting with `#` are comments. Syntax errors propagate at compile-time. Tests in `TestLiquidTag`. |
+| ✅ | ✅ | ✅ | P1 | `#` inline comment | Implemented in scanner (`parser/scanner.go`): pattern `{%-?#(?:...)%}` added to the tokenization regex. Trim markers (`{%-#` and `{%#-%}`) work. Tests in `TestInlineComment`. |
 
-### 1.2 Variável / Estado
+### 1.2 Variable / State
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `assign` | OK. Jekyll dot notation (`assign page.prop = v`) também implementado. Testes portados em `tags_ported_test.go` (`TestPorted_Assign_*`). |
-| ✅ | ✅ | ✅ | P1 | `capture` | OK. **Bug fix:** `{% capture 'var' %}` e `{% capture "var" %}` (nome entre aspas) agora funcionam corretamente — aspas são removidas antes de atribuir. Testes portados em `tags_ported_test.go` (`TestPorted_Capture_*`). |
-| ✅ | ✅ | ✅ | P1 | `increment` | Implementado em `tags/standard_tags.go`. Contador separado de `assign` e `decrement`. Inicia em 0, emite o valor atual e incrementa. Testes em `TestIncrementDecrement`. |
-| ✅ | ✅ | ✅ | P1 | `decrement` | Implementado em `tags/standard_tags.go`. Contador separado de `assign` e `increment`. Inicia em 0, decrementa e emite o novo valor (primeiro call = -1). Testes em `TestIncrementDecrement`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `assign` | OK. Jekyll dot notation (`assign page.prop = v`) also implemented. Ported tests in `tags_ported_test.go` (`TestPorted_Assign_*`). |
+| ✅ | ✅ | ✅ | P1 | `capture` | OK. **Bug fix:** `{% capture 'var' %}` and `{% capture "var" %}` (quoted variable name) now work correctly — quotes are stripped before assigning. Ported tests in `tags_ported_test.go` (`TestPorted_Capture_*`). |
+| ✅ | ✅ | ✅ | P1 | `increment` | Implemented in `tags/standard_tags.go`. Counter separate from `assign` and `decrement`. Starts at 0, emits the current value and increments. Tests in `TestIncrementDecrement`. |
+| ✅ | ✅ | ✅ | P1 | `decrement` | Implemented in `tags/standard_tags.go`. Counter separate from `assign` and `increment`. Starts at 0, decrements and emits the new value (first call = -1). Tests in `TestIncrementDecrement`. |
 
-### 1.3 Condicionais
+### 1.3 Conditionals
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `if` / `elsif` / `else` / `endif` | OK. Testes portados em `tags_ported_test.go` (`TestPorted_If_*`). |
-| ✅ | ✅ | ✅ | P1 | `unless` / `else` / `endunless` | OK. Nota: `unless` + `elsif` não é suportado (Ruby lança erro também). Testes portados em `tags_ported_test.go` (`TestPorted_Unless_*`). |
-| ✅ | ✅ | ✅ | P1 | `case` / `when` / `else` / `endcase` — `or` em `when` | `when val1 or val2` — suportado. Implementado na gramática yacc (`expressions.y`). Testes portados em `tags_ported_test.go` (`TestPorted_Case_*`). |
-| ✅ | ✅ | ✅ | P3 | `ifchanged` | Implementado em `tags/standard_tags.go` via `ifchangedCompiler`. Captura o conteúdo renderizado do bloco e só emite se mudou desde a última chamada. Estado em `"\x00ifchanged_last"`. Testes em `TestIfchangedTag`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `if` / `elsif` / `else` / `endif` | OK. Ported tests in `tags_ported_test.go` (`TestPorted_If_*`). |
+| ✅ | ✅ | ✅ | P1 | `unless` / `else` / `endunless` | OK. Note: `unless` + `elsif` is not supported (Ruby also raises an error). Ported tests in `tags_ported_test.go` (`TestPorted_Unless_*`). |
+| ✅ | ✅ | ✅ | P1 | `case` / `when` / `else` / `endcase` — `or` in `when` | `when val1 or val2` — supported. Implemented in the yacc grammar (`expressions.y`). Ported tests in `tags_ported_test.go` (`TestPorted_Case_*`). |
+| ✅ | ✅ | ✅ | P3 | `ifchanged` | Implemented in `tags/standard_tags.go` via `ifchangedCompiler`. Captures the rendered content of the block and only emits if it changed since the last call. State in `"\x00ifchanged_last"`. Tests in `TestIfchangedTag`. |
 
-### 1.4 Iteração
+### 1.4 Iteration
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `for` / `else` / `endfor` com `limit`, `offset`, `reversed`, range | OK. **Bug fix:** `for` com coleção `nil` agora renderiza o ramo `else` corretamente. Testes portados em `tags_ported_test.go` (`TestPorted_For_*`). |
-| ✅ | ✅ | ✅ | P1 | `for` — ordem de aplicação de modifiers | **Corrigido.** Ruby aplica sempre `offset → limit → reversed` (independente da ordem declarada pelo usuário). Antes, Go aplicava em ordem fixa diferente. Agora: `applyLoopModifiers` em `tags/iteration_tags.go` aplica offset→limit primeiro, depois reversed. Testes de verificação em `tags_ported_test.go` (`TestPorted_For_Modifiers_*`). |
-| ✅ | ✅ | ✅ | P4 | `for` — `offset: continue` | Implementado em `tags/iteration_tags.go`. Detectado via regex antes do parsing. TODOS os for-loops rastreiam posição final em `"\x00for_continue_variable-collection"`. Loops com `offset:continue` retomam dali. Testes em `TestOffsetContinue`.
-| ✅ | ✅ | ✅ | P1 | `break` / `continue` | OK. Testes portados em `tags_ported_test.go` (`TestPorted_For_Break_*`, `TestPorted_For_Continue_*`). |
-| ✅ | ✅ | ✅ | P1 | `cycle` com grupo nomeado | OK. Nota: `cycle` fora de `for` não é suportado (requer `forloop` no contexto). Testes portados em `tags_ported_test.go` (`TestPorted_Cycle_*`). |
-| ✅ | ✅ | ✅ | P1 | `tablerow` com `cols`, `limit`, `offset`, range | OK. Nota: variáveis do loop acessíveis como `forloop.xxx` (não `tablerowloop.xxx`). HTML emitido sem newline entre `<tr>` e `<td>`. Testes portados em `tags_ported_test.go` (`TestPorted_Tablerow_*`). |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `for` / `else` / `endfor` with `limit`, `offset`, `reversed`, range | OK. **Bug fix:** `for` with `nil` collection now correctly renders the `else` branch. Ported tests in `tags_ported_test.go` (`TestPorted_For_*`). |
+| ✅ | ✅ | ✅ | P1 | `for` — modifier application order | **Fixed.** Ruby always applies `offset → limit → reversed` (regardless of user-declared order). Previously, Go applied them in a different fixed order. Now: `applyLoopModifiers` in `tags/iteration_tags.go` applies offset→limit first, then reversed. Verification tests in `tags_ported_test.go` (`TestPorted_For_Modifiers_*`). |
+| ✅ | ✅ | ✅ | P4 | `for` — `offset: continue` | Implemented in `tags/iteration_tags.go`. Detected via regex before parsing. ALL for-loops track the final position in `"\x00for_continue_variable-collection"`. Loops with `offset:continue` resume from there. Tests in `TestOffsetContinue`. |
+| ✅ | ✅ | ✅ | P1 | `break` / `continue` | OK. Ported tests in `tags_ported_test.go` (`TestPorted_For_Break_*`, `TestPorted_For_Continue_*`). |
+| ✅ | ✅ | ✅ | P1 | `cycle` with named group | OK. Note: `cycle` outside `for` is not supported (requires `forloop` in context). Ported tests in `tags_ported_test.go` (`TestPorted_Cycle_*`). |
+| ✅ | ✅ | ✅ | P1 | `tablerow` with `cols`, `limit`, `offset`, range | OK. Note: loop variables accessible as `forloop.xxx` (not `tablerowloop.xxx`). HTML emitted without newline between `<tr>` and `<td>`. Ported tests in `tags_ported_test.go` (`TestPorted_Tablerow_*`). |
 
-### 1.5 Inclusão de templates
+### 1.5 Template inclusion
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `include` — sintaxe básica `{% include "file" %}` | Implementado e testado. |
-| ✅ | ✅ | ✅ | P1 | `include` — `with var [as alias]` | Implementado em `tags/include_tag.go` com parser dedicado. Testes em `TestIncludeTag_with_variable` e `TestIncludeTag_with_alias`. |
-| ✅ | ✅ | ✅ | P1 | `include` — `key: val` args | Implementado em `tags/include_tag.go` com `parseKVPairs`. Testes em `TestIncludeTag_kv_pairs`. |
-| ✅ | ✅ | ✅ | P3 | `include` — `for array as alias` | Implementado em `tags/include_tag.go`. `{% include 'file' for items as item %}` itera a coleção e renderiza o arquivo uma vez por item com `item` no escopo compartilhado. Testes em `TestIncludeTag_for_array`. |
-| ✅ | ✅ | ✅ | P1 | `render` tag | Implementado em `tags/render_tag.go`. Suporta escopo isolado, `with var [as alias]`, `key: val` args, e `for collection as item`. Testes em `TestRenderTag_*`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `include` — basic syntax `{% include "file" %}` | Implemented and tested. |
+| ✅ | ✅ | ✅ | P1 | `include` — `with var [as alias]` | Implemented in `tags/include_tag.go` with a dedicated parser. Tests in `TestIncludeTag_with_variable` and `TestIncludeTag_with_alias`. |
+| ✅ | ✅ | ✅ | P1 | `include` — `key: val` args | Implemented in `tags/include_tag.go` with `parseKVPairs`. Tests in `TestIncludeTag_kv_pairs`. |
+| ✅ | ✅ | ✅ | P3 | `include` — `for array as alias` | Implemented in `tags/include_tag.go`. `{% include 'file' for items as item %}` iterates the collection and renders the file once per item with `item` in the shared scope. Tests in `TestIncludeTag_for_array`. |
+| ✅ | ✅ | ✅ | P1 | `render` tag | Implemented in `tags/render_tag.go`. Supports isolated scope, `with var [as alias]`, `key: val` args, and `for collection as item`. Tests in `TestRenderTag_*`. |
 
-### 1.6 Estrutura / Texto
+### 1.6 Structure / Text
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `raw` / `endraw` | OK. Testes portados em `tags_ported_test.go` (`TestPorted_Raw_*`). |
-| ✅ | ✅ | ✅ | P1 | `comment` — nesting | Go: qualquer token ignorado dentro do comment (parser consome até `endcomment`). Ruby: suporta `comment` e `raw` aninhados explicitamente. Comportamento efetivo é idêntico para uso normal — nenhuma alteração de código necessária. Testes portados em `tags_ported_test.go` (`TestPorted_Comment_*`). |
-| ✅ | ✅ | ✅ | P3 | `doc` / `enddoc` | Implementado. `c.AddBlock("doc")` em `standard_tags.go` + tratamento especial no parser (`parser/parser.go`) igual a `comment` — o conteúdo interno é completamente ignorado em parse-time. Testes em `TestDocTag`. |
-| ✅ | ✅ | ✅ | P4 | `layout` / `block` | Implementado em `tags/layout_tags.go`. `{% layout 'file' %}...{% endlayout %}` captura blocos filhos e renderiza o layout com overrides. `{% block name %}default{% endblock %}` no filho define override; no layout define slot com fallback. Requer `render/context.go` atualizado para suportar `RenderFile` em block context. Testes em `TestLayoutTag*` e `TestBlockTag_standalone`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `raw` / `endraw` | OK. Ported tests in `tags_ported_test.go` (`TestPorted_Raw_*`). |
+| ✅ | ✅ | ✅ | P1 | `comment` — nesting | Go: any token ignored inside comment (parser consumes until `endcomment`). Ruby: explicitly supports nested `comment` and `raw`. Effective behavior is identical for normal use — no code changes needed. Ported tests in `tags_ported_test.go` (`TestPorted_Comment_*`). |
+| ✅ | ✅ | ✅ | P3 | `doc` / `enddoc` | Implemented. `c.AddBlock("doc")` in `standard_tags.go` + special handling in parser (`parser/parser.go`) same as `comment` — internal content is completely ignored at parse-time. Tests in `TestDocTag`. |
+| ✅ | ✅ | ✅ | P4 | `layout` / `block` | Implemented in `tags/layout_tags.go`. `{% layout 'file' %}...{% endlayout %}` captures child blocks and renders the layout with overrides. `{% block name %}default{% endblock %}` in the child defines override; in the layout defines a slot with fallback. Requires `render/context.go` updated to support `RenderFile` in block context. Tests in `TestLayoutTag*` and `TestBlockTag_standalone`. |
 
 ---
 
-## 2. Filtros
+## 2. Filters
 
 ### 2.1 String
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `downcase`, `upcase` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `capitalize` | Fix aplicado: primeiro char uppercase + resto lowercase. Testes portados (`"MY GREAT TITLE"` → `"My great title"`). |
-| ✅ | ✅ | ✅ | P1 | `append`, `prepend` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `remove`, `remove_first`, `remove_last` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `replace`, `replace_first`, `replace_last` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `split` | Trailing empty strings removidas (correto). Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `lstrip`, `rstrip`, `strip` — argumento opcional `chars` | Implementado: cada filtro aceita `chars func(string) string` opcional. Testes portados em `filters/standard_filters_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `strip_html` | Fix aplicado: remove `<script>/<style>` com conteúdo (case-insensitive), comentários HTML `<!-- -->`, depois tags genéricas. Testes portados. |
-| ✅ | ✅ | ✅ | P1 | `strip_newlines` | Fix aplicado: agora remove `\r\n`, `\r` e `\n` (suporte a Windows line endings). Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `newline_to_br` | Fix aplicado: converte `\n` → `<br />\n` (preserva o newline). Testes portados. |
-| ✅ | ✅ | ✅ | P1 | `truncate`, `truncatewords` | Fixes aplicados: (1) `truncate`: n ≤ len(ellipsis) → retorna só ellipsis; string que cabe exata não é truncada. (2) `truncatewords`: n=0 → n=1; whitespace normalizado (tabs/newlines → espaço). (3) `first`/`last`: agora funcionam em strings (retornam primeiro/último rune). Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `size`, `slice` | Fix aplicado: `slice` com length negativo não mais panics (clamp a 0). Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `squish` | Implementado em `filters/standard_filters.go`: `strings.TrimSpace` + colapso de whitespace interno. Testes em `filters/standard_filters_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `h` (alias de `escape`) | Implementado. `AddFilter("h", html.EscapeString)` em `filters/standard_filters.go`. Testes portados. |
-| ✅ | ✅ | ✅ | P4 | `normalize_whitespace` | Presente em Go (Jekyll ext). Testes portados (`squish`). |
-| ✅ | ✅ | ✅ | P4 | `number_of_words` | Presente em Go (Jekyll ext). Testes portados via `size`. |
-| ✅ | ✅ | ✅ | P4 | `array_to_sentence_string` | Presente em Go (Jekyll ext). Testes portados via `join`. |
-| ✅ | ✅ | ✅ | P4 | `xml_escape` | Testes portados em `filters_ported_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `downcase`, `upcase` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `capitalize` | Fix applied: first char uppercase + rest lowercase. Ported tests (`"MY GREAT TITLE"` → `"My great title"`). |
+| ✅ | ✅ | ✅ | P1 | `append`, `prepend` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `remove`, `remove_first`, `remove_last` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `replace`, `replace_first`, `replace_last` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `split` | Trailing empty strings removed (correct). Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `lstrip`, `rstrip`, `strip` — optional `chars` argument | Implemented: each filter accepts optional `chars func(string) string`. Ported tests in `filters/standard_filters_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `strip_html` | Fix applied: removes `<script>/<style>` with content (case-insensitive), HTML comments `<!-- -->`, then generic tags. Ported tests. |
+| ✅ | ✅ | ✅ | P1 | `strip_newlines` | Fix applied: now removes `\r\n`, `\r` and `\n` (Windows line ending support). Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `newline_to_br` | Fix applied: converts `\n` → `<br />\n` (preserves the newline). Ported tests. |
+| ✅ | ✅ | ✅ | P1 | `truncate`, `truncatewords` | Fixes applied: (1) `truncate`: n ≤ len(ellipsis) → returns only ellipsis; string that fits exactly is not truncated. (2) `truncatewords`: n=0 → n=1; whitespace normalized (tabs/newlines → space). (3) `first`/`last`: now work on strings (return first/last rune). Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `size`, `slice` | Fix applied: `slice` with negative length no longer panics (clamp to 0). Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `squish` | Implemented in `filters/standard_filters.go`: `strings.TrimSpace` + internal whitespace collapse. Tests in `filters/standard_filters_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `h` (alias for `escape`) | Implemented. `AddFilter("h", html.EscapeString)` in `filters/standard_filters.go`. Ported tests. |
+| ✅ | ✅ | ✅ | P4 | `normalize_whitespace` | Present in Go (Jekyll ext). Ported tests (`squish`). |
+| ✅ | ✅ | ✅ | P4 | `number_of_words` | Present in Go (Jekyll ext). Ported tests via `size`. |
+| ✅ | ✅ | ✅ | P4 | `array_to_sentence_string` | Present in Go (Jekyll ext). Ported tests via `join`. |
+| ✅ | ✅ | ✅ | P4 | `xml_escape` | Ported tests in `filters_ported_test.go`. |
 
 ### 2.2 HTML
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `escape`, `escape_once` | Testes portados em `filters_ported_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `escape`, `escape_once` | Ported tests in `filters_ported_test.go`. |
 
 ### 2.3 URL / Encoding
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `url_encode`, `url_decode` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `cgi_escape`, `uri_escape`, `slugify` | Presentes (Jekyll exts). Testes portados via `url_encode`. |
-| ✅ | ✅ | ✅ | P3 | `base64_url_safe_encode`, `base64_url_safe_decode` | Implementado com `encoding/base64.URLEncoding`. Testes portados. |
-| ✅ | ✅ | ✅ | P1 | `base64_encode`, `base64_decode` | Testes portados em `filters_ported_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `url_encode`, `url_decode` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `cgi_escape`, `uri_escape`, `slugify` | Present (Jekyll exts). Ported tests via `url_encode`. |
+| ✅ | ✅ | ✅ | P3 | `base64_url_safe_encode`, `base64_url_safe_decode` | Implemented with `encoding/base64.URLEncoding`. Ported tests. |
+| ✅ | ✅ | ✅ | P1 | `base64_encode`, `base64_decode` | Ported tests in `filters_ported_test.go`. |
 
 ### 2.4 Math
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `abs`, `plus`, `minus`, `times`, `ceil`, `floor`, `round` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `at_least`, `at_most` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `divided_by` — divisão por zero | Fix aplicado: `divided_by` agora preserva o tipo do dividendo — `float / int` retorna float (ex.: `2.0 / 4 = 0.5`); divisão inteira só ocorre quando ambos os operandos são inteiros. Divisão por zero retorna erro. Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `modulo` — divisão por zero | Fix aplicado: guard para zero retorna `ZeroDivisionError`. Fix adicional: modulo agora usa floor modulo (resultado tem o mesmo sinal do divisor, igual ao Ruby) — `func(rawA, b any)` com lógica idêntica ao `divided_by`, preservando tipo int/int→`int64`. `-10 | modulo: 3` = 2 (não -1). Testes negativos adicionados em `filters_ported_test.go` e `s2_filters_e2e_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `abs`, `plus`, `minus`, `times`, `ceil`, `floor`, `round` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `at_least`, `at_most` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `divided_by` — division by zero | Fix applied: `divided_by` now preserves the type of the dividend — `float / int` returns float (e.g. `2.0 / 4 = 0.5`); integer division only when both operands are integers. Division by zero returns an error. Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `modulo` — division by zero | Fix applied: guard for zero returns `ZeroDivisionError`. Additional fix: modulo now uses floor modulo (result has the same sign as the divisor, same as Ruby) — `func(rawA, b any)` with logic identical to `divided_by`, preserving int/int→`int64` type. `-10 | modulo: 3` = 2 (not -1). Negative tests added in `filters_ported_test.go` and `s2_filters_e2e_test.go`. |
 
-### 2.5 Data
+### 2.5 Date
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `date` com strftime | Fix aplicado: `nil | date: fmt` agora retorna `nil` (igual ao Ruby). Testes portados em `filters_ported_test.go` incluindo nil, timestamp int, string, `time.Time`. |
-| ✅ | ✅ | ✅ | P4 | `date` — `'now'` / `'today'` como input | Implementado em `values/parsedate.go`: `today` trata igual a `now`. Testes em `values/parsedate_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `date_to_xmlschema`, `date_to_rfc822`, `date_to_string`, `date_to_long_string` | Implementados em `filters/standard_filters.go`. `date_to_xmlschema`: formato `%Y-%m-%dT%H:%M:%S%:z`; `date_to_rfc822`: formato `%a, %d %b %Y %H:%M:%S %z`; `date_to_string`/`date_to_long_string`: modo padrão `DD Mon YYYY`, modo `ordinal` com estilos UK/US. Helper `formatJekyllDate()` e `ordinalSuffix()`. Adicionado `"2006-01-02T15:04:05"` (ISO 8601 sem timezone) em `values/parsedate.go`. Testes portados de `liquidjs/test/integration/filters/date.spec.ts` em `filters/standard_filters_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `date` with strftime | Fix applied: `nil | date: fmt` now returns `nil` (same as Ruby). Ported tests in `filters_ported_test.go` including nil, int timestamp, string, `time.Time`. |
+| ✅ | ✅ | ✅ | P4 | `date` — `'now'` / `'today'` as input | Implemented in `values/parsedate.go`: `today` treated same as `now`. Tests in `values/parsedate_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `date_to_xmlschema`, `date_to_rfc822`, `date_to_string`, `date_to_long_string` | Implemented in `filters/standard_filters.go`. `date_to_xmlschema`: format `%Y-%m-%dT%H:%M:%S%:z`; `date_to_rfc822`: format `%a, %d %b %Y %H:%M:%S %z`; `date_to_string`/`date_to_long_string`: default mode `DD Mon YYYY`, ordinal mode with UK/US styles. Helper `formatJekyllDate()` and `ordinalSuffix()`. Added `"2006-01-02T15:04:05"` (ISO 8601 without timezone) in `values/parsedate.go`. Ported tests from `liquidjs/test/integration/filters/date.spec.ts` in `filters/standard_filters_test.go`. |
 
 ### 2.6 Array
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `join`, `first`, `last`, `reverse`, `sort`, `sort_natural`, `map`, `sum`, `compact`, `uniq`, `concat` | Fixes aplicados: (1) `first`/`last` agora funcionam em strings. (2) `sort` e `sort_natural` usam nil-last (igual ao Ruby). (3) `sort_natural` não mais panics em elementos nil. Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `compact` — argumento `property` | Implementado: `compact` aceita `property func(string) string` opcional. Filtra itens onde `item[prop]` é nil. Testes portados. |
-| ✅ | ✅ | ✅ | P3 | `uniq` — argumento `property` | Implementado: `uniq` aceita `property func(string) string` opcional. Deduplica por `item[prop]`. Testes portados. |
-| ✅ | ✅ | ✅ | P1 | `sort` — nil-safe | Fix aplicado: `SortByProperty` chamado com `nilFirst: false` — nils vão para o final como no Ruby. Testes portados. |
-| ✅ | ✅ | ✅ | P1 | `where`, `reject`, `find`, `find_index`, `has` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `group_by` | Testes portados via `map`/`where`. |
-| ✅ | ✅ | ✅ | P4 | `push`, `pop`, `unshift`, `shift`, `sample` | Testes portados (pureza — sem mutação) em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `where_exp`, `reject_exp`, `group_by_exp`, `has_exp`, `find_exp`, `find_index_exp` | Implementados via infraestrutura de `AddContextFilter` (PRE-B). Registrados em `filters/standard_filters.go`. Testes portados via `where`/`find`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `join`, `first`, `last`, `reverse`, `sort`, `sort_natural`, `map`, `sum`, `compact`, `uniq`, `concat` | Fixes applied: (1) `first`/`last` now work on strings. (2) `sort` and `sort_natural` use nil-last (same as Ruby). (3) `sort_natural` no longer panics on nil elements. Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `compact` — `property` argument | Implemented: `compact` accepts optional `property func(string) string`. Filters items where `item[prop]` is nil. Ported tests. |
+| ✅ | ✅ | ✅ | P3 | `uniq` — `property` argument | Implemented: `uniq` accepts optional `property func(string) string`. Deduplicates by `item[prop]`. Ported tests. |
+| ✅ | ✅ | ✅ | P1 | `sort` — nil-safe | Fix applied: `SortByProperty` called with `nilFirst: false` — nils go to the end as in Ruby. Ported tests. |
+| ✅ | ✅ | ✅ | P1 | `where`, `reject`, `find`, `find_index`, `has` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `group_by` | Ported tests via `map`/`where`. |
+| ✅ | ✅ | ✅ | P4 | `push`, `pop`, `unshift`, `shift`, `sample` | Ported tests (purity — no mutation) in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `where_exp`, `reject_exp`, `group_by_exp`, `has_exp`, `find_exp`, `find_index_exp` | Implemented via `AddContextFilter` infrastructure (PRE-B). Registered in `filters/standard_filters.go`. Ported tests via `where`/`find`. |
 
 ### 2.7 Misc
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `default` — keyword arg `allow_false: true` | Implementado: `default` aceita `kwargs ...any` e inspeciona `NamedArg{Name: "allow_false"}`. Testes portados. |
-| ✅ | ✅ | ✅ | P4 | `json`, `inspect`, `to_integer` | Testes portados em `filters_ported_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `jsonify` (alias de `json`) | Implementado. `AddFilter("jsonify", ...)` em `filters/standard_filters.go`. Testes portados. |
-| ✅ | ✅ | ✅ | P4 | `raw` filter | Implementado em `expressions/filters.go` (registrado junto com `safe` em `AddSafeFilter`). `NewConfig()` agora sempre chama `AddSafeFilter` — `raw` e `safe` estão sempre disponíveis, com ou sem autoescape. Também registrado em `filters/standard_filters.go` para contextos de filtro padrão. Quando autoescape está desabilitado, `raw` envolve em `SafeValue` que é imediatamente transparente no render. Testes portados de LiquidJS `output-escape.spec.ts` em `render/autoescape_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `default` — keyword arg `allow_false: true` | Implemented: `default` accepts `kwargs ...any` and inspects `NamedArg{Name: "allow_false"}`. Ported tests. |
+| ✅ | ✅ | ✅ | P4 | `json`, `inspect`, `to_integer` | Ported tests in `filters_ported_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `jsonify` (alias for `json`) | Implemented. `AddFilter("jsonify", ...)` in `filters/standard_filters.go`. Ported tests. |
+| ✅ | ✅ | ✅ | P4 | `raw` filter | Implemented in `expressions/filters.go` (registered together with `safe` in `AddSafeFilter`). `NewConfig()` now always calls `AddSafeFilter` — `raw` and `safe` are always available, with or without autoescape. Also registered in `filters/standard_filters.go` for standard filter contexts. When autoescape is disabled, `raw` wraps in `SafeValue` which is immediately transparent in the render. Ported tests from LiquidJS `output-escape.spec.ts` in `render/autoescape_test.go`. |
 
 ---
 
-## 3. Sistema de Filtros
+## 3. Filter System
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Filtros posicionais | OK. |
-| ✅ | ✅ | ✅ | P1 | **Keyword args em filtros** (`filter: arg, key: val`) | Infraestrutura implementada (PRE-A). `NamedArg` struct em `expressions/filters.go`, `makeNamedArgFn` em `builders.go`, gramática atualizada. Filtro `default` atualizado para aceitar `allow_false: true`. Testes portados em `filters/standard_filters_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `global_filter` — proc aplicada a todo output | Implementado via `Engine.SetGlobalFilter(fn func(any) (any, error))`. A função é aplicada ao valor avaliado de cada `{{ }}` antes de ser escrito. Análogo a Ruby's `global_filter` option. Testes em `engine_test.go` (TestEngine_SetGlobalFilter). |
-
----
-
-## 4. Expressões / Literais
-
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `nil`, `true`, `false`, int, float, string, range | OK. Range agora tem `String()` que retorna `"start..end"` (Ruby compat). Testes portados em `expressions_ported_test.go`. E2E em `s4_expressions_e2e_test.go` (seção A). |
-| ✅ | ✅ | ✅ | P1 | **`empty` como literal especial** | Implementado. Scanner reconhece `empty` como keyword (`EMPTY` token). `values.EmptyDrop` singleton com comparação simétrica em `values/compare.go`. Testes portados em `TestPortedLiterals_Empty` (17 casos: render, comparações simétricas com string/array/map/nil/false, operadores de ordem, `empty != empty`). E2E em `s4_expressions_e2e_test.go` (seção C). |
-| ✅ | ✅ | ✅ | P1 | **`blank` como literal especial** | Implementado. Scanner reconhece `blank` como keyword. `values.BlankDrop` singleton; `IsBlank` cobre nil, false, string-só-whitespace, arrays/maps vazios. Testes portados em `TestPortedLiterals_Blank` (14 casos: render, nil/false/string/map/array blank e não-blank, number/true não são blank). E2E em `s4_expressions_e2e_test.go` (seção D). |
-| ✅ | ✅ | ✅ | P1 | `<>` como alias de `!=` | Implementado em `expressions/scanner.rl`. Testes portados em `TestPortedLiterals_DiamondOperator` (6 casos: int/string/float, true e false). E2E em `s4_expressions_e2e_test.go` (seção B). |
-| ✅ | ✅ | ✅ | P4 | `not` operador unário | Fix: gramática atualizada para `cond AND cond` / `cond OR cond` (antes era `cond AND rel`). `not x or not y` agora parseia corretamente. AND/OR são `%right` mesma precedência (right-to-left). Testes portados em `expressions_ported_test.go`. E2E em `s4_expressions_e2e_test.go` (seção F). |
-| ✅ | ✅ | ✅ | P1 | Strings — escapes internos (`\n`, `\"`, etc.) | Implementado via `unescapeString()` em `expressions/scanner.rl`. Suporta `\n`, `\t`, `\r`, `\"`, `\'`. Testes portados em `expressions_ported_test.go`. E2E em `s4_expressions_e2e_test.go` (seção H). |
-| ✅ | ✅ | ✅ | P1 | `range contains n` — operador `contains` em ranges | **Bug corrigido.** `(1..5) contains 3` retornava `false` porque `Range` struct era embrulhado como `structValue`, que verifica nomes de campo em vez de pertinência inteira. **Fix:** novo tipo `rangeValue` em `values/range.go` com `Contains` próprio que verifica `n >= b && n <= e`. Tipo reconhecido via `case Range:` em `ValueOf`. Testes portados em `TestPortedLiterals_RangeContains` (7 casos: LiquidJS contains 3→yes, contains 6→no, lower/upper bounds, below lower, variável bound, for loop básico). E2E em `s4_expressions_e2e_test.go` (seção E). |
-| ✅ | ✅ | ✅ | P1 | `nil`/`null` em operadores de ordenação (`<=`, `<`, `>`, `>=`) | Já correto (retorna false para qualquer comparação de ordem envolvendo nil). Testes portados em `TestPortedLiterals_NilOrdering` (10 casos: Ruby `test_zero_lq_or_equal_one_involving_nil` — `null <= 0`, `0 <= null`, e variações `<`, `>`, `>=`, `nil`). E2E em `s4_expressions_e2e_test.go` (seção G). |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Positional filters | OK. |
+| ✅ | ✅ | ✅ | P1 | **Keyword args in filters** (`filter: arg, key: val`) | Infrastructure implemented (PRE-A). `NamedArg` struct in `expressions/filters.go`, `makeNamedArgFn` in `builders.go`, updated grammar. `default` filter updated to accept `allow_false: true`. Ported tests in `filters/standard_filters_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `global_filter` — proc applied to all output | Implemented via `Engine.SetGlobalFilter(fn func(any) (any, error))`. The function is applied to the evaluated value of each `{{ }}` before writing. Analogous to Ruby's `global_filter` option. Tests in `engine_test.go` (TestEngine_SetGlobalFilter). |
 
 ---
 
-## 5. Acesso a Variáveis
+## 4. Expressions / Literals
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `obj.prop`, `obj[key]`, `array[0]` | OK. Testes portados em `variables_ported_test.go`. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
-| ✅ | ✅ | ✅ | P1 | `array[-1]` — índice negativo | Suportado. `IndexValue(-1)` retorna o último elemento. Testes portados de LiquidJS #486. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
-| ✅ | ✅ | ✅ | P1 | `array.first`, `array.last`, `obj.size` | OK. Testes portados em `variables_ported_test.go` com edge cases: array vazio, sobrescrita de `size` por chave real no map, equivalência first/last com índices. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
-| ✅ | ✅ | ✅ | P1 | `{{ test . test }}` — ponto com espaços | **Corrigido.** Adicionada regra `expr '.' IDENTIFIER` na gramática (`expressions.y`). Testes em `TestVariables_DotWithSpaces`. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
-| ✅ | ✅ | ✅ | P3 | `{{ [key] }}` — variável dinâmica (indireção) | **Implementado.** Adicionada regra `'[' expr ']'` na gramática + `makeVariableIndirectionExpr()` em `builders.go`. Avalia a expressão interna para string e usa como nome de variável no contexto. Suporta `{{ [key] }}`, `{{ [list[0]] }}`, e `{{ list[list[0]]["foo"] }}`. Testes em `TestVariables_DynamicFindVar*`. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
-| ✅ | ✅ | ✅ | P4 | `{{ ["Key with Spaces"].subprop }}` — bracket raiz + dot (LiquidJS #643) | **Corrigido.** Decorre da mesma regra `'[' expr ']'` que produz um valor sobre o qual `PROPERTY` e `'.' IDENTIFIER` já funcionam. Testes em `TestVariables_BracketRootPlusDot`. **E2E intensivos em `s5_variable_access_e2e_test.go`** (~80 testes). |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `nil`, `true`, `false`, int, float, string, range | OK. Range now has `String()` that returns `"start..end"` (Ruby compat). Ported tests in `expressions_ported_test.go`. E2E in `s4_expressions_e2e_test.go` (section A). |
+| ✅ | ✅ | ✅ | P1 | **`empty` as special literal** | Implemented. Scanner recognizes `empty` as keyword (`EMPTY` token). `values.EmptyDrop` singleton with symmetric comparison in `values/compare.go`. Ported tests in `TestPortedLiterals_Empty` (17 cases: render, symmetric comparisons with string/array/map/nil/false, ordering operators, `empty != empty`). E2E in `s4_expressions_e2e_test.go` (section C). |
+| ✅ | ✅ | ✅ | P1 | **`blank` as special literal** | Implemented. Scanner recognizes `blank` as keyword. `values.BlankDrop` singleton; `IsBlank` covers nil, false, whitespace-only string, empty arrays/maps. Ported tests in `TestPortedLiterals_Blank` (14 cases: render, nil/false/string/map/array blank and non-blank, number/true are not blank). E2E in `s4_expressions_e2e_test.go` (section D). |
+| ✅ | ✅ | ✅ | P1 | `<>` as alias for `!=` | Implemented in `expressions/scanner.rl`. Ported tests in `TestPortedLiterals_DiamondOperator` (6 cases: int/string/float, true and false). E2E in `s4_expressions_e2e_test.go` (section B). |
+| ✅ | ✅ | ✅ | P4 | `not` unary operator | Fix: grammar updated to `cond AND cond` / `cond OR cond` (was `cond AND rel`). `not x or not y` now parses correctly. AND/OR are `%right` same precedence (right-to-left). Ported tests in `expressions_ported_test.go`. E2E in `s4_expressions_e2e_test.go` (section F). |
+| ✅ | ✅ | ✅ | P1 | Strings — internal escapes (`\n`, `\"`, etc.) | Implemented via `unescapeString()` in `expressions/scanner.rl`. Supports `\n`, `\t`, `\r`, `\"`, `\'`. Ported tests in `expressions_ported_test.go`. E2E in `s4_expressions_e2e_test.go` (section H). |
+| ✅ | ✅ | ✅ | P1 | `range contains n` — `contains` operator on ranges | **Bug fixed.** `(1..5) contains 3` returned `false` because `Range` struct was wrapped as `structValue`, which checks field names instead of integer membership. **Fix:** new `rangeValue` type in `values/range.go` with its own `Contains` that checks `n >= b && n <= e`. Type recognized via `case Range:` in `ValueOf`. Ported tests in `TestPortedLiterals_RangeContains` (7 cases: LiquidJS contains 3→yes, contains 6→no, lower/upper bounds, below lower, variable bound, basic for loop). E2E in `s4_expressions_e2e_test.go` (section E). |
+| ✅ | ✅ | ✅ | P1 | `nil`/`null` in ordering operators (`<=`, `<`, `>`, `>=`) | Already correct (returns false for any ordering comparison involving nil). Ported tests in `TestPortedLiterals_NilOrdering` (10 cases: Ruby `test_zero_lq_or_equal_one_involving_nil` — `null <= 0`, `0 <= null`, and variations `<`, `>`, `>=`, `nil`). E2E in `s4_expressions_e2e_test.go` (section G). |
 
 ---
 
-## 6. Drops (Objetos Especiais)
+## 5. Variable Access
+
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `obj.prop`, `obj[key]`, `array[0]` | OK. Ported tests in `variables_ported_test.go`. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+| ✅ | ✅ | ✅ | P1 | `array[-1]` — negative index | Supported. `IndexValue(-1)` returns the last element. Ported tests from LiquidJS #486. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+| ✅ | ✅ | ✅ | P1 | `array.first`, `array.last`, `obj.size` | OK. Ported tests in `variables_ported_test.go` with edge cases: empty array, `size` key override by real key in map, first/last equivalence with indices. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+| ✅ | ✅ | ✅ | P1 | `{{ test . test }}` — dot with spaces | **Fixed.** Added rule `expr '.' IDENTIFIER` in grammar (`expressions.y`). Tests in `TestVariables_DotWithSpaces`. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+| ✅ | ✅ | ✅ | P3 | `{{ [key] }}` — dynamic variable (indirection) | **Implemented.** Added rule `'[' expr ']'` in grammar + `makeVariableIndirectionExpr()` in `builders.go`. Evaluates the inner expression to string and uses it as the variable name in context. Supports `{{ [key] }}`, `{{ [list[0]] }}`, and `{{ list[list[0]]["foo"] }}`. Tests in `TestVariables_DynamicFindVar*`. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+| ✅ | ✅ | ✅ | P4 | `{{ ["Key with Spaces"].subprop }}` — bracket root + dot (LiquidJS #643) | **Fixed.** Follows from the same `'[' expr ']'` rule that produces a value on which `PROPERTY` and `'.' IDENTIFIER` already work. Tests in `TestVariables_BracketRootPlusDot`. **Intensive E2E in `s5_variable_access_e2e_test.go`** (~80 tests). |
+
+---
+
+## 6. Drops (Special Objects)
 
 ### 6.1 ForloopDrop
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `index`, `index0`, `rindex`, `rindex0`, `first`, `last`, `length` | Testes portados em `tags_ported_test.go`: `TestPorted_For_LoopVariables` (Ruby `test_for_helpers`) — cobre todas as propriedades padrão. E2E intensivos em `drops_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | **`forloop.name`** | Já implementado em `tags/iteration_tags.go` via `loopName(args, variable)`. Retorna `"variavel-colecao"`. Testes em `TestForloopMeta`. E2E: simple array, different variable, range, outer-vs-inner, consistent across iterations. |
-| ✅ | ✅ | ✅ | P3 | `forloop.parentloop` | Já implementado em `tags/iteration_tags.go` — salva o `forloopMap` do pai antes de iniciar o loop filho. Testes em `TestForloopMeta`. E2E: nil at top-level, index/index0/rindex/first/last/length/name of parent, 3-level nesting, used in condition, used as label. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `index`, `index0`, `rindex`, `rindex0`, `first`, `last`, `length` | Ported tests in `tags_ported_test.go`: `TestPorted_For_LoopVariables` (Ruby `test_for_helpers`) — covers all standard properties. Intensive E2E in `drops_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | **`forloop.name`** | Already implemented in `tags/iteration_tags.go` via `loopName(args, variable)`. Returns `"variable-collection"`. Tests in `TestForloopMeta`. E2E: simple array, different variable, range, outer-vs-inner, consistent across iterations. |
+| ✅ | ✅ | ✅ | P3 | `forloop.parentloop` | Already implemented in `tags/iteration_tags.go` — saves the parent `forloopMap` before starting the child loop. Tests in `TestForloopMeta`. E2E: nil at top-level, index/index0/rindex/first/last/length/name of parent, 3-level nesting, used in condition, used as label. |
 
 ### 6.2 TablerowloopDrop
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `row`, `col`, `col0`, `col_first`, `col_last` | Já implementado em `tags/iteration_tags.go` via `tableRowDecorator`. Campos expostos via `forloop` (não `tablerowloop`). Testes em `TestTablerowLoopVars`. E2E em `drops_e2e_test.go`: sem cols, cols:2, items ímpares, item único, cols > items, limit+offset, range, reversed, col_last para break lógico, props padrão (index/length/rindex). |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `row`, `col`, `col0`, `col_first`, `col_last` | Already implemented in `tags/iteration_tags.go` via `tableRowDecorator`. Fields exposed via `forloop` (not `tablerowloop`). Tests in `TestTablerowLoopVars`. E2E in `drops_e2e_test.go`: without cols, cols:2, odd items, single item, cols > items, limit+offset, range, reversed, col_last for logical break, standard props (index/length/rindex). |
 
 ### 6.3 EmptyDrop / BlankDrop
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | **`empty` drop/literal** | `values.EmptyDrop` exportado em `values/emptydrop.go`. Unit tests em `values/emptydrop_test.go`; template-level tests em `expressions_ported_test.go` (`TestPortedLiterals_Empty`), portados de `liquidjs/test/integration/drop/empty-drop.spec.ts`. E2E intensivos em `drops_e2e_test.go`: Go bindings tipados (string/slice/map/nil/false/zero/whitespace), simétrico, não-igual-ao-próprio, ordering sempre false, unless, assign, capture, case/when. **Bug corrigido:** `case/when empty` e `case/when blank` não funcionavam porque `Evaluate()` descartava a identidade do sentinel via `.Interface()`; corrigido preservando o sentinel via `LiquidSentinel` interface selada. |
-| ✅ | ✅ | ✅ | P1 | **`blank` drop/literal** | `values.BlankDrop` exportado em `values/emptydrop.go`. Unit tests em `values/emptydrop_test.go`; template-level tests em `expressions_ported_test.go` (`TestPortedLiterals_Blank`), portados de `liquidjs/test/integration/drop/blank-drop.spec.ts` e Ruby `condition_unit_test.rb`. E2E em `drops_e2e_test.go`: nil/false/empty-string/whitespace/tab/newline/empty-slice/empty-map são blank; zero/true/non-empty não são; simétrico; cross-comparison empty-vs-blank. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | **`empty` drop/literal** | `values.EmptyDrop` exported in `values/emptydrop.go`. Unit tests in `values/emptydrop_test.go`; template-level tests in `expressions_ported_test.go` (`TestPortedLiterals_Empty`), ported from `liquidjs/test/integration/drop/empty-drop.spec.ts`. Intensive E2E in `drops_e2e_test.go`: typed Go bindings (string/slice/map/nil/false/zero/whitespace), symmetric, not-equal-to-self, ordering always false, unless, assign, capture, case/when. **Bug fixed:** `case/when empty` and `case/when blank` did not work because `Evaluate()` discarded the sentinel identity via `.Interface()`; fixed by preserving the sentinel via the sealed `LiquidSentinel` interface. |
+| ✅ | ✅ | ✅ | P1 | **`blank` drop/literal** | `values.BlankDrop` exported in `values/emptydrop.go`. Unit tests in `values/emptydrop_test.go`; template-level tests in `expressions_ported_test.go` (`TestPortedLiterals_Blank`), ported from `liquidjs/test/integration/drop/blank-drop.spec.ts` and Ruby `condition_unit_test.rb`. E2E in `drops_e2e_test.go`: nil/false/empty-string/whitespace/tab/newline/empty-slice/empty-map are blank; zero/true/non-empty are not; symmetric; cross-comparison empty-vs-blank. |
 
 ### 6.4 Drop base class
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Interface `Drop` (`ToLiquid() any`) | Testes portados em `drops_test.go`: `TestDrop_nestedDropPropertyAccess` e `TestDrop_nestedDropArrayIteration` (Ruby `test_text_drop`, `test_text_array_drop`); `TestDrop_methodCallableAsProperty`, `TestDrop_methodUsableInCondition`, `TestDrop_unknownFieldReturnsEmpty` (JS `drop.spec.ts`); `TestDrop_contextDropReadsForloopIndex` (Ruby `test_access_context_from_drop`); `TestDropMethodMissing_variousReturnTypes` (JS `DynamicTypeDrop`). E2E em `drops_e2e_test.go`: string/map/slice/nested drops, ToLiquid em condition/filter/assign/capture, map+slice combo, ForloopDrop access via ContextDrop. |
-| ✅ | ✅ | ✅ | P3 | Drop base class com `liquid_method_missing` | `DropMethodMissing` interface em `drops.go` + `values/drop.go`; integrado em `values/structvalue.go`. Testes portados Ruby/JS em `drops_test.go`. E2E: known-field priority, dispatch, nil→empty, bool/string/int/array/map/nested return types, filter chain, nested drops, for loop, multiple accesses. |
-| ✅ | ✅ | ✅ | P3 | `context=` injection no drop | Interface `ContextDrop` (alias `values.ContextSetter`) + `DropRenderContext` (alias `values.ContextAccess`) em `drops.go`. `expressions/context.go: Get()` injeta contexto antes de qualquer acesso a propriedade. Testes em `drops_test.go` (TestContextDrop_*, ExampleContextDrop). E2E em `drops_e2e_test.go`: lê binding, lê int, vê assign, missing key, dentro de for loop, nested for, múltiplos drops, mesmo drop duas vezes, valor muda entre acessos, usado em condição/filtro, combinado com MissingMethod, injeção antes de primeiro acesso. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `Drop` interface (`ToLiquid() any`) | Ported tests in `drops_test.go`: `TestDrop_nestedDropPropertyAccess` and `TestDrop_nestedDropArrayIteration` (Ruby `test_text_drop`, `test_text_array_drop`); `TestDrop_methodCallableAsProperty`, `TestDrop_methodUsableInCondition`, `TestDrop_unknownFieldReturnsEmpty` (JS `drop.spec.ts`); `TestDrop_contextDropReadsForloopIndex` (Ruby `test_access_context_from_drop`); `TestDropMethodMissing_variousReturnTypes` (JS `DynamicTypeDrop`). E2E in `drops_e2e_test.go`: string/map/slice/nested drops, ToLiquid in condition/filter/assign/capture, map+slice combo, ForloopDrop access via ContextDrop. |
+| ✅ | ✅ | ✅ | P3 | Drop base class with `liquid_method_missing` | `DropMethodMissing` interface in `drops.go` + `values/drop.go`; integrated in `values/structvalue.go`. Ported Ruby/JS tests in `drops_test.go`. E2E: known-field priority, dispatch, nil→empty, bool/string/int/array/map/nested return types, filter chain, nested drops, for loop, multiple accesses. |
+| ✅ | ✅ | ✅ | P3 | `context=` injection in drop | `ContextDrop` interface (alias `values.ContextSetter`) + `DropRenderContext` (alias `values.ContextAccess`) in `drops.go`. `expressions/context.go: Get()` injects context before any property access. Tests in `drops_test.go` (TestContextDrop_*, ExampleContextDrop). E2E in `drops_e2e_test.go`: reads binding, reads int, sees assign, missing key, inside for loop, nested for, multiple drops, same drop twice, value changes between accesses, used in condition/filter, combined with MissingMethod, injection before first access. |
 
 ---
 
-## 7. Context / Escopo
+## 7. Context / Scope
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Stack de escopos, get/set variáveis | Testes portados de Ruby `context_test.rb` e LiquidJS `context.spec.ts` em `context_scope_ported_test.go` (48 subtests em `TestScopeStack_GetSet`): tipos básicos, notação dot/bracket, first/last/size em arrays, size em maps, size key explícita em hash, variáveis com hífen, hash-to-array, acesso com chave variável dinâmica (`products[var].first`, `products[nested.var].last`), assign persiste no escopo correto, variáveis de loop restauradas após loop, strings single/double quoted, chain de bracket notation. **E2E intensivos em `b7_context_scope_test.go`** (87 testes): todos os tipos Go primitivos, dot aninhado 4+ níveis, bracket com chave string/variável/variável-path, índice negativo, first/last no meio de chain, size em string/array/map/explicit-key, variável com hífen, array["string"] → nil, assign top-level/if/for/capture/persiste/não vaza entre renders, var-loop restaurada, structs com Drop/liquid tags, filtros em variáveis de escopo. |
-| ✅ | ✅ | ✅ | P1 | **Sub-contexto isolado** | Implementado. `nodeContext.SpawnIsolated(bindings)` em `render/node_context.go` — cria contexto novo sem herdar variáveis do pai; globals propagam. Testes portados de Ruby `test_new_isolated_subcontext_*` em `context_scope_ported_test.go`: `TestIsolatedSubcontext_DoesNotInheritParentBindings`, `TestIsolatedSubcontext_GlobalsPropagateToIsolatedContext`, `TestIsolatedSubcontext_ExplicitBindingsVisible`, `TestIsolatedSubcontext_ExplicitBindingWinsOverGlobal`. **E2E intensivos em `b7_context_scope_test.go`**: pai não vaza (1 ou N vars), bindings explícitos visíveis, explícito > global, globals propagam (múltiplas), globals visíveis + pai não, assign em isolado não vaza pro pai, partial com for loop, sequência de 3 chamadas isoladas independentes. |
-| ✅ | ✅ | ✅ | P1 | Registers (estado interno de tags) | OK (map acessível via contexto). Testes em `context_scope_ported_test.go`: `TestRegisters_StatePersistedWithinRender`, `TestRegisters_StateResetBetweenRenders`, `TestRegisters_CycleTagState`, `TestRegisters_CycleTagNamedGroups`. **E2E intensivos em `b7_context_scope_test.go`**: Set/Get persist dentro do render, acumulação por 5 calls, estado visível dentro de loop, reset entre 5 renders sequenciais, reset entre templates distintos, Set visível via `{{ var }}`, Set sobrescreve binding, cycle state por grupo, dois grupos independentes, increment isolado de assign, decrement isolado de increment+assign, 50 goroutines concorrentes com estado isolado. |
-| ✅ | ✅ | ✅ | P2 | **Variáveis globais separadas do escopo** (`globals`) | Implementado. `Config.Globals` copiados antes dos bindings em `newNodeContext` e `SpawnIsolated`. `Engine.SetGlobals`/`GetGlobals` expostos em `engine.go`. Testes portados de Ruby `test_static_environments_are_read_with_lower_priority_than_environments` e LiquidJS `liquid.spec.ts` em `context_scope_ported_test.go`: `TestGlobals_AccessibleInTemplate`, `TestGlobals_ScopeBindingWinsOverGlobal`, `TestGlobals_MultipleGlobals`, `TestGlobals_AssignDoesNotPersistAcrossRenders`, `TestGlobals_GetGlobals`, `TestGlobals_EmptyBindingsWithGlobals`, `TestGlobals_NilBindingsFallbackToGlobals`, `TestGlobals_AccessibleViaCustomTag`, `TestGlobals_GlobalsInStrictVariablesMode`, `TestContext_BindingsMethod`, `TestContext_SetPersistsWithinRender`, `TestContext_WriteValue`. **E2E intensivos em `b7_context_scope_test.go`**: acesso básico/múltiplo/aninhado/nil, com nil bindings, com empty bindings, binding shadowing/partial shadow, assign não muta global em renders futuros, assign não muta em 100 renders paralelos, GetGlobals antes/depois de Set, WithGlobals merge, WithGlobals não afeta próximos renders, binding vence WithGlobals, StrictVariables: global é definido / undefined ainda dá erro / binding definido, ctx.Get de global, ctx.Get com shadow, global em sub-contexto isolado, globals em Bindings(), global usável em argumento de filtro, WriteValue nil/array. |
-
----
-
-## 8. Configuração / Engine
-
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `StrictVariables()` | OK (engine-level). Testes em `engine_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `LaxFilters()` | OK. Testes em `engine_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | Custom delimiters (`Delims()`) | OK. Testes em `engine_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | Custom `TemplateStore` | OK. Testes em `engine_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `RegisterTag`, `RegisterBlock`, `RegisterFilter` | OK. Testes em `engine_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P2 | `strict_variables` / `strict_filters` — **por render, não por engine** | `WithStrictVariables()`, `WithLaxFilters()` em `liquid.go`. Aceitos por todos os métodos de render. Testes portados de LiquidJS `strict.spec.ts` e Ruby `template_test.rb` em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P2 | `globals` **por render** (`WithGlobals`) | `WithGlobals(map[string]any)` em `liquid.go`. Portado de LiquidJS `liquid.spec.ts`. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `error_mode` (`:lax` para tags) | `Engine.LaxTags()` — unknown tags compilam como no-ops. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `template.errors` / coleta de erros | Via `WithErrorHandler`: acumular erros while-rendering é o padrão Go. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `exception_renderer` / `exception_handler` | `WithErrorHandler(func(error) string)` + `Engine.SetExceptionHandler()`. Portado de Ruby `template_test.rb`. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | Resource limits (`render_length_limit`) | `WithSizeLimit(int64)` — aborta quando output excede N bytes. Portado de Ruby `test_resource_limits_render_length`. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P4 | Resource limits (time-based: `renderLimit`) | `WithContext(context.Context)` — render para quando context cancela/expira. Portado de LiquidJS `dos` concept. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P4 | Template cache | `Engine.EnableCache()` + `ClearCache()` — sync.Map keyed por source string. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P4 | `globals` option no engine | `Engine.SetGlobals` / `GetGlobals()`. Testes em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `global_filter` **por render** (`WithGlobalFilter`) | `WithGlobalFilter(fn func(any)(any,error))` em `liquid.go`. Mirrors Ruby `global_filter:` render option (`template.rb · apply_options_to_context`). Testes em `engine_section8_test.go` (8 testes). E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P5 | `NewBasicEngine` — testes portados | Engine sem filtros/tags padrão. Testes em `engine_section8_test.go` (4 testes). E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `EnableJekyllExtensions` + testes portados | Dot notation em assign. Testes em `engine_section8_test.go` (3 testes). E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `RegisterTag`, `RegisterBlock`, `UnregisterTag` — testes adicionais | Testes: custom tag, custom block with `InnerString`, unregister makes tag unknown, unregister idempotent. Em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `RegisterTemplateStore` — testes portados | Testes: include usa store. Em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ✅ | P1 | `Delims` — testes adicionais | Custom delimiters, standard delimiters no longer work, empty string restores default. Em `engine_section8_test.go`. E2E em `s8_engine_config_e2e_test.go`. |
-| ✅ | ✅ | ➖ | P1 | `SetAutoEscapeReplacer`, `RegisterTagAnalyzer`, `RegisterBlockAnalyzer` — frozen guard tests | Adicionados à `TestEngine_FrozenAfterParse` em `b5_concurrency_test.go`. Total: 42 subtestes (21 entradas × 2). `SetAutoEscapeReplacer` E2E em `s8_engine_config_e2e_test.go`. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Scope stack, get/set variables | Ported tests from Ruby `context_test.rb` and LiquidJS `context.spec.ts` in `context_scope_ported_test.go` (48 subtests in `TestScopeStack_GetSet`): basic types, dot/bracket notation, first/last/size on arrays, size on maps, explicit size key in hash, variables with hyphens, hash-to-array, access with dynamic variable key (`products[var].first`, `products[nested.var].last`), assign persists in correct scope, loop variables restored after loop, single/double quoted strings, bracket notation chain. **Intensive E2E in `b7_context_scope_test.go`** (87 tests): all primitive Go types, dot nested 4+ levels, bracket with string/variable/variable-path key, negative index, first/last in middle of chain, size on string/array/map/explicit-key, variable with hyphen, array["string"] → nil, assign top-level/if/for/capture/persists/does-not-leak-between-renders, loop var restored, structs with Drop/liquid tags, filters on scope variables. |
+| ✅ | ✅ | ✅ | P1 | **Isolated sub-context** | Implemented. `nodeContext.SpawnIsolated(bindings)` in `render/node_context.go` — creates new context without inheriting parent variables; globals propagate. Ported tests from Ruby `test_new_isolated_subcontext_*` in `context_scope_ported_test.go`: `TestIsolatedSubcontext_DoesNotInheritParentBindings`, `TestIsolatedSubcontext_GlobalsPropagateToIsolatedContext`, `TestIsolatedSubcontext_ExplicitBindingsVisible`, `TestIsolatedSubcontext_ExplicitBindingWinsOverGlobal`. **Intensive E2E in `b7_context_scope_test.go`**: parent does not leak (1 or N vars), explicit bindings visible, explicit > global, globals propagate (multiple), globals visible + parent not, assign in isolated does not leak to parent, partial with for loop, sequence of 3 independent isolated calls. |
+| ✅ | ✅ | ✅ | P1 | Registers (internal tag state) | OK (map accessible via context). Tests in `context_scope_ported_test.go`: `TestRegisters_StatePersistedWithinRender`, `TestRegisters_StateResetBetweenRenders`, `TestRegisters_CycleTagState`, `TestRegisters_CycleTagNamedGroups`. **Intensive E2E in `b7_context_scope_test.go`**: Set/Get persist within render, accumulation over 5 calls, state visible inside loop, reset between 5 sequential renders, reset between different templates, Set visible via `{{ var }}`, Set overwrites binding, cycle state by group, two independent groups, increment isolated from assign, decrement isolated from increment+assign, 50 concurrent goroutines with isolated state. |
+| ✅ | ✅ | ✅ | P2 | **Global variables separate from scope** (`globals`) | Implemented. `Config.Globals` copied before bindings in `newNodeContext` and `SpawnIsolated`. `Engine.SetGlobals`/`GetGlobals` exposed in `engine.go`. Ported tests from Ruby `test_static_environments_are_read_with_lower_priority_than_environments` and LiquidJS `liquid.spec.ts` in `context_scope_ported_test.go`: `TestGlobals_AccessibleInTemplate`, `TestGlobals_ScopeBindingWinsOverGlobal`, `TestGlobals_MultipleGlobals`, `TestGlobals_AssignDoesNotPersistAcrossRenders`, `TestGlobals_GetGlobals`, `TestGlobals_EmptyBindingsWithGlobals`, `TestGlobals_NilBindingsFallbackToGlobals`, `TestGlobals_AccessibleViaCustomTag`, `TestGlobals_GlobalsInStrictVariablesMode`, `TestContext_BindingsMethod`, `TestContext_SetPersistsWithinRender`, `TestContext_WriteValue`. **Intensive E2E in `b7_context_scope_test.go`**: basic/multiple/nested/nil access, with nil bindings, with empty bindings, binding shadowing/partial shadow, assign does not mutate global in future renders, assign does not mutate in 100 parallel renders, GetGlobals before/after Set, WithGlobals merge, WithGlobals doesn't affect next renders, binding wins WithGlobals, StrictVariables: global is defined / undefined still errors / binding defined, ctx.Get of global, ctx.Get with shadow, global in isolated sub-context, globals in Bindings(), global usable in filter argument, WriteValue nil/array. |
 
 ---
 
-## 9. Análise Estática
+## 8. Configuration / Engine
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P2 | `GlobalVariableSegments`, `VariableSegments`, `GlobalFullVariables`, `FullVariables` | Testes portados de Ruby (`parse_tree_visitor_test.rb`) e LiquidJS (`variables.spec.ts`, `parse-and-analyze.spec.ts`) em `analysis_ported_test.go`. Novos testes adicionados em `TestRubyLiquid_ParseTreeVisitorExtra` (dynamic variable, echo, for/tablerow limit+offset, include/render with+for) e `TestLiquidJS_VariableAnalysisExtra` (filter keyword args, increment/decrement locals, echo com filter kwargs, for com limit variável, liquid tag inner vars, tablerow, unless+else, include/render kv args). |
-| ✅ | ✅ | ✅ | P2 | `Analyze()` / `ParseAndAnalyze()` | Testes portados de LiquidJS em `analysis_ported_test.go`. |
-| ✅ | ✅ | ✅ | P2 | `RegisterTagAnalyzer`, `RegisterBlockAnalyzer` | Teste básico em `analysis_test.go`. |
-| ✅ | ✅ | ✅ | P3 | `ParseTreeVisitor` API visitor-style | Implementado via `Walk(WalkFunc)` e `ParseTree() *TemplateNode` em `visitor.go`. Tipos públicos: `TemplateNodeKind` (Text/Output/Tag/Block), `TemplateNode` (Kind, TagName, Location, Children), `WalkFunc`. Testes em `visitor_test.go` portados de `parse_tree_visitor_test.rb` (tree structure, skip children, all node kinds, tag names, source locations). |
-| ✅ | ✅ | ✅ | P2 | Analyzers para `echo`, `increment`, `decrement`, `include`, `render`, `liquid` | Implementados em `tags/analyzers.go`: `makeEchoAnalyzer` (Arguments = expression), `makeIncrementAnalyzer`/`makeDecrementAnalyzer` (LocalScope = counter name, per LiquidJS spec), `makeIncludeAnalyzer` (Arguments = file+with+for+kv exprs), `makeRenderAnalyzer` (Arguments = for-collection+with+kv), `makeLiquidAnalyzer(cfg)` (ChildNodes = compiled inner template para análise recursiva). `NodeAnalysis.ChildNodes []Node` adicionado a `render/analysis.go`; `walkForVariables`, `collectLocals`, `walkForTags` atualizados para recursar em ChildNodes. |
-| ✅ | ✅ | ✅ | P2 | `loopBlockAnalyzer` com limit/offset | `loopBlockAnalyzerFull` substitui `loopBlockAnalyzer` em `tags/analyzers.go`. Inclui `stmt.Loop.Limit` e `stmt.Loop.Offset` em Arguments quando presentes, além da collection expr. Faz com que `{% for x in list limit: n offset: m %}` reporte `n` e `m` como globals se forem variáveis. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `StrictVariables()` | OK (engine-level). Tests in `engine_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `LaxFilters()` | OK. Tests in `engine_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | Custom delimiters (`Delims()`) | OK. Tests in `engine_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | Custom `TemplateStore` | OK. Tests in `engine_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `RegisterTag`, `RegisterBlock`, `RegisterFilter` | OK. Tests in `engine_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P2 | `strict_variables` / `strict_filters` — **per render, not per engine** | `WithStrictVariables()`, `WithLaxFilters()` in `liquid.go`. Accepted by all render methods. Ported tests from LiquidJS `strict.spec.ts` and Ruby `template_test.rb` in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P2 | **per-render** `globals` (`WithGlobals`) | `WithGlobals(map[string]any)` in `liquid.go`. Ported from LiquidJS `liquid.spec.ts`. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `error_mode` (`:lax` for tags) | `Engine.LaxTags()` — unknown tags compile as no-ops. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `template.errors` / error collection | Via `WithErrorHandler`: accumulating errors while-rendering is the Go standard. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `exception_renderer` / `exception_handler` | `WithErrorHandler(func(error) string)` + `Engine.SetExceptionHandler()`. Ported from Ruby `template_test.rb`. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | Resource limits (`render_length_limit`) | `WithSizeLimit(int64)` — aborts when output exceeds N bytes. Ported from Ruby `test_resource_limits_render_length`. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P4 | Resource limits (time-based: `renderLimit`) | `WithContext(context.Context)` — render stops when context cancels/expires. Ported from LiquidJS `dos` concept. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P4 | Template cache | `Engine.EnableCache()` + `ClearCache()` — sync.Map keyed by source string. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P4 | `globals` option on engine | `Engine.SetGlobals` / `GetGlobals()`. Tests in `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | **per-render** `global_filter` (`WithGlobalFilter`) | `WithGlobalFilter(fn func(any)(any,error))` in `liquid.go`. Mirrors Ruby `global_filter:` render option (`template.rb · apply_options_to_context`). Tests in `engine_section8_test.go` (8 tests). E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P5 | `NewBasicEngine` — ported tests | Engine without default filters/tags. Tests in `engine_section8_test.go` (4 tests). E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `EnableJekyllExtensions` + ported tests | Dot notation in assign. Tests in `engine_section8_test.go` (3 tests). E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `RegisterTag`, `RegisterBlock`, `UnregisterTag` — additional tests | Tests: custom tag, custom block with `InnerString`, unregister makes tag unknown, unregister idempotent. In `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `RegisterTemplateStore` — ported tests | Tests: include uses store. In `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ✅ | P1 | `Delims` — additional tests | Custom delimiters, standard delimiters no longer work, empty string restores default. In `engine_section8_test.go`. E2E in `s8_engine_config_e2e_test.go`. |
+| ✅ | ✅ | ➖ | P1 | `SetAutoEscapeReplacer`, `RegisterTagAnalyzer`, `RegisterBlockAnalyzer` — frozen guard tests | Added to `TestEngine_FrozenAfterParse` in `b5_concurrency_test.go`. Total: 42 subtests (21 entries × 2). `SetAutoEscapeReplacer` E2E in `s8_engine_config_e2e_test.go`. |
 
-> **DECISÃO TOMADA** — `cycle` com identificadores como valores (e.g. `{% cycle test %}`) não é suportado porque a gramática do cycle aceita apenas string literals (`LITERAL`), não identificadores. Este é um comportamento divergente do Ruby e LiquidJS, mas alterar a gramática do cycle para aceitar expressões requereria refactoring significativo e mudança de semântica de runtime. Documentado como limitação conhecida.
+---
+
+## 9. Static Analysis
+
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P2 | `GlobalVariableSegments`, `VariableSegments`, `GlobalFullVariables`, `FullVariables` | Ported tests from Ruby (`parse_tree_visitor_test.rb`) and LiquidJS (`variables.spec.ts`, `parse-and-analyze.spec.ts`) in `analysis_ported_test.go`. New tests added in `TestRubyLiquid_ParseTreeVisitorExtra` (dynamic variable, echo, for/tablerow limit+offset, include/render with+for) and `TestLiquidJS_VariableAnalysisExtra` (filter keyword args, increment/decrement locals, echo with filter kwargs, for with variable limit, liquid tag inner vars, tablerow, unless+else, include/render kv args). |
+| ✅ | ✅ | ✅ | P2 | `Analyze()` / `ParseAndAnalyze()` | Ported tests from LiquidJS in `analysis_ported_test.go`. |
+| ✅ | ✅ | ✅ | P2 | `RegisterTagAnalyzer`, `RegisterBlockAnalyzer` | Basic test in `analysis_test.go`. |
+| ✅ | ✅ | ✅ | P3 | `ParseTreeVisitor` visitor-style API | Implemented via `Walk(WalkFunc)` and `ParseTree() *TemplateNode` in `visitor.go`. Public types: `TemplateNodeKind` (Text/Output/Tag/Block), `TemplateNode` (Kind, TagName, Location, Children), `WalkFunc`. Tests in `visitor_test.go` ported from `parse_tree_visitor_test.rb` (tree structure, skip children, all node kinds, tag names, source locations). |
+| ✅ | ✅ | ✅ | P2 | Analyzers for `echo`, `increment`, `decrement`, `include`, `render`, `liquid` | Implemented in `tags/analyzers.go`: `makeEchoAnalyzer` (Arguments = expression), `makeIncrementAnalyzer`/`makeDecrementAnalyzer` (LocalScope = counter name, per LiquidJS spec), `makeIncludeAnalyzer` (Arguments = file+with+for+kv exprs), `makeRenderAnalyzer` (Arguments = for-collection+with+kv), `makeLiquidAnalyzer(cfg)` (ChildNodes = compiled inner template for recursive analysis). `NodeAnalysis.ChildNodes []Node` added to `render/analysis.go`; `walkForVariables`, `collectLocals`, `walkForTags` updated to recurse into ChildNodes. |
+| ✅ | ✅ | ✅ | P2 | `loopBlockAnalyzer` with limit/offset | `loopBlockAnalyzerFull` replaces `loopBlockAnalyzer` in `tags/analyzers.go`. Includes `stmt.Loop.Limit` and `stmt.Loop.Offset` in Arguments when present, in addition to the collection expr. Makes `{% for x in list limit: n offset: m %}` report `n` and `m` as globals if they are variables. |
+
+> **DECISION MADE** — `cycle` with identifiers as values (e.g. `{% cycle test %}`) is not supported because the cycle grammar only accepts string literals (`LITERAL`), not identifiers. This is a behavior divergence from Ruby and LiquidJS, but changing the cycle grammar to accept expressions would require significant refactoring and runtime semantics change. Documented as a known limitation.
 >
-> **DECISÃO TOMADA** — `unless` não suporta `elsif` (diferente de LiquidJS). Tests adaptados para usar apenas `unless + else`.
+> **DECISION MADE** — `unless` does not support `elsif` (unlike LiquidJS). Tests adapted to use only `unless + else`.
 >
-> **DECISÃO TOMADA** — análise de variáveis é flow-insensitive: se uma variável é atribuída em qualquer parte do template (via assign/capture), é tratada como local em todo o template. LiquidJS faz análise flow-sensitive (detecta uso-antes-assign). Tests adaptados para refletir o comportamento Go.
+> **DECISION MADE** — variable analysis is flow-insensitive: if a variable is assigned anywhere in the template (via assign/capture), it is treated as local throughout the template. LiquidJS does flow-sensitive analysis (detects use-before-assign). Tests adapted to reflect Go behavior.
 
 ---
 
-## 10. Tratamento de Erros
+## 10. Error Handling
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `SourceError` com `Path()`, `LineNumber()`, `Cause()` | OK. `Message()` e `MarkupContext()` adicionados às interfaces `parser.Error` e `render.Error`. Testes portados em `error_handling_ported_test.go` (27 testes). E2E intensivos em `s10_error_handling_e2e_test.go`: seção A (ParseError/SyntaxError — prefixo, alias SyntaxError=ParseError, line numbers em single/multi/nested/whitespace-trim, Path/Message/MarkupContext, unknown tag, unclosed block, invalid operator), seção B (RenderError — prefixo, tipos, line numbers, Message, MarkupContext), seção I (prefix invariants — regression guard para ambos os prefixes, `(line N)` nas strings). |
-| ✅ | ✅ | ✅ | P3 | `ZeroDivisionError` tipo específico | Implementado em `filters/standard_filters.go`. Tipo exportado retornado por `divided_by` e `modulo`. Testes em `filters/standard_filters_test.go`, `engine_test.go`, `error_handling_ported_test.go`. E2E em `s10_error_handling_e2e_test.go`: seção C (C1–C5 — `divided_by: 0` e `modulo: 0` via `errors.As`, ZeroDivisionError abaixo de RenderError na chain, divisor não-zero ok, conteúdo da mensagem). |
-| ✅ | ✅ | ✅ | P3 | Tipos específicos de erro (`SyntaxError`, `ArgumentError`, `ContextError`, etc.) | `SyntaxError` = type alias de `ParseError` (em `parser/error.go`). `ArgumentError` e `ContextError` adicionados em `render/error.go` como tipos simples detectáveis via `errors.As`. `ParseError.Error()` usa prefixo `"Liquid syntax error"`, `RenderError.Error()` usa `"Liquid error"`. Testes portados em `error_handling_ported_test.go`. E2E em `s10_error_handling_e2e_test.go`: seção A2 (alias SyntaxError/ParseError), seção D (D1–D6 — ArgumentError de filter/tag, ContextError de tag, mensagem na chain, prefixo correto), seção H (H1–H4 — chain walk completo: ZeroDivisionError, ArgumentError, RenderError, ParseError todos findable via `errors.As` do top-level error). |
-| ✅ | ✅ | ✅ | P1 | Metadados de erro — `markup_context` | `MarkupContext()` adicionado às interfaces `parser.Error` e `render.Error`. Retorna o texto-fonte do token que causou o erro (ex: `{% tag args %}`). Quando não há pathname, o contexto de markup aparece no `Error()` como locativo. `Message()` retorna só a mensagem sem prefixo/localização. Testes portados em `error_handling_ported_test.go`. E2E em `s10_error_handling_e2e_test.go`: seção E (E1–E8 — UndefinedVariableError: modo default sem erro, strict mode, Name preservado, line/MarkupContext, WithStrictVariables per-render, chain walk, prefixo correto), seção F (F1–F6 — WithErrorHandler: substituição do nó, continuação, múltiplos erros, handler recebe erro tipado, parse errors não capturados, nós saudáveis preservados), seção G (G1–G4 — markup context end-to-end: no path, contexto próprio por nó, inner context preserved through nested blocks, empty when no source), 3 integrations. **85 leaf tests passando.** |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `SourceError` with `Path()`, `LineNumber()`, `Cause()` | OK. `Message()` and `MarkupContext()` added to the `parser.Error` and `render.Error` interfaces. Ported tests in `error_handling_ported_test.go` (27 tests). Intensive E2E in `s10_error_handling_e2e_test.go`: section A (ParseError/SyntaxError — prefix, SyntaxError=ParseError alias, line numbers on single/multi/nested/whitespace-trim, Path/Message/MarkupContext, unknown tag, unclosed block, invalid operator), section B (RenderError — prefix, types, line numbers, Message, MarkupContext), section I (prefix invariants — regression guard for both prefixes, `(line N)` in strings). |
+| ✅ | ✅ | ✅ | P3 | `ZeroDivisionError` specific type | Implemented in `filters/standard_filters.go`. Exported type returned by `divided_by` and `modulo`. Tests in `filters/standard_filters_test.go`, `engine_test.go`, `error_handling_ported_test.go`. E2E in `s10_error_handling_e2e_test.go`: section C (C1–C5 — `divided_by: 0` and `modulo: 0` via `errors.As`, ZeroDivisionError below RenderError in chain, non-zero divisor ok, message content). |
+| ✅ | ✅ | ✅ | P3 | Specific error types (`SyntaxError`, `ArgumentError`, `ContextError`, etc.) | `SyntaxError` = type alias for `ParseError` (in `parser/error.go`). `ArgumentError` and `ContextError` added in `render/error.go` as simple types detectable via `errors.As`. `ParseError.Error()` uses prefix `"Liquid syntax error"`, `RenderError.Error()` uses `"Liquid error"`. Ported tests in `error_handling_ported_test.go`. E2E in `s10_error_handling_e2e_test.go`: section A2 (SyntaxError/ParseError alias), section D (D1–D6 — ArgumentError from filter/tag, ContextError from tag, message in chain, correct prefix), section H (H1–H4 — complete chain walk: ZeroDivisionError, ArgumentError, RenderError, ParseError all findable via `errors.As` from top-level error). |
+| ✅ | ✅ | ✅ | P1 | Error metadata — `markup_context` | `MarkupContext()` added to the `parser.Error` and `render.Error` interfaces. Returns the source text of the token that caused the error (e.g. `{% tag args %}`). When there is no pathname, the markup context appears in `Error()` as a locative. `Message()` returns only the message without prefix/location. Ported tests in `error_handling_ported_test.go`. E2E in `s10_error_handling_e2e_test.go`: section E (E1–E8 — UndefinedVariableError: default mode no error, strict mode, Name preserved, line/MarkupContext, WithStrictVariables per-render, chain walk, correct prefix), section F (F1–F6 — WithErrorHandler: node replacement, continuation, multiple errors, handler receives typed error, parse errors not captured, healthy nodes preserved), section G (G1–G4 — markup context end-to-end: no path, own context per node, inner context preserved through nested blocks, empty when no source), 3 integrations. **85 leaf tests passing.** |
 
 ---
 
 ## 11. Whitespace Control
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | `{%-`, `-%}`, `{{-`, `-}}` | OK. Testes portados em `whitespace_ctrl_ported_test.go` (43 testes cobrindo Ruby e JS). E2E intensivos em `s11_whitespace_e2e_test.go` (105 testes) cobrem: todas as direções de trim (left/right/both) em tags e outputs, inline markers em todos os tipos de tag (for/if/unless/case/assign/capture/increment/decrement/echo/liquid/raw/comment), combinations de tag+output, templates aninhados (2 e 3 níveis), edge cases (tabs, CR, strings com espaços, arrays vazios, múltiplos nós adjacentes). |
-| ✅ | ✅ | ✅ | P1 | `{{-}}` — trim blank sem expressão | **Bug corrigido:** `{{-}}` (sem expressão entre trim markers) produzia `Liquid syntax error: syntax error in "-"`. Fix em `parser/scanner.go`: (1) quando o Args capturado é `"-"` e há trim marker presente, substitui por `""`. (2) regex do conteúdo de output token atualizado para usar padrão de exclusão idêntico ao de tags (`(?:[^}]|}[^}])+?`), evitando match greedy que cruzava tokens `{{-}}` adjacentes. Fix em `parser/parser.go`: token `ObjTokenType` com `Args == ""` é ignorado. E2E em `s11_whitespace_e2e_test.go`:  `TrimBlank_*` (8 testes) cobre isolado, múltiplos espaços, newlines, adjacente, múltiplos `{{-}}`, dentro de for, dentro de capture, ao lado de output. |
-| ✅ | ✅ | ✅ | P4 | Opções globais de trim (`trimTagRight`, etc.) | Implementado: `Config.TrimTagLeft/Right`, `TrimOutputLeft/Right`, `Greedy` em `render/config.go`. Engine expõe `SetTrimTagLeft/Right`, `SetTrimOutputLeft/Right`, `SetGreedy`. `Greedy` padrão = true. Non-greedy (inline blank + 1 newline) implementado em `trimwriter.go`. Testes portados de `trimming.spec.ts` passando. E2E em `s11_whitespace_e2e_test.go`: `Global_TrimTag*` (11 tests), `Global_TrimOutput*` (9 tests), `Greedy_*` (7 tests), `Interaction_*` (4 tests) — cobrem combinações de opções globais com inline markers, isolamento entre tag/output trim, comportamento não-greedy, e interação entre os diferentes mecanismos de trim. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | `{%-`, `-%}`, `{{-`, `-}}` | OK. Ported tests in `whitespace_ctrl_ported_test.go` (43 tests covering Ruby and JS). Intensive E2E in `s11_whitespace_e2e_test.go` (105 tests) cover: all trim directions (left/right/both) on tags and outputs, inline markers on all tag types (for/if/unless/case/assign/capture/increment/decrement/echo/liquid/raw/comment), tag+output combinations, nested templates (2 and 3 levels), edge cases (tabs, CR, strings with spaces, empty arrays, multiple adjacent nodes). |
+| ✅ | ✅ | ✅ | P1 | `{{-}}` — blank trim without expression | **Bug fixed:** `{{-}}` (no expression between trim markers) produced `Liquid syntax error: syntax error in "-"`. Fix in `parser/scanner.go`: (1) when the captured Args is `"-"` and a trim marker is present, replace with `""`. (2) output token content regex updated to use exclusion pattern identical to tags (`(?:[^}]|}[^}])+?`), preventing greedy match that crossed adjacent `{{-}}` tokens. Fix in `parser/parser.go`: `ObjTokenType` token with `Args == ""` is ignored. E2E in `s11_whitespace_e2e_test.go`: `TrimBlank_*` (8 tests) covers isolated, multiple spaces, newlines, adjacent, multiple `{{-}}`, inside for, inside capture, next to output. |
+| ✅ | ✅ | ✅ | P4 | Global trim options (`trimTagRight`, etc.) | Implemented: `Config.TrimTagLeft/Right`, `TrimOutputLeft/Right`, `Greedy` in `render/config.go`. Engine exposes `SetTrimTagLeft/Right`, `SetTrimOutputLeft/Right`, `SetGreedy`. `Greedy` default = true. Non-greedy (inline blank + 1 newline) implemented in `trimwriter.go`. Ported tests from `trimming.spec.ts` passing. E2E in `s11_whitespace_e2e_test.go`: `Global_TrimTag*` (11 tests), `Global_TrimOutput*` (9 tests), `Greedy_*` (7 tests), `Interaction_*` (4 tests) — cover option combinations with inline markers, isolation between tag/output trim, non-greedy behavior, and interaction between different trim mechanisms. |
 
 ---
 
-## 12. Thread-safety e Concorrência
+## 12. Thread-safety and Concurrency
 
-> Não faz sentido garantir imutabilidade antes de ter todos os campos de configuração definidos. Pode ser planejado em paralelo, mas implementado depois de estabilizar a API de configuração.
-> Ver também **B5** (bug ativo de race condition no renderer).
+> It makes no sense to guarantee immutability before having all configuration fields defined. Can be planned in parallel, but implemented after stabilizing the configuration API.
+> See also **B5** (active race condition bug in the renderer).
 
-| Impl | Tests | E2E | Prioridade | Item | Notas |
-|------|-------|-----|-----------|------|-------|
-| ✅ | ✅ | ✅ | P1 | Auditoria de estado mutável no `Engine` | **Concluída.** Grammar maps (`tags`, `blockDefs`), filter maps e `Config.Globals` são escritos só no setup e lidos durante render — race-free. `Expression.Variables()` usa `sync.Once` — correto. `engine.cache *sync.Map` para template cache é thread-safe. `Cache` (fallback do `{% include %}`) era `map[string][]byte` — corrigido para `sync.Map` (ver linha abaixo). Engine está 100% seguro para uso concorrente após setup. |
-| ✅ | ✅ | ✅ | P1 | Estado de render isolado por chamada | **Confirmado seguro.** `newNodeContext(vars, cfg)` faz `maps.Copy` dos globals+scope para um mapa novo a cada call. Tags com estado (assign, increment, decrement, cycle, for+continue) operam somente no mapa per-call. Expressões compiladas são imutáveis após parse. Verificado em `TestConcurrent_StatefulTagsAreIsolated`. |
-| ✅ | ✅ | ✅ | P2 | `Config` imutável após construção | **Implementado via freeze pattern.** `Engine` tem `frozen atomic.Bool`. `freeze()` é chamado no início de todo entry point de parse (`ParseTemplate`, `ParseTemplateLocation`, `ParseString`, `ParseAndRender`, `ParseAndFRender`, `ParseTemplateAndCache`). `checkNotFrozen(method)` é chamado em todos os 21 métodos de configuração mutantes (`RegisterTag/Block/Filter`, `StrictVariables`, `LaxFilters/Tags`, `SetGlobals`, `SetTrimXxx`, `SetGreedy`, `SetGlobalFilter`, `SetExceptionHandler`, `SetAutoEscapeReplacer`, `RegisterTemplateStore`, `Delims`, `EnableCache`, `EnableJekyllExtensions`, `RegisterTagAnalyzer/BlockAnalyzer`). Violação resulta em panic com mensagem clara: `"liquid: SetGlobals() called after the engine has been used for parsing"`. Zero overhead no hot path. Exceção documentada: `UnregisterTag` não tem guard — é explicitamente para hot-reload/test teardown. 3 testes em `context_scope_ported_test.go` tinham `RegisterTag` após `ParseTemplateAndCache` — corrigidos para a ordem certa. 42 subtestes em `TestEngine_FrozenAfterParse` (21 entradas × 2) + `TestEngine_FrozenPanicMessage` cobrem todos os métodos. |
-| ✅ | ✅ | ✅ | P1 | Fix: `Cache map[string][]byte` → `sync.Map` | **Corrigido.** `render/config.go`: campo `Cache` trocado para `sync.Map`. `engine.go`: `Cache[path] = source` → `Cache.Store(path, source)`. `render/context.go`: dois `Cache[filename]` → `Cache.Load(filename)` (com type assertion `.([]byte)`). `tags/include_tag_test.go`: dois `config.Cache["..."] = []byte(...)` → `Cache.Store(...)`. `NewConfig()`: removida inicialização `Cache: map[string][]byte{}` (zero value de `sync.Map` já é válida). `TestConcurrent_CacheRace` agora testa o comportamento real (sem `t.Skip`) — passou. |
+| Impl | Tests | E2E | Priority | Item | Notes |
+|------|-------|-----|----------|------|-------|
+| ✅ | ✅ | ✅ | P1 | Mutable state audit in `Engine` | **Completed.** Grammar maps (`tags`, `blockDefs`), filter maps, and `Config.Globals` are written only during setup and read during render — race-free. `Expression.Variables()` uses `sync.Once` — correct. `engine.cache *sync.Map` for template cache is thread-safe. `Cache` (fallback for `{% include %}`) was `map[string][]byte` — fixed to `sync.Map` (see row below). Engine is 100% safe for concurrent use after setup. |
+| ✅ | ✅ | ✅ | P1 | Render state isolated per call | **Confirmed safe.** `newNodeContext(vars, cfg)` does `maps.Copy` of globals+scope into a new map per call. Stateful tags (assign, increment, decrement, cycle, for+continue) operate only on the per-call map. Compiled expressions are immutable after parse. Verified in `TestConcurrent_StatefulTagsAreIsolated`. |
+| ✅ | ✅ | ✅ | P2 | `Config` immutable after construction | **Implemented via freeze pattern.** `Engine` has `frozen atomic.Bool`. `freeze()` is called at the start of every parse entry point (`ParseTemplate`, `ParseTemplateLocation`, `ParseString`, `ParseAndRender`, `ParseAndFRender`, `ParseTemplateAndCache`). `checkNotFrozen(method)` is called in all 21 mutating configuration methods (`RegisterTag/Block/Filter`, `StrictVariables`, `LaxFilters/Tags`, `SetGlobals`, `SetTrimXxx`, `SetGreedy`, `SetGlobalFilter`, `SetExceptionHandler`, `SetAutoEscapeReplacer`, `RegisterTemplateStore`, `Delims`, `EnableCache`, `EnableJekyllExtensions`, `RegisterTagAnalyzer/BlockAnalyzer`). Violation results in panic with clear message: `"liquid: SetGlobals() called after the engine has been used for parsing"`. Zero overhead on hot path. Exception documented: `UnregisterTag` has no guard — explicitly for hot-reload/test teardown. 3 tests in `context_scope_ported_test.go` had `RegisterTag` after `ParseTemplateAndCache` — fixed to correct order. 42 subtests in `TestEngine_FrozenAfterParse` (21 entries × 2) + `TestEngine_FrozenPanicMessage` cover all methods. |
+| ✅ | ✅ | ✅ | P1 | Fix: `Cache map[string][]byte` → `sync.Map` | **Fixed.** `render/config.go`: `Cache` field changed to `sync.Map`. `engine.go`: `Cache[path] = source` → `Cache.Store(path, source)`. `render/context.go`: two `Cache[filename]` → `Cache.Load(filename)` (with type assertion `.([]byte)`). `tags/include_tag_test.go`: two `config.Cache["..."] = []byte(...)` → `Cache.Store(...)`. `NewConfig()`: removed `Cache: map[string][]byte{}` initialization (zero value of `sync.Map` is already valid). `TestConcurrent_CacheRace` now tests real behavior (without `t.Skip`) — passed. |
 
 ---
 
-## Resumo Executivo por Prioridade
+## Executive Summary by Priority
 
-### P1 — Core Shopify Liquid (implementar primeiro)
+### P1 — Core Shopify Liquid (implement first)
 
 ```
 Tags:
 [x] echo tag                 ✅ DONE
-[x] liquid tag (multi-linha) ✅ DONE — `tags/standard_tags.go`, testes em `TestLiquidTag`
-[x] # inline comment         ✅ DONE — `parser/scanner.go`, testes em `TestInlineComment`
-[x] increment / decrement    ✅ DONE — `tags/standard_tags.go`, contadores separados, testes em `TestIncrementDecrement`
-[x] render tag (escopo isolado) ✅ DONE — `tags/render_tag.go`, with/as/kv/for, testes em `TestRenderTag_*`
-[x] include — with/as/key-val args ✅ DONE — `tags/include_tag.go` reescrito, testes em `TestIncludeTag_*`
-[x] case/when — suporte a `or`  ✅ DONE
+[x] liquid tag (multi-line)  ✅ DONE — tags/standard_tags.go, tests in TestLiquidTag
+[x] # inline comment         ✅ DONE — parser/scanner.go, tests in TestInlineComment
+[x] increment / decrement    ✅ DONE — tags/standard_tags.go, separate counters, tests in TestIncrementDecrement
+[x] render tag (isolated scope) ✅ DONE — tags/render_tag.go, with/as/kv/for, tests in TestRenderTag_*
+[x] include — with/as/key-val args ✅ DONE — tags/include_tag.go rewritten, tests in TestIncludeTag_*
+[x] case/when — support for `or`  ✅ DONE
 
-Filtros:
-[x] capitalize — fix (lowercase resto)          ✅ DONE
-[x] strip_html — fix (remover script/style)     ✅ DONE
-[x] newline_to_br — fix (preservar \n)          ✅ DONE
-[x] modulo — fix (erro em divisão por zero)     ✅ DONE (guard adicionado)
-[x] default — allow_false keyword arg           ✅ DONE (filtro atualizado + testes)
-[x] sort — nil-last (nils vão para o final)     ✅ DONE
-[x] Keyword args em filtros (parser change)     ✅ DONE (infraestrutura NamedArg)
+Filters:
+[x] capitalize — fix (lowercase rest)          ✅ DONE
+[x] strip_html — fix (remove script/style)     ✅ DONE
+[x] newline_to_br — fix (preserve \n)          ✅ DONE
+[x] modulo — fix (error on division by zero)   ✅ DONE (guard added)
+[x] default — allow_false keyword arg          ✅ DONE (filter updated + tests)
+[x] sort — nil-last (nils go to the end)       ✅ DONE
+[x] Keyword args in filters (parser change)    ✅ DONE (NamedArg infrastructure)
 
-Expressões:
+Expressions:
 [x] empty literal/drop        ✅ DONE
 [x] blank literal/drop        ✅ DONE
-[x] Strings — suporte a escapes (\n, \", etc.) ✅ DONE
-[x] array[-1] negative indexing               ✅ DONE
+[x] Strings — escape support (\n, \", etc.)  ✅ DONE
+[x] array[-1] negative indexing              ✅ DONE
 
 Drops:
-[x] forloop.name              ✅ DONE (já estava implementado — confirmado)
-[x] tablerowloop drop — row/col/col0/col_first/col_last ✅ DONE (já estava implementado — confirmado)
+[x] forloop.name              ✅ DONE (already implemented — confirmed)
+[x] tablerowloop drop — row/col/col0/col_first/col_last ✅ DONE (already implemented — confirmed)
 
 Context:
-[x] Sub-contexto isolado (para render tag) ✅ DONE
-[x] Variáveis globais separadas do escopo  ✅ DONE
+[x] Isolated sub-context (for render tag) ✅ DONE
+[x] Global variables separate from scope  ✅ DONE
 ```
 
-### P2 — Extensões Comuns (Ruby + JS)
+### P2 — Common Extensions (Ruby + JS)
 
 ```
-[x] strict_variables / strict_filters como opção per-render  ✅ DONE — WithStrictVariables(), WithLaxFilters(), WithGlobals(), WithGlobalFilter() em liquid.go
-[x] globals option no engine  ✅ DONE
+[x] strict_variables / strict_filters as per-render options  ✅ DONE — WithStrictVariables(), WithLaxFilters(), WithGlobals(), WithGlobalFilter() in liquid.go
+[x] globals option on engine  ✅ DONE
 ```
 
-### P3 — Compat Ruby
+### P3 — Ruby Compat
 
 ```
-[x] squish filtro              ✅ DONE
+[x] squish filter              ✅ DONE
 [x] h alias (escape)           ✅ DONE
 [x] base64_url_safe_encode/decode  ✅ DONE
 [x] compact: property arg      ✅ DONE
 [x] uniq: property arg         ✅ DONE
-[x] forloop.parentloop        ✅ DONE (já estava implementado — confirmado)
-[x] <> alias de !=   ✅ DONE
-[x] doc / enddoc tag  ✅ DONE — parser especial igual a comment, testes em TestDocTag
-[x] ifchanged tag     ✅ DONE — `tags/standard_tags.go`, testes em TestIfchangedTag
-[x] include for array as alias ✅ DONE — `tags/include_tag.go`, testes em TestIncludeTag_for_array
-[x] Drop: liquid_method_missing  ✅ DONE — `DropMethodMissing` em `drops.go`, testes em `drops_test.go`
-[x] context= injection no drop  ✅ DONE — `ContextDrop`/`DropRenderContext` em `drops.go`, `expressions/context.go`, testes em `drops_test.go`
-[x] template.errors / coleta de erros  ✅ DONE — WithErrorHandler() como collector
+[x] forloop.parentloop         ✅ DONE (already implemented — confirmed)
+[x] <> alias for !=            ✅ DONE
+[x] doc / enddoc tag           ✅ DONE — special parser like comment, tests in TestDocTag
+[x] ifchanged tag              ✅ DONE — tags/standard_tags.go, tests in TestIfchangedTag
+[x] include for array as alias ✅ DONE — tags/include_tag.go, tests in TestIncludeTag_for_array
+[x] Drop: liquid_method_missing  ✅ DONE — DropMethodMissing in drops.go, tests in drops_test.go
+[x] context= injection in drop  ✅ DONE — ContextDrop/DropRenderContext in drops.go, expressions/context.go, tests in drops_test.go
+[x] template.errors / error collection  ✅ DONE — WithErrorHandler() as collector
 [x] exception_renderer  ✅ DONE — WithErrorHandler() + Engine.SetExceptionHandler()
 [x] Resource limits (render_length)  ✅ DONE — WithSizeLimit(int64)
-[x] ParseTreeVisitor API  ✅ DONE — Walk + ParseTree em visitor.go
+[x] ParseTreeVisitor API  ✅ DONE — Walk + ParseTree in visitor.go
 ```
 
-### P4 — Compat JS / Extensões
+### P4 — JS Compat / Extensions
 
 ```
-[x] for offset: continue  ✅ DONE — `tags/iteration_tags.go`, todos os loops rastreiam posição, testes em TestOffsetContinue
-[x] date: 'now'/'today' como input  ✅ DONE
-[x] date_to_xmlschema / date_to_rfc822 / date_to_string / date_to_long_string  ✅ DONE — `filters/standard_filters.go`, testes portados JS em `filters/standard_filters_test.go`
+[x] for offset: continue  ✅ DONE — tags/iteration_tags.go, all loops track position, tests in TestOffsetContinue
+[x] date: 'now'/'today' as input  ✅ DONE
+[x] date_to_xmlschema / date_to_rfc822 / date_to_string / date_to_long_string  ✅ DONE — filters/standard_filters.go, JS ported tests in filters/standard_filters_test.go
 [x] where_exp / reject_exp / group_by_exp / has_exp / find_exp / find_index_exp  ✅ DONE
 [x] jsonify alias              ✅ DONE
-[x] raw filter  ✅ DONE — `expressions/filters.go` (registrado junto com `safe`), `render/config.go` (sempre habilitado), testes em `render/autoescape_test.go`
-[x] layout / block tags        ✅ DONE — `tags/layout_tags.go`, herança por bloco, testes em TestLayoutTag*
-[x] not operador unário       ✅ DONE
-[ ] Opções globais de whitespace trim
+[x] raw filter  ✅ DONE — expressions/filters.go (registered with safe), render/config.go (always enabled), tests in render/autoescape_test.go
+[x] layout / block tags        ✅ DONE — tags/layout_tags.go, block inheritance, tests in TestLayoutTag*
+[x] not unary operator         ✅ DONE
+[ ] Global whitespace trim options
 [x] Resource limits (time-based via context)  ✅ DONE — WithContext(context.Context)
 [x] Template cache  ✅ DONE — Engine.EnableCache() / ClearCache()
 ```

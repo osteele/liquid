@@ -762,10 +762,10 @@ func TestB7_Registers_ConcurrentRendersIsolated(t *testing.T) {
 }
 
 // ╔══════════════════════════════════════════════════════════════════════════════╗
-// ║  7.4 — VARIÁVEIS GLOBAIS SEPARADAS DO ESCOPO                                ║
+// ║  7.4 — GLOBAL VARIABLES SEPARATE FROM SCOPE                                 ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
-// ── 7.4.a — Globals são acessíveis em todos os templates ─────────────────────
+// ── 7.4.a — Globals are accessible in all templates ───────────────────────────
 
 func TestB7_Globals_BasicAccess(t *testing.T) {
 	eng := mustEngine(t)
@@ -811,7 +811,7 @@ func TestB7_Globals_AccessibleWithEmptyBindings(t *testing.T) {
 	require.Equal(t, "hello", renderB7(t, eng, `{{ greeting }}`, map[string]any{}))
 }
 
-// ── 7.4.b — Bindings têm prioridade sobre globals ────────────────────────────
+// ── 7.4.b — Bindings take priority over globals ───────────────────────────────
 
 func TestB7_Globals_BindingShadowsGlobal(t *testing.T) {
 	eng := mustEngine(t)
@@ -828,7 +828,7 @@ func TestB7_Globals_PartialShadow(t *testing.T) {
 		renderB7(t, eng, `{{ a }} {{ b }}`, map[string]any{"a": "local-a"}))
 }
 
-// ── 7.4.c — assign não muta os globals para renders futuros ───────────────────
+// ── 7.4.c — assign does not mutate globals for future renders ──────────────────
 
 func TestB7_Globals_AssignDoesNotMutateGlobalForNextRender(t *testing.T) {
 	eng := mustEngine(t)
@@ -966,7 +966,7 @@ func TestB7_Globals_StrictVariables_BindingDefinedToo(t *testing.T) {
 	require.Equal(t, "bound", out)
 }
 
-// ── 7.4.g — Globals acessíveis via custom tag through ctx.Get ─────────────────
+// ── 7.4.g — Globals accessible via custom tag through ctx.Get ─────────────────
 
 func TestB7_Globals_AccessViaCtxGet(t *testing.T) {
 	eng := mustEngine(t)
@@ -1000,7 +1000,7 @@ func TestB7_Globals_AccessViaCtxGetWithBindingShadow(t *testing.T) {
 	require.Equal(t, "local", out)
 }
 
-// ── 7.4.h — Globals acessíveis em sub-contextos isolados ──────────────────────
+// ── 7.4.h — Globals accessible in isolated sub-contexts ───────────────────────
 
 func TestB7_Globals_VisibleInIsolatedSubcontext(t *testing.T) {
 	eng := mustEngine(t)

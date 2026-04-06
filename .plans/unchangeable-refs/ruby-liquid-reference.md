@@ -1,465 +1,375 @@
-# Ruby Liquid — Mapeamento Completo de Features
+# Ruby Liquid — Complete Feature Mapping
 
-> Referência extraída diretamente do código-fonte em `.example-repositories/liquid-ruby/liquid` (lib/ + test/).
-> Organizada por domínio. Usada como base para comparação com a implementação Go.
+> Reference extracted directly from the source code in `.example-repositories/liquid-ruby/liquid` (lib/ + test/).
+> Organized by domain. Used as the basis for comparison with the Go implementation.
 
 ---
 
 ## Tags
 
-### Tags de output / expressão
+### Output / Expression tags
 
-| Tag | Sintaxe | Notas |
-|-----|---------|-------|
-| `{{ }}` | `{{ expressao }}` | Output de variável ou expressão com filtros |
-| `echo` | `{% echo expressao %}` | Equivalente a `{{ }}`, usável dentro de `{% liquid %}` |
-
-### Tags de variável / estado
-
-| Tag | Sintaxe | Notas |
-|-----|---------|-------|
-| `assign` | `{% assign var = valor %}` | Cria variável; rastreado por resource limits |
-| `capture` | `{% capture var %}...{% endcapture %}` | Captura output como string; rastreado por resource limits |
-| `increment` | `{% increment var %}` | Starts at 0, outputs then increments; compartilha estado com `decrement` |
-| `decrement` | `{% decrement var %}` | Starts at -1, outputs then decrements; compartilha estado com `increment` |
-
-### Tags condicionais
-
-| Tag | Sub-tags | Notas |
-|-----|----------|-------|
-| `if` | `elsif`, `else` | Operadores: `==`, `!=`, `<>`, `<`, `>`, `<=`, `>=`, `contains`, `and`, `or`; valores especiais: `blank`, `empty` |
-| `unless` | `elsif`, `else` | Inverte condição inicial; resto igual ao `if` |
-| `case` | `when`, `else` | `when` suporta múltiplos valores separados por `or` ou `,` |
-| `ifchanged` | — | Renderiza só se output mudou desde última iteração; estado em `registers[:ifchanged]` |
-
-### Tags de iteração
-
-| Tag | Opções | Notas |
+| Tag | Syntax | Notes |
 |-----|--------|-------|
-| `for` | `reversed`, `limit: n`, `offset: n`, range `(a..b)` | Sub-tag `else` (quando array vazio); cria objeto `forloop`; suporta `break`/`continue` |
-| `break` | — | Interrompe `for`; usa `BreakInterrupt` |
-| `continue` | — | Pula iteração em `for`; usa `ContinueInterrupt` |
-| `cycle` | nome opcional: `{% cycle "name": v1, v2 %}` | Estado em `registers[:cycle]`; precisa estar dentro de `for` |
-| `tablerow` | `cols: n`, `limit: n`, `offset: n`, range `(a..b)` | Gera HTML de tabela (`<tr class="rowN">`, `<td class="colN">`); cria objeto `tablerowloop`; suporta `break` |
+| `{{ }}` | `{{ expression }}` | Variable or expression output with filters |
+| `echo` | `{% echo expression %}` | Equivalent to `{{ }}`, usable inside `{% liquid %}` |
 
-### Tags de inclusão de templates
+### Variable / State tags
 
-| Tag | Sintaxe | Escopo | Status |
-|-----|---------|--------|--------|
-| `include` | `{% include 'arquivo' [with var] [for array] [as alias] [key: val] %}` | Compartilhado (leak de variáveis) | **Deprecated** |
-| `render` | `{% render 'arquivo' [with var] [for array] [as alias] [key: val] %}` | Isolado (sem acesso a vars do pai, exceto globals) | Atual |
+| Tag | Syntax | Notes |
+|-----|--------|-------|
+| `assign` | `{% assign var = value %}` | Creates variable; tracked by resource limits |
+| `capture` | `{% capture var %}...{% endcapture %}` | Captures output as string; tracked by resource limits |
+| `increment` | `{% increment var %}` | Starts at 0, outputs then increments; shares state with `decrement` |
+| `decrement` | `{% decrement var %}` | Starts at -1, outputs then decrements; shares state with `increment` |
 
-### Tags de texto / estrutura
+### Conditional tags
 
-| Tag | Sintaxe | Notas |
+| Tag | Sub-tags | Notes |
+|-----|----------|-------|
+| `if` | `elsif`, `else` | Operators: `==`, `!=`, `<>`, `<`, `>`, `<=`, `>=`, `contains`, `and`, `or`; special values: `blank`, `empty` |
+| `unless` | `elsif`, `else` | Inverts initial condition; rest same as `if` |
+| `case` | `when`, `else` | `when` supports multiple values separated by `or` or `,` |
+| `ifchanged` | — | Renders only if output changed since last iteration; state in `registers[:ifchanged]` |
+
+### Iteration tags
+
+| Tag | Options | Notes |
 |-----|---------|-------|
-| `raw` | `{% raw %}...{% endraw %}` | Output literal, bypassa renderização |
-| `comment` | `{% comment %}...{% endcomment %}` | Ignorado; suporta nesting de `comment`/`raw` |
-| `#` (inline comment) | `{%# comentário %}` | Linha única; cada linha precisa de `#` |
-| `liquid` | `{% liquid tag1\ntag2 %}` | Multi-linha sem delimitadores `{% %}`; cada linha é uma tag |
-| `doc` | `{% doc %}...{% enddoc %}` | Documentação LiquidDoc; ignorada pelo renderer |
+| `for` | `reversed`, `limit: n`, `offset: n`, range `(a..b)` | Sub-tag `else` (when array empty); creates `forloop` object; supports `break`/`continue` |
+| `break` | — | Interrupts `for`; uses `BreakInterrupt` |
+| `continue` | — | Skips iteration in `for`; uses `ContinueInterrupt` |
+| `cycle` | optional name: `{% cycle "name": v1, v2 %}` | State in `registers[:cycle]`; must be inside `for` |
+| `tablerow` | `cols: n`, `limit: n`, `offset: n`, range `(a..b)` | Generates HTML table (`<tr class="rowN">`, `<td class="colN">`); creates `tablerowloop` object; supports `break` |
+
+### Template inclusion tags
+
+| Tag | Syntax | Scope | Status |
+|-----|--------|-------|--------|
+| `include` | `{% include 'file' [with var] [for array] [as alias] [key: val] %}` | Shared (variable leak) | **Deprecated** |
+| `render` | `{% render 'file' [with var] [for array] [as alias] [key: val] %}` | Isolated (no access to parent vars, except globals) | Current |
+
+### Text / Structure tags
+
+| Tag | Syntax | Notes |
+|-----|--------|-------|
+| `raw` | `{% raw %}...{% endraw %}` | Literal output, bypasses rendering |
+| `comment` | `{% comment %}...{% endcomment %}` | Ignored; supports `comment`/`raw` nesting |
+| `#` (inline comment) | `{%# comment %}` | Single line; each line needs `#` |
+| `liquid` | `{% liquid tag1\ntag2 %}` | Multi-line without `{% %}` delimiters; each line is a tag |
+| `doc` | `{% doc %}...{% enddoc %}` | LiquidDoc documentation; ignored by renderer |
 
 ---
 
-## Filtros (StandardFilters)
+## Filters (StandardFilters)
 
 ### String
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
 | `downcase` | `string \| downcase` | |
 | `upcase` | `string \| upcase` | |
-| `capitalize` | `string \| capitalize` | Capitaliza primeira letra, minúsculas no resto |
+| `capitalize` | `string \| capitalize` | Capitalizes first letter, lowercases the rest |
 | `escape` | `string \| escape` | HTML escape (`<`, `>`, `&`, `"`, `'`); alias `h` |
-| `escape_once` | `string \| escape_once` | HTML escape sem re-escapar já escapados |
-| `url_encode` | `string \| url_encode` | CGI escape; espaços viram `+` |
+| `escape_once` | `string \| escape_once` | HTML escape without re-escaping already escaped |
+| `url_encode` | `string \| url_encode` | CGI escape; spaces become `+` |
 | `url_decode` | `string \| url_decode` | CGI unescape |
-| `base64_encode` | `string \| base64_encode` | Base64 estrito |
-| `base64_decode` | `string \| base64_decode` | Levanta erro se inválido |
+| `base64_encode` | `string \| base64_encode` | Strict Base64 |
+| `base64_decode` | `string \| base64_decode` | Raises error if invalid |
 | `base64_url_safe_encode` | `string \| base64_url_safe_encode` | URL-safe Base64 |
 | `base64_url_safe_decode` | `string \| base64_url_safe_decode` | URL-safe Base64 decode |
-| `slice` | `string \| slice: offset[, length]` | Também funciona em arrays |
-| `truncate` | `string \| truncate: n[, ellipsis]` | Default ellipsis `"..."`, incluso na contagem |
-| `truncatewords` | `string \| truncatewords: n[, ellipsis]` | Default 15 palavras |
-| `split` | `string \| split: separador` | Retorna array |
-| `strip` | `string \| strip` | Remove whitespace dos dois lados |
-| `lstrip` | `string \| lstrip` | Remove whitespace da esquerda |
-| `rstrip` | `string \| rstrip` | Remove whitespace da direita |
-| `strip_html` | `string \| strip_html` | Remove tags HTML + `<script>`, `<style>`, comentários |
-| `strip_newlines` | `string \| strip_newlines` | Remove `\n` e `\r\n` |
-| `squish` | `string \| squish` | Strip + colapsa whitespace interno em um espaço |
-| `newline_to_br` | `string \| newline_to_br` | Converte `\n` em `<br />` |
-| `replace` | `string \| replace: old, new` | Substitui todas as ocorrências |
-| `replace_first` | `string \| replace_first: old, new` | Substitui só a primeira |
-| `replace_last` | `string \| replace_last: old, new` | Substitui só a última |
-| `remove` | `string \| remove: sub` | Remove todas as ocorrências |
-| `remove_first` | `string \| remove_first: sub` | Remove só a primeira |
-| `remove_last` | `string \| remove_last: sub` | Remove só a última |
-| `append` | `string \| append: suffix` | Concatena no final |
-| `prepend` | `string \| prepend: prefix` | Concatena no início |
+| `slice` | `string \| slice: offset[, length]` | Also works on arrays |
+| `truncate` | `string \| truncate: n[, ellipsis]` | Default ellipsis `"..."`, included in count |
+| `truncatewords` | `string \| truncatewords: n[, ellipsis]` | Default 15 words |
+| `split` | `string \| split: separator` | Returns array |
+| `strip` | `string \| strip` | Removes whitespace from both sides |
+| `lstrip` | `string \| lstrip` | Removes whitespace from the left |
+| `rstrip` | `string \| rstrip` | Removes whitespace from the right |
+| `strip_html` | `string \| strip_html` | Removes HTML tags + `<script>`, `<style>`, comments |
+| `strip_newlines` | `string \| strip_newlines` | Removes `\n` and `\r\n` |
+| `squish` | `string \| squish` | Strip + collapses internal whitespace to a single space |
+| `newline_to_br` | `string \| newline_to_br` | Converts `\n` to `<br />` |
+| `replace` | `string \| replace: old, new` | Replaces all occurrences |
+| `replace_first` | `string \| replace_first: old, new` | Replaces only the first |
+| `replace_last` | `string \| replace_last: old, new` | Replaces only the last |
+| `remove` | `string \| remove: sub` | Removes all occurrences |
+| `remove_first` | `string \| remove_first: sub` | Removes only the first |
+| `remove_last` | `string \| remove_last: sub` | Removes only the last |
+| `append` | `string \| append: suffix` | Concatenates at the end |
+| `prepend` | `string \| prepend: prefix` | Concatenates at the beginning |
 
 ### Array
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `size` | `array \| size` | Também funciona em strings |
+| `size` | `array \| size` | Also works on strings |
 | `first` | `array \| first` | |
 | `last` | `array \| last` | |
 | `join` | `array \| join[: glue]` | Default glue `" "` |
-| `split` | `string \| split: sep` | Inverso de `join` |
+| `split` | `string \| split: sep` | Inverse of `join` |
 | `reverse` | `array \| reverse` | |
-| `sort` | `array \| sort[: property]` | Case-sensitive; nil-safe (nils vão pro final) |
+| `sort` | `array \| sort[: property]` | Case-sensitive; nil-safe (nils go to end) |
 | `sort_natural` | `array \| sort_natural[: property]` | Case-insensitive |
-| `uniq` | `array \| uniq[: property]` | Remove duplicatas |
-| `compact` | `array \| compact[: property]` | Remove nils |
-| `map` | `array \| map: property` | Extrai propriedade de cada item |
-| `concat` | `array \| concat: outro_array` | Combina arrays (não dedup) |
-| `where` | `array \| where: prop[, valor]` | Filtra por propriedade; sem valor = truthy |
-| `reject` | `array \| reject: prop[, valor]` | Inverso de `where` |
-| `find` | `array \| find: prop[, valor]` | Primeiro match |
-| `find_index` | `array \| find_index: prop[, valor]` | Índice do primeiro match |
-| `has` | `array \| has: prop[, valor]` | `true` se algum item satisfaz |
-| `sum` | `array \| sum[: property]` | Soma numérica |
-| `slice` | `array \| slice: offset[, length]` | Fatia de array |
+| `uniq` | `array \| uniq[: property]` | Removes duplicates |
+| `compact` | `array \| compact[: property]` | Removes nils |
+| `map` | `array \| map: property` | Extracts property from each item |
+| `concat` | `array \| concat: other_array` | Combines arrays (no dedup) |
+| `where` | `array \| where: prop[, value]` | Filters by property; without value = truthy |
+| `reject` | `array \| reject: prop[, value]` | Inverse of `where` |
+| `find` | `array \| find: prop[, value]` | First match |
+| `find_index` | `array \| find_index: prop[, value]` | Index of first match |
+| `has` | `array \| has: prop[, value]` | `true` if any item satisfies |
+| `sum` | `array \| sum[: property]` | Numeric sum |
+| `slice` | `array \| slice: offset[, length]` | Array slice |
 
-### Matemática
+### Math
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
 | `abs` | `number \| abs` | |
 | `plus` | `number \| plus: n` | |
 | `minus` | `number \| minus: n` | |
 | `times` | `number \| times: n` | |
-| `divided_by` | `number \| divided_by: n` | Tipo do resultado = tipo do divisor; levanta `ZeroDivisionError` |
-| `modulo` | `number \| modulo: n` | Levanta `ZeroDivisionError` |
-| `round` | `number \| round[: casas]` | Default 0 casas |
+| `divided_by` | `number \| divided_by: n` | Result type = divisor type; raises `ZeroDivisionError` |
+| `modulo` | `number \| modulo: n` | Raises `ZeroDivisionError` |
+| `round` | `number \| round[: decimals]` | Default 0 decimals |
 | `ceil` | `number \| ceil` | |
 | `floor` | `number \| floor` | |
 | `at_least` | `number \| at_least: n` | `max(input, n)` |
 | `at_most` | `number \| at_most: n` | `min(input, n)` |
 
-### Data
+### Date
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `date` | `date \| date: format` | Formato strftime; retorna input se vazio/inválido |
+| `date` | `date \| date: format` | strftime format; returns input if empty/invalid |
 
 ### Misc / Default
 
-| Filtro | Assinatura | Notas |
+| Filter | Signature | Notes |
 |--------|-----------|-------|
-| `default` | `var \| default: val[, allow_false: bool]` | **Keyword argument** `allow_false`; retorna default se nil, false, ou empty |
+| `default` | `var \| default: val[, allow_false: bool]` | **Keyword argument** `allow_false`; returns default if nil, false, or empty |
 
 ---
 
-## Sistema de Filtros
+## Filter System
 
-| Feature | Descrição |
-|---------|-----------|
-| Filtros posicionais | `{{ val \| filter: arg1, arg2 }}` |
-| **Filtros com keyword args** | `{{ val \| default: fallback, allow_false: true }}` — passados como hash ao método |
-| Positional + keyword misturados | Suportado no modo `strict2_parse` |
-| `register_filter(module)` | Registra módulo Ruby como fonte de filtros |
-| `strict_filters` | Se `true`, levanta `UndefinedFilter` para filtros desconhecidos |
-| `global_filter` | Proc aplicado ao output de toda expressão antes de renderizar |
+| Feature | Description |
+|---------|-------------|
+| Positional filters | `{{ val \| filter: arg1, arg2 }}` |
+| **Filters with keyword args** | `{{ val \| default: fallback, allow_false: true }}` — passed as hash to the method |
+| Mixed positional + keyword | Supported in `strict2_parse` mode |
+| `register_filter(module)` | Registers Ruby module as filter source |
+| `strict_filters` | If `true`, raises `UndefinedFilter` for unknown filters |
+| `global_filter` | Proc applied to every expression output before rendering |
 
 ---
 
-## Expressões e Operadores
+## Expressions and Operators
 
-### Literais
+### Literals
 
-| Literal | Exemplo |
+| Literal | Example |
 |---------|---------|
 | nil/null | `nil`, `null` |
 | boolean | `true`, `false` |
-| inteiro | `42`, `-1` |
+| integer | `42`, `-1` |
 | float | `3.14` |
-| string | `"texto"` ou `'texto'` |
+| string | `"text"` or `'text'` |
 | range | `(1..10)` |
-| blank | `blank` → `''` (compara como string vazia) |
-| empty | `empty` → `''` (compara como string vazia) |
+| blank | `blank` → `''` (compares as empty string) |
+| empty | `empty` → `''` (compares as empty string) |
 
-### Operadores de comparação
+### Comparison operators
 
-| Operador | Comportamento |
-|----------|--------------|
-| `==` | Igualdade (nil-safe) |
-| `!=`, `<>` | Desigualdade |
-| `<`, `>`, `<=`, `>=` | Comparação numérica/string |
+| Operator | Behavior |
+|----------|----------|
+| `==` | Equality (nil-safe) |
+| `!=`, `<>` | Inequality |
+| `<`, `>`, `<=`, `>=` | Numeric/string comparison |
 | `contains` | String: `include?`; Array: `include?` |
 
-### Operadores booleanos
+### Boolean operators
 
-| Operador | Comportamento |
-|----------|--------------|
-| `and` | Curto-circuito, avalia da esquerda para a direita sem precedência |
-| `or` | Curto-circuito |
+| Operator | Behavior |
+|----------|----------|
+| `and` | Short-circuit, evaluates left to right without precedence |
+| `or` | Short-circuit |
 
 ### Truthiness
 
-| Valor | Truthy? |
+| Value | Truthy? |
 |-------|---------|
 | `false` | falsy |
 | `nil` | falsy |
 | `0` | **truthy** |
 | `""` | **truthy** |
 | `[]` | **truthy** |
-| qualquer outro | truthy |
+| any other | truthy |
 
-### Acesso a variáveis
+### Variable access
 
-| Sintaxe | Descrição |
-|---------|-----------|
-| `variavel` | Lookup em escopos empilhados |
-| `obj.prop` | Acesso a propriedade |
-| `obj[key]` | Acesso por chave string |
-| `array[0]` | Acesso por índice inteiro |
-| `array.first`, `array.last` | Atalhos |
-| `array.size`, `hash.size` | Tamanho |
-| `forloop.index`, etc. | Propriedades de loops |
+| Syntax | Description |
+|--------|-------------|
+| `variable` | Lookup in stacked scopes |
+| `obj.prop` | Property access |
+| `obj[key]` | String key access |
+| `array[0]` | Integer index access |
+| `array.first`, `array.last` | Shortcuts |
+| `array.size`, `hash.size` | Size |
+| `forloop.index`, etc. | Loop properties |
 
 ---
 
-## Drops (protocolo de objetos customizados)
+## Drops (custom object protocol)
 
-| Feature | Descrição |
-|---------|-----------|
-| `Drop` base class | Classe base; métodos públicos são acessíveis por nome |
-| `invoke_drop(key)` / `[key]` | Invoca método ou chama `liquid_method_missing` |
-| `liquid_method_missing(name)` | Catch-all; levanta `UndefinedDropMethod` se `strict_variables` |
-| `key?(_name)` | Sempre retorna `true` por padrão |
-| `invokable_methods` | Whitelist de métodos públicos menos blacklist |
-| Blacklist de sistema | Métodos de `Drop` + `Enumerable` (exceto `sort`, `count`, `first`, `min`, `max`) |
-| `to_liquid` | Retorna `self`; usado para lazy conversion |
-| `context=` | Injeta contexto de render no drop |
+| Feature | Description |
+|---------|-------------|
+| `Drop` base class | Base class; public methods are accessible by name |
+| `invoke_drop(key)` / `[key]` | Invokes method or calls `liquid_method_missing` |
+| `liquid_method_missing(name)` | Catch-all; raises `UndefinedDropMethod` if `strict_variables` |
+| `key?(_name)` | Always returns `true` by default |
+| `invokable_methods` | Whitelist of public methods minus blacklist |
+| System blacklist | Methods of `Drop` + `Enumerable` (except `sort`, `count`, `first`, `min`, `max`) |
+| `to_liquid` | Returns `self`; used for lazy conversion |
+| `context=` | Injects render context into the drop |
 
-### ForloopDrop (objeto `forloop`)
+### ForloopDrop (`forloop` object)
 
-| Campo | Descrição |
-|-------|-----------|
+| Field | Description |
+|-------|-------------|
 | `index` | 1-based |
 | `index0` | 0-based |
-| `rindex` | 1-based reverso |
-| `rindex0` | 0-based reverso |
+| `rindex` | 1-based reverse |
+| `rindex0` | 0-based reverse |
 | `first` | boolean |
 | `last` | boolean |
-| `length` | total de iterações |
-| `parentloop` | drop do loop pai (ou nil) |
-| `name` | identificador do loop |
+| `length` | total iterations |
+| `parentloop` | parent loop drop (or nil) |
+| `name` | loop identifier |
 
-### TablerowloopDrop (objeto `tablerowloop`)
+### TablerowloopDrop (`tablerowloop` object)
 
-| Campo | Descrição |
-|-------|-----------|
-| `index`, `index0` | iteração 1-based e 0-based |
-| `rindex`, `rindex0` | reverso |
+| Field | Description |
+|-------|-------------|
+| `index`, `index0` | 1-based and 0-based iteration |
+| `rindex`, `rindex0` | reverse |
 | `first`, `last` | boolean |
-| `col` | coluna 1-based |
-| `col0` | coluna 0-based |
+| `col` | 1-based column |
+| `col0` | 0-based column |
 | `col_first`, `col_last` | boolean |
-| `row` | linha 1-based |
-| `length` | total de iterações |
+| `row` | 1-based row |
+| `length` | total iterations |
 
 ---
 
-## Erros
+## Errors
 
-| Tipo | Uso |
-|------|-----|
+| Type | Usage |
+|------|-------|
 | `Liquid::Error` | Base |
-| `SyntaxError` | Erro de parse |
-| `ArgumentError` | Argumento inválido para filtro/tag |
-| `ContextError` | Erro em operação de contexto |
-| `FileSystemError` | Erro ao carregar arquivo |
-| `StandardError` | Erro genérico de runtime |
-| `StackLevelError` | Stack overflow de includes |
-| `MemoryError` | Resource limits atingidos |
-| `ZeroDivisionError` | Divisão por zero |
-| `FloatDomainError` | Operação float inválida |
-| `UndefinedVariable` | Variável não encontrada (strict mode) |
-| `UndefinedDropMethod` | Método de drop não encontrado (strict mode) |
-| `UndefinedFilter` | Filtro não registrado (strict_filters) |
-| `MethodOverrideError` | Tentativa de sobrescrever método proibido |
-| `DisabledError` | Tag desabilitada (Disableable) |
-| `InternalError` | Erro interno do engine |
-| `TemplateEncodingError` | Encoding inválido no template |
+| `SyntaxError` | Parse error |
+| `ArgumentError` | Invalid argument for filter/tag |
+| `ContextError` | Error in context operation |
+| `FileSystemError` | Error loading file |
+| `StandardError` | Generic runtime error |
+| `StackLevelError` | Include stack overflow |
+| `MemoryError` | Resource limits exceeded |
+| `ZeroDivisionError` | Division by zero |
+| `FloatDomainError` | Invalid float operation |
+| `UndefinedVariable` | Variable not found (strict mode) |
+| `UndefinedDropMethod` | Drop method not found (strict mode) |
+| `UndefinedFilter` | Filter not registered (strict_filters) |
+| `MethodOverrideError` | Attempt to override forbidden method |
+| `DisabledError` | Tag disabled (Disableable) |
+| `InternalError` | Internal engine error |
+| `TemplateEncodingError` | Invalid encoding in template |
 
-**Atributos comuns:** `line_number`, `template_name`, `markup_context`
+**Common attributes:** `line_number`, `template_name`, `markup_context`
 
 ---
 
-## Modos de Erro (error_mode)
+## Error Modes (error_mode)
 
-| Modo | Comportamento |
-|------|--------------|
-| `:lax` | Ignora silenciosamente erros de sintaxe na maioria dos casos (Liquid 2.5 compat) |
-| `:warn` | **Default**; warnings para sintaxe inválida |
-| `:strict` | Levanta erro para a maioria das tags com sintaxe incorreta |
-| `:strict2` | Levanta erro para todas as tags com sintaxe incorreta (modo mais rigoroso) |
+| Mode | Behavior |
+|------|---------|
+| `:lax` | Silently ignores syntax errors in most cases (Liquid 2.5 compat) |
+| `:warn` | **Default**; warnings for invalid syntax |
+| `:strict` | Raises error for most tags with incorrect syntax |
+| `:strict2` | Raises error for all tags with incorrect syntax (strictest mode) |
 
 ---
 
 ## Resource Limits
 
-| Limite | Descrição |
-|--------|-----------|
-| `render_length_limit` | Bytes máximos no output de um template |
-| `render_score_limit` | Score de render por template (cada nó conta) |
-| `assign_score_limit` | Score de assign por template (baseado em bytesize) |
-| `cumulative_render_score_limit` | Score acumulado de render (múltiplos renders) |
-| `cumulative_assign_score_limit` | Score acumulado de assign |
-| `MemoryError` | Levantado quando qualquer limite é excedido |
+| Limit | Description |
+|-------|-------------|
+| `render_length_limit` | Maximum bytes in a template output |
+| `render_score_limit` | Render score per template (each node counts) |
+| `assign_score_limit` | Assign score per template (based on bytesize) |
+| `cumulative_render_score_limit` | Cumulative render score (multiple renders) |
+| `cumulative_assign_score_limit` | Cumulative assign score |
+| `MemoryError` | Raised when any limit is exceeded |
 
-**Scoring do assign:** String → bytesize; Array/Hash → soma recursiva dos elementos; outros → 1.
+**Assign scoring:** String → bytesize; Array/Hash → recursive sum of elements; others → 1.
 
 ---
 
-## Environment / Configuração
+## Environment / Configuration
 
-| Feature | Descrição |
-|---------|-----------|
+| Feature | Description |
+|---------|-------------|
 | `error_mode` | `:lax`, `:warn`, `:strict`, `:strict2` |
-| `file_system` | Implementação plugável de filesystem para `include`/`render` |
-| `exception_renderer` | Proc para interceptar exceções |
-| `default_resource_limits` | Hash com limites padrão (ver acima) |
-| `register_tag(name, klass)` | Registra tag customizada |
-| `register_filter(module)` | Registra módulo de filtros |
-| `Environment.build {}` | Builder imutável (freeze após construção) |
-| `Environment.dangerously_override` | Override temporário do environment default (bloco) |
+| `file_system` | Pluggable filesystem implementation for `include`/`render` |
+| `exception_renderer` | Proc to intercept exceptions |
+| `default_resource_limits` | Hash with default limits (see above) |
+| `register_tag(name, klass)` | Registers custom tag |
+| `register_filter(module)` | Registers filter module |
+| `Environment.build {}` | Immutable builder (freeze after construction) |
+| `Environment.dangerously_override` | Temporary override of default environment (block) |
 
-### Opções de render (por chamada)
+### Render options (per call)
 
-| Opção | Descrição |
-|-------|-----------|
-| `filters:` | Módulos de filtro adicionais para o render |
-| `registers:` | Hash de registros estáticos |
-| `global_filter:` | Proc aplicada a todo output de variável |
-| `exception_renderer:` | Override por render |
-| `strict_variables:` | Levanta `UndefinedVariable` para vars inexistentes |
-| `strict_filters:` | Levanta `UndefinedFilter` para filtros desconhecidos |
+| Option | Description |
+|--------|-------------|
+| `filters:` | Additional filter modules for the render |
+| `registers:` | Hash of static registers |
+| `global_filter:` | Proc applied to all variable output |
+| `exception_renderer:` | Per-render override |
+| `strict_variables:` | Raises `UndefinedVariable` for non-existent vars |
+| `strict_filters:` | Raises `UndefinedFilter` for unknown filters |
 
 ---
 
 ## Template API
 
-| Método | Descrição |
-|--------|-----------|
-| `Template.parse(source, options)` | Parse em classe (usa `Environment.default`) |
-| `template.render(*args)` | Render com variáveis / contexto / drops |
-| `template.render!(*args)` | Render com rethrow de erros |
-| `template.errors` | Array de erros acumulados |
-| `template.warnings` | Warnings do parse |
-| `template.resource_limits` | Objeto `ResourceLimits` |
-| `template.root` | Nó raiz da parse tree |
-| `template.name` | Nome do template (para mensagens de erro) |
+| Method | Description |
+|--------|-------------|
+| `Template.parse(source, options)` | Parse at class level (uses `Environment.default`) |
+| `template.render(*args)` | Render with variables / context / drops |
+| `template.render!(*args)` | Render with error rethrow |
+| `template.errors` | Array of accumulated errors |
+| `template.warnings` | Parse warnings |
+| `template.resource_limits` | `ResourceLimits` object |
+| `template.root` | Root node of the parse tree |
+| `template.name` | Template name (for error messages) |
 
 ---
 
 ## File System
 
-| Interface | Descrição |
-|-----------|-----------|
-| `BlankFileSystem` | Default; levanta erro em qualquer `include`/`render` |
-| `LocalFileSystem.new(root, pattern)` | Lê do disco; pattern default `_%s.liquid` |
-| `LocalFileSystem#read_template_file(path)` | Lê arquivo; valida path (sem path traversal) |
-| Interface customizada | `read_template_file(path)` — qualquer objeto que responda a esse método |
+| Interface | Description |
+|-----------|-------------|
+| `BlankFileSystem` | Default; raises error on any `include`/`render` |
+| `LocalFileSystem.new(root, pattern)` | Reads from disk; default pattern `_%s.liquid` |
+| `LocalFileSystem#read_template_file(path)` | Reads file; validates path (no path traversal) |
+| Custom interface | `read_template_file(path)` — any object that responds to this method |
 
 ---
 
-## Análise Estática (ParseTreeVisitor)
+## Static Analysis (ParseTreeVisitor)
 
-| Feature | Descrição |
-|---------|-----------|
-| `ParseTreeVisitor.for(node, callbacks)` | Cria visitor para nó |
-| `visitor.add_callback_for(*classes) { \|node, ctx\| }` | Registra callback por classe |
-| `visitor.visit(context)` | Percorre árvore recursivamente |
-| `node.nodelist` | Lista de nós filhos (interface padrão) |
-| Nodes podem ter `ParseTreeVisitor` próprio | Via `Node::ParseTreeVisitor` inner class |
-
----
-
-## Profiler
-
-| Feature | Descrição |
-|---------|-----------|
-| `Template.parse(source, profile: true)` | Habilita profiling |
-| `template.profiler` | Objeto `Liquid::Profiler` após render |
-| Profiler reporta | Tempo por tag/nó durante a renderização |
-
----
-
-## Context interno
-
-| Feature | Descrição |
-|---------|-----------|
-| `scopes` | Stack de hashes de variáveis |
-| `environments` | Variáveis globais (do caller) |
-| `registers` | Storage de dois níveis: `static` + `changes` |
-| `stack(scope) { }` | Push/pop temporário de escopo |
-| `new_isolated_subcontext()` | Sub-contexto isolado (para `render` tag) |
-| `add_filters(module)` | Adiciona filtros ao contexto |
-| `invoke(filter_name, input, *args)` | Invoca filtro |
-| `find_variable(name)` | Lookup com strict_variables |
-| `tag_disabled?(name)` | Suporte a Disableable tags |
-| `with_disabled_tags([names]) { }` | Desabilita tags temporariamente (Disabler) |
-
----
-
-## Mecanismo de Disablement de Tags
-
-| Feature | Descrição |
-|---------|-----------|
-| `Tag::Disableable` | Mixin que faz a tag verificar se está desabilitada antes de renderizar |
-| `Tag::Disabler` | Mixin que desabilita tags listadas em `disabled_tags` durante seu render |
-| Usado em | `render` desabilita `include` dentro de partials renderizados com `render` |
-
----
-
-## Whitespace Control
-
-| Marcador | Efeito |
-|----------|--------|
-| `{%-` | Remove whitespace antes da tag |
-| `-%}` | Remove whitespace depois da tag |
-| `{{-` | Remove whitespace antes do output |
-| `-}}` | Remove whitespace depois do output |
-
----
-
-## Itens ausentes desta implementação Go (vs. Ruby)
-
-> Resumo rápido para cruzamento. Ver `macro-checklist.md` para rastreamento detalhado.
-
-| Item | Grupo na macro-checklist |
-|------|--------------------------|
-| `echo` tag | T1 |
-| `liquid` tag (multi-linha) | T1 |
-| `#` inline comment | T1 |
-| `increment` / `decrement` | T1 |
-| `render` tag (escopo isolado) | T2 |
-| Sub-contexto isolado | T2 |
-| `doc` tag | — (não listado) |
-| `ifchanged` tag | — (não listado) |
-| Filter keyword arguments (`allow_false: true`) | — (não listado, citado no README) |
-| `squish` filtro | — (não listado) |
-| `base64_url_safe_encode` / `base64_url_safe_decode` | — (não listado) |
-| `url_decode` filtro | — (não listado) |
-| `strict_variables` opção de render | — (parcialmente via engine) |
-| `strict_filters` opção de render | — (não listado) |
-| `global_filter` opção de render | — (não listado) |
-| Error modes `:lax`, `:warn`, `:strict`, `:strict2` | — (citado no README) |
-| Resource limits (render_score, assign_score, etc.) | C4 (parcial) |
-| Profiler | — (não listado) |
-| `ParseTreeVisitor` API pública | A1 (parcial) |
-| `ForloopDrop` como tipo público | D1 |
-| `TablerowloopDrop` como tipo público | D1 |
-| `liquid_method_missing` em drops | D1 |
-| `Disableable`/`Disabler` para tags | — (não listado) |
-| `Template.render` com `registers:` | — (não listado) |
-| `cumulative_*_limit` em resource limits | — (não listado) |
-| `TemplateEncodingError` | — (não listado) |
-| `ForloopDrop.parentloop` | — (não listado) |
-| `tablerow` com `cols` correto + HTML gerado | — (verificar se impl está ok) |
-| `cycle` com nome explícito | — (verificar se impl está ok) |
-| `case` com `or` em `when` | — (verificar se impl está ok) |
+| Feature | Description |
+|---------|-------------|
+| `ParseTreeVisitor.for(node, callbacks)` | Creates visitor for node |
+| `visitor.add_callback_for(*classes) { \|node, ctx\| }` | Registers callback by class |

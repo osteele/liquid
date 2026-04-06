@@ -1,27 +1,27 @@
 # Spec: Render Diagnostics — `RenderAudit`
 
-## Objetivo
+## Objective
 
-Adicionar ao engine um método capaz de retornar, junto com o output renderizado, um relatório estruturado de tudo que aconteceu durante a renderização: quais variáveis foram resolvidas, para quais valores, qual caminho cada condição tomou, quantas vezes cada for iterou, e quais mutações de estado ocorreram via `assign`/`capture`. Adicionalmente, o mesmo método pode rodar validação estrutural do template sem necessitar de um render completo.
+Add to the engine a method capable of returning, alongside the rendered output, a structured report of everything that happened during rendering: which variables were resolved to which values, which path each condition took, how many times each for loop iterated, and which state mutations occurred via `assign`/`capture`. Additionally, the same method can run structural validation of the template without needing a full render.
 
-O output deve ser serializado em JSON com estrutura estável, de forma que qualquer frontend ou ferramenta externa possa consumir sem precisar conhecer os internos do engine. O design de erros e posições segue o padrão **LSP Diagnostic** para compatibilidade com editores.
+The output must be serialized as JSON with a stable structure, so any frontend or external tool can consume it without knowing the engine internals. The error and position design follows the **LSP Diagnostic** standard for editor compatibility.
 
 ---
 
-## Estruturas de Posição
+## Position Structures
 
-O `SourceLoc` atual tem apenas `Pathname` e `LineNo`. Para suportar highlight preciso no frontend (selecionar exatamente os caracteres da expressão), precisamos de coluna de início e fim.
+The current `SourceLoc` only has `Pathname` and `LineNo`. To support precise frontend highlighting (selecting exactly the characters of the expression), we need start and end column.
 
-**Mudança necessária no scanner:** rastrear offset de coluna durante o scan (já é simples porque o scanner itera char a char e incrementa `LineNo` em `\n` — basta fazer o mesmo para `ColNo`).
+**Required scanner change:** track column offset during scanning (already simple because the scanner iterates char by char and increments `LineNo` on `\n` — just do the same for `ColNo`).
 
 ```go
-// Position representa um ponto no source (1-based, compatível com LSP).
+// Position represents a point in the source (1-based, LSP-compatible).
 type Position struct {
     Line   int `json:"line"`   // 1-based
     Column int `json:"column"` // 1-based
 }
 
-// Range é um trecho do source (de Start até End, End exclusivo).
+// Range is a span of the source (from Start to End, End exclusive).
 type Range struct {
     Start Position `json:"start"`
     End   Position `json:"end"`
@@ -33,67 +33,67 @@ type Range struct {
 ## API
 
 ```go
-// AuditOptions controla o que RenderAudit coleta.
-// Não duplica opções do engine/render — comportamentos como StrictVariables
-// são passados via ...RenderOption, igual ao Render normal.
+// AuditOptions controls what RenderAudit collects.
+// Does not duplicate engine/render options — behaviors like StrictVariables
+// are passed via ...RenderOption, same as normal Render.
 type AuditOptions struct {
     // --- Render trace ---
-    TraceVariables   bool // Rastrear {{ expr }} com valor e pipeline de filtros
-    TraceConditions  bool // Rastrear {% if/unless/case %} com estrutura de branches e comparações
-    TraceIterations  bool // Rastrear {% for/tablerow %} com metadata do loop
-    TraceAssignments bool // Rastrear {% assign %} e {% capture %} com valores resultantes
+    TraceVariables   bool // Trace {{ expr }} with value and filter pipeline
+    TraceConditions  bool // Trace {% if/unless/case %} with branch structure and comparisons
+    TraceIterations  bool // Trace {% for/tablerow %} with loop metadata
+    TraceAssignments bool // Trace {% assign %} and {% capture %} with resulting values
 
-    // Limite de iterações rastreadas por bloco for/tablerow.
-    // 0 = sem limite (cuidado com loops grandes).
-    // Recomendado: 100. Quando excedido, o campo Truncated do IterationTrace será true.
+    // Maximum traced iterations per for/tablerow block.
+    // 0 = no limit (beware of large loops).
+    // Recommended: 100. When exceeded, the Truncated field of IterationTrace will be true.
     MaxIterationTraceItems int
 }
 
-// AuditResult é o resultado completo de RenderAudit.
-// É sempre retornado não-nil, mesmo quando err != nil — o output pode ser
-// parcial se o render foi interrompido, e Diagnostics explica o que ocorreu.
+// AuditResult is the complete result of RenderAudit.
+// It is always returned non-nil, even when err != nil — the output may be
+// partial if the render was interrupted, and Diagnostics explains what happened.
 type AuditResult struct {
-    Output      string       `json:"output"`      // HTML/texto renderizado (possivelmente parcial)
-    Expressions []Expression `json:"expressions"` // Trace de todas as expressões visitadas, em ordem de execução
-    Diagnostics []Diagnostic `json:"diagnostics"` // Erros e avisos capturados durante execução
+    Output      string       `json:"output"`      // Rendered HTML/text (possibly partial)
+    Expressions []Expression `json:"expressions"` // Trace of all visited expressions, in execution order
+    Diagnostics []Diagnostic `json:"diagnostics"` // Errors and warnings captured during execution
 }
 
-// AuditError é retornado quando o render encontrou um ou mais erros.
-// Implementa error com uma mensagem resumida, e expõe os erros individuais
-// como os mesmos tipos que um render normal retornaria.
+// AuditError is returned when the render encountered one or more errors.
+// Implements error with a summary message, and exposes the individual errors
+// as the same types that a normal render would return.
 type AuditError struct {
     errors []SourceError
 }
 
-func (e *AuditError) Error() string    // "render completed with N error(s)"
-func (e *AuditError) Errors() []SourceError // cada item é UndefinedVariableError, RenderError, etc.
+func (e *AuditError) Error() string         // "render completed with N error(s)"
+func (e *AuditError) Errors() []SourceError // each item is UndefinedVariableError, RenderError, etc.
 ```
 
-O método é adicionado em `Template`, aceitando os mesmos `RenderOption` que `Render` já aceita:
+The method is added to `Template`, accepting the same `RenderOption`s that `Render` already accepts:
 
 ```go
 func (t *Template) RenderAudit(vars Bindings, opts AuditOptions, renderOpts ...RenderOption) (*AuditResult, *AuditError)
 ```
 
-E um método de análise estática do AST compilado, sem render:
+And a static analysis method of the compiled AST, without rendering:
 
 ```go
 func (t *Template) Validate() (*AuditResult, error)
 ```
 
-**Sobre `Validate()`:** erros estruturais graves (tag não fechada, sintaxe inválida) já são capturados pelo `ParseTemplate` — se o template chegou a ser criado, esses erros já não existem. O `Validate()` faz análise estática do AST compilado para detectar padrões suspeitos como `empty-block`. É um método separado, não um flag de `AuditOptions`.
+**About `Validate()`:** severe structural errors (unclosed tag, invalid syntax) are already caught by `ParseTemplate` — if the template was created, those errors no longer exist. `Validate()` performs static analysis of the compiled AST to detect suspicious patterns like `empty-block`. It is a separate method, not a flag in `AuditOptions`.
 
-**Erros de parse em `AuditError`:** quando `Validate()` detecta um problema estático, o erro vai diretamente para `Diagnostics` e `AuditError.Errors()`. Não aparece em `Expression`, pois não há execução associada. `Expressions` reflete apenas o que foi visitado durante o render.
+**Parse errors in `AuditError`:** when `Validate()` detects a static problem, the error goes directly into `Diagnostics` and `AuditError.Errors()`. It does not appear in `Expression`, since there is no associated execution. `Expressions` reflects only what was visited during the render.
 
-**Sobre `*AuditError`:** é sempre `nil` se o render completou sem erros. Quando não-nil, `.Error()` dá a mensagem resumida e `.Errors()` dá o slice com os erros individuais tipados — os mesmos tipos que um `Render` normal retornaria se parasse no primeiro erro. Quem quer inspecionar cada erro itera `.Errors()`.
+**About `*AuditError`:** it is always `nil` if the render completed without errors. When non-nil, `.Error()` gives the summary message and `.Errors()` gives the slice with individually typed errors — the same types that a normal `Render` would return if it stopped at the first error. Those who want to inspect each error iterate `.Errors()`.
 
-**Sobre `...RenderOption`:** `RenderAudit` é um render normal com observabilidade adicionada por cima. Qualquer `RenderOption` que funciona em `Render` funciona aqui da mesma forma — `WithStrictVariables()`, `WithLaxFilters()`, `WithGlobals()`, qualquer coisa. Não há modos exclusivos do audit. A diferença é que erros que normalmente abortariam o render são capturados como `Diagnostic` e o render continua — todos os erros acumulam em `AuditError.Errors()`.
+**About `...RenderOption`:** `RenderAudit` is a normal render with observability added on top. Any `RenderOption` that works in `Render` works here the same way — `WithStrictVariables()`, `WithLaxFilters()`, `WithGlobals()`, anything. There are no audit-exclusive modes. The difference is that errors that would normally abort the render are captured as `Diagnostic` and the render continues — all errors accumulate in `AuditError.Errors()`.
 
 ---
 
-## Estrutura Expression (Render Trace)
+## Expression Structure (Render Trace)
 
-Cada item `Expression` representa uma tag ou objeto Liquid que foi visitado durante a renderização. O campo `Kind` é o discriminador. Exatamente um dos campos opcionais estará preenchido.
+Each `Expression` item represents a Liquid tag or object that was visited during rendering. The `Kind` field is the discriminator. Exactly one of the optional fields will be populated.
 
 ```go
 type ExpressionKind string
@@ -107,17 +107,17 @@ const (
 )
 
 type Expression struct {
-    Source string         `json:"source"` // trecho bruto do template, ex: "{{ customer.name }}"
+    Source string         `json:"source"` // raw excerpt of the template, e.g. "{{ customer.name }}"
     Range  Range          `json:"range"`
     Kind   ExpressionKind `json:"kind"`
 
-    // Depth indica a profundidade de aninhamento desta expressão.
-    // 0 = nível raiz, 1 = dentro de um {% if %} ou {% for %}, 2 = dentro de bloco aninhado, etc.
-    // Permite reconstruir a hierarquia a partir de um array plano sem JSON aninhado.
+    // Depth indicates the nesting depth of this expression.
+    // 0 = root level, 1 = inside {% if %} or {% for %}, 2 = inside nested block, etc.
+    // Allows reconstructing the hierarchy from a flat array without nested JSON.
     Depth int `json:"depth"`
 
-    // Error está preenchido se esta expressão gerou um erro durante a execução.
-    // O mesmo erro aparece no array Diagnostics do AuditResult para varredura centralizada.
+    // Error is populated if this expression generated an error during execution.
+    // The same error also appears in the Diagnostics array of AuditResult for centralized scanning.
     Error *Diagnostic `json:"error,omitempty"`
 
     Variable   *VariableTrace   `json:"variable,omitempty"`
@@ -130,25 +130,25 @@ type Expression struct {
 
 ### VariableTrace
 
-Representa um `{{ expr }}`. Além do valor final, registra o pipeline de filtros passo a passo — resolução do Gemini para saber onde exatamente a cadeia de filtros quebrou ou transformou o valor.
+Represents a `{{ expr }}`. Beyond the final value, it records the filter pipeline step by step — useful to know exactly where in the filter chain a value broke or transformed.
 
 ```go
 type VariableTrace struct {
     Name    string        `json:"name"`    // "customer.name"
     Parts   []string      `json:"parts"`   // ["customer", "name"]
-    Value   any           `json:"value"`   // valor final após todos os filtros
-    Pipeline []FilterStep `json:"pipeline"` // passos intermediários (vazio se sem filtros)
+    Value   any           `json:"value"`   // final value after all filters
+    Pipeline []FilterStep `json:"pipeline"` // intermediate steps (empty if no filters)
 }
 
 type FilterStep struct {
-    Filter string `json:"filter"` // nome do filtro, ex: "upcase"
-    Args   []any  `json:"args"`   // argumentos passados ao filtro, ex: [4, "..."]
-    Input  any    `json:"input"`  // valor de entrada deste filtro
-    Output any    `json:"output"` // valor de saída deste filtro
+    Filter string `json:"filter"` // filter name, e.g. "upcase"
+    Args   []any  `json:"args"`   // arguments passed to the filter, e.g. [4, "..."]
+    Input  any    `json:"input"`  // input value for this filter
+    Output any    `json:"output"` // output value from this filter
 }
 ```
 
-**Exemplo JSON:**
+**Example JSON:**
 ```json
 {
   "source": "{{ customer.name | upcase | truncate: 10 }}",
@@ -157,19 +157,19 @@ type FilterStep struct {
   "variable": {
     "name": "customer.name",
     "parts": ["customer", "name"],
-    "value": "JOAQUIM...",
+    "value": "JOHN...",
     "pipeline": [
       {
         "filter": "upcase",
         "args": [],
-        "input": "joaquim silva",
-        "output": "JOAQUIM SILVA"
+        "input": "john smith",
+        "output": "JOHN SMITH"
       },
       {
         "filter": "truncate",
         "args": [10, "..."],
-        "input": "JOAQUIM SILVA",
-        "output": "JOAQUIM..."
+        "input": "JOHN SMITH",
+        "output": "JOHN..."
       }
     ]
   }
@@ -178,24 +178,24 @@ type FilterStep struct {
 
 ### ConditionTrace
 
-Representa um bloco `{% if %}`, `{% unless %}` ou `{% case %}` inteiro — do header até o `{% endif %}`/`{% endcase %}`. Captura todos os branches (if, elsif, else) com seus resultados, não só o branch vencedor.
+Represents an entire `{% if %}`, `{% unless %}`, or `{% case %}` block — from the header to the `{% endif %}`/`{% endcase %}`. Captures all branches (if, elsif, else) with their results, not just the winning branch.
 
 ```go
 type ConditionTrace struct {
-    // Branches lista todos os branches do bloco, em ordem de declaração.
-    // Para {% if %}…{% elsif %}…{% else %}…{% endif %}: branch por cláusula.
-    // Para {% case %}…{% when %}…{% else %}…{% endcase %}: branch por when/else.
+    // Branches lists all branches of the block, in declaration order.
+    // For {% if %}…{% elsif %}…{% else %}…{% endif %}: one branch per clause.
+    // For {% case %}…{% when %}…{% else %}…{% endcase %}: one branch per when/else.
     Branches []ConditionBranch `json:"branches"`
 }
 
 type ConditionBranch struct {
     Kind     string          `json:"kind"`            // "if" | "elsif" | "else" | "when" | "unless"
-    Range    Range           `json:"range"`           // range do header desta cláusula
-    Executed bool            `json:"executed"`        // o corpo deste branch executou?
-    Items    []ConditionItem `json:"items,omitempty"` // comparações (vazio no "else")
+    Range    Range           `json:"range"`           // range of this clause's header
+    Executed bool            `json:"executed"`        // did this branch's body execute?
+    Items    []ConditionItem `json:"items,omitempty"` // comparisons (empty for "else")
 }
 
-// ConditionItem é uma union: exatamente um dos campos estará preenchido.
+// ConditionItem is a union: exactly one of the fields will be populated.
 type ConditionItem struct {
     Comparison *ComparisonTrace `json:"comparison,omitempty"`
     Group      *GroupTrace      `json:"group,omitempty"`
@@ -203,9 +203,9 @@ type ConditionItem struct {
 
 type ComparisonTrace struct {
     Expression string `json:"expression"` // "customer.age >= 18"
-    Left       any    `json:"left"`       // valor resolvido do lado esquerdo
+    Left       any    `json:"left"`       // resolved value of the left side
     Operator   string `json:"operator"`   // "==", "!=", ">", ">=", "<", "<=", "contains"
-    Right      any    `json:"right"`      // valor resolvido do lado direito
+    Right      any    `json:"right"`      // resolved value of the right side
     Result     bool   `json:"result"`
 }
 
@@ -216,7 +216,7 @@ type GroupTrace struct {
 }
 ```
 
-**Exemplo JSON** para `{% if customer.age >= 18 and customer.active %}…{% elsif plan == "pro" %}…{% else %}…{% endif %}`:
+**Example JSON** for `{% if customer.age >= 18 and customer.active %}…{% elsif plan == "pro" %}…{% else %}…{% endif %}`:
 ```json
 {
   "source": "{% if customer.age >= 18 and customer.active %}",
@@ -284,30 +284,30 @@ type GroupTrace struct {
 }
 ```
 
-**Nota sobre `{% unless %}`:** o branch tem `kind: "unless"`. O campo `executed` já reflete o resultado final após a inversão.
+**Note on `{% unless %}`:** the branch has `kind: "unless"`. The `executed` field already reflects the final result after the inversion.
 
-**Nota sobre `{% case/when %}`:** cada `{% when %}` vira um branch com `kind: "when"`. As `items` contêm uma `ComparisonTrace` implícita com `operator: "=="` comparando o valor do `case` com o valor do `when`. O `{% else %}` do case vira `kind: "else"` normalmente.
+**Note on `{% case/when %}`:** each `{% when %}` becomes a branch with `kind: "when"`. The `items` contain an implicit `ComparisonTrace` with `operator: "=="` comparing the `case` value against the `when` value. The `{% else %}` of the case becomes `kind: "else"` normally.
 
 ### IterationTrace
 
-Representa um bloco `{% for %}` ou `{% tablerow %}`. Emite **um único item** por bloco (não um por iteração), contendo metadata do loop. Para inspecionar variáveis dentro do loop, os `Expression` das iterações internas aparecem naturalmente na sequência do array `expressions` no resultado.
+Represents a `{% for %}` or `{% tablerow %}` block. Emits **a single item** per block (not one per iteration), containing loop metadata. To inspect variables inside the loop, the `Expression`s of the inner iterations appear naturally in the sequence of the `expressions` array in the result.
 
-Para evitar explosão de memória em loops grandes, o trace não duplica os nós AST internos por iteração — eles já aparecem linearmente no array. O controle de `MaxIterationTraceItems` limita quantas iterações internas são rastreadas no array `expressions` (não o `IterationTrace` em si).
+To avoid memory explosion on large loops, the trace does not duplicate AST internal nodes per iteration — they already appear linearly in the array. The `MaxIterationTraceItems` control limits how many inner iterations are traced in the `expressions` array (not the `IterationTrace` itself).
 
 ```go
 type IterationTrace struct {
-    Variable   string `json:"variable"`             // nome da var do loop: "product"
-    Collection string `json:"collection"`            // nome da coleção: "products"
-    Length     int    `json:"length"`                // total de itens na coleção
-    Limit      *int   `json:"limit,omitempty"`       // valor de limit: se usado
-    Offset     *int   `json:"offset,omitempty"`      // valor de offset: se usado
-    Reversed   bool   `json:"reversed,omitempty"`    // se reversed: true foi usado
-    Truncated  bool   `json:"truncated,omitempty"`   // true se MaxIterationTraceItems foi atingido
-    TracedCount int   `json:"traced_count"`          // quantas iterações foram rastreadas
+    Variable   string `json:"variable"`             // loop variable name: "product"
+    Collection string `json:"collection"`            // collection name: "products"
+    Length     int    `json:"length"`                // total items in the collection
+    Limit      *int   `json:"limit,omitempty"`       // limit value: if used
+    Offset     *int   `json:"offset,omitempty"`      // offset value: if used
+    Reversed   bool   `json:"reversed,omitempty"`    // true if reversed: was used
+    Truncated  bool   `json:"truncated,omitempty"`   // true if MaxIterationTraceItems was reached
+    TracedCount int   `json:"traced_count"`          // how many iterations were traced
 }
 ```
 
-**Exemplo JSON:**
+**Example JSON:**
 ```json
 {
   "source": "{% for product in cart.items limit:3 %}",
@@ -326,7 +326,7 @@ type IterationTrace struct {
 }
 ```
 
-**Exemplo com truncamento** (loop com 5000 itens, `MaxIterationTraceItems: 100`):
+**Example with truncation** (loop with 5000 items, `MaxIterationTraceItems: 100`):
 ```json
 {
   "iteration": {
@@ -341,18 +341,18 @@ type IterationTrace struct {
 
 ### AssignmentTrace
 
-Representa um `{% assign %}`. Captura o nome da variável, o valor resolvido da expressão, e o pipeline de filtros se houver.
+Represents an `{% assign %}`. Captures the variable name, the resolved expression value, and the filter pipeline if any.
 
 ```go
 type AssignmentTrace struct {
-    Variable string        `json:"variable"` // nome atribuído: "total_price"
-    Path     []string      `json:"path,omitempty"` // se dot notation: ["page", "title"]
-    Value    any           `json:"value"`    // valor final após filtros
-    Pipeline []FilterStep  `json:"pipeline"` // passos de filtro (vazio se sem filtros)
+    Variable string        `json:"variable"` // assigned name: "total_price"
+    Path     []string      `json:"path,omitempty"` // if dot notation: ["page", "title"]
+    Value    any           `json:"value"`    // final value after filters
+    Pipeline []FilterStep  `json:"pipeline"` // filter steps (empty if no filters)
 }
 ```
 
-**Exemplo JSON:**
+**Example JSON:**
 ```json
 {
   "source": "{% assign discounted = product.price | times: 0.9 | round %}",
@@ -381,16 +381,16 @@ type AssignmentTrace struct {
 
 ### CaptureTrace
 
-Representa um bloco `{% capture %}…{% endcapture %}`. Captura o nome da variável e o valor string resultante do bloco.
+Represents a `{% capture %}…{% endcapture %}` block. Captures the variable name and the resulting string value of the block.
 
 ```go
 type CaptureTrace struct {
-    Variable string `json:"variable"` // nome capturado: "email_body"
-    Value    string `json:"value"`    // conteúdo renderizado do bloco
+    Variable string `json:"variable"` // captured name: "email_body"
+    Value    string `json:"value"`    // rendered content of the block
 }
 ```
 
-**Exemplo JSON:**
+**Example JSON:**
 ```json
 {
   "source": "{% capture greeting %}",
@@ -398,7 +398,7 @@ type CaptureTrace struct {
   "kind": "capture",
   "capture": {
     "variable": "greeting",
-    "value": "Olá, João! Bem-vindo de volta."
+    "value": "Hello, John! Welcome back."
   }
 }
 ```
@@ -407,7 +407,7 @@ type CaptureTrace struct {
 
 ## Diagnostics
 
-Inspirado no **LSP Diagnostic**. O array `diagnostics` é populado por erros que realmente ocorrem — os mesmos erros que um render normal levantaria, mais análise estática disponível pelo `Validate()`. A severidade segue o comportamento padrão do Liquid: se o Liquid levantaria um erro real, é `error`; se o Liquid trataria silenciosamente mas é provável bug, é `warning`; se é apenas observação, é `info`. Não há diagnósticos especulativos sobre o que poderia falhar.
+Inspired by **LSP Diagnostic**. The `diagnostics` array is populated by errors that actually occur — the same errors that a normal render would raise, plus static analysis available through `Validate()`. The severity follows standard Liquid behavior: if Liquid would raise a real error, it is `error`; if Liquid would handle it silently but it is likely a bug, it is `warning`; if it is just an observation, it is `info`. There are no speculative diagnostics about what might fail.
 
 ```go
 type DiagnosticSeverity string
@@ -421,9 +421,9 @@ const (
 type Diagnostic struct {
     Range    Range              `json:"range"`
     Severity DiagnosticSeverity `json:"severity"`
-    Code     string             `json:"code"`    // identificador de máquina (ver catálogo)
-    Message  string             `json:"message"` // mensagem legível para humanos
-    Source   string             `json:"source"`  // trecho bruto do template
+    Code     string             `json:"code"`    // machine identifier (see catalog)
+    Message  string             `json:"message"` // human-readable message
+    Source   string             `json:"source"`  // raw excerpt of the template
     Related  []RelatedInfo      `json:"related,omitempty"`
 }
 
@@ -433,28 +433,28 @@ type RelatedInfo struct {
 }
 ```
 
-### Catálogo de Códigos de Diagnóstico
+### Diagnostic Code Catalog
 
-`error` para erros reais que o Liquid já levanta. `warning` para comportamentos silenciosos que são provavelmente bugs no template — o Liquid trata silenciosamente, mas uma engine auditável deve expô-los. `info` para observações estáticas.
+`error` for real errors that Liquid already raises. `warning` for silent behaviors that are probably template bugs — Liquid handles them silently, but an auditable engine should expose them. `info` for static observations.
 
-| Code | Severity | Detectado em | Descrição |
+| Code | Severity | Detected at | Description |
 |---|---|---|---|
-| `unclosed-tag` | error | parse (Validate) | `{% if %}` sem `{% endif %}` correspondente |
-| `unexpected-tag` | error | parse (Validate) | `{% endif %}` sem `{% if %}` que o abriu |
-| `syntax-error` | error | parse (Validate) | Sintaxe inválida dentro de uma tag ou objeto |
-| `undefined-filter` | error | parse (Validate) | Filtro invocado não está registrado no engine |
-| `argument-error` | error | render | Argumentos inválidos para filtro ou tag (ex: `divided_by: 0`) |
-| `undefined-variable` | warning | render (strict) | Variável não encontrada nos bindings — apenas quando `WithStrictVariables()` ativo |
-| `type-mismatch` | warning | render | Comparação entre tipos incompatíveis; Liquid avalia como false mas é provável bug no template |
-| `not-iterable` | warning | render | `{% for %}` sobre valor não-iterável (int, bool, string); Liquid itera zero vezes silenciosamente |
-| `nil-dereference` | warning | render | Acesso a propriedade de nil num path encadeado (ex: `customer.address.city` quando `address` é nil) |
-| `empty-block` | info | parse (Validate) | Bloco `{% if %}…{% endif %}` sem conteúdo |
+| `unclosed-tag` | error | parse (Validate) | `{% if %}` without a matching `{% endif %}` |
+| `unexpected-tag` | error | parse (Validate) | `{% endif %}` without an opening `{% if %}` |
+| `syntax-error` | error | parse (Validate) | Invalid syntax inside a tag or object |
+| `undefined-filter` | error | parse (Validate) | Invoked filter is not registered in the engine |
+| `argument-error` | error | render | Invalid arguments for filter or tag (e.g. `divided_by: 0`) |
+| `undefined-variable` | warning | render (strict) | Variable not found in bindings — only when `WithStrictVariables()` is active |
+| `type-mismatch` | warning | render | Comparison between incompatible types; Liquid evaluates as false but is likely a template bug |
+| `not-iterable` | warning | render | `{% for %}` over a non-iterable value (int, bool, string); Liquid iterates zero times silently |
+| `nil-dereference` | warning | render | Property access on nil in a chained path (e.g. `customer.address.city` when `address` is nil) |
+| `empty-block` | info | parse (Validate) | `{% if %}…{% endif %}` block with no content |
 
-**Nota sobre `nil` simples:** variável nil em renderização (`{{ nil_var }}`) e nil em comparação (`{% if nil_var == x %}`) são comportamentos normais e intencionais do Liquid — produzem string vazia e false respectivamente. Não geram diagnósticos. `nil-dereference` é específico para acesso encadeado onde um nó intermediário do path é nil.
+**Note on simple `nil`:** nil variable in rendering (`{{ nil_var }}`) and nil in comparison (`{% if nil_var == x %}`) are normal and intentional Liquid behaviors — they produce an empty string and false respectively. They do not generate diagnostics. `nil-dereference` is specific to chained access where an intermediate node in the path is nil.
 
-**Exemplos JSON de diagnósticos:**
+**Example JSON diagnostics:**
 
-`unclosed-tag` com `Related` apontando onde o fechamento era esperado:
+`unclosed-tag` with `Related` pointing to where the closing was expected:
 ```json
 {
   "range": { "start": {"line": 8, "column": 1}, "end": {"line": 8, "column": 14} },
@@ -471,7 +471,7 @@ type RelatedInfo struct {
 }
 ```
 
-`argument-error` em filtro com divisão por zero:
+`argument-error` on filter with division by zero:
 ```json
 {
   "range": { "start": {"line": 9, "column": 5}, "end": {"line": 9, "column": 38} },
@@ -482,7 +482,7 @@ type RelatedInfo struct {
 }
 ```
 
-`undefined-variable` (com `WithStrictVariables()` ativo):
+`undefined-variable` (with `WithStrictVariables()` active):
 ```json
 {
   "range": { "start": {"line": 22, "column": 5}, "end": {"line": 22, "column": 24} },
@@ -493,7 +493,7 @@ type RelatedInfo struct {
 }
 ```
 
-`type-mismatch` durante comparação:
+`type-mismatch` during comparison:
 ```json
 {
   "range": { "start": {"line": 12, "column": 4}, "end": {"line": 12, "column": 34} },
@@ -504,7 +504,7 @@ type RelatedInfo struct {
 }
 ```
 
-`not-iterable` quando o valor não é uma coleção:
+`not-iterable` when the value is not a collection:
 ```json
 {
   "range": { "start": {"line": 20, "column": 1}, "end": {"line": 20, "column": 32} },
@@ -515,7 +515,7 @@ type RelatedInfo struct {
 }
 ```
 
-`nil-dereference` em path encadeado:
+`nil-dereference` in chained path:
 ```json
 {
   "range": { "start": {"line": 7, "column": 5}, "end": {"line": 7, "column": 32} },
@@ -528,18 +528,18 @@ type RelatedInfo struct {
 
 ---
 
-## Ordem das Expressions no Array
+## Expression Array Order
 
-O array `expressions` segue a **ordem de execução** (não de declaração), o que é natural para rastrear fluxo. Isso significa:
+The `expressions` array follows **execution order** (not declaration order), which is natural for flow tracing. This means:
 
-- Em um `{% if … %}…{% elsif … %}`, apenas o branch executado terá suas `expressions` internas no array. O `ConditionTrace` do `elsif` omitido aparece mesmo assim (com `result: false`), mas seus filhos não.
-- Em um `{% for %}`, as expressions internas se repetem para cada iteração (até `MaxIterationTraceItems`).
+- In an `{% if … %}…{% elsif … %}`, only the executed branch will have its inner `expressions` in the array. The `ConditionTrace` of the skipped `elsif` still appears (with `result: false`), but its children do not.
+- In a `{% for %}`, inner expressions repeat for each iteration (up to `MaxIterationTraceItems`).
 
-Para correlacionar um `Expression` com seu ponto exato no template original, use o `Range`.
+To correlate an `Expression` with its exact point in the original template, use the `Range`.
 
 ---
 
-## Exemplo Completo
+## Complete Example
 
 **Template:**
 ```liquid
@@ -547,24 +547,24 @@ Para correlacionar um `Expression` com seu ponto exato no template original, use
 <h1>{{ title }}</h1>
 
 {% if customer.age >= 18 %}
-  <p>Bem-vindo, {{ customer.name }}!</p>
+  <p>Welcome, {{ customer.name }}!</p>
 {% else %}
-  <p>Acesso restrito.</p>
+  <p>Access restricted.</p>
 {% endif %}
 
 {% for item in cart.items %}
-  <li>{{ item.name }} — R$ {{ item.price | times: 1.1 | round }}</li>
+  <li>{{ item.name }} — ${{ item.price | times: 1.1 | round }}</li>
 {% endfor %}
 ```
 
 **Bindings:**
 ```json
 {
-  "page": {"title": "minha loja"},
-  "customer": {"name": "João", "age": 25},
+  "page": {"title": "my store"},
+  "customer": {"name": "John", "age": 25},
   "cart": {"items": [
-    {"name": "Camiseta", "price": 50},
-    {"name": "Calça", "price": 120}
+    {"name": "T-Shirt", "price": 50},
+    {"name": "Pants", "price": 120}
   ]}
 }
 ```
@@ -583,7 +583,7 @@ AuditOptions{
 **`AuditResult`:**
 ```json
 {
-  "output": "<h1>MINHA LOJA</h1>\n\n  <p>Bem-vindo, João!</p>\n\n  <li>Camiseta — R$ 55</li>\n  <li>Calça — R$ 132</li>\n",
+  "output": "<h1>MY STORE</h1>\n\n  <p>Welcome, John!</p>\n\n  <li>T-Shirt — $55</li>\n  <li>Pants — $132</li>\n",
   "expressions": [
     {
       "source": "{% assign title = page.title | upcase %}",
@@ -591,9 +591,9 @@ AuditOptions{
       "kind": "assignment",
       "assignment": {
         "variable": "title",
-        "value": "MINHA LOJA",
+        "value": "MY STORE",
         "pipeline": [
-          { "filter": "upcase", "args": [], "input": "minha loja", "output": "MINHA LOJA" }
+          { "filter": "upcase", "args": [], "input": "my store", "output": "MY STORE" }
         ]
       }
     },
@@ -601,7 +601,7 @@ AuditOptions{
       "source": "{{ title }}",
       "range": { "start": {"line": 2, "column": 5}, "end": {"line": 2, "column": 15} },
       "kind": "variable",
-      "variable": { "name": "title", "parts": ["title"], "value": "MINHA LOJA", "pipeline": [] }
+      "variable": { "name": "title", "parts": ["title"], "value": "MY STORE", "pipeline": [] }
     },
     {
       "source": "{% if customer.age >= 18 %}",
@@ -626,7 +626,7 @@ AuditOptions{
       "source": "{{ customer.name }}",
       "range": { "start": {"line": 5, "column": 15}, "end": {"line": 5, "column": 34} },
       "kind": "variable",
-      "variable": { "name": "customer.name", "parts": ["customer", "name"], "value": "João", "pipeline": [] }
+      "variable": { "name": "customer.name", "parts": ["customer", "name"], "value": "John", "pipeline": [] }
     },
     {
       "source": "{% for item in cart.items %}",
@@ -644,7 +644,7 @@ AuditOptions{
       "source": "{{ item.name }}",
       "range": { "start": {"line": 11, "column": 7}, "end": {"line": 11, "column": 21} },
       "kind": "variable",
-      "variable": { "name": "item.name", "parts": ["item", "name"], "value": "Camiseta", "pipeline": [] }
+      "variable": { "name": "item.name", "parts": ["item", "name"], "value": "T-Shirt", "pipeline": [] }
     },
     {
       "source": "{{ item.price | times: 1.1 | round }}",
@@ -664,7 +664,7 @@ AuditOptions{
       "source": "{{ item.name }}",
       "range": { "start": {"line": 11, "column": 7}, "end": {"line": 11, "column": 21} },
       "kind": "variable",
-      "variable": { "name": "item.name", "parts": ["item", "name"], "value": "Calça", "pipeline": [] }
+      "variable": { "name": "item.name", "parts": ["item", "name"], "value": "Pants", "pipeline": [] }
     },
     {
       "source": "{{ item.price | times: 1.1 | round }}",
@@ -687,75 +687,75 @@ AuditOptions{
 
 ---
 
-## Plano de Implementação
+## Implementation Plan
 
-### Fase 1 — Tracking de Coluna no Scanner
+### Phase 1 — Column Tracking in Scanner
 
-Arquivo: `parser/scanner.go`, `parser/token.go`
+File: `parser/scanner.go`, `parser/token.go`
 
-- Adicionar `ColNo int` em `SourceLoc`
-- O scanner já incrementa `LineNo` ao encontrar `\n`; basta adicionar `ColNo` e resetá-lo para 1 a cada nova linha
-- Adicionar `EndLoc SourceLoc` em `Token` para saber onde o token termina (não só começa)
-- Todos os formadores de `Range` em fases seguintes dependem disso
+- Add `ColNo int` to `SourceLoc`
+- The scanner already increments `LineNo` when it encounters `\n`; just add `ColNo` and reset it to 1 on each new line
+- Add `EndLoc SourceLoc` to `Token` to know where the token ends (not just starts)
+- All `Range` builders in subsequent phases depend on this
 
-**Impacto:** mudança localizada no scanner. `SourceLoc.String()` pode incluir coluna opcionalmente.
+**Impact:** localized change in the scanner. `SourceLoc.String()` can optionally include the column.
 
-### Fase 2 — Diagnostics de Parse
+### Phase 2 — Parse Diagnostics
 
-Arquivos: `parser/parser.go`, `parser/error.go`, `liquid.go`
+Files: `parser/parser.go`, `parser/error.go`, `liquid.go`
 
-- Converter `parser.Error` em `[]Diagnostic` com `Range` completo
-- Erros de block não-fechado já existem como `error`; envolvê-los em `Diagnostic{Code: "unclosed-tag"}`
-- Novo método `Template.Validate(AuditOptions) (*AuditResult, error)` — sem render
+- Convert `parser.Error` into `[]Diagnostic` with complete `Range`
+- Unclosed block errors already exist as `error`; wrap them in `Diagnostic{Code: "unclosed-tag"}`
+- New method `Template.Validate(AuditOptions) (*AuditResult, error)` — without rendering
 
-### Fase 3 — Render Trace
+### Phase 3 — Render Trace
 
-Arquivos: `render/context.go`, `render/render.go`, novos arquivos `render/trace.go`, `render/trace_context.go`
+Files: `render/context.go`, `render/render.go`, new files `render/trace.go`, `render/trace_context.go`
 
-- Criar `traceContext` que wrapa `render.Context` e implementa `render.Context`
-- Interceptar `Evaluate()` para capturar `VariableTrace`
-- Interceptar renderers de `if/unless/case` para capturar `ConditionTrace`
-- Interceptar renderer de `for/tablerow` para capturar `IterationTrace` e aplicar `MaxIterationTraceItems`
-- Interceptar renderers de `assign`/`capture` para capturar `AssignmentTrace`/`CaptureTrace`
-- Interceptar cada `FilterStep` na cadeia de filtros para popular `Pipeline`
+- Create `traceContext` that wraps `render.Context` and implements `render.Context`
+- Intercept `Evaluate()` to capture `VariableTrace`
+- Intercept `if/unless/case` renderers to capture `ConditionTrace`
+- Intercept `for/tablerow` renderer to capture `IterationTrace` and apply `MaxIterationTraceItems`
+- Intercept `assign`/`capture` renderers to capture `AssignmentTrace`/`CaptureTrace`
+- Intercept each `FilterStep` in the filter chain to populate `Pipeline`
 
-### Fase 4 — Diagnostics de Runtime
+### Phase 4 — Runtime Diagnostics
 
-Arquivos: `render/trace_context.go`
+Files: `render/trace_context.go`
 
-- Interceptar erros reais que acontecem durante o render e convertê-los em `Diagnostic` estruturado em vez de abortar
-- `UndefinedVariableError` (quando StrictVariables ativo) → `Diagnostic{Code: "undefined-variable"}`, render continua
-- Incompatibilidade de tipos em comparações → `Diagnostic{Code: "type-mismatch"}`
-- `ArgumentError` (filtro com args inválidos, divisão por zero) → `Diagnostic{Code: "argument-error"}`
-- `{% for %}` sobre tipo não iterável → `Diagnostic{Code: "not-iterable"}`, itera zero vezes (comportamento normal)
-- Acesso a propriedade de nil em path encadeado → `Diagnostic{Code: "nil-dereference"}`, retorna empty (comportamento normal)
-- Acumular todos os erros em `AuditError.errors`; derivar o `*AuditError` retornado
+- Intercept real errors that occur during rendering and convert them into structured `Diagnostic` instead of aborting
+- `UndefinedVariableError` (when StrictVariables active) → `Diagnostic{Code: "undefined-variable"}`, render continues
+- Type incompatibility in comparisons → `Diagnostic{Code: "type-mismatch"}`
+- `ArgumentError` (filter with invalid args, division by zero) → `Diagnostic{Code: "argument-error"}`
+- `{% for %}` over non-iterable type → `Diagnostic{Code: "not-iterable"}`, iterates zero times (normal behavior)
+- Property access on nil in chained path → `Diagnostic{Code: "nil-dereference"}`, returns empty (normal behavior)
+- Accumulate all errors in `AuditError.errors`; derive the returned `*AuditError`
 
-### Fase 5 — API Final e Expose Público
+### Phase 5 — Final API and Public Exposure
 
-Arquivo: `liquid.go`, `template.go`
+File: `liquid.go`, `template.go`
 
-- `Template.RenderAudit(vars Bindings, opts AuditOptions, renderOpts ...RenderOption) (*AuditResult, *AuditError)` — faz tudo
-- `Template.Validate() (*AuditResult, error)` — só análise estática do AST
-- Tipos `AuditResult`, `AuditOptions`, `AuditError`, `Expression`, `Diagnostic`, `Position`, `Range` exportados em `liquid.go`
-- JSON tags em todos os tipos para serialização direta
+- `Template.RenderAudit(vars Bindings, opts AuditOptions, renderOpts ...RenderOption) (*AuditResult, *AuditError)` — does everything
+- `Template.Validate() (*AuditResult, error)` — static AST analysis only
+- Types `AuditResult`, `AuditOptions`, `AuditError`, `Expression`, `Diagnostic`, `Position`, `Range` exported in `liquid.go`
+- JSON tags on all types for direct serialization
 
 ---
 
-## Notas de Design
+## Design Notes
 
-**Por que não há `Validate bool` no `AuditOptions`:** Erros estruturais graves (tag não fechada, sintaxe inválida) já são capturados pelo `ParseTemplate` — se o template foi criado com sucesso, esses erros não existem. Não há nada a validar estruturalmente durante um render audit. O `Validate()` é um método separado para análise estática do AST compilado.
+**Why there is no `Validate bool` in `AuditOptions`:** Severe structural errors (unclosed tag, invalid syntax) are already caught by `ParseTemplate` — if the template was successfully created, those errors no longer exist. There is nothing to structurally validate during a render audit. `Validate()` is a separate method for static analysis of the compiled AST.
 
-**Por que o erro retornado é `*AuditError` e não `SourceError`:** O render audit não para no primeiro erro — acumula todos os erros encontrados. O `*AuditError` reflete isso: `.Error()` dá o resumo, `.Errors()` dá o slice completo com os mesmos tipos que um render normal retornaria um por um.
+**Why the returned error is `*AuditError` and not `SourceError`:** The render audit does not stop at the first error — it accumulates all encountered errors. The `*AuditError` reflects this: `.Error()` gives the summary, `.Errors()` gives the complete slice with the same types that a normal render would return one by one.
 
-**Por que nil e for-sobre-nil geram `warning` e não `error`:** São comportamentos silenciosos do Liquid que nunca abortam o render — a severity warning reflete exatamente isso. O Liquid silenciosamente retorna vazio ou itera zero; o audit apenas torna isso visível. `nil-dereference` é específico para paths encadeados (`a.b.c` onde `b` é nil), não para variável nil simples.
+**Why nil and for-over-nil generate `warning` and not `error`:** These are silent Liquid behaviors that never abort the render — the warning severity reflects exactly this. Liquid silently returns empty or iterates zero times; the audit just makes this visible. `nil-dereference` is specific to chained paths (`a.b.c` where `b` is nil), not to a simple nil variable.
 
-**Por que o PII não está aqui:** A responsabilidade de redação de dados sensíveis é da camada que chama o engine — quem sabe que `customer.cpf` é sensível é quem monta os bindings, não o engine. O engine expõe o trace; o caller decide o que logar ou trafegar.
+**Why PII is not addressed here:** The responsibility for redacting sensitive data is at the layer that calls the engine — whoever knows that `customer.ssn` is sensitive is the one building the bindings, not the engine. The engine exposes the trace; the caller decides what to log or transmit.
 
-**Por que `...RenderOption` e não opções novas:** O audit render é um render normal com observabilidade adicionada. Qualquer `RenderOption` do engine funciona aqui sem nenhuma mudança — `WithStrictVariables()`, `WithLaxFilters()`, `WithGlobals()`. Não existe modo exclusivo do audit. Garante paridade de comportamento: `RenderAudit` nunca renderiza diferente do `Render` com as mesmas opções.
+**Why `...RenderOption` and not new options:** The audit render is a normal render with observability added. Any engine `RenderOption` works here without any changes — `WithStrictVariables()`, `WithLaxFilters()`, `WithGlobals()`. There is no audit-exclusive mode. This guarantees behavioral parity: `RenderAudit` never renders differently from `Render` with the same options.
 
-**Por que `Depth` em vez de JSON aninhado:** LSP usa `children []DocumentSymbol` (JSON aninhado real) no `DocumentSymbol`. Para o nosso caso, o array de expressions é uma timeline de execução — iteração linear é o caso de uso principal, não navegação de árvore. Com `depth`, o frontend itera o array uma vez e constrói a árvore se precisar: filhos de um nó são os próximos itens com `depth = nó.depth + 1` até o próximo item com `depth <= nó.depth`. JSON aninhado não é adequado para uma timeline.
+**Why `Depth` instead of nested JSON:** LSP uses `children []DocumentSymbol` (real nested JSON) in `DocumentSymbol`. For our case, the expressions array is an execution timeline — linear iteration is the primary use case, not tree navigation. With `depth`, the frontend iterates the array once and builds the tree if needed: children of a node are the next items with `depth = node.depth + 1` until the next item with `depth <= node.depth`. Nested JSON is not suitable for a timeline.
 
-**Por que `IterationTrace` não duplica o nó interno por iteração:** Se um for tem 1000 itens e o corpo tem 10 expressions, rastrear tudo daria 10.000 expression objects. O `MaxIterationTraceItems` limita o número de iterações rastreadas, mantendo o array razoável. O `IterationTrace` em si sempre aparece com `length` e `traced_count`.
+**Why `IterationTrace` does not duplicate the internal node per iteration:** If a for loop has 1000 items and the body has 10 expressions, tracing everything would produce 10,000 expression objects. `MaxIterationTraceItems` limits the number of traced iterations, keeping the array manageable. The `IterationTrace` itself always appears with `length` and `traced_count`.
 
-**Sobre `NodeID` para "Inspect Element":** Uma extensão futura seria injetar comentários HTML `<!-- lid:RANGE -->` no output quando trace está ativo, permitindo que um frontend correlacione um trecho do HTML renderizado com o `Range` da expression que o gerou. Não está no escopo desta fase.
+**About `NodeID` for "Inspect Element":** A future extension would be to inject HTML comments `<!-- lid:RANGE -->` into the output when tracing is active, allowing a frontend to correlate a rendered HTML fragment with the `Range` of the expression that generated it. This is not in scope for this phase.
