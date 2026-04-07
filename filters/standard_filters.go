@@ -9,8 +9,8 @@ import (
 	"math"
 	"net/url"
 	"reflect"
-	"strconv"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -172,6 +172,8 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		return a[len(a)-1]
 	})
 	fd.AddFilter("uniq", uniqFilter)
+	fd.AddFilter("where", whereFilter)
+	fd.AddFilter("sum", sumFilter)
 
 	// date filters
 	fd.AddFilter("date", func(t time.Time, format func(string) string) (string, error) {
@@ -259,11 +261,47 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 
 		return math.Floor(n*exp+0.5) / exp
 	})
+	fd.AddFilter("at_least", func(a, b any) any {
+		if isIntegerType(a) && isIntegerType(b) {
+			ai, bi := toInt64(a), toInt64(b)
+			if ai < bi {
+				return bi
+			}
+			return ai
+		}
+		af, bf := toFloat64(a), toFloat64(b)
+		if af < bf {
+			return bf
+		}
+		return af
+	})
+	fd.AddFilter("at_most", func(a, b any) any {
+		if isIntegerType(a) && isIntegerType(b) {
+			ai, bi := toInt64(a), toInt64(b)
+			if ai > bi {
+				return bi
+			}
+			return ai
+		}
+		af, bf := toFloat64(a), toFloat64(b)
+		if af > bf {
+			return bf
+		}
+		return af
+	})
 
 	// sequence filters
 	fd.AddFilter("size", values.Length)
 
 	// string filters
+	fd.AddFilter("pluralize", func(count any, singular, plural string) string {
+		if toFloat64(count) == 1.0 {
+			return singular
+		}
+		return plural
+	})
+	fd.AddFilter("handleize", handleizeFilter)
+	fd.AddFilter("handle", handleizeFilter)
 	fd.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
@@ -293,9 +331,23 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("remove_first", func(s, old string) string {
 		return strings.Replace(s, old, "", 1)
 	})
+	fd.AddFilter("remove_last", func(s, old string) string {
+		i := strings.LastIndex(s, old)
+		if i < 0 {
+			return s
+		}
+		return s[:i] + s[i+len(old):]
+	})
 	fd.AddFilter("replace", strings.ReplaceAll)
 	fd.AddFilter("replace_first", func(s, old, n string) string {
 		return strings.Replace(s, old, n, 1)
+	})
+	fd.AddFilter("replace_last", func(s, old, n string) string {
+		i := strings.LastIndex(s, old)
+		if i < 0 {
+			return s
+		}
+		return s[:i] + n + s[i+len(old):]
 	})
 	fd.AddFilter("sort_natural", sortNaturalFilter)
 	fd.AddFilter("slice", func(v interface{}, start int, length func(int) int) interface{} {
@@ -471,6 +523,64 @@ func uniqFilter(a []any) (result []any) {
 	}
 
 	return
+}
+
+var handleizeRe = regexp.MustCompile(`[^a-z0-9]+`)
+
+func handleizeFilter(s string) string {
+	s = strings.ToLower(s)
+	s = handleizeRe.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	return s
+}
+
+func whereFilter(a []any, key string, targetValue func(any) any) (result []any) {
+	keyValue := values.ValueOf(key)
+	target := targetValue(nil)
+	for _, obj := range a {
+		value := values.ValueOf(obj)
+		prop := value.PropertyValue(keyValue).Interface()
+		if target == nil {
+			// One-arg form: truthy check
+			if prop != nil && prop != false {
+				result = append(result, obj)
+			}
+		} else {
+			// Two-arg form: equality check using Liquid-compatible
+			// comparison (handles nil, mixed int/float, etc.)
+			if values.Equal(prop, target) {
+				result = append(result, obj)
+			}
+		}
+	}
+	return
+}
+
+func sumFilter(a []any, key func(string) string) any {
+	prop := key("")
+	allInts := true
+	var intTotal int64
+	var floatTotal float64
+	for _, item := range a {
+		if prop != "" {
+			v := values.ValueOf(item)
+			item = v.PropertyValue(values.ValueOf(prop)).Interface()
+		}
+		if allInts && isIntegerType(item) {
+			intTotal += toInt64(item)
+		} else {
+			if allInts {
+				// Switch to float, carry over the int total so far
+				floatTotal = float64(intTotal)
+				allInts = false
+			}
+			floatTotal += toFloat64(item)
+		}
+	}
+	if allInts {
+		return intTotal
+	}
+	return floatTotal
 }
 
 func eqItems(a, b any) bool {
