@@ -263,27 +263,31 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	})
 	fd.AddFilter("at_least", func(a, b any) any {
 		if isIntegerType(a) && isIntegerType(b) {
-			if toInt64(a) < toInt64(b) {
-				return b
+			ai, bi := toInt64(a), toInt64(b)
+			if ai < bi {
+				return bi
 			}
-			return a
+			return ai
 		}
-		if toFloat64(a) < toFloat64(b) {
-			return b
+		af, bf := toFloat64(a), toFloat64(b)
+		if af < bf {
+			return bf
 		}
-		return a
+		return af
 	})
 	fd.AddFilter("at_most", func(a, b any) any {
 		if isIntegerType(a) && isIntegerType(b) {
-			if toInt64(a) > toInt64(b) {
-				return b
+			ai, bi := toInt64(a), toInt64(b)
+			if ai > bi {
+				return bi
 			}
-			return a
+			return ai
 		}
-		if toFloat64(a) > toFloat64(b) {
-			return b
+		af, bf := toFloat64(a), toFloat64(b)
+		if af > bf {
+			return bf
 		}
-		return a
+		return af
 	})
 
 	// sequence filters

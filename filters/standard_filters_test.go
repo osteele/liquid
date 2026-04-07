@@ -259,10 +259,10 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`str_float | plus: 1.0`, 4.5},
 
 	// at_least / at_most
-	{`4 | at_least: 5`, 5},
-	{`6 | at_least: 5`, 6},
-	{`4 | at_most: 5`, 4},
-	{`6 | at_most: 5`, 5},
+	{`4 | at_least: 5`, int64(5)},
+	{`6 | at_least: 5`, int64(6)},
+	{`4 | at_most: 5`, int64(4)},
+	{`6 | at_most: 5`, int64(5)},
 
 	{`3 | modulo: 2`, 1.0},
 	{`24 | modulo: 7`, 3.0},
