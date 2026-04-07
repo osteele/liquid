@@ -542,9 +542,9 @@ func whereFilter(a []any, key string, targetValue func(any) any) (result []any) 
 				result = append(result, obj)
 			}
 		} else {
-			// Two-arg form: equality check — skip nil props to avoid
-			// reflect.TypeOf(nil) panic in eqItems
-			if prop != nil && eqItems(prop, target) {
+			// Two-arg form: equality check using Liquid-compatible
+			// comparison (handles nil, mixed int/float, etc.)
+			if values.Equal(prop, target) {
 				result = append(result, obj)
 			}
 		}

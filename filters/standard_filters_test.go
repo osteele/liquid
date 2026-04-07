@@ -55,6 +55,7 @@ var filterTests = []struct {
 	{`products | where: "available" | map: "title" | join: ", "`, "Shirt, Pants"},
 	{`products | where: "type", "Shirt" | map: "title" | join: ", "`, "Shirt"},
 	{`products | where: "price", 10.0 | map: "title" | join: ", "`, "Shirt"},
+	{`products | where: "price", 10 | map: "title" | join: ", "`, "Shirt"},
 	// sum
 	{`"1,2,3" | split: "," | sum`, 6.0},
 	{`prices | sum`, int64(30)},
