@@ -83,7 +83,7 @@ func TestSourceError(t *testing.T) {
 	loc := SourceLoc{Pathname: "test.html", LineNo: 5}
 	token := Token{
 		SourceLoc: loc,
-		Source:     "{% bad %}",
+		Source:    "{% bad %}",
 	}
 
 	err := Errorf(&token, "something went wrong")

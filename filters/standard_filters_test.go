@@ -51,6 +51,15 @@ var filterTests = []struct {
 	{`dup_ints | uniq | join`, "1 2 3"},
 	{`dup_strings | uniq | join`, "one two three"},
 	{`dup_maps | uniq | map: "name" | join`, "m1 m2 m3"},
+	// where
+	{`products | where: "available" | map: "title" | join: ", "`, "Shirt, Pants"},
+	{`products | where: "type", "Shirt" | map: "title" | join: ", "`, "Shirt"},
+	{`products | where: "price", 10.0 | map: "title" | join: ", "`, "Shirt"},
+	// sum
+	{`"1,2,3" | split: "," | sum`, 6.0},
+	{`prices | sum`, int64(30)},
+	{`products | sum: "price"`, 30.0},
+
 	{`mixed_case_array | sort_natural | join`, "a B c"},
 	{`mixed_case_hash_values | sort_natural: 'key' | map: 'key' | join`, "a B c"},
 
@@ -89,6 +98,22 @@ var filterTests = []struct {
 	{`"Straße" | size`, 6},
 
 	// string filters
+	// pluralize
+	{`1 | pluralize: "item", "items"`, "item"},
+	{`2 | pluralize: "item", "items"`, "items"},
+	{`0 | pluralize: "item", "items"`, "items"},
+	{`1.0 | pluralize: "item", "items"`, "item"},
+	{`1.5 | pluralize: "item", "items"`, "items"},
+	{`"1" | pluralize: "item", "items"`, "item"},
+	{`"2" | pluralize: "item", "items"`, "items"},
+
+	// handleize / handle
+	{`"100% M & Ms!!!" | handleize`, "100-m-ms"},
+	{`"Hello World" | handleize`, "hello-world"},
+	{`"" | handleize`, ""},
+	{`"---already---" | handleize`, "already"},
+	{`"Hello World" | handle`, "hello-world"},
+
 	{`"Take my protein pills and put my helmet on" | replace: "my", "your"`, "Take your protein pills and put your helmet on"},
 	{`"Take my protein pills and put my helmet on" | replace_first: "my", "your"`, "Take your protein pills and put my helmet on"},
 	{`"/my/fancy/url" | append: ".html"`, "/my/fancy/url.html"},
@@ -104,6 +129,10 @@ var filterTests = []struct {
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
 	{`"I strained to see the train through the rain" | remove_first: "rain"`, "I sted to see the train through the rain"},
+	{`"Hello Hello Hello" | remove_last: "Hello"`, "Hello Hello "},
+	{`"Hello" | remove_last: "xyz"`, "Hello"},
+	{`"Hello Hello Hello" | replace_last: "Hello", "Goodbye"`, "Hello Hello Goodbye"},
+	{`"Hello" | replace_last: "xyz", "abc"`, "Hello"},
 
 	{`"Liquid" | slice: 0`, "L"},
 	{`"Liquid
@@ -228,6 +257,12 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`str_int | plus: 1`, 11.0},
 	{`str_float | plus: 1.0`, 4.5},
 
+	// at_least / at_most
+	{`4 | at_least: 5`, 5},
+	{`6 | at_least: 5`, 6},
+	{`4 | at_most: 5`, 4},
+	{`6 | at_most: 5`, 5},
+
 	{`3 | modulo: 2`, 1.0},
 	{`24 | modulo: 7`, 3.0},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
@@ -282,6 +317,12 @@ var filterTestBindings = map[string]any{
 		{"weight": 3},
 		{"weight": nil},
 	},
+	"products": []map[string]any{
+		{"title": "Shirt", "type": "Shirt", "price": 10.0, "available": true},
+		{"title": "Pants", "type": "Pants", "price": 20.0, "available": true},
+		{"title": "Hat", "type": "Hat", "price": nil, "available": false},
+	},
+	"prices":               []any{10, 20},
 	"string_with_newlines": "\nHello\nthere\n",
 	"dup_ints":             []int{1, 2, 1, 3},
 	"dup_strings":          []string{"one", "two", "one", "three"},
