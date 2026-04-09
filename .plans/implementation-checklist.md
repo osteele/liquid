@@ -1,4 +1,4 @@
-# Implementation Checklist — Go Liquid vs Merged Reference
+﻿# Implementation Checklist — Go Liquid vs Merged Reference
 
 > Comparison between [go-liquid-reference.md](unchangeable-refs/go-liquid-reference.md) and [merged-liquid-reference.md](unchangeable-refs/merged-ruby-js-liquid-reference.md).
 >
@@ -324,7 +324,7 @@
 
 | Impl | Tests | E2E | Priority | Item | Notes |
 |------|-------|-----|----------|------|-------|
-| ✅ | ✅ | ✅ | P2 | `GlobalVariableSegments`, `VariableSegments`, `GlobalFullVariables`, `FullVariables` | Ported tests from Ruby (`parse_tree_visitor_test.rb`) and LiquidJS (`variables.spec.ts`, `parse-and-analyze.spec.ts`) in `analysis_ported_test.go`. New tests added in `TestRubyLiquid_ParseTreeVisitorExtra` (dynamic variable, echo, for/tablerow limit+offset, include/render with+for) and `TestLiquidJS_VariableAnalysisExtra` (filter keyword args, increment/decrement locals, echo with filter kwargs, for with variable limit, liquid tag inner vars, tablerow, unless+else, include/render kv args). |
+| ✅ | ✅ | ✅ | P2 | `GlobalVariableSegments`, `VariableSegments`, `GlobalFullVariables`, `FullVariables` | Ported tests from Ruby (`parse_tree_visitor_test.rb`) and LiquidJS (`variables.spec.ts`, `parse-and-analyze.spec.ts`) in `analysis_ported_test.go`. New tests added in `TestRubyLiquid_ParseTreeVisitorExtra` (dynamic variable, echo, for/tablerow limit+offset, include/render with+for) and `TestLiquidJS_VariableAnalysisExtra` (filter keyword args, increment/decrement locals, echo with filter kwargs, for with variable limit, liquid tag inner vars, tablerow, unless+else, include/render kv args). **Two bugs fixed post-porting (discovered via JS PoC parity test):** (1) `forloop` was missing from `BlockScope` in `loopBlockAnalyzerFull` (`tags/analyzers.go`) — `forloop.index` inside `{% for %}` appeared as a global instead of local; (2) `IndexValue` in `trackingValue` (`expressions/analysis.go`) treated all `[]` as dynamic index, discarding the path — `obj["prop"]` returned just `["obj"]` instead of `["obj","prop"]`, diverging from LiquidJS which treats string literal keys as property access. Both fixes accompanied by two ported tests added to `TestLiquidJS_VariableAnalysis` (`forloop is local inside for block`, `bracket string key treated as property access`). |
 | ✅ | ✅ | ✅ | P2 | `Analyze()` / `ParseAndAnalyze()` | Ported tests from LiquidJS in `analysis_ported_test.go`. |
 | ✅ | ✅ | ✅ | P2 | `RegisterTagAnalyzer`, `RegisterBlockAnalyzer` | Basic test in `analysis_test.go`. |
 | ✅ | ✅ | ✅ | P3 | `ParseTreeVisitor` visitor-style API | Implemented via `Walk(WalkFunc)` and `ParseTree() *TemplateNode` in `visitor.go`. Public types: `TemplateNodeKind` (Text/Output/Tag/Block), `TemplateNode` (Kind, TagName, Location, Children), `WalkFunc`. Tests in `visitor_test.go` ported from `parse_tree_visitor_test.rb` (tree structure, skip children, all node kinds, tag names, source locations). |

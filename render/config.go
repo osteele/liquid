@@ -80,6 +80,23 @@ type Config struct {
 	// parse error. Only the render-path skips unknown tags; analysis still
 	// treats them as no-ops.
 	LaxTags bool
+
+	// analysisInFlight tracks partial template filenames currently being compiled
+	// for static analysis. Used by the include tag analyzer to detect and break
+	// cycles (e.g., A includes B includes A). Safe for concurrent use.
+	analysisInFlight sync.Map
+}
+
+// MarkAnalysisInFlight records filename as currently being compiled for static
+// analysis. Returns true if it was already in-flight (cycle detected).
+func (c *Config) MarkAnalysisInFlight(filename string) (alreadyInFlight bool) {
+	_, alreadyInFlight = c.analysisInFlight.LoadOrStore(filename, true)
+	return
+}
+
+// ClearAnalysisInFlight removes filename from the in-flight set.
+func (c *Config) ClearAnalysisInFlight(filename string) {
+	c.analysisInFlight.Delete(filename)
 }
 
 type grammar struct {

@@ -818,24 +818,22 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 	}
 }
 
-// TestB6_UndefinedVar_NilBindingNotUndefined verifies that a variable explicitly
-// bound to nil in the bindings map does NOT trigger UndefinedVariableError — only
-// truly absent keys should.
-func TestB6_UndefinedVar_NilBindingNotUndefined(t *testing.T) {
+// TestB6_UndefinedVar_NilBindingIsUndefined verifies that a variable explicitly
+// bound to nil in the bindings map DOES trigger UndefinedVariableError in strict
+// mode, treating nil the same as a missing key.
+func TestB6_UndefinedVar_NilBindingIsUndefined(t *testing.T) {
 	eng := NewEngine()
 	strict := WithStrictVariables()
 
-	// "product" is in the map with an explicit nil value — this is a DEFINED
-	// variable, just with a nil value.  StrictVariables must not fire here.
-	out, err := eng.ParseAndRenderString(
+	// "product" is in the map with an explicit nil value — in strict mode, nil
+	// is treated as undefined (same as a missing key).
+	_, err := eng.ParseAndRenderString(
 		`{{ product }}`,
 		map[string]any{"product": nil},
 		strict,
 	)
-	assert.NoError(t, err,
-		"explicit nil binding must NOT raise UndefinedVariableError")
-	assert.Equal(t, "", out,
-		"nil binding renders as empty string")
+	assert.Error(t, err,
+		"explicit nil binding in strict mode must raise UndefinedVariableError")
 }
 
 // TestB6_UndefinedVar_FilterDoesNotHideError verifies the key fix: when a

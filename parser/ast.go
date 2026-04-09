@@ -40,6 +40,14 @@ type ASTObject struct {
 	Expr expressions.Expression
 }
 
+// ASTBroken is a node that failed to compile but does not break the block structure.
+// It renders as an empty string. The parser emits a Diagnostic and continues.
+// ASTBroken is produced by the audit parse path only (parseTokensAudit).
+type ASTBroken struct {
+	Token
+	ParseErr error // original compile-time error
+}
+
 // ASTSeq is a sequence of nodes.
 type ASTSeq struct {
 	sourcelessNode

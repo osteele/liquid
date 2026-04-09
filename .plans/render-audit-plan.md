@@ -72,6 +72,55 @@ func (e *AuditError) Errors() []SourceError // each item is UndefinedVariableErr
 The method is added to `Template`, accepting the same `RenderOption`s that `Render` already accepts:
 
 ```go
+// RenderAudit renders the template with vars and returns a structured trace of
+// the entire execution alongside any errors that occurred.
+//
+// Unlike Render, RenderAudit does not stop at the first error — it accumulates
+// all errors into the returned *AuditError while the render continues, producing
+// as much output as possible. AuditResult is always non-nil; AuditResult.Output
+// contains the (possibly partial) rendered string.
+//
+// *AuditError is nil when the render completed without errors. When non-nil,
+// each individual error can be inspected with errors.As:
+//
+//	auditResult, auditErr := tpl.RenderAudit(vars, opts)
+//	if auditErr != nil {
+//	    for _, e := range auditErr.Errors() {
+//	        var undVar *UndefinedVariableError
+//	        var argErr *ArgumentError
+//	        var renderErr *RenderError
+//	        switch {
+//	        case errors.As(e, &undVar):
+//	            fmt.Printf("undefined variable %q at line %d\n", undVar.Variable, undVar.LineNumber())
+//	        case errors.As(e, &argErr):
+//	            fmt.Printf("argument error: %s\n", argErr.Error())
+//	        case errors.As(e, &renderErr):
+//	            fmt.Printf("render error at line %d: %s\n", renderErr.LineNumber(), renderErr.Message())
+//	        }
+//	    }
+//	}
+//
+// The same errors are also available as Diagnostic entries in
+// AuditResult.Diagnostics, with machine-readable codes and LSP-compatible ranges.
+// Diagnostics that may appear during rendering:
+//
+//   - "argument-error" (error): a filter received invalid arguments
+//     (e.g. divided_by: 0). The corresponding AuditError entry wraps *ArgumentError.
+//   - "undefined-variable" (warning): a variable was not found in bindings.
+//     Only emitted when WithStrictVariables() is active. Wraps *UndefinedVariableError.
+//   - "type-mismatch" (warning): a comparison between incompatible types
+//     (e.g. string vs int); Liquid evaluates it as false but it is likely a bug.
+//   - "not-iterable" (warning): a {% for %} loop over a non-iterable value
+//     (int, bool, string); Liquid iterates zero times silently.
+//   - "nil-dereference" (warning): a chained property access where an intermediate
+//     node in the path is nil (e.g. customer.address.city when address is nil);
+//     the expression renders as empty string.
+//
+// opts controls what the trace collects (variables, conditions, iterations,
+// assignments). renderOpts accepts the same options as Render —
+// WithStrictVariables(), WithLaxFilters(), WithGlobals(), etc. — with identical
+// semantics. RenderAudit never renders differently from Render given the same
+// renderOpts.
 func (t *Template) RenderAudit(vars Bindings, opts AuditOptions, renderOpts ...RenderOption) (*AuditResult, *AuditError)
 ```
 

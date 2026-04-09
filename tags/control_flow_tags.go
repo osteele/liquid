@@ -199,7 +199,7 @@ func ifTagCompiler(polarity bool) func(render.BlockNode) (func(io.Writer, render
 					return err
 				}
 
-				if value != nil && value != false {
+				if values.Truthy(value) {
 					executedIdx = i
 					renderErr = ctx.RenderBlock(w, b.body)
 					break

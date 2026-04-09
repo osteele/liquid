@@ -445,6 +445,7 @@ func TestS13_If_Elsif_AllBranches(t *testing.T) {
 	}{
 		{1, "one"}, {2, "two"}, {3, "three"}, {4, "other"},
 	} {
+		tc := tc
 		t.Run(fmt.Sprintf("n=%d", tc.n), func(t *testing.T) {
 			require.Equal(t, tc.want, renderS1(t, tpl, map[string]any{"n": tc.n}))
 		})
@@ -502,6 +503,7 @@ func TestS13_If_ComparisonOperators(t *testing.T) {
 		{`{% if 5 <= 4 %}ok{% else %}no{% endif %}`, "no"},
 	}
 	for _, tc := range cases {
+		tc := tc
 		t.Run(tc.tpl, func(t *testing.T) {
 			require.Equal(t, tc.want, renderS1T(t, tc.tpl))
 		})
@@ -548,6 +550,7 @@ func TestS13_If_NestedThreeLevels(t *testing.T) {
 func TestS13_If_WithGoTypedInt(t *testing.T) {
 	// all int-like types should compare correctly against integer literals
 	for _, v := range []any{int8(5), int16(5), int32(5), int64(5), uint(5), uint32(5), uint64(5)} {
+		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			out := renderS1(t, `{% if n == 5 %}yes{% else %}no{% endif %}`, map[string]any{"n": v})
 			require.Equal(t, "yes", out)
@@ -557,6 +560,7 @@ func TestS13_If_WithGoTypedInt(t *testing.T) {
 
 func TestS13_If_WithGoTypedFloat(t *testing.T) {
 	for _, v := range []any{float32(5.0), float64(5.0)} {
+		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			out := renderS1(t, `{% if n == 5 %}yes{% else %}no{% endif %}`, map[string]any{"n": v})
 			require.Equal(t, "yes", out)
@@ -650,6 +654,7 @@ func TestS13_Case_MultipleWhenClauses(t *testing.T) {
 	for _, tc := range []struct{ x, want string }{
 		{"a", "A"}, {"b", "B"}, {"c", "C"}, {"d", "?"},
 	} {
+		tc := tc
 		t.Run(tc.x, func(t *testing.T) {
 			require.Equal(t, tc.want, renderS1(t, tpl, map[string]any{"x": tc.x}))
 		})
@@ -672,6 +677,7 @@ func TestS13_Case_WithGoTypedInt(t *testing.T) {
 	// Go int types should match integer literals
 	tpl := `{% case n %}{% when 7 %}seven{% else %}other{% endcase %}`
 	for _, v := range []any{int(7), int32(7), int64(7), uint(7), uint64(7)} {
+		v := v
 		t.Run(fmt.Sprintf("%T", v), func(t *testing.T) {
 			require.Equal(t, "seven", renderS1(t, tpl, map[string]any{"n": v}))
 		})
@@ -797,6 +803,7 @@ func TestS14_For_AllModifiers_OffsetLimitReversed(t *testing.T) {
 		`{% for i in arr reversed limit:3 offset:1 %}{{ i }}{% endfor %}`,
 	}
 	for _, tpl := range cases {
+		tpl := tpl
 		t.Run(tpl, func(t *testing.T) {
 			require.Equal(t, want, renderS1(t, tpl, arr))
 		})

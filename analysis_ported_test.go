@@ -7,6 +7,7 @@ package liquid
 //   - LiquidJS:    src/template/analysis.spec.ts
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 )
@@ -277,6 +278,107 @@ func TestRubyLiquid_ParseTreeVisitor(t *testing.T) {
 			t.Errorf("got %v, want %v", got, want)
 		}
 	})
+
+	// ── Ruby: cases not yet ported ──
+
+	t.Run("dynamic variable", func(t *testing.T) {
+		// Ruby: test_dynamic_variable — {{ test[inlookup] }} references both test and inlookup
+		got := globalSegments(t, `{{ test[inlookup] }}`)
+		want := [][]string{{"test"}, {"inlookup"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("echo tag", func(t *testing.T) {
+		// Ruby: test_echo — {% echo test %} references test
+		got := globalSegments(t, `{% echo test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("for limit variable", func(t *testing.T) {
+		// Ruby: test_for_limit — limit: test is a referenced global
+		got := globalSegments(t, `{% for x in (1..5) limit: test %}{% endfor %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("for offset variable", func(t *testing.T) {
+		// Ruby: test_for_offset — offset: test is a referenced global
+		got := globalSegments(t, `{% for x in (1..5) offset: test %}{% endfor %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("tablerow limit variable", func(t *testing.T) {
+		// Ruby: test_tablerow_limit
+		got := globalSegments(t, `{% tablerow x in (1..5) limit: test %}{% endtablerow %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("tablerow offset variable", func(t *testing.T) {
+		// Ruby: test_tablerow_offset
+		got := globalSegments(t, `{% tablerow x in (1..5) offset: test %}{% endtablerow %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include dynamic filename", func(t *testing.T) {
+		// Ruby: test_include — {% include test %} references test (dynamic filename)
+		got := globalSegments(t, `{% include test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include with variable", func(t *testing.T) {
+		// Ruby: test_include_with — {% include "hai" with test %}
+		got := globalSegments(t, `{% include "hai" with test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include for variable", func(t *testing.T) {
+		// Ruby: test_include_for — {% include "hai" for test %}
+		got := globalSegments(t, `{% include "hai" for test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("render with variable", func(t *testing.T) {
+		// Ruby: test_render_with — {% render "hai" with test %}
+		got := globalSegments(t, `{% render "hai" with test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("render for variable", func(t *testing.T) {
+		// Ruby: test_render_for — {% render "hai" for test %}
+		got := globalSegments(t, `{% render "hai" for test %}`)
+		want := [][]string{{"test"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
 }
 
 // ── LiquidJS: static_analysis/variables.spec.ts ─────────────────────────────
@@ -520,6 +622,257 @@ func TestLiquidJS_VariableAnalysis(t *testing.T) {
 		wantGlobals := [][]string{{"name"}}
 		if !segmentsEqual(globals, wantGlobals) {
 			t.Errorf("globals: got %v, want %v", globals, wantGlobals)
+		}
+	})
+
+	t.Run("forloop is local inside for block", func(t *testing.T) {
+		// LiquidJS: forloop is injected by the for tag itself, so it's local — not a global.
+		// Bug was: forloop was missing from BlockScope in loopBlockAnalyzerFull.
+		tpl, _ := engine.ParseString(`{% for item in order.items %}{{ forloop.index }}: {{ item.name }}{% endfor %}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+
+		wantGlobals := [][]string{{"order", "items"}}
+		if !segmentsEqual(globals, wantGlobals) {
+			t.Errorf("globals: got %v, want %v", globals, wantGlobals)
+		}
+	})
+
+	t.Run("bracket string key treated as property access", func(t *testing.T) {
+		// LiquidJS: obj["prop"] == obj.prop — string literal key is a named property.
+		// Bug was: IndexValue treated all [] as dynamic, recording only the base path.
+		tpl, _ := engine.ParseString(`{{ customer["first_name"] }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		want := [][]string{{"customer", "first_name"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("bracket string key with spaces", func(t *testing.T) {
+		// LiquidJS: a["b c"] — string key with spaces treated as property name
+		tpl, _ := engine.ParseString(`{{ a["b c"] }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		want := [][]string{{"a", "b c"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("numeric index records base path only", func(t *testing.T) {
+		// LiquidJS: a[1] — numeric index, only base path recorded
+		tpl, _ := engine.ParseString(`{{ a[1] }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		// Go records base path as ["a"] — numeric index is discarded
+		if len(got) == 0 {
+			t.Errorf("expected at least one segment, got empty")
+			return
+		}
+		if got[0][0] != "a" {
+			t.Errorf("expected root 'a', got %v", got)
+		}
+	})
+
+	t.Run("nested variable as index key", func(t *testing.T) {
+		// LiquidJS: a[b.c] — both 'a' (base) and 'b.c' (key) are recorded as globals
+		tpl, _ := engine.ParseString(`{{ a[b.c] }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		if !roots["a"] {
+			t.Errorf("expected 'a' in segments, got %v", got)
+		}
+		if !roots["b.c"] {
+			t.Errorf("expected 'b.c' in segments, got %v", got)
+		}
+	})
+
+	t.Run("deeply nested variable as index key", func(t *testing.T) {
+		// LiquidJS: d[a[b.c]] — d, a, b.c all recorded as globals
+		tpl, _ := engine.ParseString(`{{ d[a[b.c]] }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		for _, expected := range []string{"d", "a", "b.c"} {
+			if !roots[expected] {
+				t.Errorf("expected %q in segments, got %v", expected, got)
+			}
+		}
+	})
+
+	t.Run("filter keyword argument variables", func(t *testing.T) {
+		// LiquidJS: {{ a | default: b, allow_false: c }} — a, b, c all globals
+		tpl, _ := engine.ParseString(`{{ a | default: b, allow_false: c }}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		for _, expected := range []string{"a", "b", "c"} {
+			if !roots[expected] {
+				t.Errorf("expected %q in segments, got %v", expected, got)
+			}
+		}
+	})
+
+	t.Run("decrement creates local", func(t *testing.T) {
+		// LiquidJS: {% decrement a %} — 'a' is local (counter), no globals
+		tpl, _ := engine.ParseString(`{% decrement a %}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		if len(globals) != 0 {
+			t.Errorf("expected no globals, got %v", globals)
+		}
+		// 'a' counter is tracked as local — not referenced in output, so All is also empty
+		_ = all
+	})
+
+	t.Run("increment creates local", func(t *testing.T) {
+		// LiquidJS: {% increment a %} — 'a' is local (counter), no globals
+		tpl, _ := engine.ParseString(`{% increment a %}`)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+
+		if len(globals) != 0 {
+			t.Errorf("expected no globals, got %v", globals)
+		}
+	})
+
+	t.Run("echo tag with filter kwargs", func(t *testing.T) {
+		// LiquidJS: {% echo x | default: y, allow_false: z %} — x, y, z all globals
+		tpl, _ := engine.ParseString(`{% echo x | default: y, allow_false: z %}`)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		for _, expected := range []string{"x", "y", "z"} {
+			if !roots[expected] {
+				t.Errorf("expected %q in segments, got %v", expected, got)
+			}
+		}
+	})
+
+	t.Run("for tag full — forloop is local, else and break/continue", func(t *testing.T) {
+		// LiquidJS: full for block — forloop local, range var global, else body global
+		src := "{% for x in (1..y) limit: a %}\n  {{ x }} {{ forloop.index }} {{ forloop.first }}\n{% break %}\n{% else %}\n  {{ z }}\n{% continue %}\n{% endfor %}"
+		tpl, _ := engine.ParseString(src)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		globalRoots := map[string]bool{}
+		for _, seg := range globals {
+			globalRoots[strings.Join(seg, ".")] = true
+		}
+		allRoots := map[string]bool{}
+		for _, seg := range all {
+			allRoots[strings.Join(seg, ".")] = true
+		}
+
+		// y (range end), a (limit), z (else body) are globals
+		for _, expected := range []string{"y", "a", "z"} {
+			if !globalRoots[expected] {
+				t.Errorf("expected %q in globals, got %v", expected, globals)
+			}
+		}
+		// forloop is local — not in globals
+		if globalRoots["forloop"] || globalRoots["forloop.index"] || globalRoots["forloop.first"] {
+			t.Errorf("forloop should not be global, got globals %v", globals)
+		}
+		// x is loop var — not in globals
+		if globalRoots["x"] {
+			t.Errorf("x should not be global, got globals %v", globals)
+		}
+		// x and forloop.* appear in All
+		if !allRoots["x"] {
+			t.Errorf("expected x in all, got %v", all)
+		}
+	})
+
+	t.Run("liquid tag inner variables", func(t *testing.T) {
+		// LiquidJS: variables inside {% liquid %} block are analyzed
+		src := "{% liquid\n  if product.title\n    echo foo | upcase\n  else\n    echo \"product-1\" | upcase\n  endif\n  \n  for i in (0..5)\n    echo i\nendfor %}"
+		tpl, _ := engine.ParseString(src)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		globalRoots := map[string]bool{}
+		for _, seg := range globals {
+			globalRoots[strings.Join(seg, ".")] = true
+		}
+		allRoots := map[string]bool{}
+		for _, seg := range all {
+			allRoots[strings.Join(seg, ".")] = true
+		}
+
+		if !globalRoots["product.title"] {
+			t.Errorf("expected product.title in globals, got %v", globals)
+		}
+		if !globalRoots["foo"] {
+			t.Errorf("expected foo in globals, got %v", globals)
+		}
+		// i is loop var — local
+		if globalRoots["i"] {
+			t.Errorf("i should not be global, got %v", globals)
+		}
+		if !allRoots["i"] {
+			t.Errorf("expected i in all, got %v", all)
+		}
+	})
+
+	t.Run("unless tag full — with else", func(t *testing.T) {
+		// LiquidJS: {% unless x %}{{ a }}{% else %}{{ c }}{% endunless %}
+		src := "{% unless x %}\n  {{ a }}\n{% else %}\n  {{ c }}\n{% endunless %}"
+		tpl, _ := engine.ParseString(src)
+		got, _ := engine.GlobalVariableSegments(tpl)
+
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		for _, expected := range []string{"x", "a", "c"} {
+			if !roots[expected] {
+				t.Errorf("expected %q in globals, got %v", expected, got)
+			}
+		}
+	})
+
+	t.Run("deeply nested tags", func(t *testing.T) {
+		// LiquidJS: nested if+for+unless — a, b, c, y are globals; x is local
+		src := "{% if a %}\n  {% for x in b %}\n    {% unless x == y %}\n      {% if 42 == c %}\n        {{ a }}, {{ y }}\n      {% endif %}\n    {% endunless %}\n  {% endfor %}\n{% endif %}"
+		tpl, _ := engine.ParseString(src)
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		all, _ := engine.VariableSegments(tpl)
+
+		globalRoots := map[string]bool{}
+		for _, seg := range globals {
+			globalRoots[strings.Join(seg, ".")] = true
+		}
+		allRoots := map[string]bool{}
+		for _, seg := range all {
+			allRoots[strings.Join(seg, ".")] = true
+		}
+
+		for _, expected := range []string{"a", "b", "c", "y"} {
+			if !globalRoots[expected] {
+				t.Errorf("expected %q in globals, got %v", expected, globals)
+			}
+		}
+		if globalRoots["x"] {
+			t.Errorf("x should not be global, got %v", globals)
+		}
+		if !allRoots["x"] {
+			t.Errorf("expected x in all (loop var), got %v", all)
 		}
 	})
 }
@@ -1441,6 +1794,207 @@ func TestLiquidJS_VariableAnalysisExtra(t *testing.T) {
 		}
 		if !roots["bar"] {
 			t.Errorf("expected bar in globals, got %v", got)
+		}
+	})
+}
+
+// ── LiquidJS: include/render with TemplateStore partial traversal ─────────────
+// Source: test/e2e/parse-and-analyze.spec.ts — partial analysis tests.
+// These require a TemplateStore to load partial templates at analysis time.
+// The include tag (shared scope) traverses into partials; render (isolated scope) does not.
+
+// inMemoryStore is a simple in-memory TemplateStore for testing partial analysis.
+type inMemoryStore struct {
+	files map[string]string
+}
+
+func (s *inMemoryStore) ReadTemplate(filename string) ([]byte, error) {
+	if src, ok := s.files[filename]; ok {
+		return []byte(src), nil
+	}
+	return nil, fmt.Errorf("template not found: %s", filename)
+}
+
+func TestLiquidJS_PartialAnalysis(t *testing.T) {
+	t.Run("include static literal — partial vars reported", func(t *testing.T) {
+		// JS: engine.globalVariableSegmentsSync('{% include "product" %}')
+		// with "product" template = '{{ product.name }}'
+		// → [['product', 'name']]
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"product": `{{ product.name }}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% include "product" %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"product", "name"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include with-arg and partial vars both reported", func(t *testing.T) {
+		// include "product" with outer — outer is a tag arg (global),
+		// plus product.price inside the partial is also reported.
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"product": `{{ product.price }}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% include "product" with outer %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		roots := map[string]bool{}
+		for _, seg := range got {
+			roots[strings.Join(seg, ".")] = true
+		}
+		if !roots["outer"] {
+			t.Errorf("expected 'outer' (with-arg) in globals, got %v", got)
+		}
+		if !roots["product.price"] {
+			t.Errorf("expected 'product.price' (from partial) in globals, got %v", got)
+		}
+	})
+
+	t.Run("include chain A → B → C", func(t *testing.T) {
+		// Multi-level include: root → "a" → "b" → {{ deep_var }}
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"a": `{% include "b" %}`,
+				"b": `{{ deep_var }}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% include "a" %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"deep_var"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include cycle — no infinite loop", func(t *testing.T) {
+		// A includes B includes A — cycle detection must prevent infinite recursion.
+		// The result is a safe partial analysis (variables from non-cyclic portions).
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"a": `{{ a_var }}{% include "b" %}`,
+				"b": `{{ b_var }}{% include "a" %}`,
+			},
+		})
+		// This must not panic or loop forever.
+		tpl, err := engine.ParseString(`{% include "a" %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		// a_var and b_var should both be present (from the non-cyclic traversal paths)
+		roots := map[string]bool{}
+		for _, seg := range got {
+			if len(seg) > 0 {
+				roots[seg[0]] = true
+			}
+		}
+		if !roots["a_var"] {
+			t.Errorf("expected 'a_var' in globals, got %v", got)
+		}
+		if !roots["b_var"] {
+			t.Errorf("expected 'b_var' in globals, got %v", got)
+		}
+	})
+
+	t.Run("include dynamic filename — no partial traversal", func(t *testing.T) {
+		// {% include template %} — filename is a variable, cannot traverse statically.
+		// Only the variable reference itself (template) should be reported.
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"product": `{{ product.name }}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% include template %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		want := [][]string{{"template"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
+		}
+	})
+
+	t.Run("include — assign inside partial is local to outer scope", func(t *testing.T) {
+		// include shares scope: {% assign x = "foo" %} inside partial defines x
+		// in the parent scope too. So x should appear in Locals, not Globals.
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"setter": `{% assign x = "foo" %}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% include "setter" %}{{ x }}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		globals, _ := engine.GlobalVariableSegments(tpl)
+		// x is defined inside the partial — shared scope means it's local to the whole template
+		for _, seg := range globals {
+			if len(seg) > 0 && seg[0] == "x" {
+				t.Errorf("x should not be global (it is assigned in included partial), got globals %v", globals)
+			}
+		}
+	})
+
+	t.Run("render tag — no partial traversal (isolated scope)", func(t *testing.T) {
+		// render creates isolated scope; internal vars are NOT globals of the outer template.
+		// Only the render tag's explicit arguments (with/for/kv) are reported.
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{
+				"product": `{{ product.name }} {{ product.price }}`,
+			},
+		})
+		tpl, err := engine.ParseString(`{% render "product" %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		// render with no arguments → no globals from the outer scope needed
+		// (product.name/price inside the partial come from render's isolated context)
+		for _, seg := range got {
+			if len(seg) > 0 && seg[0] == "product" {
+				t.Errorf("product should not be global (render uses isolated scope), got %v", got)
+			}
+		}
+	})
+
+	t.Run("include missing template — graceful degradation", func(t *testing.T) {
+		// If the partial doesn't exist in the store, analysis continues without it.
+		// No error is returned; only the tag-level argument variables are reported.
+		engine := NewEngine()
+		engine.RegisterTemplateStore(&inMemoryStore{
+			files: map[string]string{}, // empty store
+		})
+		tpl, err := engine.ParseString(`{% include "nonexistent" with source_var %}`)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, _ := engine.GlobalVariableSegments(tpl)
+		// source_var (the with-arg) should still be reported
+		want := [][]string{{"source_var"}}
+		if !segmentsEqual(got, want) {
+			t.Errorf("got %v, want %v", got, want)
 		}
 	})
 }

@@ -37,51 +37,38 @@ type FilterDictionary interface {
 // Helper functions for type-aware arithmetic operations
 
 // isIntegerType checks if a value is an integer type that can be safely
-// represented as int64 without overflow
+// represented as int64 without overflow. Uses reflect.Kind so defined types
+// (e.g. type MyInt int32) are recognised the same as their underlying types.
 func isIntegerType(v any) bool {
-	switch val := v.(type) {
-	case int, int8, int16, int32, int64, uint8, uint16, uint32:
+	if v == nil {
+		return false
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return true
-	case uint:
-		// Check if uint value fits in int64 range
-		return val <= math.MaxInt64
-	case uint64:
-		// Check if uint64 value fits in int64 range
-		return val <= math.MaxInt64
-	case uintptr:
-		// Check if uintptr value fits in int64 range
-		return val <= math.MaxInt64
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32:
+		return true
+	case reflect.Uint, reflect.Uint64, reflect.Uintptr:
+		return rv.Uint() <= math.MaxInt64
 	default:
 		return false
 	}
 }
 
-// toInt64 converts a value to int64
-// Caller must ensure value fits in int64 range by calling isIntegerType first
+// toInt64 converts a value to int64.
+// Caller must ensure value fits in int64 range by calling isIntegerType first.
+// Uses reflect.Kind so defined types (e.g. type MyInt int32) are handled.
 func toInt64(v any) int64 {
-	switch val := v.(type) {
-	case int:
-		return int64(val)
-	case int8:
-		return int64(val)
-	case int16:
-		return int64(val)
-	case int32:
-		return int64(val)
-	case int64:
-		return val
-	case uint8:
-		return int64(val)
-	case uint16:
-		return int64(val)
-	case uint32:
-		return int64(val)
-	case uint:
-		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
-	case uint64:
-		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
-	case uintptr:
-		return int64(val) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
+	if v == nil {
+		return 0
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return rv.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return int64(rv.Uint()) //nolint:gosec // G115: Safe - isIntegerType verifies val <= math.MaxInt64
 	default:
 		return 0
 	}
@@ -89,36 +76,21 @@ func toInt64(v any) int64 {
 
 // toFloat64 converts a value to float64.
 // Strings are parsed as floats, matching Ruby Liquid's String#to_f behavior.
+// Uses reflect.Kind so defined types (e.g. type MyFloat float32) are handled.
 func toFloat64(v any) float64 {
-	switch val := v.(type) {
-	case int:
-		return float64(val)
-	case int8:
-		return float64(val)
-	case int16:
-		return float64(val)
-	case int32:
-		return float64(val)
-	case int64:
-		return float64(val)
-	case uint:
-		return float64(val)
-	case uint8:
-		return float64(val)
-	case uint16:
-		return float64(val)
-	case uint32:
-		return float64(val)
-	case uint64:
-		return float64(val)
-	case uintptr:
-		return float64(val)
-	case float32:
-		return float64(val)
-	case float64:
-		return val
-	case string:
-		f, err := strconv.ParseFloat(val, 64)
+	if v == nil {
+		return 0
+	}
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return float64(rv.Int())
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return float64(rv.Uint())
+	case reflect.Float32, reflect.Float64:
+		return rv.Float()
+	case reflect.String:
+		f, err := strconv.ParseFloat(rv.String(), 64)
 		if err != nil {
 			return 0
 		}
@@ -142,7 +114,9 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 		}
 		isFalsy := value == nil || values.IsEmpty(value)
 		if !allowFalse {
-			isFalsy = isFalsy || value == false
+			// Use Truthy (reflect-based) so defined bool types (e.g. type MyBool bool)
+			// with a false value are also treated as falsy, matching plain bool semantics.
+			isFalsy = isFalsy || !values.Truthy(value)
 		}
 		if isFalsy {
 			value = defaultValue

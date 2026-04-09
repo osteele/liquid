@@ -60,6 +60,11 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	}
 
 	switch reflect.TypeOf(value).Kind() {
+	case reflect.Chan, reflect.Func, reflect.Complex64, reflect.Complex128, reflect.UnsafePointer:
+		// Unsupported Go kinds: not representable in Liquid. Return an
+		// invalidKindValue whose every method panics with TypeError so the
+		// expression evaluator can surface it as a template error.
+		return invalidKindValue{reflect.TypeOf(value)}
 	case reflect.Ptr:
 		rv := reflect.ValueOf(value)
 		if rv.IsNil() {
@@ -74,6 +79,19 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
 	case reflect.Array, reflect.Slice:
+		// Byte slices and byte arrays are rendered as strings, not as numeric arrays.
+		rv := reflect.ValueOf(value)
+		if rv.Type().Elem().Kind() == reflect.Uint8 {
+			if rv.Kind() == reflect.Slice {
+				return stringValue{wrapperValue{string(rv.Bytes())}}
+			}
+			// fixed-size array: copy element-by-element
+			b := make([]byte, rv.Len())
+			for i := range rv.Len() {
+				b[i] = byte(rv.Index(i).Uint())
+			}
+			return stringValue{wrapperValue{string(b)}}
+		}
 		return arrayValue{wrapperValue{value}}
 	case reflect.Map:
 		return mapValue{wrapperValue{value}}
@@ -89,6 +107,26 @@ const (
 	lastKey  = "last"
 	sizeKey  = "size"
 )
+
+// invalidKindValue represents a Go value whose kind is not representable in
+// Liquid templates (chan, func, complex, unsafe pointer). Every method panics
+// with a descriptive TypeError so the expression evaluator's recover can
+// surface it as a template render error instead of silently rendering nothing.
+type invalidKindValue struct {
+	goType reflect.Type
+}
+
+func (v invalidKindValue) msg() string {
+	return fmt.Sprintf("unsupported type %s: chan, func, and complex values cannot be used in Liquid templates", v.goType)
+}
+func (v invalidKindValue) Interface() any            { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Int() int                  { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Test() bool                { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Equal(Value) bool          { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Less(Value) bool           { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Contains(Value) bool       { panic(TypeError(v.msg())) }
+func (v invalidKindValue) IndexValue(Value) Value    { panic(TypeError(v.msg())) }
+func (v invalidKindValue) PropertyValue(Value) Value { panic(TypeError(v.msg())) }
 
 // embed this in a struct to "inherit" default implementations of the Value interface
 type valueEmbed struct{}
@@ -120,7 +158,18 @@ func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
 func (v wrapperValue) Contains(Value) bool       { return false }
 func (v wrapperValue) Interface() any            { return v.value }
 func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
-func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
+func (v wrapperValue) Test() bool {
+	if v.value == nil {
+		return false
+	}
+	// Use reflect.Kind so that defined types based on bool (e.g. type MyBool bool)
+	// are treated as falsy when their value is false, matching plain bool semantics.
+	rv := reflect.ValueOf(v.value)
+	if rv.Kind() == reflect.Bool {
+		return rv.Bool()
+	}
+	return true
+}
 
 func (v wrapperValue) Int() int {
 	if n, ok := v.value.(int); ok {

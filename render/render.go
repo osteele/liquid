@@ -119,14 +119,14 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	// StrictVariables: check before evaluation so that undefined root
 	// variables are caught even when a filter chain transforms nil → "".
-	// We look for the presence of the root variable name in the bindings map
-	// (key-existence, not value-truthiness) so that an explicit nil binding
-	// still counts as "defined".
+	// A nil binding is treated the same as a missing key: both mean the
+	// variable has no usable value and should produce an UndefinedVariableError.
 	if ctx.config.StrictVariables {
 		vars := n.expr.Variables()
 		if len(vars) > 0 && len(vars[0]) > 0 {
 			root := vars[0][0]
-			if _, exists := ctx.bindings[root]; !exists {
+			v, exists := ctx.bindings[root]
+			if !exists || v == nil {
 				// Name is the root variable name only (e.g. "user", not "user.name"),
 				// matching Ruby Liquid's behaviour for dotted-path access.
 				locErr := parser.Errorf(n, "undefined variable %q", root)
@@ -252,6 +252,9 @@ func (n *TextNode) render(w *trimWriter, _ nodeContext) Error {
 	return wrapRenderError(err, n)
 }
 
+// render for BrokenNode is a no-op: the failure was captured as a Diagnostic at parse time.
+func (n *BrokenNode) render(_ *trimWriter, _ nodeContext) Error { return nil }
+
 func (n *TrimNode) render(w *trimWriter, _ nodeContext) Error {
 	if n.TrimDirection == parser.Left {
 		if n.Greedy {
@@ -299,13 +302,49 @@ func writeObject(w io.Writer, value any) error {
 		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
 		return err
 	case []byte:
-		_, err := w.Write(value)
+		_, err := io.WriteString(w, string(value))
 		return err
 	}
 
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		_, err := io.WriteString(w, strconv.FormatInt(rt.Int(), 10))
+		return err
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		_, err := io.WriteString(w, strconv.FormatUint(rt.Uint(), 10))
+		return err
+	case reflect.Float32:
+		_, err := io.WriteString(w, strconv.FormatFloat(rt.Float(), 'f', -1, 32))
+		return err
+	case reflect.Float64:
+		_, err := io.WriteString(w, strconv.FormatFloat(rt.Float(), 'f', -1, 64))
+		return err
+	case reflect.Bool:
+		if rt.Bool() {
+			_, err := io.WriteString(w, "true")
+			return err
+		}
+		_, err := io.WriteString(w, "false")
+		return err
+	case reflect.String:
+		_, err := io.WriteString(w, rt.String())
+		return err
 	case reflect.Array, reflect.Slice:
+		// Byte arrays/slices (including defined types like type MyBytes []byte)
+		// are rendered as strings, not as space-joined numeric sequences.
+		if rt.Type().Elem().Kind() == reflect.Uint8 {
+			if rt.Kind() == reflect.Slice {
+				_, err := io.WriteString(w, string(rt.Bytes()))
+				return err
+			}
+			b := make([]byte, rt.Len())
+			for i := range rt.Len() {
+				b[i] = byte(rt.Index(i).Uint())
+			}
+			_, err := io.WriteString(w, string(b))
+			return err
+		}
 		for i := range rt.Len() {
 			item := rt.Index(i)
 			if item.IsValid() {
@@ -318,7 +357,14 @@ func writeObject(w io.Writer, value any) error {
 
 		return nil
 	case reflect.Ptr:
-		return writeObject(w, reflect.ValueOf(value).Elem())
+		rv := reflect.ValueOf(value)
+		if rv.IsNil() {
+			return nil
+		}
+		return writeObject(w, rv.Elem().Interface())
+	case reflect.Chan, reflect.Func, reflect.Complex64, reflect.Complex128, reflect.UnsafePointer:
+		// Unsupported Go kinds surfaced directly (e.g. inside array elements).
+		return values.TypeError(fmt.Sprintf("unsupported type %s: chan, func, and complex values cannot be used in Liquid templates", rt.Type()))
 	default:
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err

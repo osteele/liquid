@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	"github.com/osteele/liquid/filters"
+	"github.com/osteele/liquid/parser"
 	"github.com/osteele/liquid/render"
 	"github.com/osteele/liquid/tags"
 )
@@ -393,4 +394,63 @@ func (e *Engine) ClearCache() {
 			return true
 		})
 	}
+}
+
+// ParseTemplateAudit parses source in error-recovering mode and returns a
+// *ParseResult containing the compiled template and all parse-time diagnostics.
+//
+// Unlike ParseTemplate, ParseTemplateAudit never returns a SourceError.
+// All problems are captured as Diagnostic entries in ParseResult.Diagnostics,
+// using the same Diagnostic type used by (*Template).RenderAudit.
+//
+// ParseResult.Template is non-nil when parsing produced a usable compiled
+// template. Callers should check Template before rendering:
+//
+//	result := eng.ParseTemplateAudit(source)
+//	for _, d := range result.Diagnostics {
+//	    log.Printf("%s at line %d: %s", d.Severity, d.Range.Start.Line, d.Message)
+//	}
+//	if result.Template != nil {
+//	    output, err := result.Template.RenderString(binds)
+//	    _ = output; _ = err
+//	}
+//
+// Diagnostics that may appear:
+//
+//   - "unclosed-tag" (error): a block tag was opened but never closed;
+//     ParseResult.Template is nil when this occurs.
+//   - "unexpected-tag" (error): a closing or clause tag appeared without a
+//     matching open block; ParseResult.Template is nil when this occurs.
+//   - "syntax-error" (error): invalid expression inside {{ }} or tag args.
+//   - "undefined-filter" (error): a filter name used is not registered.
+//   - "empty-block" (info): a block tag has no content in any branch.
+func (e *Engine) ParseTemplateAudit(source []byte) *ParseResult {
+	e.freeze()
+
+	loc := parser.SourceLoc{Pathname: "", LineNo: 1}
+	cr := e.cfg.CompileAudit(string(source), loc)
+
+	// Convert internal ParseDiags to public Diagnostics.
+	diags := make([]Diagnostic, 0, len(cr.Diags))
+	for _, d := range cr.Diags {
+		diags = append(diags, parseDiagToPublic(d))
+	}
+
+	if cr.FatalError != nil {
+		return &ParseResult{Template: nil, Diagnostics: diags}
+	}
+
+	// Build a usable *Template from the compiled node.
+	tpl := &Template{root: cr.Node, cfg: &e.cfg}
+
+	// Static analysis: reuse the same walk that Validate() uses.
+	staticDiags := tpl.collectValidationDiags()
+	diags = append(diags, staticDiags...)
+
+	return &ParseResult{Template: tpl, Diagnostics: diags}
+}
+
+// ParseStringAudit is the string-input convenience variant of ParseTemplateAudit.
+func (e *Engine) ParseStringAudit(source string) *ParseResult {
+	return e.ParseTemplateAudit([]byte(source))
 }

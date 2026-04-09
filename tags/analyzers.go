@@ -130,13 +130,15 @@ func loopBlockAnalyzerFull(node render.BlockNode) render.NodeAnalysis {
 	}
 	return render.NodeAnalysis{
 		Arguments:  args,
-		BlockScope: []string{stmt.Loop.Variable},
+		BlockScope: []string{stmt.Loop.Variable, forloopVarName},
 	}
 }
 
 // makeIncludeAnalyzer returns a TagAnalyzer for the include tag.
 // Reports variable references from the file expression, with/for arguments, and key-value pairs.
-func makeIncludeAnalyzer() render.TagAnalyzer {
+// If the filename is a static string literal, the partial template is loaded from the
+// TemplateStore, compiled, and included in ChildNodes for recursive variable analysis.
+func makeIncludeAnalyzer(cfg *render.Config) render.TagAnalyzer {
 	return func(source string) render.NodeAnalysis {
 		parsed, err := parseIncludeArgs(source)
 		if err != nil {
@@ -155,8 +157,50 @@ func makeIncludeAnalyzer() render.TagAnalyzer {
 		for _, kv := range parsed.kvPairs {
 			exprs = append(exprs, kv.valueExpr)
 		}
-		return render.NodeAnalysis{Arguments: exprs}
+
+		// If the filename is a static string literal, load and compile the partial
+		// template so that walkForVariables/collectLocals can recurse into it.
+		var childNodes []render.Node
+		if parsed.fileExpr != nil && len(parsed.fileExpr.Variables()) == 0 {
+			emptyCtx := expressions.NewContext(nil, expressions.NewConfig())
+			if val, evalErr := parsed.fileExpr.Evaluate(emptyCtx); evalErr == nil {
+				if filename, ok := val.(string); ok {
+					if node := compilePartialForAnalysis(cfg, filename); node != nil {
+						childNodes = append(childNodes, node)
+					}
+				}
+			}
+		}
+
+		return render.NodeAnalysis{Arguments: exprs, ChildNodes: childNodes}
 	}
+}
+
+// compilePartialForAnalysis loads a partial template from the TemplateStore and compiles
+// it for static analysis. Uses cfg.analysisInFlight to detect and break cycles
+// (e.g., A includes B includes A). Returns nil on any error or if already in-flight.
+func compilePartialForAnalysis(cfg *render.Config, filename string) render.Node {
+	if cfg == nil || cfg.TemplateStore == nil {
+		return nil
+	}
+	// Cycle detection: if this filename is already being compiled (directly or transitively),
+	// skip it to prevent infinite recursion.
+	if cfg.MarkAnalysisInFlight(filename) {
+		return nil
+	}
+	defer cfg.ClearAnalysisInFlight(filename)
+
+	source, err := cfg.TemplateStore.ReadTemplate(filename)
+	if err != nil {
+		return nil
+	}
+
+	node, err := cfg.Compile(string(source), parser.SourceLoc{})
+	if err != nil {
+		return nil
+	}
+
+	return node
 }
 
 // makeRenderAnalyzer returns a TagAnalyzer for the render tag.

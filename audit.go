@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/osteele/liquid/expressions"
 	"github.com/osteele/liquid/filters"
@@ -237,9 +238,9 @@ type CaptureTrace struct {
 // It is always non-nil, even when an error was returned — Output may be partial
 // and Diagnostics explains what happened.
 type AuditResult struct {
-	Output      string            `json:"output"`
+	Output      string       `json:"output"`
 	Expressions []Expression `json:"expressions"`
-	Diagnostics []Diagnostic      `json:"diagnostics"`
+	Diagnostics []Diagnostic `json:"diagnostics"`
 }
 
 // --------------------------------------------------------------------------
@@ -269,17 +270,100 @@ func (e *AuditError) Errors() []SourceError {
 }
 
 // --------------------------------------------------------------------------
+// ParseResult
+// --------------------------------------------------------------------------
+
+// ParseResult is the result of ParseTemplateAudit.
+//
+// Template is non-nil when parsing produced a usable compiled template.
+// Template is nil only when a structural (fatal) error prevented compilation
+// (unclosed-tag or unexpected-tag).
+//
+// Diagnostics is always non-nil; it is empty when there are no issues.
+// It uses the same Diagnostic type as RenderAudit, making the two phases
+// fully uniform.
+type ParseResult struct {
+	// Template is the compiled template. Non-nil unless a fatal structural
+	// error made compilation impossible.
+	Template *Template `json:"template,omitempty"`
+	// Diagnostics contains every parse-time error and static analysis warning,
+	// in source order. Never nil (empty slice when no issues).
+	Diagnostics []Diagnostic `json:"diagnostics"`
+}
+
+// parseDiagToPublic converts an internal ParseDiag into the public Diagnostic type.
+func parseDiagToPublic(d parser.ParseDiag) Diagnostic {
+	var related []RelatedInfo
+	for _, r := range d.Related {
+		// For unclosed-tag, end == start (point range) is fine.
+		related = append(related, RelatedInfo{
+			Range:   Range{Start: locToPos(r.Loc), End: locToPos(r.Loc)},
+			Message: r.Message,
+		})
+	}
+	return Diagnostic{
+		Range:    locsToRange(d.Tok.SourceLoc, d.Tok.EndLoc),
+		Severity: SeverityError,
+		Code:     d.Code,
+		Message:  d.Message,
+		Source:   d.Tok.Source,
+		Related:  related,
+	}
+}
+
+// --------------------------------------------------------------------------
 // RenderAudit — wires up AuditHooks and collects results
 // --------------------------------------------------------------------------
 
-// RenderAudit executes the template with the given variable bindings and collects
-// a structured trace of everything that occurred during rendering.
+// RenderAudit renders the template with vars and returns a structured trace of
+// the entire execution alongside any errors that occurred.
 //
-// It accepts the same RenderOption values as Render. For example, pass
-// WithStrictVariables() to detect undefined variable accesses.
+// Unlike Render, RenderAudit does not stop at the first error — it accumulates
+// all errors into the returned *AuditError while the render continues, producing
+// as much output as possible. AuditResult is always non-nil; AuditResult.Output
+// contains the (possibly partial) rendered string.
 //
-// The returned *AuditResult is always non-nil. When errors occurred, a non-nil
-// *AuditError is also returned with all individual errors accessible via Errors().
+// *AuditError is nil when the render completed without errors. When non-nil,
+// each individual error can be inspected with errors.As:
+//
+//	auditResult, auditErr := tpl.RenderAudit(vars, opts)
+//	if auditErr != nil {
+//	    for _, e := range auditErr.Errors() {
+//	        var undVar *UndefinedVariableError
+//	        var argErr *ArgumentError
+//	        var renderErr *RenderError
+//	        switch {
+//	        case errors.As(e, &undVar):
+//	            fmt.Printf("undefined variable %q at line %d\n", undVar.Variable, undVar.LineNumber())
+//	        case errors.As(e, &argErr):
+//	            fmt.Printf("argument error: %s\n", argErr.Error())
+//	        case errors.As(e, &renderErr):
+//	            fmt.Printf("render error at line %d: %s\n", renderErr.LineNumber(), renderErr.Message())
+//	        }
+//	    }
+//	}
+//
+// The same errors are also available as Diagnostic entries in
+// AuditResult.Diagnostics, with machine-readable codes and LSP-compatible ranges.
+// Diagnostics that may appear during rendering:
+//
+//   - "argument-error" (error): a filter received invalid arguments
+//     (e.g. divided_by: 0). The corresponding AuditError entry wraps *ArgumentError.
+//   - "undefined-variable" (warning): a variable was not found in bindings.
+//     Only emitted when WithStrictVariables() is active. Wraps *UndefinedVariableError.
+//   - "type-mismatch" (warning): a comparison between incompatible types
+//     (e.g. string vs int); Liquid evaluates it as false but it is likely a bug.
+//   - "not-iterable" (warning): a {% for %} loop over a non-iterable value
+//     (int, bool, string); Liquid iterates zero times silently.
+//   - "nil-dereference" (warning): a chained property access where an intermediate
+//     node in the path is nil (e.g. customer.address.city when address is nil);
+//     the expression renders as empty string.
+//
+// opts controls what the trace collects (variables, conditions, iterations,
+// assignments). renderOpts accepts the same options as Render —
+// WithStrictVariables(), WithLaxFilters(), WithGlobals(), etc. — with identical
+// semantics. RenderAudit never renders differently from Render given the same
+// renderOpts.
 func (t *Template) RenderAudit(vars Bindings, opts AuditOptions, renderOpts ...RenderOption) (*AuditResult, *AuditError) {
 	result := &AuditResult{}
 	var auditErrs []SourceError
@@ -530,67 +614,100 @@ func (t *Template) Validate() (*AuditResult, error) {
 func (t *Template) collectValidationDiags() []Diagnostic {
 	var diags []Diagnostic
 
-	var walkTree func(node *TemplateNode)
-	walkTree = func(node *TemplateNode) {
-		if node == nil {
-			return
-		}
-		if node.Kind == TemplateNodeBlock {
-			name := node.TagName
-			if len(node.Children) == 0 && (name == "if" || name == "unless" || name == "for" || name == "case") {
+	// checkExprFilters checks a single expression for undefined filter names,
+	// emitting a diagnostic for each unknown filter found.
+	checkExprFilters := func(expr expressions.Expression, loc, endLoc parser.SourceLoc, source string) {
+		for _, fname := range expressions.FilterNames(expr) {
+			if !t.cfg.HasFilter(fname) {
 				diags = append(diags, Diagnostic{
-					Range:    Range{Start: locToPos(node.Location), End: locToPos(node.Location)},
-					Severity: SeverityInfo,
-					Code:     "empty-block",
-					Message:  fmt.Sprintf("empty %q block", name),
+					Range:    locsToRange(loc, endLoc),
+					Severity: SeverityError,
+					Code:     "undefined-filter",
+					Message:  fmt.Sprintf("undefined filter %q", fname),
+					Source:   source,
 				})
 			}
 		}
-		for _, child := range node.Children {
-			walkTree(child)
-		}
 	}
 
-	walkTree(t.ParseTree())
+	emptyBlockTags := map[string]bool{
+		"if": true, "unless": true, "for": true, "case": true, "tablerow": true,
+	}
 
-	// Check for undefined filters by walking the internal render node tree.
-	var checkFilters func(n render.Node)
-	checkFilters = func(n render.Node) {
+	var checkNode func(n render.Node)
+	checkNode = func(n render.Node) {
 		if n == nil {
 			return
 		}
 		switch n := n.(type) {
 		case *render.SeqNode:
 			for _, child := range n.Children {
-				checkFilters(child)
+				checkNode(child)
 			}
 		case *render.ObjectNode:
-			expr := n.GetExpr()
-			if expr != nil {
-				for _, fname := range expressions.FilterNames(expr) {
-					if !t.cfg.HasFilter(fname) {
-						diags = append(diags, Diagnostic{
-							Range:    locsToRange(n.SourceLoc, n.EndLoc),
-							Severity: SeverityError,
-							Code:     "undefined-filter",
-							Message:  fmt.Sprintf("undefined filter %q", fname),
-							Source:   n.Source,
-						})
-					}
-				}
+			if expr := n.GetExpr(); expr != nil {
+				checkExprFilters(expr, n.SourceLoc, n.EndLoc, n.Source)
+			}
+		case *render.TagNode:
+			for _, expr := range n.Analysis.Arguments {
+				checkExprFilters(expr, n.SourceLoc, n.EndLoc, n.Source)
+			}
+			for _, child := range n.Analysis.ChildNodes {
+				checkNode(child)
 			}
 		case *render.BlockNode:
+			// empty-block: block with no content in any branch.
+			if emptyBlockTags[n.Name] {
+				allEmpty := isNodeSliceEmpty(n.Body)
+				for _, clause := range n.Clauses {
+					if !isNodeSliceEmpty(clause.Body) {
+						allEmpty = false
+						break
+					}
+				}
+				if allEmpty {
+					diags = append(diags, Diagnostic{
+						Range:    locsToRange(n.SourceLoc, n.EndLoc),
+						Severity: SeverityInfo,
+						Code:     "empty-block",
+						Message:  fmt.Sprintf("block %q has no content in any branch", n.Name),
+						Source:   n.Source,
+					})
+				}
+			}
+			// Check filter names in block's own arguments.
+			for _, expr := range n.Analysis.Arguments {
+				checkExprFilters(expr, n.SourceLoc, n.EndLoc, n.Source)
+			}
 			for _, child := range n.Body {
-				checkFilters(child)
+				checkNode(child)
 			}
 			for _, clause := range n.Clauses {
-				checkFilters(clause)
+				checkNode(clause)
 			}
 		}
 	}
-	checkFilters(t.root)
+	checkNode(t.root)
 
 	return diags
+}
+
+// isNodeSliceEmpty reports whether a slice of nodes is effectively empty —
+// contains only whitespace-only TextNodes or TrimNodes, but no real content.
+func isNodeSliceEmpty(nodes []render.Node) bool {
+	for _, n := range nodes {
+		switch n := n.(type) {
+		case *render.TextNode:
+			if len(strings.TrimSpace(n.Source)) > 0 {
+				return false
+			}
+		case *render.TrimNode:
+			// trim markers are not content
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 // --------------------------------------------------------------------------

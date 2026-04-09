@@ -416,7 +416,6 @@ loop:
 				auditHooks.IncrIterCount()
 			}
 		}
-
 		decorator.before(w, i)
 		err := ctx.RenderChildren(w)
 		decorator.after(w, i, l)

@@ -47,7 +47,7 @@ func AddStandardTags(c *render.Config) {
 	c.AddTagAnalyzer("echo", makeEchoAnalyzer())
 	c.AddTagAnalyzer("increment", makeIncrementAnalyzer())
 	c.AddTagAnalyzer("decrement", makeDecrementAnalyzer())
-	c.AddTagAnalyzer("include", makeIncludeAnalyzer())
+	c.AddTagAnalyzer("include", makeIncludeAnalyzer(c))
 	c.AddTagAnalyzer("render", makeRenderAnalyzer())
 	c.AddTagAnalyzer("liquid", makeLiquidAnalyzer(c))
 	c.AddBlockAnalyzer("capture", captureBlockAnalyzer)

@@ -69,6 +69,13 @@ type TrimNode struct {
 	Greedy bool // true = trim all whitespace; false = inline blanks + at most one newline
 }
 
+// BrokenNode is a render node whose source failed to parse or compile.
+// It renders as an empty string and returns no error. The failure was already
+// recorded as a Diagnostic in the parse-audit result.
+type BrokenNode struct {
+	parser.Token
+}
+
 // FIXME requiring this is a bad design
 type sourcelessNode struct{}
 

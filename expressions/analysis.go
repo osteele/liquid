@@ -172,8 +172,21 @@ func (tv *trackingValue) PropertyValue(key values.Value) values.Value {
 
 // IndexValue records the base path and the key (if it's also a variable),
 // then returns untrackable since we don't track dynamic index paths.
+// Exception: a string literal key (e.g. obj["prop"]) is treated as a property
+// access, mirroring LiquidJS behaviour.
 func (tv *trackingValue) IndexValue(key values.Value) values.Value {
-	tv.record()
+	if tv.collector != nil {
+		// String literal key acts like a named property (e.g. a["b"] == a.b).
+		if _, isTracking := key.(*trackingValue); !isTracking {
+			if s, ok := key.Interface().(string); ok {
+				return tv.pathAppend(s)
+			}
+		}
+		// Numeric or variable index: record the base path.
+		tv.record()
+	}
+	// Always record the key if it is a variable reference, even if the base is
+	// already untrackable (e.g. the second access in matrix[row.index][col.key]).
 	if ktv, ok := key.(*trackingValue); ok {
 		ktv.record()
 	}

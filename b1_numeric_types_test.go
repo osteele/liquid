@@ -755,17 +755,25 @@ func renderUnsafeNoError(t *testing.T, tpl string, bindings map[string]any) stri
 	return out
 }
 
-// ── B1-unsupported: chan, func, complex do not panic in templates ─────────────
-//
-// Liquid does not support these Go types, but when passed as bindings they
-// must not cause panics or unexpected crashes. The behaviour is best-effort:
-//   - rendering {{ x }}: some string representation is written (no panic)
-//   - truthiness: non-nil chan/func/complex are truthy (Liquid: only nil and
-//     false are falsy)
-//   - comparisons with numerics: no panic
+// renderExpectError calls ParseAndRenderString and expects an error to be returned.
+func renderExpectError(t *testing.T, tpl string, bindings map[string]any) {
+	t.Helper()
+	engine := NewEngine()
+	require.NotPanics(t, func() {
+		_, err := engine.ParseAndRenderString(tpl, bindings)
+		require.Error(t, err)
+	}, "template %q must not panic", tpl)
+}
 
-func TestB1_UnsupportedTypes_RenderDoesNotPanic(t *testing.T) {
+// ── B1-unsupported: chan, func, complex are invalid types that produce errors ──
+//
+// These Go kinds are not representable in Liquid. Using them as bindings must:
+//   - never panic (the expression evaluator's recover converts TypeError to error)
+//   - return a non-nil error from ParseAndRenderString
+
+func TestB1_UnsupportedTypes_ProduceError(t *testing.T) {
 	ch := make(chan int)
+	defer close(ch)
 	fn := func() int { return 42 }
 
 	cases := []struct {
@@ -781,47 +789,19 @@ func TestB1_UnsupportedTypes_RenderDoesNotPanic(t *testing.T) {
 	templates := []string{
 		`{{ x }}`,
 		`{% if x %}yes{% else %}no{% endif %}`,
-		`{% assign v = x %}{{ v }}`,
 	}
 	for _, tc := range cases {
 		for _, tpl := range templates {
 			tc, tpl := tc, tpl
 			t.Run(tc.name+"/"+tpl, func(t *testing.T) {
-				renderUnsafeNoError(t, tpl, map[string]any{"x": tc.x})
+				renderExpectError(t, tpl, map[string]any{"x": tc.x})
 			})
 		}
 	}
 }
 
-// ── B1-unsupported: non-nil chan / func / complex are truthy ──────────────────
-
-func TestB1_UnsupportedTypes_AreTruthy(t *testing.T) {
-	ch := make(chan int)
-	fn := func() {}
-
-	truthy := []struct {
-		name string
-		x    any
-	}{
-		{"complex64_nonzero", complex64(1 + 2i)},
-		{"complex128_nonzero", complex128(1 + 2i)},
-		// zero complex is still truthy — Liquid only treats nil and false as falsy
-		{"complex128_zero", complex128(0)},
-		{"chan_int", ch},
-		{"func", fn},
-	}
-	for _, tc := range truthy {
-		t.Run(tc.name, func(t *testing.T) {
-			out := renderUnsafeNoError(t,
-				`{% if x %}yes{% else %}no{% endif %}`,
-				map[string]any{"x": tc.x})
-			require.Equal(t, "yes", out,
-				"%T(%v) should be truthy in Liquid (only nil and false are falsy)", tc.x, tc.x)
-		})
-	}
-}
-
-// ── B1-unsupported: comparisons with numeric literals do not panic ────────────
+// ── B1-unsupported: chan / func / complex — comparisons do not panic ──────────
+// Even though these types now produce errors, no panic should ever escape.
 
 func TestB1_UnsupportedTypes_ComparisonWithNumericDoesNotPanic(t *testing.T) {
 	ch := make(chan int)
@@ -857,64 +837,33 @@ func TestB1_UnsupportedTypes_ComparisonWithNumericDoesNotPanic(t *testing.T) {
 	}
 }
 
-// ── B1-unsupported: complex == complex comparison is self-consistent ──────────
+// ── B1-unsupported: complex — now errors instead of comparing as nil ─────────
 
 func TestB1_ComplexSelfEquality(t *testing.T) {
-	// complex numbers are Go-comparable — two interface values of the same
-	// complex type with the same value should be equal.
-	t.Run("complex128_eq_itself_via_var", func(t *testing.T) {
+	// Complex values now produce a TypeError rather than silently nil-comparing.
+	t.Run("complex128_errors", func(t *testing.T) {
 		v := complex128(1 + 2i)
-		out := renderUnsafeNoError(t,
+		renderExpectError(t,
 			`{% if a == b %}yes{% else %}no{% endif %}`,
 			map[string]any{"a": v, "b": v})
-		require.Equal(t, "yes", out)
-	})
-	t.Run("complex128_ne_different_value", func(t *testing.T) {
-		out := renderUnsafeNoError(t,
-			`{% if a == b %}yes{% else %}no{% endif %}`,
-			map[string]any{"a": complex128(1 + 2i), "b": complex128(1 + 3i)})
-		require.Equal(t, "no", out)
-	})
-	// zero complex is NOT equal to integer 0 (different types in interface comparison)
-	t.Run("zero_complex_ne_int_zero", func(t *testing.T) {
-		out := renderUnsafeNoError(t,
-			`{% if a == b %}yes{% else %}no{% endif %}`,
-			map[string]any{"a": complex128(0), "b": int(0)})
-		require.Equal(t, "no", out)
 	})
 }
 
-// ── B1-unsupported: rendering complex numbers produces expected format ────────
+// ── B1-unsupported: rendering chan/func/complex produces error, not empty ──────
 
-func TestB1_ComplexRendering(t *testing.T) {
-	t.Run("complex128_output", func(t *testing.T) {
-		out := renderUnsafeNoError(t, `{{ x }}`, map[string]any{"x": complex128(1 + 2i)})
-		// fmt.Sprint(complex128(1+2i)) == "(1+2i)"
-		require.Equal(t, "(1+2i)", out)
-	})
-	t.Run("complex64_output", func(t *testing.T) {
-		out := renderUnsafeNoError(t, `{{ x }}`, map[string]any{"x": complex64(3 + 4i)})
-		require.Equal(t, "(3+4i)", out)
-	})
-	t.Run("zero_complex128_output", func(t *testing.T) {
-		out := renderUnsafeNoError(t, `{{ x }}`, map[string]any{"x": complex128(0)})
-		require.Equal(t, "(0+0i)", out)
-	})
+func TestB1_ComplexRendering_Errors(t *testing.T) {
+	renderExpectError(t, `{{ x }}`, map[string]any{"x": complex128(1 + 2i)})
+	renderExpectError(t, `{{ x }}`, map[string]any{"x": complex64(3 + 4i)})
+	renderExpectError(t, `{{ x }}`, map[string]any{"x": complex128(0)})
 }
 
-// ── B1-unsupported: func rendering produces non-empty output ─────────────────
-
-func TestB1_FuncRendering_NonEmpty(t *testing.T) {
+func TestB1_FuncRendering_Errors(t *testing.T) {
 	fn := func() {}
-	out := renderUnsafeNoError(t, `{{ x }}`, map[string]any{"x": fn})
-	// fmt.Sprint on a func prints its address (e.g. "0x12345678")
-	require.NotEmpty(t, out, "rendering a func should produce a non-empty string")
+	renderExpectError(t, `{{ x }}`, map[string]any{"x": fn})
 }
 
-// ── B1-unsupported: chan rendering produces non-empty output ──────────────────
-
-func TestB1_ChanRendering_NonEmpty(t *testing.T) {
+func TestB1_ChanRendering_Errors(t *testing.T) {
 	ch := make(chan int)
-	out := renderUnsafeNoError(t, `{{ x }}`, map[string]any{"x": ch})
-	require.NotEmpty(t, out, "rendering a chan should produce a non-empty string")
+	defer close(ch)
+	renderExpectError(t, `{{ x }}`, map[string]any{"x": ch})
 }

@@ -89,6 +89,8 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:
 		return &ObjectNode{n.Token, n.Expr}, nil
+	case *parser.ASTBroken:
+		return &BrokenNode{n.Token}, nil
 	case *parser.ASTTrim:
 		return &TrimNode{TrimDirection: n.TrimDirection, Greedy: c.Greedy}, nil
 	default:
