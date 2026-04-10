@@ -8,6 +8,8 @@ func (w expressionWrapper) Evaluate(ctx Context) (any, error) {
 	return w.fn(ctx)
 }
 
+func (w expressionWrapper) Variables() [][]string { return nil }
+
 // Constant creates an expression that returns a constant value.
 func Constant(k any) Expression {
 	return expressionWrapper{

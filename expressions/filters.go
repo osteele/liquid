@@ -31,6 +31,18 @@ func (e FilterError) Error() string {
 	return fmt.Sprintf("error applying filter %q (%q)", e.FilterName, e.Err)
 }
 
+// Unwrap returns the underlying filter error, enabling errors.As and errors.Is
+// to find the root cause (e.g. ZeroDivisionError).
+func (e FilterError) Unwrap() error { return e.Err }
+
+// NamedArg is a keyword argument passed to a filter.
+// For example, in {{ x | default: "foo", allow_false: true }},
+// allow_false: true is represented as NamedArg{Name: "allow_false", Value: true}.
+type NamedArg struct {
+	Name  string
+	Value any
+}
+
 type valueFn func(Context) values.Value
 
 func (c *Config) ensureMapIsCreated() {
@@ -60,7 +72,7 @@ func (c *Config) AddSafeFilter() {
 	// Reading from a nil map is safe; delay allocation until we need to write.
 	if c.filters["safe"] == nil {
 		c.ensureMapIsCreated()
-		c.filters["safe"] = func(in interface{}) interface{} {
+		safeFilter := func(in interface{}) interface{} {
 			if in, alreadySafe := in.(values.SafeValue); alreadySafe {
 				return in
 			}
@@ -68,12 +80,15 @@ func (c *Config) AddSafeFilter() {
 				Value: in,
 			}
 		}
+		c.filters["safe"] = safeFilter
+		// "raw" is the LiquidJS-compatible alias for "safe". Both skip autoescape.
+		c.filters["raw"] = safeFilter
 	}
 }
 
 var (
-	closureType   = reflect.TypeOf(closure{})
-	interfaceType = reflect.TypeOf([]any{}).Elem()
+	closureType   = reflect.TypeFor[closure]()
+	interfaceType = reflect.TypeFor[[]any]().Elem()
 )
 
 func isClosureInterfaceType(t reflect.Type) bool {
@@ -81,6 +96,20 @@ func isClosureInterfaceType(t reflect.Type) bool {
 }
 
 func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn) (any, error) {
+	// Check context-aware filters first.
+	if fn, ok := ctx.contextFilters[name]; ok {
+		inputVal := receiver(ctx).Interface()
+		args := make([]any, len(params))
+		for i, p := range params {
+			args[i] = p(ctx).Interface()
+		}
+		result, err := fn(ctx, inputVal, args)
+		if err == nil && ctx.FilterHook != nil {
+			ctx.FilterHook(name, inputVal, args, result)
+		}
+		return result, err
+	}
+
 	filter, ok := ctx.filters[name]
 	if !ok {
 		if !ctx.LaxFilters {
@@ -117,10 +146,17 @@ func (ctx *context) ApplyFilter(name string, receiver valueFn, params []valueFn)
 		return nil, err
 	}
 
-	switch out := out.(type) {
+	var result any
+	switch v := out.(type) {
 	case []byte:
-		return string(out), nil
+		result = string(v)
 	default:
-		return out, nil
+		result = out
 	}
+
+	if ctx.FilterHook != nil {
+		ctx.FilterHook(name, args[0], args[1:], result)
+	}
+
+	return result, nil
 }

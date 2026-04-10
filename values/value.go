@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode/utf8"
 
 	yaml "gopkg.in/yaml.v2"
 )
@@ -44,15 +45,26 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	}
 	// interfaces
 	switch v := value.(type) {
+	case *emptyDropValue:
+		return v
+	case *blankDropValue:
+		return v
 	case drop:
 		return &dropWrapper{d: v}
 	case yaml.MapSlice:
 		return mapSliceValue{slice: v}
+	case Range:
+		return rangeValue{wrapperValue{value}}
 	case Value:
 		return v
 	}
 
 	switch reflect.TypeOf(value).Kind() {
+	case reflect.Chan, reflect.Func, reflect.Complex64, reflect.Complex128, reflect.UnsafePointer:
+		// Unsupported Go kinds: not representable in Liquid. Return an
+		// invalidKindValue whose every method panics with TypeError so the
+		// expression evaluator can surface it as a template error.
+		return invalidKindValue{reflect.TypeOf(value)}
 	case reflect.Ptr:
 		rv := reflect.ValueOf(value)
 		if rv.IsNil() {
@@ -67,6 +79,19 @@ func ValueOf(value any) Value { //nolint: gocyclo
 	case reflect.String:
 		return stringValue{wrapperValue{value}}
 	case reflect.Array, reflect.Slice:
+		// Byte slices and byte arrays are rendered as strings, not as numeric arrays.
+		rv := reflect.ValueOf(value)
+		if rv.Type().Elem().Kind() == reflect.Uint8 {
+			if rv.Kind() == reflect.Slice {
+				return stringValue{wrapperValue{string(rv.Bytes())}}
+			}
+			// fixed-size array: copy element-by-element
+			b := make([]byte, rv.Len())
+			for i := range rv.Len() {
+				b[i] = byte(rv.Index(i).Uint())
+			}
+			return stringValue{wrapperValue{string(b)}}
+		}
 		return arrayValue{wrapperValue{value}}
 	case reflect.Map:
 		return mapValue{wrapperValue{value}}
@@ -83,6 +108,26 @@ const (
 	sizeKey  = "size"
 )
 
+// invalidKindValue represents a Go value whose kind is not representable in
+// Liquid templates (chan, func, complex, unsafe pointer). Every method panics
+// with a descriptive TypeError so the expression evaluator's recover can
+// surface it as a template render error instead of silently rendering nothing.
+type invalidKindValue struct {
+	goType reflect.Type
+}
+
+func (v invalidKindValue) msg() string {
+	return fmt.Sprintf("unsupported type %s: chan, func, and complex values cannot be used in Liquid templates", v.goType)
+}
+func (v invalidKindValue) Interface() any            { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Int() int                  { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Test() bool                { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Equal(Value) bool          { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Less(Value) bool           { panic(TypeError(v.msg())) }
+func (v invalidKindValue) Contains(Value) bool       { panic(TypeError(v.msg())) }
+func (v invalidKindValue) IndexValue(Value) Value    { panic(TypeError(v.msg())) }
+func (v invalidKindValue) PropertyValue(Value) Value { panic(TypeError(v.msg())) }
+
 // embed this in a struct to "inherit" default implementations of the Value interface
 type valueEmbed struct{}
 
@@ -97,13 +142,34 @@ func (v valueEmbed) Test() bool                { return true }
 // A wrapperValue wraps a Go value.
 type wrapperValue struct{ value any }
 
-func (v wrapperValue) Equal(other Value) bool    { return Equal(v.value, other.Interface()) }
+func (v wrapperValue) Equal(other Value) bool {
+	// Symmetric comparison: delegate to EmptyDrop/BlankDrop's own Equal so it
+	// can apply its emptiness/blankness semantics against this value.
+	switch o := other.(type) {
+	case *emptyDropValue:
+		return o.Equal(v)
+	case *blankDropValue:
+		return o.Equal(v)
+	}
+	return Equal(v.value, other.Interface())
+}
 func (v wrapperValue) Less(other Value) bool     { return Less(v.value, other.Interface()) }
 func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
 func (v wrapperValue) Contains(Value) bool       { return false }
 func (v wrapperValue) Interface() any            { return v.value }
 func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
-func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
+func (v wrapperValue) Test() bool {
+	if v.value == nil {
+		return false
+	}
+	// Use reflect.Kind so that defined types based on bool (e.g. type MyBool bool)
+	// are treated as falsy when their value is false, matching plain bool semantics.
+	rv := reflect.ValueOf(v.value)
+	if rv.Kind() == reflect.Bool {
+		return rv.Bool()
+	}
+	return true
+}
 
 func (v wrapperValue) Int() int {
 	if n, ok := v.value.(int); ok {
@@ -147,15 +213,21 @@ func (av arrayValue) IndexValue(iv Value) Value {
 	ar := reflect.ValueOf(av.value)
 
 	var n int
-	switch ix := iv.Interface().(type) {
-	case int:
-		n = ix
-	case float32:
-		// Ruby array indexing truncates floats
-		n = int(ix)
-	case float64:
-		n = int(ix)
-	default:
+	raw := iv.Interface()
+	rv := reflect.ValueOf(raw)
+	if rv.IsValid() {
+		switch rv.Kind() {
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			n = int(rv.Int())
+		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+			n = int(rv.Uint()) //nolint:gosec // G115: array indexes are never near MaxUint64
+		case reflect.Float32, reflect.Float64:
+			// Ruby array indexing truncates floats
+			n = int(rv.Float())
+		default:
+			return nilValue
+		}
+	} else {
 		return nilValue
 	}
 
@@ -245,7 +317,7 @@ func (sv stringValue) Contains(substr Value) bool {
 
 func (sv stringValue) PropertyValue(iv Value) Value {
 	if iv.Interface() == sizeKey {
-		return ValueOf(len(sv.value.(string)))
+		return ValueOf(utf8.RuneCountInString(sv.value.(string)))
 	}
 
 	return nilValue

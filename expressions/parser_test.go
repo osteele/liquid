@@ -21,7 +21,12 @@ var parseTests = []struct {
 	{`a | add: b`, 3},
 	{`1 == 1`, true},
 	{`1 != 1`, false},
+	{`1 <> 1`, false},
+	{`not false`, true},
+	{`not true`, false},
 	{`true and true`, true},
+	// keyword arg: add_kw is registered with allow_false kwarg below
+	{`a | add_kw: b, flag: true`, 3},
 }
 
 var parseErrorTests = []struct{ in, expected string }{
@@ -37,6 +42,20 @@ var parseErrorTests = []struct{ in, expected string }{
 func TestParse(t *testing.T) {
 	cfg := NewConfig()
 	cfg.AddFilter("add", func(a, b int) int { return a + b })
+	// add_kw strips NamedArg kwargs and adds a+b, to test keyword arg parsing
+	cfg.AddFilter("add_kw", func(a int, args ...any) int {
+		var b int
+		for _, arg := range args {
+			if na, ok := arg.(NamedArg); ok {
+				_ = na // ignore keyword args in this test filter
+				continue
+			}
+			if n, ok := arg.(int); ok {
+				b = n
+			}
+		}
+		return a + b
+	})
 	ctx := NewContext(map[string]any{
 		"a":   1,
 		"b":   2,

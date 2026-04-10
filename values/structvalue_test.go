@@ -90,3 +90,41 @@ func TestValue_struct_ptr(t *testing.T) {
 	require.Equal(t, 4, p.PropertyValue(ValueOf("PM2")).Interface())
 	require.Panics(t, func() { p.PropertyValue(ValueOf("PM2e")) })
 }
+
+// ---------------------------------------------------------------------------
+// dropMethodMissing (catch-all property access)
+// ---------------------------------------------------------------------------
+
+type methodMissingDrop struct {
+	Known int
+	data  map[string]any
+}
+
+func (d methodMissingDrop) MissingMethod(key string) any {
+	return d.data[key]
+}
+
+func TestStructValue_MissingMethod_known(t *testing.T) {
+	// Defined fields take priority; MissingMethod is NOT called for them.
+	v := ValueOf(methodMissingDrop{Known: 99, data: map[string]any{"Known": "shadow"}})
+	require.Equal(t, 99, v.PropertyValue(ValueOf("Known")).Interface())
+}
+
+func TestStructValue_MissingMethod_dynamic(t *testing.T) {
+	// Undefined keys fall through to MissingMethod.
+	v := ValueOf(methodMissingDrop{data: map[string]any{"foo": "bar", "num": 42}})
+	require.Equal(t, "bar", v.PropertyValue(ValueOf("foo")).Interface())
+	require.Equal(t, 42, v.PropertyValue(ValueOf("num")).Interface())
+}
+
+func TestStructValue_MissingMethod_nil(t *testing.T) {
+	// MissingMethod returning nil produces a nil Value (not panic).
+	v := ValueOf(methodMissingDrop{data: map[string]any{}})
+	require.Nil(t, v.PropertyValue(ValueOf("missing")).Interface())
+}
+
+func TestStructValue_MissingMethod_noInterface(t *testing.T) {
+	// Types without MissingMethod still return nil for unknown properties.
+	v := ValueOf(testValueStruct{F: 1})
+	require.Nil(t, v.PropertyValue(ValueOf("nonexistent")).Interface())
+}

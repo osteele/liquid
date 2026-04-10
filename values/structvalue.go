@@ -73,6 +73,11 @@ func (sv structValue) PropertyValue(index Value) Value {
 		return ValueOf(fv.Interface())
 	}
 
+	// Fall back to DropMethodMissing catch-all if the type implements it.
+	if mm, ok := sv.value.(dropMethodMissing); ok {
+		return ValueOf(mm.MissingMethod(name))
+	}
+
 	return nilValue
 }
 

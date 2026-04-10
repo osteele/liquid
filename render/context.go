@@ -12,6 +12,7 @@ import (
 	"github.com/osteele/liquid/parser"
 
 	"github.com/osteele/liquid/expressions"
+	"github.com/osteele/liquid/values"
 )
 
 // Context provides the rendering context for a tag renderer.
@@ -43,6 +44,11 @@ type Context interface {
 	// RenderFile parses and renders a template. It's used in the implementation of the {% include %} tag.
 	// RenderFile does not cache the compiled template.
 	RenderFile(string, map[string]any) (string, error)
+	// RenderFileIsolated parses and renders a template in an isolated scope.
+	// Unlike RenderFile, the rendered template cannot access variables from the calling context —
+	// only the explicitly provided bindings are available.
+	// It's used in the implementation of the {% render %} tag.
+	RenderFileIsolated(string, map[string]any) (string, error)
 	// Set updates the value of a variable in the current lexical environment.
 	// It's used in the implementation of the {% assign %} and {% capture %} tags.
 	Set(name string, value any)
@@ -59,6 +65,18 @@ type Context interface {
 	TagName() string
 	// WrapError creates a new error that records the source location from the current context.
 	WrapError(err error) Error
+	// WriteValue writes a value to the writer using the same rendering rules as {{ expr }}.
+	// nil renders as empty string, arrays render as space-joined elements, and autoescape
+	// is applied if configured on the engine.
+	WriteValue(w io.Writer, value any) error
+	// AuditHooks returns the active render audit hooks, or nil when no audit is in progress.
+	// Used internally by tag renderers to emit audit trace events.
+	AuditHooks() *AuditHooks
+	// TagLoc returns the source start and end locations of the current tag node.
+	// For block tags the block's SourceLoc/EndLoc are returned.
+	// Returns zero values when called outside a tag renderer.
+	// Used internally by tag renderers to report source locations in audit events.
+	TagLoc() (start, end parser.SourceLoc)
 }
 
 type TemplateStore interface {
@@ -94,6 +112,20 @@ func (c rendererContext) Errorf(format string, a ...any) Error {
 	}
 }
 
+// sourceLoc returns the source location of the current node, preferring tag
+// nodes over block nodes. Returns a zero SourceLoc when neither is set.
+func (c rendererContext) sourceLoc() parser.SourceLoc {
+	if c.node != nil {
+		return c.node.SourceLoc
+	}
+
+	if c.cn != nil {
+		return c.cn.SourceLoc
+	}
+
+	return parser.SourceLoc{}
+}
+
 func (c rendererContext) WrapError(err error) Error {
 	switch {
 	case c.node != nil:
@@ -103,6 +135,16 @@ func (c rendererContext) WrapError(err error) Error {
 	default:
 		return wrapRenderError(err, invalidLoc)
 	}
+}
+
+func (c rendererContext) WriteValue(w io.Writer, value any) error {
+	if sv, isSafe := value.(values.SafeValue); isSafe {
+		return writeObject(w, sv.Value)
+	}
+	if replacer := c.ctx.config.escapeReplacer; replacer != nil {
+		w = &replacerWriter{replacer: replacer, w: w}
+	}
+	return writeObject(w, value)
 }
 
 func (c rendererContext) Evaluate(expr expressions.Expression) (out any, err error) {
@@ -145,17 +187,42 @@ func (c rendererContext) ExpandTagArg() (string, error) {
 	return args, nil
 }
 
-// RenderBlock renders a node.
+// AuditHooks returns the active render audit hooks, or nil if no audit is active.
+func (c rendererContext) AuditHooks() *AuditHooks {
+	return c.ctx.config.Audit
+}
+
+// TagLoc returns the source start and end locations of the current tag or block node.
+func (c rendererContext) TagLoc() (start, end parser.SourceLoc) {
+	if c.node != nil {
+		return c.node.SourceLoc, c.node.EndLoc
+	}
+	if c.cn != nil {
+		return c.cn.SourceLoc, c.cn.EndLoc
+	}
+	return parser.SourceLoc{}, parser.SourceLoc{}
+}
+
+// RenderBlock renders a node. When audit is active, depth is incremented for
+// the duration of the block body so inner expressions get the correct depth.
 func (c rendererContext) RenderBlock(w io.Writer, b *BlockNode) error {
+	if audit := c.ctx.config.Audit; audit != nil {
+		audit.depth++
+		defer func() { audit.depth-- }()
+	}
 	return c.ctx.RenderSequence(w, b.Body)
 }
 
-// RenderChildren renders the current node's children.
+// RenderChildren renders the current node's children. When audit is active,
+// depth is incremented for the duration so inner expressions get the correct depth.
 func (c rendererContext) RenderChildren(w io.Writer) Error {
 	if c.cn == nil {
 		return nil
 	}
-
+	if audit := c.ctx.config.Audit; audit != nil {
+		audit.depth++
+		defer func() { audit.depth-- }()
+	}
 	return c.ctx.RenderSequence(w, c.cn.Body)
 }
 
@@ -163,8 +230,8 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
-		if cval, ok := c.ctx.config.Cache[filename]; ok {
-			source = cval
+		if cval, ok := c.ctx.config.Cache.Load(filename); ok {
+			source = cval.([]byte)
 		} else {
 			return "", err
 		}
@@ -172,7 +239,7 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 		return "", err
 	}
 
-	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	root, err := c.ctx.config.Compile(string(source), c.sourceLoc())
 	if err != nil {
 		return "", err
 	}
@@ -183,6 +250,37 @@ func (c rendererContext) RenderFile(filename string, b map[string]any) (string, 
 
 	buf := new(bytes.Buffer)
 	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// RenderFileIsolated parses and renders a template in an isolated scope.
+// The rendered template cannot access variables from the calling context —
+// only the explicitly provided bindings are available.
+// This is used by the {% render %} tag.
+func (c rendererContext) RenderFileIsolated(filename string, b map[string]any) (string, error) {
+	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
+	if err != nil && errors.Is(err, fs.ErrNotExist) {
+		// Is it cached?
+		if cval, ok := c.ctx.config.Cache.Load(filename); ok {
+			source = cval.([]byte)
+		} else {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	}
+
+	root, err := c.ctx.config.Compile(string(source), c.sourceLoc())
+	if err != nil {
+		return "", err
+	}
+
+	// Only use passed bindings; do not inherit parent scope.
+	buf := new(bytes.Buffer)
+	if err := Render(root, buf, b, c.ctx.config); err != nil {
 		return "", err
 	}
 

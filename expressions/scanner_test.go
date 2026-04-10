@@ -248,3 +248,70 @@ func TestLexUnicodeIdentifiers(t *testing.T) {
 		}
 	})
 }
+
+// TestLexPREA verifies the new tokens and scanner rules introduced in PRE-A.
+func TestLexPREA(t *testing.T) {
+	// empty and blank are now keywords, not identifiers
+	t.Run("empty_keyword", func(t *testing.T) {
+		ts := scanExpression("empty")
+		require.Len(t, ts, 1)
+		require.Equal(t, EMPTY, ts[0].tok)
+	})
+
+	t.Run("blank_keyword", func(t *testing.T) {
+		ts := scanExpression("blank")
+		require.Len(t, ts, 1)
+		require.Equal(t, BLANK, ts[0].tok)
+	})
+
+	// empty/blank as prefix of identifiers must still be IDENTIFIER
+	t.Run("empty_prefix_is_identifier", func(t *testing.T) {
+		ts := scanExpression("empty_list")
+		require.Len(t, ts, 1)
+		require.Equal(t, IDENTIFIER, ts[0].tok)
+		require.Equal(t, "empty_list", ts[0].typ.name)
+	})
+
+	// not keyword
+	t.Run("not_keyword", func(t *testing.T) {
+		ts := scanExpression("not")
+		require.Len(t, ts, 1)
+		require.Equal(t, NOT, ts[0].tok)
+	})
+
+	// <> is alias for !=
+	t.Run("diamond_operator", func(t *testing.T) {
+		ts := scanExpression("<>")
+		require.Len(t, ts, 1)
+		require.Equal(t, NEQ, ts[0].tok)
+	})
+
+	// string escape sequences
+	t.Run("string_escape_newline", func(t *testing.T) {
+		ts := scanExpression(`"hello\nworld"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "hello\nworld", ts[0].typ.val)
+	})
+
+	t.Run("string_escape_single_quote", func(t *testing.T) {
+		ts := scanExpression(`'it\'s'`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "it's", ts[0].typ.val)
+	})
+
+	t.Run("string_escape_backslash", func(t *testing.T) {
+		ts := scanExpression(`"a\\b"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, `a\b`, ts[0].typ.val)
+	})
+
+	t.Run("string_escape_tab", func(t *testing.T) {
+		ts := scanExpression(`"col1\tcol2"`)
+		require.Len(t, ts, 1)
+		require.Equal(t, LITERAL, ts[0].tok)
+		require.Equal(t, "col1\tcol2", ts[0].typ.val)
+	})
+}

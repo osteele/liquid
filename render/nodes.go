@@ -21,6 +21,7 @@ type BlockNode struct {
 	renderer func(io.Writer, Context) error
 	Body     []Node
 	Clauses  []*BlockNode
+	Analysis NodeAnalysis
 }
 
 // RawNode holds the text between the start and end of a raw tag.
@@ -35,6 +36,7 @@ type TagNode struct {
 	parser.Token
 
 	renderer func(io.Writer, Context) error
+	Analysis NodeAnalysis
 }
 
 // TextNode is a text chunk, that is rendered verbatim.
@@ -49,6 +51,10 @@ type ObjectNode struct {
 	expr expressions.Expression
 }
 
+// GetExpr returns the expression associated with this object node.
+// Used for static analysis.
+func (n *ObjectNode) GetExpr() expressions.Expression { return n.expr }
+
 // SeqNode is a sequence of nodes.
 type SeqNode struct {
 	sourcelessNode
@@ -60,6 +66,14 @@ type SeqNode struct {
 type TrimNode struct {
 	sourcelessNode
 	parser.TrimDirection
+	Greedy bool // true = trim all whitespace; false = inline blanks + at most one newline
+}
+
+// BrokenNode is a render node whose source failed to parse or compile.
+// It renders as an empty string and returns no error. The failure was already
+// recorded as a Diagnostic in the parse-audit result.
+type BrokenNode struct {
+	parser.Token
 }
 
 // FIXME requiring this is a bad design

@@ -5,9 +5,21 @@ import (
 	"sort"
 )
 
-// Sort any []any value.
+// Sort any []any value. nil elements are sorted last (matching Ruby Liquid).
 func Sort(data []any) {
-	sort.Sort(genericSortable(data))
+	sort.SliceStable(data, func(i, j int) bool {
+		a, b := data[i], data[j]
+		if a == nil && b == nil {
+			return false
+		}
+		if a == nil {
+			return false // nil goes to the end
+		}
+		if b == nil {
+			return true // non-nil comes before nil
+		}
+		return Less(a, b)
+	})
 }
 
 type genericSortable []any

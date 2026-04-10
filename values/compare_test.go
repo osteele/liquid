@@ -29,8 +29,8 @@ var eqTests = []struct {
 	{1.0, 1, true},
 	{"a", "b", false},
 	{"a", "a", true},
-	{int8(2), int16(2), true}, // TODO
-	// {uint8(2), int8(2), true}, // FIXME
+	{int8(2), int16(2), true},
+	{uint8(2), int8(2), true},
 	{eqArrayTestObj, eqArrayTestObj[:], true},
 	{[]string{"a"}, []string{"a"}, true},
 	{[]string{"a"}, []string{"a", "b"}, false},

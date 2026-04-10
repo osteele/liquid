@@ -1,7 +1,9 @@
 package filters
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -29,6 +31,14 @@ var filterTests = []struct {
 	{`"true" | default: 2.99`, "true"},
 	{`4.99 | default: 2.99`, 4.99},
 	{`fruits | default: 2.99 | join`, "apples oranges peaches plums"},
+
+	// default filter — allow_false: true keyword arg [ruby: standardfilters_test.rb; js: misc.spec.ts]
+	{`false | default: 2.99, allow_false: true`, false},
+	{`nil | default: 2.99, allow_false: true`, 2.99},
+	{`"" | default: 2.99, allow_false: true`, 2.99},
+	{`empty_array | default: 2.99, allow_false: true`, 2.99},
+	{`true | default: 2.99, allow_false: true`, true},
+	{`4.99 | default: 2.99, allow_false: true`, 4.99},
 	{`"string" | json`, "\"string\""},
 	{`true | json`, "true"},
 	{`1 | json`, "1"},
@@ -41,7 +51,7 @@ var filterTests = []struct {
 	{`",John, Paul, George, Ringo" | split: ", " | join: " and "`, ",John and Paul and George and Ringo"},
 	{`"John, Paul, George, Ringo," | split: ", " | join: " and "`, "John and Paul and George and Ringo,"},
 	{`animals | sort | join: ", "`, "Sally Snake, giraffe, octopus, zebra"},
-	{`sort_prop | sort: "weight" | inspect`, `[{"weight":null},{"weight":1},{"weight":3},{"weight":5}]`},
+	{`sort_prop | sort: "weight" | inspect`, `[{"weight":1},{"weight":3},{"weight":5},{"weight":null}]`},
 	{`fruits | reverse | join: ", "`, "plums, peaches, oranges, apples"},
 	{`fruits | first`, "apples"},
 	{`fruits | last`, "plums"},
@@ -82,6 +92,16 @@ var filterTests = []struct {
 	{`"2017-07-09" | date: "%e/%m"`, " 9/07"},
 	{`"2017-07-09" | date: "%-d/%-m"`, "9/7"},
 
+	// date_to_string filter [js: test/integration/filters/date.spec.ts]
+	{`"2008-11-07T13:07:54-08:00" | date_to_string`, "07 Nov 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_string: "ordinal", "US"`, "Nov 7th, 2008"},
+	{`"hello" | date_to_string: "ordinal", "US"`, "hello"},
+
+	// date_to_long_string filter [js: test/integration/filters/date.spec.ts]
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string`, "07 November 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string: "ordinal", "US"`, "November 7th, 2008"},
+	{`"2008-11-07T13:07:54-08:00" | date_to_long_string: "ordinal"`, "7th November 2008"},
+
 	// sequence (array or string) filters
 	{`"Ground control to Major Tom." | size`, 28},
 	{`"apples, oranges, peaches, plums" | split: ", " | size`, 4},
@@ -95,11 +115,12 @@ var filterTests = []struct {
 	{`"website.com" | append: "/index.html"`, "website.com/index.html"},
 	{`"title" | capitalize`, "Title"},
 	{`"my great title" | capitalize`, "My great title"},
+	{`"MY GREAT TITLE" | capitalize`, "My great title"},
 	{`"" | capitalize`, ""},
 	{`"Parker Moore" | downcase`, "parker moore"},
 	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 	{`"1 < 2 & 3" | escape_once`, "1 &lt; 2 &amp; 3"},
-	{`string_with_newlines | newline_to_br`, "<br />Hello<br />there<br />"},
+	{`string_with_newlines | newline_to_br`, "<br />\nHello<br />\nthere<br />\n"},
 	{`"1 &lt; 2 &amp; 3" | escape_once`, "1 &lt; 2 &amp; 3"},
 	{`"apples, oranges, and bananas" | prepend: "Some fruit: "`, "Some fruit: apples, oranges, and bananas"},
 	{`"I strained to see the train through the rain" | remove: "rain"`, "I sted to see the t through the "},
@@ -150,6 +171,13 @@ Liquid" | slice: 2, 4`, "quid"},
 	{"'a \t b' | split: ' ' | join: '-'", "a-b"},
 
 	{`"Have <em>you</em> read <strong>Ulysses</strong>?" | strip_html`, "Have you read Ulysses?"},
+	// strip_html: script and style blocks (with content) are removed [ruby: standard_filter_test.rb]
+	{`"<script>alert('xss')</script>Hello" | strip_html`, "Hello"},
+	{`"<SCRIPT>alert('xss')</SCRIPT>World" | strip_html`, "World"},
+	{`"<style>.foo { color: red; }</style>Content" | strip_html`, "Content"},
+	// strip_html: HTML comments are removed [ruby: standard_filter_test.rb]
+	{`"<!-- comment -->Hello" | strip_html`, "Hello"},
+	{`"A<!-- c -->B<!-- d -->C" | strip_html`, "ABC"},
 	{`string_with_newlines | strip_newlines`, "Hellothere"},
 
 	{`"Ground control to Major Tom." | truncate: 20`, "Ground control to..."},
@@ -169,10 +197,151 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"          So much room for activities!          " | strip`, "So much room for activities!"},
 	{`"          So much room for activities!          " | lstrip`, "So much room for activities!          "},
 	{`"          So much room for activities!          " | rstrip`, "          So much room for activities!"},
+	// strip/lstrip/rstrip with chars argument [liquidjs]
+	{`"abcHello Worldabc" | strip: "abc"`, "Hello World"},
+	{`"abcHello World" | lstrip: "abc"`, "Hello World"},
+	{`"Hello Worldabc" | rstrip: "abc"`, "Hello World"},
+	// squish: strip + collapse internal whitespace [ruby]
+	{`"  Hello   World  " | squish`, "Hello World"},
+	{"\"  Hello\\n\\tWorld  \" | squish", "Hello World"},
+	// h: alias for escape [ruby]
+	{`"Have you read 'James & the Giant Peach'?" | h`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
 
 	{`"%27Stop%21%27+said+Fred" | url_decode`, "'Stop!' said Fred"},
 	{`"john@liquid.com" | url_encode`, "john%40liquid.com"},
 	{`"Tetsuro Takara" | url_encode`, "Tetsuro+Takara"},
+
+	// string filters
+	{`"I strained to see the train through the rain" | remove_last: "rain"`, "I strained to see the train through the "},
+	{`"hello world" | remove_last: "l"`, "hello word"},
+	{`"no match" | remove_last: "xyz"`, "no match"},
+	{`"Take my protein pills and put my helmet on" | replace_last: "my", "your"`, "Take my protein pills and put your helmet on"},
+	{`"hello world" | replace_last: "l", "L"`, "hello worLd"},
+	{`"no match" | replace_last: "xyz", "abc"`, "no match"},
+	{`"  hello   world  " | normalize_whitespace`, " hello world "},
+	{"\"hello\nworld\ttab\" | normalize_whitespace", "hello world tab"},
+	{`"one two three" | number_of_words`, 3},
+	{`"" | number_of_words`, 0},
+	{`"   " | number_of_words`, 0},
+	{`"Hello world!" | number_of_words`, 2},
+	{`"你好hello世界world" | number_of_words`, 1},
+	{`"   Hello    world!    " | number_of_words`, 2},
+	{`"hello world" | number_of_words: "cjk"`, 2},
+	{`"你好hello世界world" | number_of_words: "cjk"`, 6},
+	{`"" | number_of_words: "cjk"`, 0},
+	{`"你好こんにちは안녕하세요" | number_of_words: "cjk"`, 12},
+	{`"hello 日本語 world" | number_of_words: "auto"`, 5},
+	{`"hello world" | number_of_words: "auto"`, 2},
+	{`"你好hello世界world" | number_of_words: "auto"`, 6},
+	{`"你好世界" | number_of_words: "auto"`, 4},
+	{`fruits | array_to_sentence_string`, "apples, oranges, peaches, and plums"},
+	{`"a,b" | split: "," | array_to_sentence_string`, "a and b"},
+	{`"a" | split: "," | array_to_sentence_string`, "a"},
+	{`"a,b,c" | split: "," | array_to_sentence_string: "or"`, "a, b, or c"},
+
+	// where filter [ruby: standard_filter_test.rb]
+	{`where_array | where: "ok" | map: "handle" | join: " "`, "alpha delta"},
+	{`where_array | where: "ok", true | map: "handle" | join: " "`, "alpha delta"},
+	{`where_array | where: "ok", false | map: "handle" | join: " "`, "beta gamma"},
+	{`where_messages | where: "language", "French" | map: "message" | join`, "Bonjour!"},
+	{`where_messages | where: "language", "German" | map: "message" | join`, "Hallo!"},
+	{`where_messages | where: "language", "English" | map: "message" | join`, "Hello!"},
+	{`where_truthy | where: "foo" | map: "foo" | join: " "`, "true for sure"},
+
+	// reject filter [ruby: standard_filter_test.rb]
+	{`where_array | reject: "ok" | map: "handle" | join: " "`, "beta gamma"},
+	{`where_array | reject: "ok", true | map: "handle" | join: " "`, "beta gamma"},
+	{`where_array | reject: "ok", false | map: "handle" | join: " "`, "alpha delta"},
+
+	// group_by filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`group_members | group_by: "graduation_year" | map: "name" | join: ", "`, "2003, 2014, 2004"},
+
+	// find filter [ruby: standard_filter_test.rb]
+	{`find_products | find: "price", 3999 | inspect`, `{"price":3999,"title":"Alpine jacket"}`},
+	// find filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`group_members | find: "graduation_year", 2014 | inspect`, `{"graduation_year":2014,"name":"John"}`},
+	{`find_products | find: "price", 9999`, nil},
+
+	// find_index filter [ruby: standard_filter_test.rb]
+	{`find_products | find_index: "price", 3999`, 2},
+	// find_index filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`group_members | find_index: "graduation_year", 2014`, 2},
+	{`group_members | find_index: "graduation_year", 2018`, nil},
+
+	// has filter [ruby: standard_filter_test.rb]
+	{`has_array_truthy | has: "ok"`, true},
+	{`has_array_truthy | has: "ok", true`, true},
+	{`has_array_falsy | has: "ok"`, false},
+	{`has_array_truthy | has: "ok", false`, true},
+	{`has_array_all_true | has: "ok", false`, false},
+	// has filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`group_members | has: "graduation_year", 2014`, true},
+	{`group_members | has: "graduation_year", 2018`, false},
+
+	// sum filter [ruby: standard_filter_test.rb]
+	{`sum_ints | sum`, int64(3)},
+	{`sum_mixed | sum`, int64(10)},
+	{`sum_objects | sum: "quantity"`, int64(3)},
+	{`sum_objects | sum: "weight"`, int64(7)},
+	{`sum_objects | sum: "subtotal"`, int64(0)},
+	{`sum_floats | sum`, 0.6000000000000001},
+	{`sum_neg_floats | sum`, -0.4},
+
+	// push filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`fruits | push: "grapes" | join: ", "`, "apples, oranges, peaches, plums, grapes"},
+	{`fruits | push: "grapes" | size`, 5},
+
+	// unshift filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`fruits | unshift: "grapes" | join: ", "`, "grapes, apples, oranges, peaches, plums"},
+	{`fruits | unshift: "grapes" | size`, 5},
+
+	// pop filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`fruits | pop | join: ", "`, "apples, oranges, peaches"},
+	{`empty_array | pop | size`, 0},
+
+	// shift filter [liquidjs: test/integration/filters/array.spec.ts]
+	{`fruits | shift | join: ", "`, "oranges, peaches, plums"},
+	{`empty_array | shift | size`, 0},
+
+	// math filters
+	{`4 | at_least: 5`, 5.0},
+	{`4 | at_least: 3`, 4.0},
+	{`4 | at_most: 5`, 4.0},
+	{`4 | at_most: 3`, 3.0},
+
+	// html/url filters
+	{`"Have you read 'James & the Giant Peach'?" | xml_escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
+	{`'<script>"alert"</script>' | xml_escape`, "&lt;script&gt;&#34;alert&#34;&lt;/script&gt;"},
+	{`"john@liquid.com" | cgi_escape`, "john%40liquid.com"},
+	{`"hello world" | cgi_escape`, "hello+world"},
+	{`"foo, bar; baz?" | cgi_escape`, "foo%2C+bar%3B+baz%3F"},
+	{`"hello world" | uri_escape`, "hello%20world"},
+	{`"http://example.com/?q=foo, \bar?" | uri_escape`, "http://example.com/?q=foo,%20%5Cbar?"},
+	{`"!#$&'()*+,/:;=?@[]" | uri_escape`, "!#$&'()*+,/:;=?@[]"},
+	{`"Hello World" | slugify`, "hello-world"},
+	{`"The _config.yml file" | slugify`, "the-config-yml-file"},
+	{`"The _config.yml file" | slugify: "pretty"`, "the-_config.yml-file"},
+	{`"The _cönfig.yml file" | slugify: "ascii"`, "the-c-nfig-yml-file"},
+	{`"The cönfig.yml file" | slugify: "latin"`, "the-config-yml-file"},
+	{`"The _config.yml file" | slugify: "none"`, "the _config.yml file"},
+	{`"The _config.yml file" | slugify: "raw"`, "the _config.yml file"},
+	{`"Hello World" | slugify: "invalid_mode"`, "hello world"},
+
+	// base64 filters [ruby: standard_filter_test.rb]
+	{`"hello" | base64_encode`, "aGVsbG8="},
+	{`"aGVsbG8=" | base64_decode`, "hello"},
+	{`"hello" | base64_url_safe_encode`, "aGVsbG8="},
+	{`"aGVsbG8=" | base64_url_safe_decode`, "hello"},
+	// base64 url-safe uses - and _ instead of + and /
+	{`"Man" | base64_url_safe_encode`, "TWFu"},
+	{`"TWFu" | base64_url_safe_decode`, "Man"},
+
+	// type conversion filters
+	{`"3.5" | to_integer`, 3},
+	{`3.9 | to_integer`, 3},
+	{`"42" | to_integer`, 42},
+	{`true | to_integer`, 1},
+	{`false | to_integer`, 0},
 
 	// number filters
 	{`-17 | abs`, 17.0},
@@ -228,8 +397,8 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`str_int | plus: 1`, 11.0},
 	{`str_float | plus: 1.0`, 4.5},
 
-	{`3 | modulo: 2`, 1.0},
-	{`24 | modulo: 7`, 3.0},
+	{`3 | modulo: 2`, int64(1)},
+	{`24 | modulo: 7`, int64(3)},
 	// {`183.357 | modulo: 12 | `, 3.357}, // TODO test suit use inexact
 
 	{`16 | divided_by: 4`, int64(4)},
@@ -246,6 +415,25 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+
+	// jsonify: alias for json [liquidjs]
+	{`"string" | jsonify`, "\"string\""},
+	{`true | jsonify`, "true"},
+	{`1 | jsonify`, "1"},
+
+	// default: allow_false keyword arg [ruby: standard_filter_test.rb, liquidjs]
+	{`false | default: 2.99, allow_false: true`, false},
+	{`nil | default: 2.99, allow_false: true`, 2.99},
+	{`"" | default: 2.99, allow_false: true`, 2.99},
+
+	// compact with property argument [ruby: standard_filter_test.rb]
+	{`compact_with_nil_prop | compact: "prop" | map: "name" | join`, `a b`},
+
+	// uniq with property argument [ruby: standard_filter_test.rb]
+	{`dup_prop_objects | uniq: "name" | map: "name" | join`, `a b`},
+
+	// sort nil-last [ruby: standard_filter_test.rb]
+	{`sort_prop | sort: "weight" | map: "weight" | last`, nil},
 }
 
 var filterErrorTests = []struct {
@@ -253,7 +441,9 @@ var filterErrorTests = []struct {
 	error string
 }{
 	{`20 | divided_by: 's'`, `error applying filter "divided_by" ("invalid divisor: 's'")`},
-	{`20 | divided_by: 0`, `error applying filter "divided_by" ("division by zero")`},
+	{`20 | divided_by: 0`, `error applying filter "divided_by" ("divided by 0")`},
+	{`"not-base64!!!" | base64_decode`, `error applying filter "base64_decode" ("illegal base64 data at input byte 3")`},
+	{`"not-base64" | base64_url_safe_decode`, `error applying filter "base64_url_safe_decode" ("illegal base64 data at input byte 8")`},
 }
 
 var filterTestBindings = map[string]any{
@@ -327,6 +517,80 @@ var filterTestBindings = map[string]any{
 		{Str: "b"},
 		{Str: "c"},
 	},
+	// where filter test data
+	"where_array": []any{
+		map[string]any{"handle": "alpha", "ok": true},
+		map[string]any{"handle": "beta", "ok": false},
+		map[string]any{"handle": "gamma", "ok": false},
+		map[string]any{"handle": "delta", "ok": true},
+	},
+	"where_messages": []any{
+		map[string]any{"message": "Bonjour!", "language": "French"},
+		map[string]any{"message": "Hello!", "language": "English"},
+		map[string]any{"message": "Hallo!", "language": "German"},
+	},
+	"where_truthy": []any{
+		map[string]any{"foo": false},
+		map[string]any{"foo": true},
+		map[string]any{"foo": "for sure"},
+		map[string]any{"bar": true},
+	},
+	// has filter test data
+	"has_array_truthy": []any{
+		map[string]any{"handle": "alpha", "ok": true},
+		map[string]any{"handle": "beta", "ok": false},
+		map[string]any{"handle": "gamma", "ok": false},
+		map[string]any{"handle": "delta", "ok": false},
+	},
+	"has_array_falsy": []any{
+		map[string]any{"handle": "alpha", "ok": false},
+		map[string]any{"handle": "beta", "ok": false},
+		map[string]any{"handle": "gamma", "ok": false},
+		map[string]any{"handle": "delta", "ok": false},
+	},
+	"has_array_all_true": []any{
+		map[string]any{"handle": "alpha", "ok": true},
+		map[string]any{"handle": "beta", "ok": true},
+		map[string]any{"handle": "gamma", "ok": true},
+		map[string]any{"handle": "delta", "ok": true},
+	},
+	// group_by / find filter test data
+	"group_members": []any{
+		map[string]any{"graduation_year": 2003, "name": "Jay"},
+		map[string]any{"graduation_year": 2003, "name": "John"},
+		map[string]any{"graduation_year": 2014, "name": "John"},
+		map[string]any{"graduation_year": 2004, "name": "Jack"},
+	},
+	// find filter test data
+	"find_products": []any{
+		map[string]any{"title": "Pro goggles", "price": 1299},
+		map[string]any{"title": "Thermal gloves", "price": 1499},
+		map[string]any{"title": "Alpine jacket", "price": 3999},
+		map[string]any{"title": "Mountain boots", "price": 3899},
+		map[string]any{"title": "Safety helmet", "price": 1999},
+	},
+	// sum filter test data
+	"sum_ints":       []any{1, 2},
+	"sum_mixed":      []any{1, 2, "3", "4"},
+	"sum_floats":     []any{0.1, 0.2, 0.3},
+	"sum_neg_floats": []any{0.1, -0.2, -0.3},
+	"sum_objects": []any{
+		map[string]any{"quantity": 1},
+		map[string]any{"quantity": 2, "weight": 3},
+		map[string]any{"weight": 4},
+	},
+	// compact with property arg test data [ruby]
+	"compact_with_nil_prop": []any{
+		map[string]any{"name": "a", "prop": "value"},
+		map[string]any{"name": "b", "prop": "value"},
+		map[string]any{"name": "c"},
+	},
+	// uniq with property arg test data [ruby]
+	"dup_prop_objects": []any{
+		map[string]any{"name": "a"},
+		map[string]any{"name": "a"},
+		map[string]any{"name": "b"},
+	},
 }
 
 func TestFilters(t *testing.T) {
@@ -367,4 +631,566 @@ func timeMustParse(s string) time.Time {
 	}
 
 	return t
+}
+
+// TestSampleFilter tests the sample filter. [liquidjs: test/integration/filters/array.spec.ts]
+func TestSampleFilter(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"fruits":    []any{"apples", "oranges", "peaches", "plums"},
+		"empty_arr": []any{},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// sample returns a single element from the array
+	t.Run("single_element", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`fruits | sample`, context)
+		require.NoError(t, err)
+		require.Contains(t, []any{"apples", "oranges", "peaches", "plums"}, actual)
+	})
+
+	// sample with count returns array of that size
+	t.Run("with_count", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`fruits | sample: 2`, context)
+		require.NoError(t, err)
+		arr, ok := actual.([]any)
+		require.True(t, ok)
+		require.Len(t, arr, 2)
+	})
+
+	// sample with count > len returns entire array
+	t.Run("count_exceeds_length", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`fruits | sample: 10`, context)
+		require.NoError(t, err)
+		arr, ok := actual.([]any)
+		require.True(t, ok)
+		require.Len(t, arr, 4)
+	})
+
+	// empty array: nil input returns empty [liquidjs: `{{ nil | sample: 2 }}`]
+	t.Run("empty_array", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`empty_arr | sample`, context)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	t.Run("empty_array_with_count", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`empty_arr | sample: 2`, context)
+		require.NoError(t, err)
+		require.Equal(t, []any{}, actual)
+	})
+}
+
+// TestWhereFilterEdgeCases tests where filter edge cases. [liquidjs: test/integration/filters/array.spec.ts]
+func TestWhereFilterEdgeCases(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"products": []any{
+			map[string]any{"title": "Vacuum", "type": "living room"},
+			map[string]any{"title": "Spatula", "type": "kitchen"},
+			map[string]any{"title": "Television", "type": "living room"},
+			map[string]any{"title": "Garlic press", "type": "kitchen"},
+			map[string]any{"title": "Coffee mug", "available": true},
+			map[string]any{"title": "Sneakers", "available": false},
+			map[string]any{"title": "Boring sneakers", "available": true},
+		},
+		"empty_array": []any{},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// where with property and value [liquidjs: `products | where: "type", "kitchen"`]
+	t.Run("with_value", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where: "type", "kitchen" | map: "title" | join: ", "`, context)
+		require.NoError(t, err)
+		require.Equal(t, "Spatula, Garlic press", actual)
+	})
+
+	// where with truthy (no target value) [liquidjs: `products | where: "available"`]
+	t.Run("truthy", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where: "available" | map: "title" | join: ", "`, context)
+		require.NoError(t, err)
+		require.Equal(t, "Coffee mug, Boring sneakers", actual)
+	})
+
+	// where on empty array
+	t.Run("empty_array", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`empty_array | where: "type", "x" | size`, context)
+		require.NoError(t, err)
+		require.Equal(t, 0, actual)
+	})
+}
+
+// TestRejectFilterEdgeCases tests reject filter edge cases. [liquidjs: test/integration/filters/array.spec.ts]
+func TestRejectFilterEdgeCases(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"products": []any{
+			map[string]any{"title": "Vacuum", "type": "living room"},
+			map[string]any{"title": "Spatula", "type": "kitchen"},
+			map[string]any{"title": "Television", "type": "living room"},
+			map[string]any{"title": "Garlic press", "type": "kitchen"},
+			map[string]any{"title": "Coffee mug", "available": true},
+			map[string]any{"title": "Sneakers", "available": false},
+			map[string]any{"title": "Boring sneakers", "available": true},
+		},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// reject by value [liquidjs: `products | reject: "type", "kitchen"`]
+	t.Run("with_value", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | reject: "type", "kitchen" | map: "title" | join: ", "`, context)
+		require.NoError(t, err)
+		require.Equal(t, "Vacuum, Television, Coffee mug, Sneakers, Boring sneakers", actual)
+	})
+
+	// reject truthy (no target value) [liquidjs: `products | reject: "available"`]
+	t.Run("truthy", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | reject: "available" | map: "title" | join: ", "`, context)
+		require.NoError(t, err)
+		require.Equal(t, "Vacuum, Spatula, Television, Garlic press, Sneakers", actual)
+	})
+
+	// reject by property existence [liquidjs: `products | reject: "type"`]
+	t.Run("by_property", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | reject: "type" | map: "title" | join: ", "`, context)
+		require.NoError(t, err)
+		require.Equal(t, "Coffee mug, Sneakers, Boring sneakers", actual)
+	})
+}
+
+// TestGroupByFilter tests the group_by filter. [liquidjs: test/integration/filters/array.spec.ts]
+func TestGroupByFilter(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"members": []any{
+			map[string]any{"graduation_year": 2003, "name": "Jay"},
+			map[string]any{"graduation_year": 2003, "name": "John"},
+			map[string]any{"graduation_year": 2004, "name": "Jack"},
+		},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	t.Run("basic", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`members | group_by: "graduation_year" | inspect`, context)
+		require.NoError(t, err)
+		require.Equal(t, `[{"items":[{"graduation_year":2003,"name":"Jay"},{"graduation_year":2003,"name":"John"}],"name":2003},{"items":[{"graduation_year":2004,"name":"Jack"}],"name":2004}]`, actual)
+	})
+}
+
+// TestSumFilterEdgeCases tests sum filter edge cases. [ruby: standard_filter_test.rb]
+func TestSumFilterEdgeCases(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"with_nil":    []any{1, nil, 2},
+		"with_true":   []any{1, true, nil},
+		"with_string": []any{1, "foo", map[string]any{"quantity": 3}},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// nil values are skipped [ruby: sum([1, nil, ...])]
+	t.Run("with_nil", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`with_nil | sum`, context)
+		require.NoError(t, err)
+		require.Equal(t, int64(3), actual)
+	})
+
+	// non-numeric values (strings, maps) are skipped [ruby: sum([1, [2], "foo", { "quantity" => 3 }]) = 3]
+	t.Run("with_string", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`with_string | sum`, context)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), actual)
+	})
+}
+
+// TestFindFilterEdgeCases tests find filter edge cases.
+func TestFindFilterEdgeCases(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"members": []any{
+			map[string]any{"graduation_year": 2013, "name": "Jay"},
+			map[string]any{"graduation_year": 2014, "name": "John"},
+			map[string]any{"graduation_year": 2014, "name": "Jack", "age": 13},
+		},
+		"empty_array": []any{},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// find by truthy property (no value) [liquidjs: `members | find: "age"`]
+	t.Run("truthy", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`members | find: "age" | inspect`, context)
+		require.NoError(t, err)
+		require.Equal(t, `{"age":13,"graduation_year":2014,"name":"Jack"}`, actual)
+	})
+
+	// find not found returns nil [liquidjs: `members | find: "graduation_year", 2018`]
+	t.Run("not_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`members | find: "graduation_year", 2018`, context)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	// find on empty array returns nil [ruby: products | find: 'title.content', 'Not found']
+	t.Run("empty_array", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`empty_array | find: "price", 100`, context)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+}
+
+// TestHasFilterEdgeCases tests has filter edge cases.
+func TestHasFilterEdgeCases(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{
+		"empty_array": []any{},
+		"members": []any{
+			map[string]any{"graduation_year": 2013, "name": "Jay"},
+			map[string]any{"graduation_year": 2014, "name": "John"},
+			map[string]any{"graduation_year": 2014, "name": "Jack", "age": 13},
+		},
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	// has on empty array returns false [ruby: has([], 'foo', 'bar') = false]
+	t.Run("empty_array", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`empty_array | has: "foo", "bar"`, context)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
+
+	// has truthy checks if any item has a truthy property [liquidjs: `members | has: "age"`]
+	t.Run("truthy", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`members | has: "age"`, context)
+		require.NoError(t, err)
+		require.Equal(t, true, actual)
+	})
+
+	// has truthy not found returns false [liquidjs: `members | has: "height"`]
+	t.Run("truthy_not_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`members | has: "height"`, context)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
+}
+
+// TestPushFilterImmutability verifies push does not mutate the original array. [liquidjs: test/integration/filters/array.spec.ts]
+func TestPushFilterImmutability(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	original := []any{"hey"}
+	bindings := map[string]any{
+		"val": original,
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	actual, err := expressions.EvaluateString(`val | push: "foo" | join: ","`, context)
+	require.NoError(t, err)
+	require.Equal(t, "hey,foo", actual)
+
+	// Original should not be mutated
+	require.Equal(t, []any{"hey"}, original)
+}
+
+// TestPopFilterImmutability verifies pop does not mutate the original array. [liquidjs: test/integration/filters/array.spec.ts]
+func TestPopFilterImmutability(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	original := []any{"hey", "you"}
+	bindings := map[string]any{
+		"val": original,
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	actual, err := expressions.EvaluateString(`val | pop | join: ","`, context)
+	require.NoError(t, err)
+	require.Equal(t, "hey", actual)
+
+	// Original should not be mutated
+	require.Equal(t, []any{"hey", "you"}, original)
+}
+
+// TestUnshiftFilterImmutability verifies unshift does not mutate the original array. [liquidjs: test/integration/filters/array.spec.ts]
+func TestUnshiftFilterImmutability(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	original := []any{"you"}
+	bindings := map[string]any{
+		"val": original,
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	actual, err := expressions.EvaluateString(`val | unshift: "hey" | join: ", "`, context)
+	require.NoError(t, err)
+	require.Equal(t, "hey, you", actual)
+
+	// Original should not be mutated
+	require.Equal(t, []any{"you"}, original)
+}
+
+// TestShiftFilterImmutability verifies shift does not mutate the original array. [liquidjs: test/integration/filters/array.spec.ts]
+func TestShiftFilterImmutability(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	original := []any{"hey", "you"}
+	bindings := map[string]any{
+		"val": original,
+	}
+	context := expressions.NewContext(bindings, cfg)
+
+	actual, err := expressions.EvaluateString(`val | shift | join: ","`, context)
+	require.NoError(t, err)
+	require.Equal(t, "you", actual)
+
+	// Original should not be mutated
+	require.Equal(t, []any{"hey", "you"}, original)
+}
+
+// TestZeroDivisionError verifies that divided_by and modulo return a typed ZeroDivisionError.
+func TestZeroDivisionError(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+	bindings := map[string]any{}
+	context := expressions.NewContext(bindings, cfg)
+
+	t.Run("divided_by_zero_is_ZeroDivisionError", func(t *testing.T) {
+		_, err := expressions.EvaluateString(`20 | divided_by: 0`, context)
+		require.Error(t, err)
+		var zde *ZeroDivisionError
+		require.True(t, errors.As(err, &zde), "expected ZeroDivisionError, got %T: %v", err, err)
+	})
+
+	t.Run("modulo_zero_is_ZeroDivisionError", func(t *testing.T) {
+		_, err := expressions.EvaluateString(`20 | modulo: 0`, context)
+		require.Error(t, err)
+		var zde *ZeroDivisionError
+		require.True(t, errors.As(err, &zde), "expected ZeroDivisionError, got %T: %v", err, err)
+	})
+
+	t.Run("modulo_nonzero_succeeds", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`10 | modulo: 3`, context)
+		require.NoError(t, err)
+		require.Equal(t, int64(1), actual)
+	})
+}
+
+// TestExpFilters contains integration tests for all _exp context-aware filters.
+func TestExpFilters(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	products := []any{
+		map[string]any{"title": "Vacuum", "type": "appliance", "price": 45, "available": true},
+		map[string]any{"title": "Spatula", "type": "kitchen", "price": 10, "available": true},
+		map[string]any{"title": "Television", "type": "appliance", "price": 500, "available": false},
+		map[string]any{"title": "Garlic press", "type": "kitchen", "price": 12, "available": true},
+	}
+	bindings := map[string]any{
+		"products": products,
+		"nums":     []any{1, 2, 3, 4, 5},
+	}
+	ctx := expressions.NewContext(bindings, cfg)
+
+	// where_exp
+	t.Run("where_exp_truthy_property", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.available"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 3)
+	})
+
+	t.Run("where_exp_comparison", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 2)
+		require.Equal(t, "Vacuum", result[0].(map[string]any)["title"])
+		require.Equal(t, "Television", result[1].(map[string]any)["title"])
+	})
+
+	t.Run("where_exp_type_filter", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.type == \"appliance\""`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 2)
+	})
+
+	t.Run("where_exp_empty_result", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | where_exp: "p", "p.price > 1000"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, []any{}, actual)
+	})
+
+	// reject_exp
+	t.Run("reject_exp_available", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | reject_exp: "p", "p.available"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Len(t, result, 1)
+		require.Equal(t, "Television", result[0].(map[string]any)["title"])
+	})
+
+	t.Run("reject_exp_comparison", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`nums | reject_exp: "n", "n > 3"`, ctx)
+		require.NoError(t, err)
+		result := actual.([]any)
+		require.Equal(t, []any{1, 2, 3}, result)
+	})
+
+	// group_by_exp
+	t.Run("group_by_exp_type", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | group_by_exp: "p", "p.type"`, ctx)
+		require.NoError(t, err)
+		groups := actual.([]any)
+		require.Len(t, groups, 2)
+		g0 := groups[0].(map[string]any)
+		require.Equal(t, "appliance", g0["name"])
+		require.Len(t, g0["items"].([]any), 2)
+		g1 := groups[1].(map[string]any)
+		require.Equal(t, "kitchen", g1["name"])
+		require.Len(t, g1["items"].([]any), 2)
+	})
+
+	// find_exp
+	t.Run("find_exp_first_match", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		item := actual.(map[string]any)
+		require.Equal(t, "Vacuum", item["title"])
+	})
+
+	t.Run("find_exp_no_match", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	// find_index_exp
+	t.Run("find_index_exp_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_index_exp: "p", "p.price > 20"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, 0, actual)
+	})
+
+	t.Run("find_index_exp_not_found", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | find_index_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Nil(t, actual)
+	})
+
+	t.Run("find_index_exp_second", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`nums | find_index_exp: "n", "n > 3"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, 3, actual)
+	})
+
+	// has_exp
+	t.Run("has_exp_true", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | has_exp: "p", "p.available and p.price < 15"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, true, actual)
+	})
+
+	t.Run("has_exp_false", func(t *testing.T) {
+		actual, err := expressions.EvaluateString(`products | has_exp: "p", "p.price > 9999"`, ctx)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
+
+	t.Run("has_exp_empty_array", func(t *testing.T) {
+		bindings2 := map[string]any{"arr": []any{}}
+		ctx2 := expressions.NewContext(bindings2, cfg)
+		actual, err := expressions.EvaluateString(`arr | has_exp: "x", "x > 1"`, ctx2)
+		require.NoError(t, err)
+		require.Equal(t, false, actual)
+	})
+}
+
+// TestDateToXmlschema verifies the date_to_xmlschema filter.
+// Ported from LiquidJS: test/integration/filters/date.spec.ts — filters/date_to_xmlschema
+func TestDateToXmlschema(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	tests := []struct {
+		in      string
+		pattern string // regexp pattern to match
+		exact   string // if non-empty, exact match expected
+	}{
+		{
+			// Date with explicit UTC-8 timezone — output preserves it.
+			in:    `"2008-11-07T13:07:54-08:00" | date_to_xmlschema`,
+			exact: "2008-11-07T13:07:54-08:00",
+		},
+		{
+			// Date without timezone → system-local offset appended.
+			in:      `"1990-10-15T23:00:00" | date_to_xmlschema`,
+			pattern: `^1990-10-15T23:00:00[+-]\d{2}:\d{2}$`,
+		},
+		{
+			// Invalid date → returned unchanged.
+			in:    `"not-a-date" | date_to_xmlschema`,
+			exact: "not-a-date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			ctx := expressions.NewContext(map[string]any{}, cfg)
+			actual, err := expressions.EvaluateString(tt.in, ctx)
+			require.NoError(t, err)
+			if tt.exact != "" {
+				require.Equal(t, tt.exact, actual)
+			} else {
+				require.Regexp(t, regexp.MustCompile(tt.pattern), actual)
+			}
+		})
+	}
+}
+
+// TestDateToRfc822 verifies the date_to_rfc822 filter.
+// Ported from LiquidJS: test/integration/filters/date.spec.ts — filters/date_to_rfc822
+func TestDateToRfc822(t *testing.T) {
+	cfg := expressions.NewConfig()
+	AddStandardFilters(&cfg)
+
+	tests := []struct {
+		in      string
+		pattern string
+		exact   string
+	}{
+		{
+			// Date with explicit UTC-8 timezone.
+			in:    `"2008-11-07T13:07:54-08:00" | date_to_rfc822`,
+			exact: "Fri, 07 Nov 2008 13:07:54 -0800",
+		},
+		{
+			// Date without timezone → system's local offset.
+			in:      `"1990-10-15T23:00:00" | date_to_rfc822`,
+			pattern: `^Mon, 15 Oct 1990 23:00:00 [+-]\d{4}$`,
+		},
+		{
+			// Invalid date → returned unchanged.
+			in:    `"not-a-date" | date_to_rfc822`,
+			exact: "not-a-date",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.in, func(t *testing.T) {
+			ctx := expressions.NewContext(map[string]any{}, cfg)
+			actual, err := expressions.EvaluateString(tt.in, ctx)
+			require.NoError(t, err)
+			if tt.exact != "" {
+				require.Equal(t, tt.exact, actual)
+			} else {
+				require.Regexp(t, regexp.MustCompile(tt.pattern), actual)
+			}
+		})
+	}
 }

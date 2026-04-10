@@ -110,6 +110,30 @@ var evaluatorTests = []struct {
 	{`"foo" contains "missing"`, false},
 	{`nil contains "missing"`, false},
 
+	// PRE-A: empty and blank as literals
+	{`"" == empty`, true},
+	{`"hello" == empty`, false},
+	{`array == empty`, false},
+	{`empty_list == empty`, true},
+	{`nil == empty`, false},
+	{`"" == blank`, true},
+	{`"   " == blank`, true},
+	{`nil == blank`, true},
+	{`false == blank`, true},
+	{`"hello" == blank`, false},
+	{`empty_list == blank`, true},
+
+	// PRE-A: not operator
+	{`not false`, true},
+	{`not true`, false},
+	{`not nil`, true},
+	{`not 1`, false},
+
+	// PRE-A: <> as alias for !=
+	{`1 <> 2`, true},
+	{`1 <> 1`, false},
+	{`"a" <> "b"`, true},
+
 	// filters
 	{`"seafood" | length`, 8},
 }

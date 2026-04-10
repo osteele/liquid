@@ -6,9 +6,10 @@ import "fmt"
 type Token struct {
 	Type      TokenType
 	SourceLoc SourceLoc
-	Name      string // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
-	Args      string // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
-	Source    string // Source is the entirety of the token, including the "{{", "{%", etc. markers.
+	EndLoc    SourceLoc // End location (exclusive) of this token; zero if not tracked.
+	Name      string    // Name is the tag name of a tag Chunk. E.g. the tag name of "{% if 1 %}" is "if".
+	Args      string    // Parameters is the tag arguments of a tag Chunk. E.g. the tag arguments of "{% if 1 %}" is "1".
+	Source    string    // Source is the entirety of the token, including the "{{" "{%", etc. markers.
 }
 
 // TokenType is the type of a Chunk
@@ -35,6 +36,7 @@ const (
 type SourceLoc struct {
 	Pathname string
 	LineNo   int
+	ColNo    int // 1-based column number; 0 means not tracked
 }
 
 // SourceLocation returns the token's source location, for use in error reporting.

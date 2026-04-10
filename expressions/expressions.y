@@ -37,7 +37,10 @@ func init() {
 %token <val> LITERAL
 %token <name> IDENTIFIER KEYWORD PROPERTY
 %token ASSIGN CYCLE LOOP WHEN
-%token EQ NEQ GE LE IN AND OR CONTAINS DOTDOT
+%token EQ NEQ GE LE IN AND OR NOT CONTAINS DOTDOT
+%token EMPTY BLANK
+%right AND OR
+%right NOT
 %left '.' '|'
 %left '<' '>'
 %%
@@ -49,7 +52,7 @@ start:
 	if len(path) == 1 {
 		variable = path[0]
 	}
-	yylex.(*lexer).Assignment = Assignment{Variable: variable, Path: path, ValueFn: &expression{$4}}
+	yylex.(*lexer).Assignment = Assignment{Variable: variable, Path: path, ValueFn: &expression{evaluator: $4}}
 }
 | CYCLE cycle ';' { yylex.(*lexer).Cycle = $2 }
 | LOOP loop ';'   { yylex.(*lexer).Loop = $2 }
@@ -80,11 +83,11 @@ cycle3:
 | ',' string cycle3 { $$ = append([]string{$2}, $3...) }
 ;
 
-exprs: expr expr2 { $$ = append([]Expression{&expression{$1}}, $2...) } ;
+exprs: expr expr2 { $$ = append([]Expression{&expression{evaluator: $1}}, $2...) } ;
 expr2:
   /* empty */    { $$ = []Expression{} }
-| ',' expr expr2 { $$ = append([]Expression{&expression{$2}}, $3...) }
-| OR expr expr2  { $$ = append([]Expression{&expression{$2}}, $3...) }
+| ',' expr expr2 { $$ = append([]Expression{&expression{evaluator: $2}}, $3...) }
+| OR expr expr2  { $$ = append([]Expression{&expression{evaluator: $2}}, $3...) }
 ;
 
 string: LITERAL {
@@ -97,7 +100,7 @@ string: LITERAL {
 
 loop: IDENTIFIER IN filtered loop_modifiers {
 	name, expr, mods := $1, $3, $4
-	$$ = Loop{mods, name, &expression{expr}}
+	$$ = Loop{mods, name, &expression{evaluator: expr}}
 }
 ;
 
@@ -114,11 +117,11 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 | loop_modifiers KEYWORD expr {
     switch $2 {
 	case "cols":
-		$1.Cols = &expression{$3}
+		$1.Cols = &expression{evaluator: $3}
 	case "limit":
-		$1.Limit = &expression{$3}
+		$1.Limit = &expression{evaluator: $3}
 	case "offset":
-		$1.Offset = &expression{$3}
+		$1.Offset = &expression{evaluator: $3}
 	default:
 		panic(SyntaxError(fmt.Sprintf("undefined loop modifier %q", $2)))
 	}
@@ -129,8 +132,12 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 expr:
   LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
+| EMPTY { $$ = func(_ Context) values.Value { return values.EmptyDrop } }
+| BLANK { $$ = func(_ Context) values.Value { return values.BlankDrop } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
+| expr '.' IDENTIFIER { $$ = makeObjectPropertyExpr($1, $3) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }
+| '[' expr ']' { $$ = makeVariableIndirectionExpr($2) }
 | '(' expr DOTDOT expr ')' { $$ = makeRangeExpr($2, $4) }
 | '(' cond ')' { $$ = $2 }
 ;
@@ -143,8 +150,11 @@ filtered:
 
 filter_params:
   expr { $$ = []valueFn{$1} }
+| KEYWORD expr { $$ = []valueFn{makeNamedArgFn($1, $2)} }
 | filter_params ',' expr
   { $$ = append($1, $3) }
+| filter_params ',' KEYWORD expr
+  { $$ = append($1, makeNamedArgFn($3, $4)) }
 
 rel:
   filtered
@@ -152,42 +162,66 @@ rel:
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Equal(b))
+		result := a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("==", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr NEQ expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(!a.Equal(b))
+		result := !a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("!=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr '>' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(b.Less(a))
+		result := b.Less(a)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook(">", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr '<' expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Less(b))
+		result := a.Less(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("<", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr GE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(b.Less(a) || a.Equal(b))
+		result := b.Less(a) || a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook(">=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr LE expr {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
 		a, b := fa(ctx), fb(ctx)
-		return values.ValueOf(a.Less(b) || a.Equal(b))
+		result := a.Less(b) || a.Equal(b)
+		if c, ok := ctx.(*context); ok {
+			c.callComparisonHook("<=", a, b, result)
+		}
+		return values.ValueOf(result)
 	}
 }
 | expr CONTAINS expr { $$ = makeContainsExpr($1, $3) }
@@ -195,16 +229,40 @@ rel:
 
 cond:
   rel
-| cond AND rel {
-	fa, fb := $1, $3
+| NOT cond {
+	fa := $2
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() && fb(ctx).Test())
+		return values.ValueOf(!fa(ctx).Test())
 	}
 }
-| cond OR rel {
+| cond AND cond {
 	fa, fb := $1, $3
 	$$ = func(ctx Context) values.Value {
-		return values.ValueOf(fa(ctx).Test() || fb(ctx).Test())
+		if c, ok := ctx.(*context); ok {
+			c.callGroupBeginHook()
+		}
+		a := fa(ctx)
+		b := fb(ctx)
+		result := a.Test() && b.Test()
+		if c, ok := ctx.(*context); ok {
+			c.callGroupEndHook("and", result)
+		}
+		return values.ValueOf(result)
+	}
+}
+| cond OR cond {
+	fa, fb := $1, $3
+	$$ = func(ctx Context) values.Value {
+		if c, ok := ctx.(*context); ok {
+			c.callGroupBeginHook()
+		}
+		a := fa(ctx)
+		b := fb(ctx)
+		result := a.Test() || b.Test()
+		if c, ok := ctx.(*context); ok {
+			c.callGroupEndHook("or", result)
+		}
+		return values.ValueOf(result)
 	}
 }
 ;

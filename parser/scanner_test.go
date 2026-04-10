@@ -77,9 +77,11 @@ func TestScan_ws(t *testing.T) {
 	}{
 		{`{{ expr }}`, []Token{
 			{
-				Type:   ObjTokenType,
-				Args:   "expr",
-				Source: "{{ expr }}",
+				Type:      ObjTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 11},
+				Args:      "expr",
+				Source:    "{{ expr }}",
 			},
 		}},
 		{`{{- expr }}`, []Token{
@@ -87,16 +89,20 @@ func TestScan_ws(t *testing.T) {
 				Type: TrimLeftTokenType,
 			},
 			{
-				Type:   ObjTokenType,
-				Args:   "expr",
-				Source: "{{- expr }}",
+				Type:      ObjTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 12},
+				Args:      "expr",
+				Source:    "{{- expr }}",
 			},
 		}},
 		{`{{ expr -}}`, []Token{
 			{
-				Type:   ObjTokenType,
-				Args:   "expr",
-				Source: "{{ expr -}}",
+				Type:      ObjTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 12},
+				Args:      "expr",
+				Source:    "{{ expr -}}",
 			},
 			{
 				Type: TrimRightTokenType,
@@ -107,9 +113,11 @@ func TestScan_ws(t *testing.T) {
 				Type: TrimLeftTokenType,
 			},
 			{
-				Type:   ObjTokenType,
-				Args:   "expr",
-				Source: "{{- expr -}}",
+				Type:      ObjTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 13},
+				Args:      "expr",
+				Source:    "{{- expr -}}",
 			},
 			{
 				Type: TrimRightTokenType,
@@ -117,10 +125,12 @@ func TestScan_ws(t *testing.T) {
 		}},
 		{`{% tag arg %}`, []Token{
 			{
-				Type:   TagTokenType,
-				Name:   "tag",
-				Args:   "arg",
-				Source: "{% tag arg %}",
+				Type:      TagTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 14},
+				Name:      "tag",
+				Args:      "arg",
+				Source:    "{% tag arg %}",
 			},
 		}},
 		{`{%- tag arg %}`, []Token{
@@ -128,18 +138,22 @@ func TestScan_ws(t *testing.T) {
 				Type: TrimLeftTokenType,
 			},
 			{
-				Type:   TagTokenType,
-				Name:   "tag",
-				Args:   "arg",
-				Source: "{%- tag arg %}",
+				Type:      TagTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 15},
+				Name:      "tag",
+				Args:      "arg",
+				Source:    "{%- tag arg %}",
 			},
 		}},
 		{`{% tag arg -%}`, []Token{
 			{
-				Type:   TagTokenType,
-				Name:   "tag",
-				Args:   "arg",
-				Source: "{% tag arg -%}",
+				Type:      TagTokenType,
+				SourceLoc: SourceLoc{ColNo: 1},
+				EndLoc:    SourceLoc{ColNo: 15},
+				Name:      "tag",
+				Args:      "arg",
+				Source:    "{% tag arg -%}",
 			},
 			{
 				Type: TrimRightTokenType,

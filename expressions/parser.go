@@ -33,7 +33,7 @@ func Parse(source string) (expr Expression, err error) {
 		return nil, err
 	}
 
-	return &expression{p.val}, nil
+	return &expression{evaluator: p.val}, nil
 }
 
 func parse(source string) (p *parseValue, err error) {

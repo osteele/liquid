@@ -8,6 +8,29 @@ type drop interface {
 	ToLiquid() any
 }
 
+// dropMethodMissing is the internal interface for catch-all property access.
+// Types implementing this will have MissingMethod called when a property or
+// method is not found via reflection.
+type dropMethodMissing interface {
+	MissingMethod(key string) any
+}
+
+// ContextAccess is the minimal interface injected into drops that implement
+// ContextSetter. It provides read/write access to the current rendering scope.
+// Mirrors Ruby Liquid's Context object (limited to variable bindings).
+type ContextAccess interface {
+	Get(name string) any
+	Set(name string, value any)
+}
+
+// ContextSetter is an optional interface for drop types that want to receive
+// the current rendering context when they are looked up from the variable scope.
+// SetContext is called by the renderer each time the drop is accessed.
+// This mirrors Ruby Liquid's context= setter.
+type ContextSetter interface {
+	SetContext(ctx ContextAccess)
+}
+
 // ToLiquid converts an object to Liquid, if it implements the Drop interface.
 func ToLiquid(value any) any {
 	switch value := value.(type) {

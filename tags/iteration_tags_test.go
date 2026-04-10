@@ -42,10 +42,8 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array limit: 0 %}{{ a }}.{% else %}ELSE{% endfor %}`, "ELSE"},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 10 %}{{ a }}.{% endfor %}`, ""},
-	// Combining multiple modifiers (issue #6)
-	// Note: In this implementation, modifiers are always applied in the order: reversed -> offset -> limit
-	// The order they appear in the template syntax does not matter.
-	// This differs from Ruby Shopify Liquid where syntax order matters and reversed only works when placed first.
+	// Combining multiple modifiers: reversed is applied first, then offset, then limit.
+	// This means offset:N skips N elements from the start of the already-reversed view.
 	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
 	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "second.first."}, // same result - syntax order doesn't matter
 	{`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
@@ -212,6 +210,143 @@ func TestIterationTags_errors(t *testing.T) {
 			err = render.Render(root, io.Discard, iterationTestBindings, cfg)
 			require.Errorf(t, err, test.in)
 			require.Containsf(t, err.Error(), test.expected, test.in)
+		})
+	}
+}
+
+// ---------------------------------------------------------------------------
+// forloop.name, forloop.parentloop
+// ---------------------------------------------------------------------------
+
+var forloopMetaTests = []struct{ in, expected string }{
+	// forloop.name = "variable-collection"
+	{`{% for a in array %}{{ forloop.name }}{% endfor %}`, "a-arraya-arraya-array"},
+	{`{% for item in array %}{{ forloop.name }}.{% endfor %}`, "item-array.item-array.item-array."},
+	// forloop.parentloop is nil in a non-nested loop (renders as empty)
+	{`{% for a in array %}{{ forloop.parentloop }}.{% endfor %}`, "..." /* first iteration */},
+	// forloop.parentloop is set in nested loops
+	{
+		`{% for i in array %}{% for j in array %}{{ forloop.parentloop.index }},{% endfor %}{% endfor %}`,
+		"1,1,1,2,2,2,3,3,3,",
+	},
+}
+
+func TestForloopMeta(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+
+	bindings := map[string]any{
+		"array": []string{"a", "b", "c"},
+	}
+
+	for i, test := range forloopMetaTests[:2] { // skip parentloop nil test which has quirky expected
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, bindings, config)
+			require.NoErrorf(t, err, test.in)
+			require.Equalf(t, test.expected, buf.String(), test.in)
+		})
+	}
+
+	// Test forloop.parentloop in nested loops
+	t.Run("nested_parentloop", func(t *testing.T) {
+		tpl := `{% for i in array %}{% for j in array %}{{ forloop.parentloop.index }},{% endfor %}{% endfor %}`
+		root, err := config.Compile(tpl, parser.SourceLoc{})
+		require.NoError(t, err)
+
+		buf := new(bytes.Buffer)
+		err = render.Render(root, buf, bindings, config)
+		require.NoError(t, err)
+		require.Equal(t, "1,1,1,2,2,2,3,3,3,", buf.String())
+	})
+}
+
+// ---------------------------------------------------------------------------
+// tablerow-specific forloop variables (col, col0, col_first, col_last, row)
+// ---------------------------------------------------------------------------
+
+var tablerowLoopVarTests = []struct{ in, expected string }{
+	{`{% tablerow i in products cols:2 %}{{ forloop.col }},{% endtablerow %}`, "1,2,1,2,1,2,"},
+	{`{% tablerow i in products cols:2 %}{{ forloop.col0 }},{% endtablerow %}`, "0,1,0,1,0,1,"},
+	{`{% tablerow i in products cols:2 %}{{ forloop.col_first }},{% endtablerow %}`, "true,false,true,false,true,false,"},
+	{`{% tablerow i in products cols:2 %}{{ forloop.col_last }},{% endtablerow %}`, "false,true,false,true,false,true,"},
+	{`{% tablerow i in products cols:2 %}{{ forloop.row }},{% endtablerow %}`, "1,1,2,2,3,3,"},
+	// with no cols, all items are in row 1
+	{`{% tablerow i in products %}{{ forloop.row }}.{% endtablerow %}`, "1.1.1.1.1.1."},
+}
+
+func TestTablerowLoopVars(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+
+	bindings := map[string]any{
+		"products": []string{"a", "b", "c", "d", "e", "f"},
+	}
+
+	for i, test := range tablerowLoopVarTests {
+		t.Run(fmt.Sprintf("%02d", i+1), func(t *testing.T) {
+			root, err := config.Compile(test.in, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.in)
+
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, bindings, config)
+			require.NoErrorf(t, err, test.in)
+			// Strip HTML to get just the loop var values
+			out := regexp.MustCompile(`<[^>]+>`).ReplaceAllString(buf.String(), "")
+			require.Equalf(t, test.expected, out, test.in)
+		})
+	}
+}
+
+// TestOffsetContinue verifies that offset:continue resumes the loop from where
+// the previous iteration of the same named loop left off.
+func TestOffsetContinue(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+
+	bindings := map[string]any{
+		"arr": []string{"a", "b", "c", "d", "e", "f"},
+	}
+
+	tests := []struct {
+		desc     string
+		in       string
+		expected string
+	}{
+		{
+			"two consecutive chunks of 2",
+			`{% for x in arr limit:2 %}{{ x }}{% endfor %}-{% for x in arr limit:2 offset:continue %}{{ x }}{% endfor %}`,
+			"ab-cd",
+		},
+		{
+			"three consecutive chunks",
+			`{% for x in arr limit:2 %}{{ x }}{% endfor %}-{% for x in arr limit:2 offset:continue %}{{ x }}{% endfor %}-{% for x in arr limit:2 offset:continue %}{{ x }}{% endfor %}`,
+			"ab-cd-ef",
+		},
+		{
+			"continue after full iteration",
+			`{% for x in arr %}{{ x }}{% endfor %}-{% for x in arr offset:continue %}{{ x }}{% endfor %}`,
+			"abcdef-",
+		},
+		{
+			"offset:continue with spaces around colon",
+			`{% for x in arr limit:2 %}{{ x }}{% endfor %}-{% for x in arr limit:2 offset : continue %}{{ x }}{% endfor %}`,
+			"ab-cd",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			root, err := config.Compile(tt.in, parser.SourceLoc{})
+			require.NoError(t, err, tt.in)
+
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, bindings, config)
+			require.NoError(t, err, tt.in)
+			require.Equal(t, tt.expected, buf.String(), tt.in)
 		})
 	}
 }

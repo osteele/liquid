@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"io"
 
 	"github.com/osteele/liquid/parser"
 )
@@ -48,6 +49,9 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 
 			node.renderer = r
 		}
+		if analyzer, ok := c.findBlockAnalyzer(n.Name); ok {
+			node.Analysis = analyzer(node)
+		}
 
 		return &node, nil
 	case *parser.ASTRaw:
@@ -66,7 +70,18 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 				return nil, parser.Errorf(n, "%s", err)
 			}
 
-			return &TagNode{n.Token, f}, nil
+			var analysis NodeAnalysis
+			if analyzer, ok := c.findTagAnalyzer(n.Name); ok {
+				analysis = analyzer(n.Args)
+			}
+
+			return &TagNode{n.Token, f, analysis}, nil
+		}
+
+		if c.LaxTags {
+			// Unknown tag → silent no-op when LaxTags is enabled.
+			noopFn := func(io.Writer, Context) error { return nil }
+			return &TagNode{n.Token, noopFn, NodeAnalysis{}}, nil
 		}
 
 		return nil, parser.Errorf(n, "undefined tag %q", n.Name)
@@ -74,8 +89,10 @@ func (c *Config) compileNode(n parser.ASTNode) (Node, parser.Error) {
 		return &TextNode{n.Token}, nil
 	case *parser.ASTObject:
 		return &ObjectNode{n.Token, n.Expr}, nil
+	case *parser.ASTBroken:
+		return &BrokenNode{n.Token}, nil
 	case *parser.ASTTrim:
-		return &TrimNode{TrimDirection: n.TrimDirection}, nil
+		return &TrimNode{TrimDirection: n.TrimDirection, Greedy: c.Greedy}, nil
 	default:
 		panic(fmt.Errorf("un-compilable node type %T", n))
 	}
@@ -103,7 +120,23 @@ func (c *Config) compileNodes(nodes []parser.ASTNode) ([]Node, parser.Error) {
 			return nil, err
 		}
 
+		var trimLeft, trimRight bool
+		switch compiled.(type) {
+		case *TagNode, *BlockNode:
+			trimLeft = c.TrimTagLeft
+			trimRight = c.TrimTagRight
+		case *ObjectNode:
+			trimLeft = c.TrimOutputLeft
+			trimRight = c.TrimOutputRight
+		}
+
+		if trimLeft {
+			out = append(out, &TrimNode{TrimDirection: parser.Left, Greedy: c.Greedy})
+		}
 		out = append(out, compiled)
+		if trimRight {
+			out = append(out, &TrimNode{TrimDirection: parser.Right, Greedy: c.Greedy})
+		}
 	}
 
 	return out, nil

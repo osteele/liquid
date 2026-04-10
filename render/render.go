@@ -2,11 +2,11 @@
 package render
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/osteele/liquid/parser"
@@ -14,17 +14,36 @@ import (
 	"github.com/osteele/liquid/values"
 )
 
+// sizeLimitWriter wraps an io.Writer and stops writing once the byte limit is reached.
+type sizeLimitWriter struct {
+	w     io.Writer
+	limit int64
+	total int64
+}
+
+func (s *sizeLimitWriter) Write(p []byte) (int, error) {
+	s.total += int64(len(p))
+	if s.total > s.limit {
+		return 0, fmt.Errorf("render size limit of %d bytes exceeded", s.limit)
+	}
+	return s.w.Write(p)
+}
+
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
-	tw := trimWriter{w: w}
+	var out io.Writer = w
+	if c.SizeLimit > 0 {
+		out = &sizeLimitWriter{w: w, limit: c.SizeLimit}
+	}
+	tw := trimWriter{w: out}
 
 	err := node.render(&tw, newNodeContext(vars, c))
 	if err != nil {
 		return err
 	}
 
-	if _, err := tw.Flush(); err != nil {
-		panic(err)
+	if _, flushErr := tw.Flush(); flushErr != nil {
+		return &RenderError{parser.WrapError(flushErr, invalidLoc)}
 	}
 
 	return nil
@@ -38,14 +57,25 @@ func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	}
 
 	for _, n := range seq {
+		if ctx := c.config.Context; ctx != nil {
+			if ctxErr := ctx.Err(); ctxErr != nil {
+				return &RenderError{parser.WrapError(ctxErr, invalidLoc)}
+			}
+		}
 		err := n.render(tw, c)
 		if err != nil {
+			if h := c.config.ExceptionHandler; h != nil {
+				if _, writeErr := io.WriteString(tw, h(err)); writeErr != nil {
+					return wrapRenderError(writeErr, n)
+				}
+				continue
+			}
 			return err
 		}
 	}
 
-	if _, err := tw.Flush(); err != nil {
-		panic(err)
+	if _, flushErr := tw.Flush(); flushErr != nil {
+		return &RenderError{parser.WrapError(flushErr, invalidLoc)}
 	}
 
 	return nil
@@ -65,6 +95,13 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 
 	err := renderer(w, rendererContext{ctx, nil, n})
 
+	// Annotate UndefinedVariableError with the innermost enclosing block tag
+	// source, but only the first time (innermost wins over outer blocks).
+	if uve, ok := err.(*UndefinedVariableError); ok && uve.BlockContext == "" {
+		uve.BlockContext = n.Source
+		uve.BlockLine = n.SourceLoc.LineNo
+	}
+
 	return wrapRenderError(err, n)
 }
 
@@ -79,15 +116,135 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 	return nil
 }
 
+// isNilBinding reports whether a raw binding value should be considered nil.
+// It handles Go's typed-nil gotcha: a value like (*int)(nil) stored in an
+// interface{} is not == nil, but it carries no usable data. We dereference
+// pointer chains so that (**T)(nil) and (*T)(nil) are both caught.
+func isNilBinding(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return true
+		}
+		rv = rv.Elem()
+	}
+	return false
+}
+
 func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
+	// StrictVariables: check before evaluation so that undefined root
+	// variables are caught even when a filter chain transforms nil → "".
+	// A nil binding is treated the same as a missing key: both mean the
+	// variable has no usable value and should produce an UndefinedVariableError.
+	// isNilBinding is used instead of v == nil to also catch typed nils
+	// (e.g. (*int)(nil)) and nil pointer chains (e.g. (**int)(nil)).
+	if ctx.config.StrictVariables {
+		vars := n.expr.Variables()
+		if len(vars) > 0 && len(vars[0]) > 0 {
+			root := vars[0][0]
+			v, exists := ctx.bindings[root]
+			if !exists || isNilBinding(v) {
+				// RootName is the root segment only (e.g. "user" for {{ user.name }}),
+				// matching Ruby Liquid's behaviour. FullPath carries the full dotted
+				// path so Error() and callers have more context.
+				fullPath := strings.Join(vars[0], ".")
+				locErr := parser.Errorf(n, "undefined variable %q", fullPath)
+				uve := &UndefinedVariableError{RootName: root, FullPath: fullPath, loc: locErr}
+				if audit := ctx.config.Audit; audit != nil {
+					if audit.OnError != nil {
+						audit.OnError(n.SourceLoc, n.EndLoc, n.Source, uve)
+					}
+					if audit.OnObject != nil && !audit.suppressInner {
+						parts := vars[0]
+						audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, strings.Join(parts, "."), parts, nil, nil, audit.depth, uve)
+					}
+				}
+				return uve
+			}
+		}
+	}
+
+	// Set up filter pipeline capture if audit is active.
+	var auditPipeline []FilterStep
+	if audit := ctx.config.Audit; audit != nil && !audit.suppressInner {
+		audit.filterTarget = &auditPipeline
+		audit.currentLocStart = n.SourceLoc
+		audit.currentLocEnd = n.EndLoc
+		audit.currentLocSource = n.Source
+	}
+
 	value, err := ctx.Evaluate(n.expr)
+
+	if audit := ctx.config.Audit; audit != nil {
+		audit.filterTarget = nil
+		audit.currentLocStart = parser.SourceLoc{}
+		audit.currentLocEnd = parser.SourceLoc{}
+		audit.currentLocSource = ""
+	}
+
 	if err != nil {
+		if audit := ctx.config.Audit; audit != nil && audit.OnError != nil {
+			audit.OnError(n.SourceLoc, n.EndLoc, n.Source, err)
+		}
+		// Emit OnObject even on error (with nil value) so the audit layer can
+		// record the Expression with Error populated.
+		if audit := ctx.config.Audit; audit != nil && audit.OnObject != nil && !audit.suppressInner {
+			vars := n.expr.Variables()
+			name, parts := "", []string{}
+			if len(vars) > 0 && len(vars[0]) > 0 {
+				parts = vars[0]
+				name = strings.Join(parts, ".")
+			}
+			audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, name, parts, nil, auditPipeline, audit.depth, err)
+		}
 		return wrapRenderError(err, n)
 	}
 
-	if value == nil && ctx.config.StrictVariables {
-		return wrapRenderError(errors.New("undefined variable"), n)
+	// StrictNestedVariables: if evaluation succeeded but returned nil on a
+	// multi-segment path (e.g. {{ customer.invalid }}), the nested attribute
+	// doesn't exist. This is a stricter check than StrictVariables (which only
+	// checks the root). Only fires for paths with more than one segment so that
+	// single-variable dynamic lookups ({{ [key] }}) are not affected.
+	if ctx.config.StrictNestedVariables && value == nil {
+		vars := n.expr.Variables()
+		if len(vars) > 0 && len(vars[0]) > 1 {
+			fullPath := strings.Join(vars[0], ".")
+			locErr := parser.Errorf(n, "undefined variable %q", fullPath)
+			uve := &UndefinedVariableError{RootName: vars[0][0], FullPath: fullPath, loc: locErr}
+			if audit := ctx.config.Audit; audit != nil {
+				if audit.OnError != nil {
+					audit.OnError(n.SourceLoc, n.EndLoc, n.Source, uve)
+				}
+				if audit.OnObject != nil && !audit.suppressInner {
+					parts := vars[0]
+					audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, strings.Join(parts, "."), parts, nil, auditPipeline, audit.depth, uve)
+				}
+			}
+			return uve
+		}
 	}
+
+	// Emit audit event for this object node (no error case).
+	if audit := ctx.config.Audit; audit != nil && audit.OnObject != nil && !audit.suppressInner {
+		vars := n.expr.Variables()
+		name, parts := "", []string{}
+		if len(vars) > 0 && len(vars[0]) > 0 {
+			parts = vars[0]
+			name = strings.Join(parts, ".")
+		}
+		audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, name, parts, value, auditPipeline, audit.depth, nil)
+	}
+
+	if gf := ctx.config.globalFilter; gf != nil {
+		value, err = gf(value)
+		if err != nil {
+			return wrapRenderError(err, n)
+		}
+	}
+
 	if sv, isSafe := value.(values.SafeValue); isSafe {
 		err = writeObject(w, sv.Value)
 	} else {
@@ -111,8 +268,19 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 
 func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
 	for _, c := range n.Children {
+		if ctxVal := ctx.config.Context; ctxVal != nil {
+			if ctxErr := ctxVal.Err(); ctxErr != nil {
+				return &RenderError{parser.WrapError(ctxErr, invalidLoc)}
+			}
+		}
 		err := c.render(w, ctx)
 		if err != nil {
+			if h := ctx.config.ExceptionHandler; h != nil {
+				if _, writeErr := io.WriteString(w, h(err)); writeErr != nil {
+					return wrapRenderError(writeErr, n)
+				}
+				continue
+			}
 			return err
 		}
 	}
@@ -130,19 +298,32 @@ func (n *TextNode) render(w *trimWriter, _ nodeContext) Error {
 	return wrapRenderError(err, n)
 }
 
+// render for BrokenNode is a no-op: the failure was captured as a Diagnostic at parse time.
+func (n *BrokenNode) render(_ *trimWriter, _ nodeContext) Error { return nil }
+
 func (n *TrimNode) render(w *trimWriter, _ nodeContext) Error {
 	if n.TrimDirection == parser.Left {
-		return wrapRenderError(w.TrimLeft(), n)
-	} else {
-		w.TrimRight()
-		return nil
+		if n.Greedy {
+			return wrapRenderError(w.TrimLeft(), n)
+		}
+		return wrapRenderError(w.TrimLeftNonGreedy(), n)
 	}
+	if n.Greedy {
+		w.TrimRight()
+	} else {
+		w.TrimRightNonGreedy()
+	}
+	return nil
 }
 
 // writeObject writes a value used in an object node
 func writeObject(w io.Writer, value any) error {
 	value = values.ToLiquid(value)
 	if value == nil {
+		return nil
+	}
+	// EmptyDrop and BlankDrop always render as an empty string.
+	if _, ok := value.(values.LiquidSentinel); ok {
 		return nil
 	}
 
@@ -167,13 +348,49 @@ func writeObject(w io.Writer, value any) error {
 		_, err := io.WriteString(w, value.Format("2006-01-02 15:04:05 -0700"))
 		return err
 	case []byte:
-		_, err := w.Write(value)
+		_, err := io.WriteString(w, string(value))
 		return err
 	}
 
 	rt := reflect.ValueOf(value)
 	switch rt.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		_, err := io.WriteString(w, strconv.FormatInt(rt.Int(), 10))
+		return err
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		_, err := io.WriteString(w, strconv.FormatUint(rt.Uint(), 10))
+		return err
+	case reflect.Float32:
+		_, err := io.WriteString(w, strconv.FormatFloat(rt.Float(), 'f', -1, 32))
+		return err
+	case reflect.Float64:
+		_, err := io.WriteString(w, strconv.FormatFloat(rt.Float(), 'f', -1, 64))
+		return err
+	case reflect.Bool:
+		if rt.Bool() {
+			_, err := io.WriteString(w, "true")
+			return err
+		}
+		_, err := io.WriteString(w, "false")
+		return err
+	case reflect.String:
+		_, err := io.WriteString(w, rt.String())
+		return err
 	case reflect.Array, reflect.Slice:
+		// Byte arrays/slices (including defined types like type MyBytes []byte)
+		// are rendered as strings, not as space-joined numeric sequences.
+		if rt.Type().Elem().Kind() == reflect.Uint8 {
+			if rt.Kind() == reflect.Slice {
+				_, err := io.WriteString(w, string(rt.Bytes()))
+				return err
+			}
+			b := make([]byte, rt.Len())
+			for i := range rt.Len() {
+				b[i] = byte(rt.Index(i).Uint())
+			}
+			_, err := io.WriteString(w, string(b))
+			return err
+		}
 		for i := range rt.Len() {
 			item := rt.Index(i)
 			if item.IsValid() {
@@ -186,7 +403,14 @@ func writeObject(w io.Writer, value any) error {
 
 		return nil
 	case reflect.Ptr:
-		return writeObject(w, reflect.ValueOf(value).Elem())
+		rv := reflect.ValueOf(value)
+		if rv.IsNil() {
+			return nil
+		}
+		return writeObject(w, rv.Elem().Interface())
+	case reflect.Chan, reflect.Func, reflect.Complex64, reflect.Complex128, reflect.UnsafePointer:
+		// Unsupported Go kinds surfaced directly (e.g. inside array elements).
+		return values.TypeError(fmt.Sprintf("unsupported type %s: chan, func, and complex values cannot be used in Liquid templates", rt.Type()))
 	default:
 		_, err := io.WriteString(w, fmt.Sprint(value))
 		return err
