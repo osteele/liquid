@@ -647,7 +647,7 @@ func TestS10E3_UndefinedVar_NameField_Simple(t *testing.T) {
 	err := s10renderErr(t, eng, `{{ my_missing_var }}`, map[string]any{})
 	var ue *render.UndefinedVariableError
 	require.True(t, errors.As(err, &ue))
-	assert.Equal(t, "my_missing_var", ue.Name)
+	assert.Equal(t, "my_missing_var", ue.RootName)
 }
 
 func TestS10E3_UndefinedVar_NameField_DottedAccessPreservesRoot(t *testing.T) {
@@ -657,7 +657,7 @@ func TestS10E3_UndefinedVar_NameField_DottedAccessPreservesRoot(t *testing.T) {
 	err := s10renderErr(t, eng, `{{ user.name }}`, map[string]any{})
 	var ue *render.UndefinedVariableError
 	require.True(t, errors.As(err, &ue))
-	assert.Equal(t, "user", ue.Name)
+	assert.Equal(t, "user", ue.RootName)
 }
 
 // E4 — Line number and markup context correct.
@@ -1079,7 +1079,7 @@ func TestS10_Integration_StrictVariables_MultipleUndefined(t *testing.T) {
 	out, err := tpl.RenderString(map[string]any{}, liquid.WithErrorHandler(func(e error) string {
 		var ue *render.UndefinedVariableError
 		if errors.As(e, &ue) {
-			names = append(names, ue.Name)
+			names = append(names, ue.RootName)
 		}
 		return "?"
 	}))

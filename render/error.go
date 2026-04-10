@@ -60,7 +60,8 @@ func (e *RenderError) Unwrap() error { return e.inner }
 // are set to the innermost enclosing block tag source and line when the error
 // bubbles up through BlockNode.render.
 type UndefinedVariableError struct {
-	Name         string
+	RootName     string // root segment only, e.g. "user" for {{ user.name }}
+	FullPath     string // full dotted path, e.g. "user.name"; empty when single-segment
 	loc          parser.Error
 	BlockContext string // e.g. "{% if cond %}"
 	BlockLine    int    // 1-based line of the enclosing block tag
@@ -87,14 +88,22 @@ func (e *UndefinedVariableError) Error() string {
 			blockCtx = fmt.Sprintf(" (inside %s)", e.BlockContext)
 		}
 	}
-	return fmt.Sprintf("Liquid error%s: undefined variable %q%s%s", line, e.Name, locative, blockCtx)
+	display := e.RootName
+	if e.FullPath != "" {
+		display = e.FullPath
+	}
+	return fmt.Sprintf("Liquid error%s: undefined variable %q%s%s", line, display, locative, blockCtx)
 }
 
 func (e *UndefinedVariableError) Cause() error    { return nil }
 func (e *UndefinedVariableError) Path() string    { return e.loc.Path() }
 func (e *UndefinedVariableError) LineNumber() int { return e.loc.LineNumber() }
 func (e *UndefinedVariableError) Message() string {
-	return fmt.Sprintf("undefined variable %q", e.Name)
+	display := e.RootName
+	if e.FullPath != "" {
+		display = e.FullPath
+	}
+	return fmt.Sprintf("undefined variable %q", display)
 }
 func (e *UndefinedVariableError) MarkupContext() string { return e.loc.MarkupContext() }
 

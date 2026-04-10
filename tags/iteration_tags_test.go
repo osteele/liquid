@@ -37,15 +37,15 @@ var iterationTests = []struct{ in, expected string }{
 	{`{% for a in array offset: offset %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array offset: loopmods.offset %}{{ a }}.{% endfor %}`, "second.third."},
 	{`{% for a in array offset: loopmods["offset"] %}{{ a }}.{% endfor %}`, "second.third."},
-	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "first."},
+	{`{% for a in array reversed limit: 1 %}{{ a }}.{% endfor %}`, "third."},
 	{`{% for a in array limit: 0 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array limit: 0 %}{{ a }}.{% else %}ELSE{% endfor %}`, "ELSE"},
 	{`{% for a in array offset: 3 %}{{ a }}.{% endfor %}`, ""},
 	{`{% for a in array offset: 10 %}{{ a }}.{% endfor %}`, ""},
-	// Combining multiple modifiers — Ruby behavior: offset → limit → reversed (always, regardless of syntax order).
-	// This matches Ruby Shopify Liquid: offset/limit slice first, reversed applied last.
-	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "third.second."},
-	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "third.second."}, // same result - syntax order doesn't matter
+	// Combining multiple modifiers: reversed is applied first, then offset, then limit.
+	// This means offset:N skips N elements from the start of the already-reversed view.
+	{`{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`, "second.first."},
+	{`{% for a in array offset:1 reversed %}{{ a }}.{% endfor %}`, "second.first."}, // same result - syntax order doesn't matter
 	{`{% for a in array limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},
 	{`{% for a in array offset:1 limit:1 %}{{ a }}.{% endfor %}`, "second."}, // same result
 	{`{% for a in array reversed limit:1 offset:1 %}{{ a }}.{% endfor %}`, "second."},

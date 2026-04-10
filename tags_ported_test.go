@@ -479,37 +479,37 @@ func TestPorted_For_SpacingInDeclaration(t *testing.T) {
 		tplRenderWith(t, `{% for       item   in   items %}{{item}}{% endfor %}`, assigns))
 }
 
-// Modifier order: Ruby behavior is always offset → limit → reversed
-// Source: Ruby for.rb collection_segment implementation
+// Modifier order: reversed is applied first, then offset, then limit.
+// This means offset:N skips N elements from the start of the reversed view.
 func TestPorted_For_ModifierOrder_ReversedWithLimit(t *testing.T) {
-	// reversed limit:2 on [1..5]: slice(0,2)=[1,2] → reversed=[2,1]
+	// reversed limit:2 on [1..5]: reversed=[5,4,3,2,1] → limit:2=[5,4]
 	assigns := map[string]any{"array": []int{1, 2, 3, 4, 5}}
-	require.Equal(t, "21",
+	require.Equal(t, "54",
 		tplRenderWith(t, `{% for i in array reversed limit:2 %}{{ i }}{% endfor %}`, assigns))
 	// same result regardless of syntax order
-	require.Equal(t, "21",
+	require.Equal(t, "54",
 		tplRenderWith(t, `{% for i in array limit:2 reversed %}{{ i }}{% endfor %}`, assigns))
 }
 
 func TestPorted_For_ModifierOrder_ReversedWithOffset(t *testing.T) {
-	// reversed offset:2 on [1..5]: slice(2,nil)=[3,4,5] → reversed=[5,4,3]
+	// reversed offset:2 on [1..5]: reversed=[5,4,3,2,1] → offset:2=[3,2,1]
 	assigns := map[string]any{"array": []int{1, 2, 3, 4, 5}}
-	require.Equal(t, "543",
+	require.Equal(t, "321",
 		tplRenderWith(t, `{% for i in array reversed offset:2 %}{{ i }}{% endfor %}`, assigns))
 	// same result regardless of syntax order
-	require.Equal(t, "543",
+	require.Equal(t, "321",
 		tplRenderWith(t, `{% for i in array offset:2 reversed %}{{ i }}{% endfor %}`, assigns))
 }
 
 func TestPorted_For_ModifierOrder_AllThree(t *testing.T) {
-	// reversed limit:2 offset:1 on [1..5]: slice(1,3)=[2,3] → reversed=[3,2]
+	// reversed limit:2 offset:1 on [1..5]: reversed=[5,4,3,2,1] → offset:1=[4,3,2,1] → limit:2=[4,3]
 	assigns := map[string]any{"array": []int{1, 2, 3, 4, 5}}
-	require.Equal(t, "32",
+	require.Equal(t, "43",
 		tplRenderWith(t, `{% for i in array reversed limit:2 offset:1 %}{{ i }}{% endfor %}`, assigns))
 	// syntax order does not matter
-	require.Equal(t, "32",
+	require.Equal(t, "43",
 		tplRenderWith(t, `{% for i in array limit:2 offset:1 reversed %}{{ i }}{% endfor %}`, assigns))
-	require.Equal(t, "32",
+	require.Equal(t, "43",
 		tplRenderWith(t, `{% for i in array offset:1 reversed limit:2 %}{{ i }}{% endfor %}`, assigns))
 }
 

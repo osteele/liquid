@@ -180,8 +180,14 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 				iter = reverseWrapper{iter}
 			}
 		} else {
-			// Normal path: Ruby behavior is always offset → limit → reversed,
-			// regardless of the order the modifiers appear in the template.
+			// Apply reversed first, then offset, then limit.
+			// This ensures that offset:N skips N elements from the start of the
+			// (already-reversed) view, which is the expected behavior for templates
+			// like {% for item in items reversed offset:1 %}.
+			if stmt.Loop.Reversed {
+				iter = reverseWrapper{iter}
+			}
+
 			if stmt.Loop.Offset != nil {
 				ov, err := ctx.Evaluate(stmt.Loop.Offset)
 				if err != nil {
@@ -213,11 +219,6 @@ func loopTagCompiler(node render.BlockNode) (func(io.Writer, render.Context) err
 				if limit >= 0 {
 					iter = limitWrapper{iter, limit}
 				}
-			}
-
-			// Apply reversed last (Ruby behavior: offset → limit → reversed).
-			if stmt.Loop.Reversed {
-				iter = reverseWrapper{iter}
 			}
 		}
 

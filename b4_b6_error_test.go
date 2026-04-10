@@ -253,7 +253,7 @@ func TestB4_UndefinedVariableError_StrictVariables(t *testing.T) {
 	var uve *render.UndefinedVariableError
 	assert.True(t, errors.As(err, &uve),
 		"errors.As must find *render.UndefinedVariableError, got %T", err)
-	assert.Equal(t, "missing_var", uve.Name,
+	assert.Equal(t, "missing_var", uve.RootName,
 		"UndefinedVariableError.Name must be the exact variable name")
 }
 
@@ -275,7 +275,7 @@ func TestB4_UndefinedVariableError_NamePreservation(t *testing.T) {
 			require.Error(t, err)
 			var uve *render.UndefinedVariableError
 			require.True(t, errors.As(err, &uve))
-			assert.Contains(t, uve.Name, strings.SplitN(c.varName, ".", 2)[0],
+			assert.Contains(t, uve.RootName, strings.SplitN(c.varName, ".", 2)[0],
 				"UndefinedVariableError.Name must contain the variable root")
 		})
 	}
@@ -609,7 +609,7 @@ func TestB6_UndefinedVariableInBlock(t *testing.T) {
 		var uve *render.UndefinedVariableError
 		require.True(t, errors.As(err, &uve),
 			"errors.As must still find UndefinedVariableError inside an if-block")
-		assert.Equal(t, "ghost_var", uve.Name)
+		assert.Equal(t, "ghost_var", uve.RootName)
 		assert.Equal(t, 1, uve.LineNumber())
 	})
 
@@ -624,7 +624,7 @@ func TestB6_UndefinedVariableInBlock(t *testing.T) {
 		var uve *render.UndefinedVariableError
 		require.True(t, errors.As(err, &uve),
 			"errors.As must find UndefinedVariableError inside a for-block")
-		assert.Equal(t, "missing", uve.Name)
+		assert.Equal(t, "missing", uve.RootName)
 	})
 
 	t.Run("multiline_correct_line", func(t *testing.T) {
@@ -810,7 +810,7 @@ func TestB6_UndefinedVarConsistentAcrossFormats(t *testing.T) {
 			require.True(t, errors.As(err, &uve),
 				"errors.As must find *render.UndefinedVariableError, got %T", err)
 
-			assert.Equal(t, c.wantVar, uve.Name,
+			assert.Equal(t, c.wantVar, uve.RootName,
 				"Name must be the root variable, not the full expression text")
 			assert.Equal(t, c.wantLine, uve.LineNumber(),
 				"LineNumber must point to the {{ expr }} line, not the block tag")
@@ -860,7 +860,7 @@ func TestB6_UndefinedVar_FilterDoesNotHideError(t *testing.T) {
 		assert.True(t, errors.As(err, &uve),
 			"error must be *render.UndefinedVariableError even with filters, tpl: %q", tpl)
 		if uve != nil {
-			assert.Equal(t, "ghost", uve.Name,
+			assert.Equal(t, "ghost", uve.RootName,
 				"Name must be the root variable name, not the filter pipeline, tpl: %q", tpl)
 		}
 	}

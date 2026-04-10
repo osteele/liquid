@@ -302,7 +302,7 @@ func TestPortedErrors_ErrorChain_UndefinedVariable(t *testing.T) {
 
 	var ue *render.UndefinedVariableError
 	require.True(t, errors.As(err, &ue), "expected *render.UndefinedVariableError in chain")
-	require.Equal(t, "my_missing_var", ue.Name)
+	require.Equal(t, "my_missing_var", ue.RootName)
 
 	// Message() includes the variable name but not a "Liquid" prefix
 	require.Contains(t, ue.Message(), "my_missing_var")

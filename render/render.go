@@ -116,21 +116,43 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 	return nil
 }
 
+// isNilBinding reports whether a raw binding value should be considered nil.
+// It handles Go's typed-nil gotcha: a value like (*int)(nil) stored in an
+// interface{} is not == nil, but it carries no usable data. We dereference
+// pointer chains so that (**T)(nil) and (*T)(nil) are both caught.
+func isNilBinding(v any) bool {
+	if v == nil {
+		return true
+	}
+	rv := reflect.ValueOf(v)
+	for rv.Kind() == reflect.Ptr {
+		if rv.IsNil() {
+			return true
+		}
+		rv = rv.Elem()
+	}
+	return false
+}
+
 func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	// StrictVariables: check before evaluation so that undefined root
 	// variables are caught even when a filter chain transforms nil → "".
 	// A nil binding is treated the same as a missing key: both mean the
 	// variable has no usable value and should produce an UndefinedVariableError.
+	// isNilBinding is used instead of v == nil to also catch typed nils
+	// (e.g. (*int)(nil)) and nil pointer chains (e.g. (**int)(nil)).
 	if ctx.config.StrictVariables {
 		vars := n.expr.Variables()
 		if len(vars) > 0 && len(vars[0]) > 0 {
 			root := vars[0][0]
 			v, exists := ctx.bindings[root]
-			if !exists || v == nil {
-				// Name is the root variable name only (e.g. "user", not "user.name"),
-				// matching Ruby Liquid's behaviour for dotted-path access.
-				locErr := parser.Errorf(n, "undefined variable %q", root)
-				uve := &UndefinedVariableError{Name: root, loc: locErr}
+			if !exists || isNilBinding(v) {
+				// RootName is the root segment only (e.g. "user" for {{ user.name }}),
+				// matching Ruby Liquid's behaviour. FullPath carries the full dotted
+				// path so Error() and callers have more context.
+				fullPath := strings.Join(vars[0], ".")
+				locErr := parser.Errorf(n, "undefined variable %q", fullPath)
+				uve := &UndefinedVariableError{RootName: root, FullPath: fullPath, loc: locErr}
 				if audit := ctx.config.Audit; audit != nil {
 					if audit.OnError != nil {
 						audit.OnError(n.SourceLoc, n.EndLoc, n.Source, uve)
@@ -179,6 +201,30 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 			audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, name, parts, nil, auditPipeline, audit.depth, err)
 		}
 		return wrapRenderError(err, n)
+	}
+
+	// StrictNestedVariables: if evaluation succeeded but returned nil on a
+	// multi-segment path (e.g. {{ customer.invalid }}), the nested attribute
+	// doesn't exist. This is a stricter check than StrictVariables (which only
+	// checks the root). Only fires for paths with more than one segment so that
+	// single-variable dynamic lookups ({{ [key] }}) are not affected.
+	if ctx.config.StrictNestedVariables && value == nil {
+		vars := n.expr.Variables()
+		if len(vars) > 0 && len(vars[0]) > 1 {
+			fullPath := strings.Join(vars[0], ".")
+			locErr := parser.Errorf(n, "undefined variable %q", fullPath)
+			uve := &UndefinedVariableError{RootName: vars[0][0], FullPath: fullPath, loc: locErr}
+			if audit := ctx.config.Audit; audit != nil {
+				if audit.OnError != nil {
+					audit.OnError(n.SourceLoc, n.EndLoc, n.Source, uve)
+				}
+				if audit.OnObject != nil && !audit.suppressInner {
+					parts := vars[0]
+					audit.OnObject(n.SourceLoc, n.EndLoc, n.Source, strings.Join(parts, "."), parts, nil, auditPipeline, audit.depth, uve)
+				}
+			}
+			return uve
+		}
 	}
 
 	// Emit audit event for this object node (no error case).

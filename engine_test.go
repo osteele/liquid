@@ -290,7 +290,7 @@ func TestUndefinedVariableError_Type(t *testing.T) {
 
 	var ue *render.UndefinedVariableError
 	require.True(t, errors.As(err, &ue), "expected *render.UndefinedVariableError, got %T", err)
-	require.Equal(t, "my_missing_var", ue.Name)
+	require.Equal(t, "my_missing_var", ue.RootName)
 	require.Contains(t, err.Error(), "my_missing_var")
 }
 

@@ -811,17 +811,17 @@ func TestS14_For_AllModifiers_OffsetLimitReversed(t *testing.T) {
 }
 
 func TestS14_For_Modifier_ReversedLimitOne(t *testing.T) {
-	// arr=[first,second,third]; offset:0; limit:1=[first]; reversed=[first]
+	// arr=[first,second,third]; reversed=[third,second,first]; limit:1=[third]
 	out := renderS1(t, `{% for a in array reversed limit:1 %}{{ a }}{% endfor %}`,
 		map[string]any{"array": []string{"first", "second", "third"}})
-	require.Equal(t, "first", out)
+	require.Equal(t, "third", out)
 }
 
 func TestS14_For_Modifier_ReversedOffsetOne(t *testing.T) {
-	// arr=[first,second,third]; offset:1=[second,third]; reversed=[third,second]
+	// arr=[first,second,third]; reversed=[third,second,first]; offset:1=[second,first]
 	out := renderS1(t, `{% for a in array reversed offset:1 %}{{ a }}.{% endfor %}`,
 		map[string]any{"array": []string{"first", "second", "third"}})
-	require.Equal(t, "third.second.", out)
+	require.Equal(t, "second.first.", out)
 }
 
 func TestS14_For_LimitFromVariable(t *testing.T) {

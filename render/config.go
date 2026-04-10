@@ -14,7 +14,12 @@ type Config struct {
 
 	Cache           sync.Map // key: string, value: []byte — safe for concurrent use
 	StrictVariables bool
-	TemplateStore   TemplateStore
+	// StrictNestedVariables extends StrictVariables to also error when a
+	// multi-segment dotted path (e.g. {{ customer.invalid }}) evaluates to nil,
+	// meaning the nested attribute does not exist on the parent object.
+	// StrictVariables must also be enabled for root-variable checking.
+	StrictNestedVariables bool
+	TemplateStore         TemplateStore
 
 	// Globals are variables that are accessible in every rendering context,
 	// including isolated sub-contexts created by the {% render %} tag.

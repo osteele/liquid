@@ -128,6 +128,14 @@ func (e *Engine) StrictVariables() {
 	e.cfg.StrictVariables = true
 }
 
+// StrictNestedVariables extends strict variable checking to also error when a
+// multi-segment dotted path (e.g. {{ customer.invalid }}) evaluates to nil.
+// StrictVariables should also be enabled for root-variable checking.
+func (e *Engine) StrictNestedVariables() {
+	e.checkNotFrozen("StrictNestedVariables")
+	e.cfg.StrictNestedVariables = true
+}
+
 // LaxFilters causes the renderer to silently pass through the input value
 // when the template contains an undefined filter, matching Shopify Liquid behavior.
 // By default, undefined filters cause an error.
