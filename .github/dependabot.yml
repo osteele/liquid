@@ -1,0 +1,56 @@
+version: 2
+
+updates:
+  #
+  # Go modules
+  #
+  - package-ecosystem: "gomod"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+
+    labels:
+      - "dependencies"
+      - "go"
+
+    groups:
+      go-dependencies:
+        patterns:
+          - "*"
+
+  #
+  # Docker
+  #
+  - package-ecosystem: "docker"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+
+    labels:
+      - "dependencies"
+      - "docker"
+
+    groups:
+      docker-dependencies:
+        patterns:
+          - "*"
+
+  #
+  # GitHub Actions
+  #
+  - package-ecosystem: "github-actions"
+    directory: "/"
+
+    schedule:
+      interval: "weekly"
+
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+    groups:
+      github-actions:
+        patterns:
+          - "*"
