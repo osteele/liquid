@@ -2,7 +2,9 @@ package values
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 	"time"
@@ -74,6 +76,35 @@ func convertValueToFloat(value any, typ reflect.Type) (float64, error) {
 	return 0, conversionError("", value, typ)
 }
 
+// TODO: need to confirm if time conversion just needs to support unix time
+func convertToTime(value any) (time.Time, error) {
+	switch v := value.(type) {
+	case json.Number:
+		i, err := v.Int64()
+		if err != nil {
+			return time.Time{}, err
+		}
+		return time.Unix(i, 0), nil
+	case int64:
+		return time.Unix(v, 0), nil
+	case int:
+		return time.Unix(int64(v), 0), nil
+	case float64:
+		// float64 timestamp is only accepted when it represents an exact integer value.
+		// This prevents precision loss caused by IEEE-754 floating point representation.
+		if v < float64(math.MinInt64) || v > float64(math.MaxInt64) {
+			return time.Time{}, errors.New("value out of range for time conversion")
+		}
+		iv := int64(v)
+		if float64(iv) != v {
+			return time.Time{}, errors.New("float value is not an exact integer")
+		}
+		return time.Unix(iv, 0), nil
+	default:
+		return time.Time{}, errors.New("unsupported type for time conversion")
+	}
+}
+
 // Convert value to the type. This is a more aggressive conversion, that will
 // recursively create new map and slice values as necessary. It doesn't
 // handle circular references.
@@ -81,13 +112,20 @@ func convertValueToFloat(value any, typ reflect.Type) (float64, error) {
 func Convert(value any, typ reflect.Type) (any, error) { //nolint: gocyclo
 	value = ToLiquid(value)
 	rv := reflect.ValueOf(value)
+
 	// int.Convert(string) returns "\x01" not "1", so guard against that in the following test
 	if typ.Kind() != reflect.String && value != nil && rv.Type().ConvertibleTo(typ) {
 		return rv.Convert(typ).Interface(), nil
 	}
-	if typ == timeType && rv.Kind() == reflect.String {
-		return ParseDate(value.(string))
+
+	if typ == timeType {
+		if rv.Kind() == reflect.String {
+			return ParseDate(value.(string))
+		}
+
+		return convertToTime(value)
 	}
+
 	// currently unused:
 	// case reflect.PtrTo(r.Type()) == typ:
 	// 	return &value, nil

@@ -56,3 +56,15 @@
 {% endif %}
 
 {{ "March 14, 2016" | date: "%b %d, %y" }}
+
+{{ "now" | date: "%B %d %Y" }}
+
+{{ "now" | date: "%s" | plus: 432000 | date: "%B %d, %Y" }}
+
+{{ "now" | date: "%s" }}
+
+{{ "now" | date: "%s" | plus: 86400 }}
+
+{{ "now" | date: "%s" | plus: 86400 | date: "%Y-%m-%d" }}
+
+{{ "now" | date: "%s" | plus: 432000 | date: "%Y-%m-%d %H:%M:%S" }}
