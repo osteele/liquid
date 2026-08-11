@@ -527,6 +527,8 @@ func uniqFilter(a []any) (result []any) {
 
 var handleizeRe = regexp.MustCompile(`[^a-z0-9]+`)
 
+var omittedWhereTarget = &struct{}{}
+
 func handleizeFilter(s string) string {
 	s = strings.ToLower(s)
 	s = handleizeRe.ReplaceAllString(s, "-")
@@ -536,11 +538,11 @@ func handleizeFilter(s string) string {
 
 func whereFilter(a []any, key string, targetValue func(any) any) (result []any) {
 	keyValue := values.ValueOf(key)
-	target := targetValue(nil)
+	target := targetValue(omittedWhereTarget)
 	for _, obj := range a {
 		value := values.ValueOf(obj)
 		prop := value.PropertyValue(keyValue).Interface()
-		if target == nil {
+		if target == omittedWhereTarget {
 			// One-arg form: truthy check
 			if prop != nil && prop != false {
 				result = append(result, obj)

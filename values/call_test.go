@@ -53,6 +53,13 @@ func TestCall_optional(t *testing.T) {
 	value, err = Call(reflect.ValueOf(fn), []any{5, 10})
 	require.NoError(t, err)
 	require.Equal(t, "5,10.", value)
+
+	nilDefault := func(value func(any) any) any {
+		return value("default")
+	}
+	value, err = Call(reflect.ValueOf(nilDefault), []any{nil})
+	require.NoError(t, err)
+	require.Nil(t, value)
 }
 
 func TestCall_variadic(t *testing.T) {

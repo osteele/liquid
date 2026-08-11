@@ -99,6 +99,9 @@ func isDefaultFunctionType(typ reflect.Type) bool {
 
 func makeConstantFunction(typ reflect.Type, arg any) reflect.Value {
 	return reflect.MakeFunc(typ, func(args []reflect.Value) []reflect.Value {
+		if arg == nil {
+			return []reflect.Value{reflect.Zero(typ.Out(0))}
+		}
 		return []reflect.Value{reflect.ValueOf(MustConvert(arg, typ.Out(0)))}
 	})
 }
