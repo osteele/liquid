@@ -2,6 +2,7 @@ package expressions
 
 import (
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -86,8 +87,12 @@ func (lex *lexer) Lex(out *yySymType) int {
 		}
 		action String {
 			tok = LITERAL
-			// TODO unescape \x
-			out.val = string(lex.data[lex.ts+1:lex.te-1])
+			raw := string(lex.data[lex.ts+1:lex.te-1])
+			if lex.data[lex.ts] == '"' {
+				out.val = unescapeString(raw)
+			} else {
+				out.val = raw
+			}
 			fbreak;
 		}
 		action Relation { tok = RELATION; out.name = lex.token(); fbreak; }
@@ -97,7 +102,8 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 		int = '-'? digit+ ;
 		float = '-'? digit+ ('.' digit+)? ;
-		string = '"' (any - '"')* '"' | "'" (any - "'")* "'" ; # TODO escapes
+		dq_char = (any - '"' - '\\') | ('\\' any);
+		string = '"' dq_char* '"' | "'" (any - "'")* "'" ;
 
 		main := |*
 			# statement selectors, should match constants in parser.go
@@ -144,6 +150,39 @@ func (lex *lexer) Lex(out *yySymType) int {
 
 func (lex *lexer) Error(e string) {
     // fmt.Println("scan error:", e)
+}
+
+// unescapeString processes escape sequences in double-quoted strings.
+// Supported: \\, \", \n, \t, \r. Unknown sequences pass through as-is.
+func unescapeString(s string) string {
+	if !strings.ContainsRune(s, '\\') {
+		return s
+	}
+	var b strings.Builder
+	b.Grow(len(s))
+	for i := 0; i < len(s); i++ {
+		if s[i] == '\\' && i+1 < len(s) {
+			i++
+			switch s[i] {
+			case '\\':
+				b.WriteByte('\\')
+			case '"':
+				b.WriteByte('"')
+			case 'n':
+				b.WriteByte('\n')
+			case 't':
+				b.WriteByte('\t')
+			case 'r':
+				b.WriteByte('\r')
+			default:
+				b.WriteByte('\\')
+				b.WriteByte(s[i])
+			}
+		} else {
+			b.WriteByte(s[i])
+		}
+	}
+	return b.String()
 }
 
 func isValidUnicodeIdentifier(s string) bool {
