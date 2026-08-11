@@ -352,4 +352,3 @@ type reverseWrapper struct {
 
 func (w reverseWrapper) Len() int        { return w.i.Len() }
 func (w reverseWrapper) Index(i int) any { return w.i.Index(w.i.Len() - 1 - i) }
-

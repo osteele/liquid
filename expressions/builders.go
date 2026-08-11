@@ -19,7 +19,19 @@ func makeContainsExpr(e1, e2 func(Context) values.Value) func(Context) values.Va
 	}
 }
 
-func makeFilter(fn valueFn, name string, args []valueFn) valueFn {
+// filterArgs holds both positional and keyword arguments for a filter.
+type filterArgs struct {
+	positional []valueFn
+	keyword    []keywordArg
+}
+
+// keywordArg represents a named argument (e.g., allow_false: true).
+type keywordArg struct {
+	name string
+	val  valueFn
+}
+
+func makeFilter(fn valueFn, name string, args *filterArgs) valueFn {
 	return func(ctx Context) values.Value {
 		result, err := ctx.ApplyFilter(name, fn, args)
 		if err != nil {

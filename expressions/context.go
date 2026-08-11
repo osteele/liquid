@@ -4,7 +4,7 @@ import "github.com/osteele/liquid/values"
 
 // Context is the expression evaluation context. It maps variables names to values.
 type Context interface {
-	ApplyFilter(string, valueFn, []valueFn) (any, error)
+	ApplyFilter(string, valueFn, *filterArgs) (any, error)
 	// Clone returns a copy with a new variable binding map
 	// (so that copy.Set does effect the source context.)
 	Clone() Context
