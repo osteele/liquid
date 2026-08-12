@@ -3,13 +3,21 @@
 
 ## Unreleased
 
+### Added
+
+- **Named Filter Arguments** (#42): Added keyword arguments for filters, including `allow_false` support in the `default` filter.
+- **String Literal Escapes** (#45): Added `\\`, `\"`, `\n`, `\t`, and `\r` escapes in double-quoted string literals. Single-quoted strings remain literal.
+- **Shopify Filters** (#146): Added `where`, `sum`, `at_least`, `at_most`, `pluralize`, `handleize`/`handle`, `remove_last`, and `replace_last`.
+
 ### Fixed
 
 - **32-bit Platform Build**: Fixed build failure on 32-bit platforms (ARM, x86) where `math.MaxInt64` overflowed `uint` in the `isIntegerType` comparison. The `uint` value is now widened to `uint64` before comparing.
+- **Optional Nil Arguments**: Fixed explicit `nil` values in optional filter arguments and distinguished them from omitted arguments in `where`.
 
 ### CI
 
 - Added 32-bit build verification (linux/arm, linux/386) to CI pipeline.
+- Pinned Go development tools in `go.mod`, aligned local and CI lint versions, and added reproducibility checks for both generated expression-parser files.
 
 ## 1.8.1 (2026-02-27)
 

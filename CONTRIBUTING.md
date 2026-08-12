@@ -21,12 +21,12 @@ Fork and clone the repo.
 Install package dependencies and development tools:
 
 ```bash
-make tools  # Install code generation tools
+make tools  # Download the versions pinned in go.mod
 make deps   # Download Go dependencies
 ```
 
-[Install golangci-lint](https://golangci-lint.run/usage/install/#local-installation).
-On macOS: `brew install golangci-lint`
+The lint target runs the golangci-lint version pinned in `go.mod`; a separate
+global installation is not required.
 
 #### Set up Git Hooks (Recommended)
 
@@ -128,7 +128,7 @@ open http://localhost:6060/pkg/github.com/osteele/liquid/
 
 To work on the lexer, install Ragel. On macOS: `brew install ragel`.
 
-The parser and lexer tools are installed via `make tools`, which installs:
+The Go code-generation tools are pinned in `go.mod` and downloaded by `make tools`:
 - `goyacc` for parser generation
 - `stringer` for string method generation
 

@@ -129,13 +129,13 @@ func BenchmarkEngine_Parse(b *testing.B) {
 
 	buf := new(bytes.Buffer)
 	for range 1000 {
-		_, err := io.WriteString(buf, `if{% if true %}true{% elsif %}elsif{% else %}else{% endif %}`)
+		_, err := io.WriteString(buf, `if{% if true %}true{% elsif false %}elsif{% else %}else{% endif %}`)
 		require.NoError(b, err)
 		_, err = io.WriteString(buf, `loop{% for item in array %}loop{% break %}{% endfor %}`)
 		require.NoError(b, err)
-		_, err = io.WriteString(buf, `case{% case value %}{% when a %}{% when b %{% endcase %}`)
+		_, err = io.WriteString(buf, `case{% case value %}{% when a %}{% when b %}{% endcase %}`)
 		require.NoError(b, err)
-		_, err = io.WriteString(buf, `expr{{ a and b }}{{ a add: b }}`)
+		_, err = io.WriteString(buf, `expr{{ a and b }}{{ a | plus: b }}`)
 		require.NoError(b, err)
 	}
 
