@@ -2,7 +2,6 @@
 package render
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -24,7 +23,7 @@ func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
 	}
 
 	if _, err := tw.Flush(); err != nil {
-		panic(err)
+		return wrapRenderError(err, invalidLoc)
 	}
 
 	return nil
@@ -45,7 +44,7 @@ func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	}
 
 	if _, err := tw.Flush(); err != nil {
-		panic(err)
+		return wrapRenderError(err, invalidLoc)
 	}
 
 	return nil
@@ -85,9 +84,6 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 		return wrapRenderError(err, n)
 	}
 
-	if value == nil && ctx.config.StrictVariables {
-		return wrapRenderError(errors.New("undefined variable"), n)
-	}
 	if sv, isSafe := value.(values.SafeValue); isSafe {
 		err = writeObject(w, sv.Value)
 	} else {

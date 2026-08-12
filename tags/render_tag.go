@@ -359,7 +359,10 @@ func renderTag(source string) (func(io.Writer, render.Context) error, error) {
 			return ctx.Errorf("render requires isolated file rendering support")
 		}
 
-		filename := filepath.Join(filepath.Dir(ctx.SourceFile()), templateName)
+		filename, err := resolveTemplatePath(ctx.SourceFile(), templateName)
+		if err != nil {
+			return ctx.WrapError(err)
+		}
 		alias := args.withAlias
 		if alias == "" {
 			alias = args.forAlias

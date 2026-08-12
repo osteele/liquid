@@ -2,7 +2,6 @@ package tags
 
 import (
 	"io"
-	"path/filepath"
 
 	"github.com/osteele/liquid/render"
 )
@@ -22,7 +21,10 @@ func includeTag(source string) (func(io.Writer, render.Context) error, error) {
 			return ctx.Errorf("include requires a string argument; got %v", value)
 		}
 
-		filename := filepath.Join(filepath.Dir(ctx.SourceFile()), rel)
+		filename, err := resolveTemplatePath(ctx.SourceFile(), rel)
+		if err != nil {
+			return ctx.WrapError(err)
+		}
 
 		s, err := ctx.RenderFile(filename, map[string]any{})
 		if err != nil {

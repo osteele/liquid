@@ -151,7 +151,14 @@ func (e *Engine) ParseAndRenderString(source string, b Bindings) (string, Source
 // ParseTemplate, ParseTemplateLocation, ParseAndRender, or ParseAndRenderString. An empty delimiter
 // stands for the corresponding default: objectLeft = {{, objectRight = }}, tagLeft = {% , tagRight = %}
 func (e *Engine) Delims(objectLeft, objectRight, tagLeft, tagRight string) *Engine {
-	e.cfg.Delims = []string{objectLeft, objectRight, tagLeft, tagRight}
+	delims := []string{objectLeft, objectRight, tagLeft, tagRight}
+	defaults := []string{"{{", "}}", "{%", "%}"}
+	for i, delim := range delims {
+		if delim == "" {
+			delims[i] = defaults[i]
+		}
+	}
+	e.cfg.Delims = delims
 	return e
 }
 

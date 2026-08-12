@@ -112,6 +112,10 @@ func TestValue_PropertyValue(t *testing.T) {
 	hv = ValueOf(map[any]any{"key": "value"})
 	require.Equal(t, "value", hv.PropertyValue(ValueOf("key")).Interface())
 
+	// an incompatible property key does not panic
+	hv = ValueOf(map[int]string{1: "value"})
+	require.Nil(t, hv.PropertyValue(ValueOf("key")).Interface())
+
 	// ptr to map
 	hashPtr := ValueOf(&map[string]any{"key": "value"})
 	require.Equal(t, "value", hashPtr.PropertyValue(ValueOf("key")).Interface())

@@ -18,6 +18,11 @@ type testValueStruct struct {
 	F2e     func() (int, error)
 }
 
+type privateValueStruct struct {
+	visible int
+	tagged  int `liquid:"tagged"`
+}
+
 func (tv testValueStruct) M1() int           { return 3 }
 func (tv testValueStruct) M2() (int, error)  { return 4, nil }
 func (tv testValueStruct) M2e() (int, error) { return 4, errors.New("expected error") }
@@ -89,4 +94,12 @@ func TestValue_struct_ptr(t *testing.T) {
 	require.Equal(t, 3, p.PropertyValue(ValueOf("PM1")).Interface())
 	require.Equal(t, 4, p.PropertyValue(ValueOf("PM2")).Interface())
 	require.Panics(t, func() { p.PropertyValue(ValueOf("PM2e")) })
+}
+
+func TestValueStructIgnoresUnexportedFields(t *testing.T) {
+	value := ValueOf(privateValueStruct{visible: 1, tagged: 2})
+	require.False(t, value.Contains(ValueOf("visible")))
+	require.False(t, value.Contains(ValueOf("tagged")))
+	require.Nil(t, value.PropertyValue(ValueOf("visible")).Interface())
+	require.Nil(t, value.PropertyValue(ValueOf("tagged")).Interface())
 }

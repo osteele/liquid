@@ -325,12 +325,13 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("append", func(s, suffix string) string {
 		return s + suffix
 	})
-	fd.AddFilter("capitalize", func(s, suffix string) string {
-		if len(s) == 0 {
+	fd.AddFilter("capitalize", func(s, _ string) string {
+		runes := []rune(strings.ToLower(s))
+		if len(runes) == 0 {
 			return s
 		}
 
-		return strings.ToUpper(s[:1]) + s[1:]
+		return strings.ToUpper(string(runes[0])) + string(runes[1:])
 	})
 	fd.AddFilter("downcase", func(s, suffix string) string {
 		return strings.ToLower(s)
@@ -438,22 +439,25 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 	fd.AddFilter("truncate", func(s string, length func(int) int, ellipsis func(string) string) string {
 		n := length(50)
 		el := ellipsis("...")
-		// runes aren't bytes; don't use slice
-		re := regexp.MustCompile(fmt.Sprintf(`^(.{%d})..{%d,}`, n-len(el), len(el)))
-
-		return re.ReplaceAllString(s, `$1`+el)
-	})
-	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
-		el := ellipsis("...")
-		n := length(15)
-		re := regexp.MustCompile(fmt.Sprintf(`^(?:\s*\S+){%d}`, n))
-
-		m := re.FindString(s)
-		if m == "" {
+		runes := []rune(s)
+		if len(runes) <= n {
 			return s
 		}
 
-		return m + el
+		prefixLength := max(n-len([]rune(el)), 0)
+		prefixLength = min(prefixLength, len(runes))
+
+		return string(runes[:prefixLength]) + el
+	})
+	fd.AddFilter("truncatewords", func(s string, length func(int) int, ellipsis func(string) string) string {
+		el := ellipsis("...")
+		n := max(length(15), 1)
+		words := strings.Fields(s)
+		if len(words) <= n {
+			return s
+		}
+
+		return strings.Join(words[:n], " ") + el
 	})
 	fd.AddFilter("upcase", func(s, suffix string) string {
 		return strings.ToUpper(s)
@@ -518,7 +522,8 @@ func uniqFilter(a []any) (result []any) {
 	seenMap := map[any]bool{}
 
 	seen := func(item any) bool {
-		if k := reflect.TypeOf(item).Kind(); k < reflect.Array || k == reflect.Ptr || k == reflect.UnsafePointer {
+		typeOfItem := reflect.TypeOf(item)
+		if typeOfItem == nil || typeOfItem.Comparable() {
 			if seenMap[item] {
 				return true
 			}
@@ -606,6 +611,9 @@ func sumFilter(a []any, key func(string) string) any {
 }
 
 func eqItems(a, b any) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
 	if reflect.TypeOf(a).Comparable() && reflect.TypeOf(b).Comparable() {
 		return a == b
 	}

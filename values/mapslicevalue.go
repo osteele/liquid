@@ -32,12 +32,12 @@ func (v mapSliceValue) IndexValue(index Value) Value {
 		}
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 func (v mapSliceValue) PropertyValue(index Value) Value {
 	result := v.IndexValue(index)
-	if result == nilValue && index.Interface() == sizeKey {
+	if IsUndefined(result) && index.Interface() == sizeKey {
 		result = ValueOf(len(v.slice))
 	}
 

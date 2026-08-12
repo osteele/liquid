@@ -47,7 +47,13 @@ func makeFilter(fn valueFn, name string, args *filterArgs) valueFn {
 
 func makeIndexExpr(sequenceFn, indexFn func(Context) values.Value) func(Context) values.Value {
 	return func(ctx Context) values.Value {
-		return sequenceFn(ctx).IndexValue(indexFn(ctx))
+		index := indexFn(ctx)
+		value := sequenceFn(ctx).IndexValue(index)
+		if strictVariables(ctx) && values.IsUndefined(value) {
+			panic(InterpreterError("undefined variable"))
+		}
+
+		return value
 	}
 }
 
@@ -55,6 +61,11 @@ func makeObjectPropertyExpr(objFn func(Context) values.Value, name string) func(
 	index := values.ValueOf(name)
 
 	return func(ctx Context) values.Value {
-		return objFn(ctx).PropertyValue(index)
+		value := objFn(ctx).PropertyValue(index)
+		if strictVariables(ctx) && values.IsUndefined(value) {
+			panic(InterpreterError("undefined variable"))
+		}
+
+		return value
 	}
 }

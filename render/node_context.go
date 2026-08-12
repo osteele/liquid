@@ -23,6 +23,7 @@ func newNodeContext(scope map[string]any, c Config) nodeContext {
 	vars := make(map[string]any, len(scope))
 	maps.Copy(vars, scope)
 
+	c.Config.StrictVariables = c.StrictVariables
 	ctx := nodeContext{bindings: vars, config: c}
 	ctx.exprCtx = expressions.NewContext(vars, c.Config.Config)
 	return ctx

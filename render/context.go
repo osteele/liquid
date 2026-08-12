@@ -187,7 +187,7 @@ func (c rendererContext) renderFile(filename string, bindings map[string]any) (s
 		return "", err
 	}
 
-	root, err := c.ctx.config.Compile(string(source), c.node.SourceLoc)
+	root, err := c.ctx.config.Compile(string(source), parser.SourceLoc{Pathname: filename, LineNo: 1})
 	if err != nil {
 		return "", err
 	}
@@ -241,7 +241,12 @@ func (c rendererContext) SetPath(path []string, value any) error {
 			// Check if it's a map we can navigate into
 			switch v := obj.(type) {
 			case map[string]any:
-				current = v
+				cloned := maps.Clone(v)
+				if cloned == nil {
+					cloned = make(map[string]any)
+				}
+				current[key] = cloned
+				current = cloned
 			default:
 				// Can't navigate into non-map types
 				return fmt.Errorf("cannot set property on non-object at '%s'", key)

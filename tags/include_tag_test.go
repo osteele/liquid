@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -48,6 +49,35 @@ func TestIncludeTag(t *testing.T) {
 	err = render.Render(root, io.Discard, includeTestBindings, config)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "requires a string")
+}
+
+func TestIncludeTagRejectsEscapingPaths(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+	loc := parser.SourceLoc{Pathname: filepath.Join("testdata", "source.liquid"), LineNo: 1}
+	root, err := config.Compile(`{% include "../secret.liquid" %}`, loc)
+	require.NoError(t, err)
+
+	err = render.Render(root, io.Discard, nil, config)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "escapes its source directory")
+}
+
+func TestIncludeTagResolvesNestedIncludesRelativeToIncludedFile(t *testing.T) {
+	config := render.NewConfig()
+	AddStandardTags(&config)
+	mainPath := filepath.Join("templates", "main.liquid")
+	firstPath := filepath.Join("templates", "nested", "first.liquid")
+	secondPath := filepath.Join("templates", "nested", "second.liquid")
+	config.Cache[firstPath] = []byte(`first:{% include "second.liquid" %}`)
+	config.Cache[secondPath] = []byte("second")
+
+	root, err := config.Compile(`{% include "nested/first.liquid" %}`, parser.SourceLoc{Pathname: mainPath, LineNo: 1})
+	require.NoError(t, err)
+	buf := new(bytes.Buffer)
+	err = render.Render(root, buf, nil, config)
+	require.NoError(t, err)
+	require.Equal(t, "first:second", buf.String())
 }
 
 func TestIncludeTag_file_not_found_error(t *testing.T) {

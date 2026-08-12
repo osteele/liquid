@@ -130,6 +130,8 @@ var filterTests = []struct {
 	{`"website.com" | append: "/index.html"`, "website.com/index.html"},
 	{`"title" | capitalize`, "Title"},
 	{`"my great title" | capitalize`, "My great title"},
+	{`"mY GREAT TITLE" | capitalize`, "My great title"},
+	{`"éCOLE" | capitalize`, "École"},
 	{`"" | capitalize`, ""},
 	{`"Parker Moore" | downcase`, "parker moore"},
 	{`"Have you read 'James & the Giant Peach'?" | escape`, "Have you read &#39;James &amp; the Giant Peach&#39;?"},
@@ -195,10 +197,13 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`"Ground control to Major Tom." | truncate: 25, ", and so on"`, "Ground control, and so on"},
 	{`"Ground control to Major Tom." | truncate: 20, ""`, "Ground control to Ma"},
 	{`"Ground" | truncate: 20`, "Ground"},
+	{`"Ground" | truncate: 2`, "..."},
+	{`"白鵬翔" | truncate: 2, "…"`, "白…"},
 	{`"Ground control to Major Tom." | truncatewords: 3`, "Ground control to..."},
 	{`"Ground control to Major Tom." | truncatewords: 3, "--"`, "Ground control to--"},
 	{`"Ground control to Major Tom." | truncatewords: 3, ""`, "Ground control to"},
 	{`"Ground control" | truncatewords: 3, ""`, "Ground control"},
+	{`"Ground control to" | truncatewords: 3`, "Ground control to"},
 	{`"Ground" | truncatewords: 3, ""`, "Ground"},
 	{`"  Ground" | truncatewords: 3, ""`, "  Ground"},
 	{`"" | truncatewords: 3, ""`, ""},
@@ -291,6 +296,10 @@ Liquid" | slice: 2, 4`, "quid"},
 	{`map | inspect`, `{"a":1}`},
 	{`1 | type`, `int`},
 	{`"1" | type`, `string`},
+}
+
+func TestUniqFilterHandlesNil(t *testing.T) {
+	require.Equal(t, []any{nil, "value"}, uniqFilter([]any{nil, nil, "value", "value"}))
 }
 
 var filterErrorTests = []struct {

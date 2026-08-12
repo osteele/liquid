@@ -45,7 +45,11 @@ func Equal(a, b any) bool { //nolint: gocyclo
 
 		return a == b
 	default:
-		return a == b
+		if ra.Type() == rb.Type() && ra.Type().Comparable() {
+			return a == b
+		}
+
+		return reflect.DeepEqual(a, b)
 	}
 }
 

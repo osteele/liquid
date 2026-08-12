@@ -3,6 +3,7 @@ package liquid
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -15,6 +16,14 @@ import (
 )
 
 var emptyBindings = map[string]any{}
+
+var errTestWriter = errors.New("test writer failure")
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errTestWriter
+}
 
 // There's a lot more tests in the filters and tags sub-packages.
 // This collects a minimal set for testing end-to-end.
@@ -220,6 +229,13 @@ func TestEngine_Delims(t *testing.T) {
 	require.Equal(t, "{{ x }}", out)
 }
 
+func TestEngine_DelimsEmptyValuesUseDefaults(t *testing.T) {
+	engine := NewEngine().Delims("", "", "", "")
+	out, err := engine.ParseAndRenderString(`{{ x }}`, testBindings)
+	require.NoError(t, err)
+	require.Equal(t, "123", out)
+}
+
 func TestEngine_StrictVariables(t *testing.T) {
 	engine := NewEngine()
 	engine.StrictVariables()
@@ -233,6 +249,24 @@ func TestEngine_StrictVariables(t *testing.T) {
 	_, err = engine.ParseAndRenderString(`{{ undefined_var }}`, testBindings)
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "undefined variable")
+
+	// Nil literals and bindings are defined values.
+	out, err = engine.ParseAndRenderString(`{{ nil }}|{{ value }}|{{ object.value }}`, Bindings{
+		"value":  nil,
+		"object": map[string]any{"value": nil},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "||", out)
+
+	_, err = engine.ParseAndRenderString(`{{ object.missing }}`, Bindings{"object": map[string]any{}})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "undefined variable")
+}
+
+func TestFRenderReturnsWriterErrors(t *testing.T) {
+	engine := NewEngine()
+	err := engine.ParseAndFRender(failingWriter{}, []byte("buffered output"), emptyBindings)
+	require.ErrorIs(t, err, errTestWriter)
 }
 
 func TestEngine_EnableJekyllExtensions(t *testing.T) {
@@ -245,6 +279,20 @@ func TestEngine_EnableJekyllExtensions(t *testing.T) {
 	)
 	require.NoError(t, err)
 	require.Equal(t, "/about/", out)
+}
+
+func TestEngine_JekyllAssignmentDoesNotMutateBindings(t *testing.T) {
+	engine := NewEngine()
+	engine.EnableJekyllExtensions()
+	page := map[string]any{"url": "/before/"}
+
+	out, err := engine.ParseAndRenderString(
+		`{% assign page.url = "/after/" %}{{ page.url }}`,
+		map[string]any{"page": page},
+	)
+	require.NoError(t, err)
+	require.Equal(t, "/after/", out)
+	require.Equal(t, "/before/", page["url"])
 }
 
 func TestEngine_SetAutoEscapeReplacer(t *testing.T) {

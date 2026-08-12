@@ -57,6 +57,10 @@ func (e *sourceLocError) Cause() error {
 	return e.cause
 }
 
+func (e *sourceLocError) Unwrap() error {
+	return e.cause
+}
+
 func (e *sourceLocError) Path() string {
 	return e.Pathname
 }

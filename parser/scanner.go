@@ -8,16 +8,26 @@ import (
 )
 
 // defaultTokenMatcher is the compiled regex for the default delimiters, cached at package level.
-var defaultTokenMatcher = formTokenMatcher([]string{"{{", "}}", "{%", "%}"})
+var defaultDelims = []string{"{{", "}}", "{%", "%}"}
+
+var defaultTokenMatcher = formTokenMatcher(defaultDelims)
 
 // customTokenMatchers caches compiled regexps for custom delimiter sets.
 var customTokenMatchers sync.Map // key: [4]string, value: *regexp.Regexp
 
 // Scan breaks a string into a sequence of Tokens.
 func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
-	// Apply defaults
 	if len(delims) != 4 {
-		delims = []string{"{{", "}}", "{%", "%}"}
+		delims = defaultDelims
+	} else {
+		normalized := make([]string, len(defaultDelims))
+		for i, delim := range delims {
+			if delim == "" {
+				delim = defaultDelims[i]
+			}
+			normalized[i] = delim
+		}
+		delims = normalized
 	}
 
 	var tokenMatcher *regexp.Regexp
@@ -46,7 +56,7 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 		source := data[ts:te]
 		switch {
 		case data[ts:ts+len(delims[0])] == delims[0]:
-			if source[2] == '-' {
+			if hasTrimLeft(source, delims[0]) {
 				tokens = append(tokens, Token{
 					Type: TrimLeftTokenType,
 				})
@@ -58,13 +68,13 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 				Source:    source,
 				Args:      data[m[2]:m[3]],
 			})
-			if source[len(source)-3] == '-' {
+			if hasTrimRight(source, delims[1]) {
 				tokens = append(tokens, Token{
 					Type: TrimRightTokenType,
 				})
 			}
 		case data[ts:ts+len(delims[2])] == delims[2]:
-			if source[2] == '-' {
+			if hasTrimLeft(source, delims[2]) {
 				tokens = append(tokens, Token{
 					Type: TrimLeftTokenType,
 				})
@@ -78,10 +88,13 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 			}
 			if m[6] > 0 {
 				tok.Args = data[m[6]:m[7]]
+				if hasTrimRight(source, delims[3]) {
+					tok.Args = strings.TrimSpace(strings.TrimSuffix(tok.Args, "-"))
+				}
 			}
 
 			tokens = append(tokens, tok)
-			if source[len(source)-3] == '-' {
+			if hasTrimRight(source, delims[3]) {
 				tokens = append(tokens, Token{
 					Type: TrimRightTokenType,
 				})
@@ -97,6 +110,16 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 	}
 
 	return tokens
+}
+
+func hasTrimLeft(source, leftDelim string) bool {
+	index := len(leftDelim)
+	return index < len(source) && source[index] == '-'
+}
+
+func hasTrimRight(source, rightDelim string) bool {
+	index := len(source) - len(rightDelim) - 1
+	return index >= 0 && source[index] == '-'
 }
 
 func formTokenMatcher(delims []string) *regexp.Regexp {

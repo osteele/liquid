@@ -39,7 +39,7 @@ func (sv structValue) Contains(elem Value) bool {
 func (sv structValue) PropertyValue(index Value) Value {
 	name, ok := index.Interface().(string)
 	if !ok {
-		return nilValue
+		return undefinedValue
 	}
 
 	sr := reflect.ValueOf(sv.value)
@@ -55,7 +55,7 @@ func (sv structValue) PropertyValue(index Value) Value {
 
 		sr = sr.Elem()
 		if !sr.IsValid() {
-			return nilValue
+			return undefinedValue
 		}
 	}
 
@@ -66,6 +66,9 @@ func (sv structValue) PropertyValue(index Value) Value {
 
 	if field, ok := sv.findField(name); ok {
 		fv := sr.FieldByName(field.Name)
+		if !fv.CanInterface() {
+			return undefinedValue
+		}
 		if fv.Kind() == reflect.Func {
 			return sv.invoke(fv)
 		}
@@ -73,7 +76,7 @@ func (sv structValue) PropertyValue(index Value) Value {
 		return ValueOf(fv.Interface())
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 const tagKey = "liquid"
@@ -86,14 +89,16 @@ func (sv structValue) findField(name string) (*reflect.StructField, bool) {
 	}
 
 	if field, ok := sr.FieldByName(name); ok {
-		if _, ok := field.Tag.Lookup(tagKey); !ok {
-			return &field, true
+		if field.PkgPath == "" {
+			if _, ok := field.Tag.Lookup(tagKey); !ok {
+				return &field, true
+			}
 		}
 	}
 
 	for i, n := 0, sr.NumField(); i < n; i++ {
 		field := sr.Field(i)
-		if field.Tag.Get(tagKey) == name {
+		if field.PkgPath == "" && field.Tag.Get(tagKey) == name {
 			return &field, true
 		}
 	}

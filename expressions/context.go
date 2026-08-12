@@ -34,10 +34,24 @@ func (ctx *context) Clone() Context {
 
 // Get looks up a variable value in the expression context.
 func (ctx *context) Get(name string) any {
-	return values.ToLiquid(ctx.bindings[name])
+	value, ok := ctx.bindings[name]
+	if !ok && ctx.Config.StrictVariables {
+		panic(InterpreterError("undefined variable"))
+	}
+
+	return values.ToLiquid(value)
 }
 
 // Set sets a variable value in the expression context.
 func (ctx *context) Set(name string, value any) {
 	ctx.bindings[name] = value
+}
+
+func (ctx *context) StrictVariables() bool {
+	return ctx.Config.StrictVariables
+}
+
+func strictVariables(ctx Context) bool {
+	configured, ok := ctx.(interface{ StrictVariables() bool })
+	return ok && configured.StrictVariables()
 }

@@ -88,10 +88,10 @@ type valueEmbed struct{}
 
 func (v valueEmbed) Equal(Value) bool          { return false }
 func (v valueEmbed) Less(Value) bool           { return false }
-func (v valueEmbed) IndexValue(Value) Value    { return nilValue }
+func (v valueEmbed) IndexValue(Value) Value    { return undefinedValue }
 func (v valueEmbed) Contains(Value) bool       { return false }
 func (v valueEmbed) Int() int                  { panic(conversionError("", v, reflect.TypeOf(1))) }
-func (v valueEmbed) PropertyValue(Value) Value { return nilValue }
+func (v valueEmbed) PropertyValue(Value) Value { return undefinedValue }
 func (v valueEmbed) Test() bool                { return true }
 
 // A wrapperValue wraps a Go value.
@@ -99,10 +99,10 @@ type wrapperValue struct{ value any }
 
 func (v wrapperValue) Equal(other Value) bool    { return Equal(v.value, other.Interface()) }
 func (v wrapperValue) Less(other Value) bool     { return Less(v.value, other.Interface()) }
-func (v wrapperValue) IndexValue(Value) Value    { return nilValue }
+func (v wrapperValue) IndexValue(Value) Value    { return undefinedValue }
 func (v wrapperValue) Contains(Value) bool       { return false }
 func (v wrapperValue) Interface() any            { return v.value }
-func (v wrapperValue) PropertyValue(Value) Value { return nilValue }
+func (v wrapperValue) PropertyValue(Value) Value { return undefinedValue }
 func (v wrapperValue) Test() bool                { return v.value != nil && v.value != false }
 
 func (v wrapperValue) Int() int {
@@ -115,12 +115,27 @@ func (v wrapperValue) Int() int {
 
 // interned values
 var (
-	nilValue   = wrapperValue{nil}
-	falseValue = wrapperValue{false}
-	trueValue  = wrapperValue{true}
-	zeroValue  = wrapperValue{0}
-	oneValue   = wrapperValue{1}
+	nilValue       = wrapperValue{nil}
+	undefinedValue = undefined{}
+	falseValue     = wrapperValue{false}
+	trueValue      = wrapperValue{true}
+	zeroValue      = wrapperValue{0}
+	oneValue       = wrapperValue{1}
 )
+
+type undefined struct{ valueEmbed }
+
+func (undefined) Interface() any { return nil }
+func (undefined) Equal(other Value) bool {
+	return other.Interface() == nil
+}
+func (undefined) Test() bool { return false }
+
+// IsUndefined reports whether a value represents a missing variable, property, or index.
+func IsUndefined(value Value) bool {
+	_, ok := value.(undefined)
+	return ok
+}
 
 // container values
 type (
@@ -156,7 +171,7 @@ func (av arrayValue) IndexValue(iv Value) Value {
 	case float64:
 		n = int(ix)
 	default:
-		return nilValue
+		return undefinedValue
 	}
 
 	if n < 0 {
@@ -167,7 +182,7 @@ func (av arrayValue) IndexValue(iv Value) Value {
 		return ValueOf(ar.Index(n).Interface())
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 func (av arrayValue) PropertyValue(iv Value) Value {
@@ -186,7 +201,7 @@ func (av arrayValue) PropertyValue(iv Value) Value {
 		return ValueOf(ar.Len())
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 func (mv mapValue) Contains(iv Value) bool {
@@ -212,7 +227,7 @@ func (mv mapValue) IndexValue(iv Value) Value {
 		}
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 func (mv mapValue) PropertyValue(iv Value) Value {
@@ -220,18 +235,22 @@ func (mv mapValue) PropertyValue(iv Value) Value {
 
 	ir := reflect.ValueOf(iv.Interface())
 	if !ir.IsValid() {
-		return nilValue
+		return undefinedValue
 	}
 
-	er := mr.MapIndex(ir)
-	switch {
-	case er.IsValid():
-		return ValueOf(er.Interface())
-	case iv.Interface() == sizeKey:
-		return ValueOf(mr.Len())
-	default:
-		return nilValue
+	kt := mr.Type().Key()
+	if ir.Type().ConvertibleTo(kt) && ir.Type().Comparable() {
+		er := mr.MapIndex(ir.Convert(kt))
+		if er.IsValid() {
+			return ValueOf(er.Interface())
+		}
 	}
+
+	if iv.Interface() == sizeKey {
+		return ValueOf(mr.Len())
+	}
+
+	return undefinedValue
 }
 
 func (sv stringValue) Contains(substr Value) bool {
@@ -248,7 +267,7 @@ func (sv stringValue) PropertyValue(iv Value) Value {
 		return ValueOf(len(sv.value.(string)))
 	}
 
-	return nilValue
+	return undefinedValue
 }
 
 // SafeValue is a wrapped interface{} to mark it as being safe so that auto-escape is not applied.

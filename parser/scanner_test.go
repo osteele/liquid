@@ -215,3 +215,23 @@ func TestScan_delims(t *testing.T) {
 		})
 	}
 }
+
+func TestScanCustomDelimiterWhitespaceControl(t *testing.T) {
+	delims := []string{"<", ">", "[", "]"}
+	tokens := Scan(`< - invalid >`, SourceLoc{}, delims)
+	require.Len(t, tokens, 1)
+
+	tokens = Scan(`<- object ->`, SourceLoc{}, delims)
+	require.Equal(t, []Token{
+		{Type: TrimLeftTokenType},
+		{Type: ObjTokenType, Source: "<- object ->", Args: "object"},
+		{Type: TrimRightTokenType},
+	}, tokens)
+
+	tokens = Scan(`[- tag -]`, SourceLoc{}, delims)
+	require.Equal(t, []Token{
+		{Type: TrimLeftTokenType},
+		{Type: TagTokenType, Source: "[- tag -]", Name: "tag"},
+		{Type: TrimRightTokenType},
+	}, tokens)
+}

@@ -39,6 +39,8 @@ var eqTests = []struct {
 	{[]string{"a", "b"}, []string{"a", "c"}, false},
 	{[]any{1.0, 2}, []any{1, 2.0}, true},
 	{eqTestObj, eqTestObj, true},
+	{map[string]any{"key": []int{1, 2}}, map[string]any{"key": []int{1, 2}}, true},
+	{map[string]int{"key": 1}, map[string]int{"key": 2}, false},
 }
 
 func TestEqual(t *testing.T) {
@@ -60,6 +62,8 @@ func TestEqual_ptr(t *testing.T) {
 	)
 	require.True(t, Equal(&s, &s))
 	require.True(t, Equal(&n, &n))
+	n2 := n
+	require.False(t, Equal(&n, &n2))
 	require.False(t, Equal(&n, &f))
 
 	// // null pointers
