@@ -2,9 +2,30 @@ package values
 
 import (
 	"reflect"
+	"sync"
 )
 
 type structValue struct{ wrapperValue }
+
+type structPropertyKind uint8
+
+const (
+	missingStructProperty structPropertyKind = iota
+	structMethod
+	structField
+)
+
+type structPropertyKey struct {
+	typ  reflect.Type
+	name string
+}
+
+type structProperty struct {
+	kind  structPropertyKind
+	index []int
+}
+
+var structPropertyCache sync.Map
 
 func (sv structValue) IndexValue(index Value) Value {
 	return sv.PropertyValue(index)
@@ -16,24 +37,8 @@ func (sv structValue) Contains(elem Value) bool {
 		return false
 	}
 
-	st := reflect.TypeOf(sv.value)
-	if st.Kind() == reflect.Ptr {
-		if _, found := st.MethodByName(name); found {
-			return true
-		}
-
-		st = st.Elem()
-	}
-
-	if _, found := st.MethodByName(name); found {
-		return true
-	}
-
-	if _, found := sv.findField(name); found {
-		return true
-	}
-
-	return false
+	property := lookupStructProperty(reflect.TypeOf(sv.value), name)
+	return property.kind != missingStructProperty
 }
 
 func (sv structValue) PropertyValue(index Value) Value {
@@ -42,30 +47,22 @@ func (sv structValue) PropertyValue(index Value) Value {
 		return undefinedValue
 	}
 
+	st := reflect.TypeOf(sv.value)
+	property := lookupStructProperty(st, name)
 	sr := reflect.ValueOf(sv.value)
 
-	st := reflect.TypeOf(sv.value)
-	if st.Kind() == reflect.Ptr {
-		if _, found := st.MethodByName(name); found {
-			m := sr.MethodByName(name)
-			return sv.invoke(m)
+	switch property.kind {
+	case structMethod:
+		return sv.invoke(sr.Method(property.index[0]))
+	case structField:
+		if st.Kind() == reflect.Ptr {
+			sr = sr.Elem()
+			if !sr.IsValid() {
+				return undefinedValue
+			}
 		}
 
-		st = st.Elem()
-
-		sr = sr.Elem()
-		if !sr.IsValid() {
-			return undefinedValue
-		}
-	}
-
-	if _, ok := st.MethodByName(name); ok {
-		m := sr.MethodByName(name)
-		return sv.invoke(m)
-	}
-
-	if field, ok := sv.findField(name); ok {
-		fv := sr.FieldByName(field.Name)
+		fv := sr.FieldByIndex(property.index)
 		if !fv.CanInterface() {
 			return undefinedValue
 		}
@@ -74,36 +71,52 @@ func (sv structValue) PropertyValue(index Value) Value {
 		}
 
 		return ValueOf(fv.Interface())
+	default:
+		return undefinedValue
 	}
-
-	return undefinedValue
 }
 
 const tagKey = "liquid"
 
-// like FieldByName, but obeys `liquid:"name"` tags
-func (sv structValue) findField(name string) (*reflect.StructField, bool) {
-	sr := reflect.TypeOf(sv.value)
-	if sr.Kind() == reflect.Ptr {
-		sr = sr.Elem()
+func lookupStructProperty(typ reflect.Type, name string) structProperty {
+	key := structPropertyKey{typ: typ, name: name}
+	if cached, ok := structPropertyCache.Load(key); ok {
+		return cached.(structProperty)
 	}
 
-	if field, ok := sr.FieldByName(name); ok {
+	property := inspectStructProperty(typ, name)
+	if property.kind == missingStructProperty {
+		return property
+	}
+	actual, _ := structPropertyCache.LoadOrStore(key, property)
+	return actual.(structProperty)
+}
+
+func inspectStructProperty(typ reflect.Type, name string) structProperty {
+	if method, ok := typ.MethodByName(name); ok {
+		return structProperty{kind: structMethod, index: []int{method.Index}}
+	}
+
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+	}
+
+	if field, ok := typ.FieldByName(name); ok {
 		if field.PkgPath == "" {
 			if _, ok := field.Tag.Lookup(tagKey); !ok {
-				return &field, true
+				return structProperty{kind: structField, index: field.Index}
 			}
 		}
 	}
 
-	for i, n := 0, sr.NumField(); i < n; i++ {
-		field := sr.Field(i)
+	for i := range typ.NumField() {
+		field := typ.Field(i)
 		if field.PkgPath == "" && field.Tag.Get(tagKey) == name {
-			return &field, true
+			return structProperty{kind: structField, index: field.Index}
 		}
 	}
 
-	return nil, false
+	return structProperty{}
 }
 
 func (sv structValue) invoke(fv reflect.Value) Value {

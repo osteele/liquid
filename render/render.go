@@ -15,9 +15,13 @@ import (
 
 // Render renders the render tree.
 func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
+	return renderWithContext(node, w, newNodeContext(vars, c))
+}
+
+func renderWithContext(node Node, w io.Writer, ctx *nodeContext) Error {
 	tw := trimWriter{w: w}
 
-	err := node.render(&tw, newNodeContext(vars, c))
+	err := node.render(&tw, ctx)
 	if err != nil {
 		return err
 	}
@@ -30,7 +34,7 @@ func Render(node Node, w io.Writer, vars map[string]any, c Config) Error {
 }
 
 // RenderSequence renders a sequence of nodes.
-func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
+func (c *nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	tw, ok := w.(*trimWriter)
 	if !ok {
 		tw = &trimWriter{w: w}
@@ -50,7 +54,7 @@ func (c nodeContext) RenderSequence(w io.Writer, seq []Node) Error {
 	return nil
 }
 
-func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
+func (n *BlockNode) render(w *trimWriter, ctx *nodeContext) Error {
 	cd, ok := ctx.config.findBlockDef(n.Name)
 	if !ok || cd.parser == nil {
 		// this should have been detected during compilation; it's an implementation error if it happens here
@@ -67,7 +71,7 @@ func (n *BlockNode) render(w *trimWriter, ctx nodeContext) Error {
 	return wrapRenderError(err, n)
 }
 
-func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
+func (n *RawNode) render(w *trimWriter, ctx *nodeContext) Error {
 	for _, s := range n.slices {
 		_, err := io.WriteString(w, s)
 		if err != nil {
@@ -78,7 +82,7 @@ func (n *RawNode) render(w *trimWriter, ctx nodeContext) Error {
 	return nil
 }
 
-func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
+func (n *ObjectNode) render(w *trimWriter, ctx *nodeContext) Error {
 	value, err := ctx.Evaluate(n.expr)
 	if err != nil {
 		return wrapRenderError(err, n)
@@ -105,7 +109,7 @@ func (n *ObjectNode) render(w *trimWriter, ctx nodeContext) Error {
 	return nil
 }
 
-func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
+func (n *SeqNode) render(w *trimWriter, ctx *nodeContext) Error {
 	for _, c := range n.Children {
 		err := c.render(w, ctx)
 		if err != nil {
@@ -116,17 +120,17 @@ func (n *SeqNode) render(w *trimWriter, ctx nodeContext) Error {
 	return nil
 }
 
-func (n *TagNode) render(w *trimWriter, ctx nodeContext) Error {
+func (n *TagNode) render(w *trimWriter, ctx *nodeContext) Error {
 	err := wrapRenderError(n.renderer(w, rendererContext{ctx, n, nil}), n)
 	return err
 }
 
-func (n *TextNode) render(w *trimWriter, _ nodeContext) Error {
+func (n *TextNode) render(w *trimWriter, _ *nodeContext) Error {
 	_, err := io.WriteString(w, n.Source)
 	return wrapRenderError(err, n)
 }
 
-func (n *TrimNode) render(w *trimWriter, _ nodeContext) Error {
+func (n *TrimNode) render(w *trimWriter, _ *nodeContext) Error {
 	if n.TrimDirection == parser.Left {
 		return wrapRenderError(w.TrimLeft(), n)
 	} else {

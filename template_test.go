@@ -2,6 +2,7 @@ package liquid
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
@@ -125,6 +126,43 @@ func BenchmarkTemplate_Render(b *testing.B) {
 
 	b.ResetTimer()
 
+	for range b.N {
+		_, err := tpl.Render(bindings)
+		require.NoError(b, err)
+	}
+}
+
+func BenchmarkTemplate_RenderStructProperty(b *testing.B) {
+	engine := NewEngine()
+	tpl, err := engine.ParseString(`{% for i in (1..1000) %}{{ message.Text }}{% endfor %}`)
+	require.NoError(b, err)
+	bindings := Bindings{"message": testStruct{Text: "hello"}}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for range b.N {
+		_, err := tpl.Render(bindings)
+		require.NoError(b, err)
+	}
+}
+
+type benchmarkTemplateStore struct {
+	source []byte
+}
+
+func (s benchmarkTemplateStore) ReadTemplate(string) ([]byte, error) {
+	return s.source, nil
+}
+
+func BenchmarkTemplate_RenderIncludes(b *testing.B) {
+	engine := NewEngine()
+	engine.RegisterTemplateStore(benchmarkTemplateStore{source: []byte(`{{ message.Text }}`)})
+	tpl, err := engine.ParseString(strings.Repeat(`{% include "partial.liquid" %}`, 100))
+	require.NoError(b, err)
+	bindings := Bindings{"message": testStruct{Text: "hello"}}
+
+	b.ReportAllocs()
+	b.ResetTimer()
 	for range b.N {
 		_, err := tpl.Render(bindings)
 		require.NoError(b, err)

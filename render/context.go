@@ -66,7 +66,7 @@ type TemplateStore interface {
 }
 
 type rendererContext struct {
-	ctx  nodeContext
+	ctx  *nodeContext
 	node *TagNode
 	cn   *BlockNode
 }
@@ -160,44 +160,65 @@ func (c rendererContext) RenderChildren(w io.Writer) Error {
 }
 
 func (c rendererContext) RenderFile(filename string, b map[string]any) (string, error) {
+	buf := new(bytes.Buffer)
+	if err := c.RenderFileTo(buf, filename, b); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// RenderFileTo renders a template directly to a writer while inheriting the
+// parent lexical scope. It is used as an optional internal extension to Context.
+func (c rendererContext) RenderFileTo(w io.Writer, filename string, b map[string]any) error {
 	bindings := make(map[string]any, len(c.ctx.bindings)+len(b))
 	maps.Copy(bindings, c.ctx.bindings)
 	maps.Copy(bindings, b)
 
-	return c.renderFile(filename, bindings)
+	return c.renderFileTo(w, filename, bindings)
 }
 
 // RenderFileIsolated renders a template without inheriting the parent lexical scope.
 // It is intentionally not part of Context, so adding the render tag does not break
 // third-party Context implementations.
 func (c rendererContext) RenderFileIsolated(filename string, bindings map[string]any) (string, error) {
-	return c.renderFile(filename, maps.Clone(bindings))
+	buf := new(bytes.Buffer)
+	if err := c.RenderFileIsolatedTo(buf, filename, bindings); err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
 }
 
-func (c rendererContext) renderFile(filename string, bindings map[string]any) (string, error) {
+// RenderFileIsolatedTo renders a template directly to a writer without
+// inheriting the parent lexical scope.
+func (c rendererContext) RenderFileIsolatedTo(w io.Writer, filename string, bindings map[string]any) error {
+	return c.renderFileTo(w, filename, maps.Clone(bindings))
+}
+
+func (c rendererContext) renderFileTo(w io.Writer, filename string, bindings map[string]any) error {
 	source, err := c.ctx.config.TemplateStore.ReadTemplate(filename)
 	if err != nil && errors.Is(err, fs.ErrNotExist) {
 		// Is it cached?
 		if cval, ok := c.ctx.config.Cache[filename]; ok {
 			source = cval
 		} else {
-			return "", err
+			return err
 		}
 	} else if err != nil {
-		return "", err
+		return err
 	}
 
-	root, err := c.ctx.config.Compile(string(source), parser.SourceLoc{Pathname: filename, LineNo: 1})
-	if err != nil {
-		return "", err
+	root, ok := c.ctx.cachedPartial(filename, source)
+	if !ok {
+		root, err = c.ctx.config.Compile(string(source), parser.SourceLoc{Pathname: filename, LineNo: 1})
+		if err != nil {
+			return err
+		}
+		c.ctx.cachePartial(filename, source, root)
 	}
 
-	buf := new(bytes.Buffer)
-	if err := Render(root, buf, bindings, c.ctx.config); err != nil {
-		return "", err
-	}
-
-	return buf.String(), nil
+	return renderWithContext(root, w, c.ctx.child(bindings))
 }
 
 // InnerString renders the children to a string.

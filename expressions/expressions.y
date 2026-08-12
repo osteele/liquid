@@ -127,7 +127,7 @@ loop_modifiers: /* empty */ { $$ = loopModifiers{} }
 ;
 
 expr:
-  LITERAL { val := $1; $$ = func(Context) values.Value { return values.ValueOf(val) } }
+  LITERAL { val := values.ValueOf($1); $$ = func(Context) values.Value { return val } }
 | IDENTIFIER { name := $1; $$ = func(ctx Context) values.Value { return values.ValueOf(ctx.Get(name)) } }
 | expr PROPERTY { $$ = makeObjectPropertyExpr($1, $2) }
 | expr '[' expr ']' { $$ = makeIndexExpr($1, $3) }

@@ -46,7 +46,9 @@ func Scan(data string, loc SourceLoc, delims []string) (tokens []Token) {
 	// TODO error on unterminated {{ and {%
 	// TODO probably an error when a tag contains a {{ or {%, at least outside of a string
 	p, pe := 0, len(data)
-	for _, m := range tokenMatcher.FindAllStringSubmatchIndex(data, -1) {
+	matches := tokenMatcher.FindAllStringSubmatchIndex(data, -1)
+	tokens = make([]Token, 0, 2*len(matches)+1)
+	for _, m := range matches {
 		ts, te := m[0], m[1]
 		if p < ts {
 			tokens = append(tokens, Token{Type: TextTokenType, SourceLoc: loc, Source: data[p:ts]})

@@ -39,5 +39,12 @@ func (tl *FileTemplateStore) ReadTemplate(filename string) ([]byte, error) {
 	source, readErr := root.ReadFile(rel)
 	closeErr := root.Close()
 
-	return source, errors.Join(readErr, closeErr)
+	switch {
+	case readErr == nil:
+		return source, closeErr
+	case closeErr == nil:
+		return source, readErr
+	default:
+		return source, errors.Join(readErr, closeErr)
+	}
 }

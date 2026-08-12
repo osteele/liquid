@@ -702,8 +702,8 @@ yydefault:
 		yyDollar = yyS[yypt-1 : yypt+1]
 //line expressions.y:130
 		{
-			val := yyDollar[1].val
-			yyVAL.f = func(Context) values.Value { return values.ValueOf(val) }
+			val := values.ValueOf(yyDollar[1].val)
+			yyVAL.f = func(Context) values.Value { return val }
 		}
 	case 24:
 		yyDollar = yyS[yypt-1 : yypt+1]

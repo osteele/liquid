@@ -111,3 +111,32 @@ func TestIncludeTag_cached_value_handling(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "include-content", strings.TrimSpace(buf.String()))
 }
+
+type changingTemplateStore struct {
+	sources [][]byte
+	index   int
+}
+
+func (s *changingTemplateStore) ReadTemplate(string) ([]byte, error) {
+	source := s.sources[s.index]
+	s.index++
+	return source, nil
+}
+
+func TestIncludeTagRecompilesChangedSourceWithinRender(t *testing.T) {
+	store := &changingTemplateStore{sources: [][]byte{[]byte("first"), []byte("second")}}
+	config := render.NewConfig()
+	config.TemplateStore = store
+	AddStandardTags(&config)
+
+	root, err := config.Compile(
+		`{% include "partial.liquid" %},{% include "partial.liquid" %}`,
+		parser.SourceLoc{},
+	)
+	require.NoError(t, err)
+
+	var output bytes.Buffer
+	err = render.Render(root, &output, includeTestBindings, config)
+	require.NoError(t, err)
+	require.Equal(t, "first,second", output.String())
+}

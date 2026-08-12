@@ -3,6 +3,26 @@
 
 ## Unreleased
 
+### Performance
+
+- Benchmarks on Apple M1 improved as follows (median of eight runs): parsing is
+  15% faster with 78% fewer allocated bytes; loop rendering is 18% faster with
+  53% fewer bytes; struct-property rendering is 26% faster with 54% fewer
+  bytes; and 100 repeated includes are 79% faster with 94% fewer bytes.
+- Reduced parse allocations by pooling generated expression parsers and
+  preallocating template tokens.
+- Reduced render allocations by sharing the internal render context and
+  compiling literal values once.
+- Compile include arguments once, stream partial output directly, and reuse
+  unchanged compiled partials within a top-level render.
+- Cache successful struct property and method metadata lookups.
+- See [BENCHMARKS.md](BENCHMARKS.md) for measurements and rejected trials.
+
+### Fixed
+
+- Preserve `os.IsNotExist` compatibility when a template read fails and the
+  template-store root closes successfully.
+
 ## 1.9.1 (2026-08-12)
 
 ### Changed

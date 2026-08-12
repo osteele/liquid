@@ -7,9 +7,14 @@ package expressions
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/osteele/liquid/values"
 )
+
+var yaccParserPool = sync.Pool{
+	New: func() any { return new(yyParserImpl) },
+}
 
 type parseValue struct {
 	Assignment
@@ -52,12 +57,22 @@ func parse(source string) (p *parseValue, err error) {
 	// FIXME hack to recognize EOF
 	lex := newLexer([]byte(source + ";"))
 
-	n := yyParse(lex)
+	n := parseWithPooledYaccParser(lex)
 	if n != 0 {
 		return nil, SyntaxError(fmt.Errorf("syntax error in %q", source).Error())
 	}
 
 	return &lex.parseValue, nil
+}
+
+func parseWithPooledYaccParser(lex yyLexer) int {
+	p := yaccParserPool.Get().(*yyParserImpl)
+	defer func() {
+		*p = yyParserImpl{}
+		yaccParserPool.Put(p)
+	}()
+
+	return p.Parse(lex)
 }
 
 // EvaluateString is a wrapper for Parse and Evaluate.

@@ -33,6 +33,10 @@ type isolatedFileRenderer interface {
 	RenderFileIsolated(string, map[string]any) (string, error)
 }
 
+type isolatedFileWriter interface {
+	RenderFileIsolatedTo(io.Writer, string, map[string]any) error
+}
+
 // parseRenderArgs parses the arguments of a render tag.
 func parseRenderArgs(source string) (*renderArgs, error) {
 	source = strings.TrimSpace(source)
@@ -389,6 +393,10 @@ func renderTag(source string) (func(io.Writer, render.Context) error, error) {
 			scope[alias] = value
 		}
 
+		if fw, ok := fileRenderer.(isolatedFileWriter); ok {
+			return fw.RenderFileIsolatedTo(w, filename, scope)
+		}
+
 		s, err := fileRenderer.RenderFileIsolated(filename, scope)
 		if err != nil {
 			return err
@@ -452,6 +460,13 @@ func renderFor(
 			"length":  items.Len(),
 			"rindex":  items.Len() - i,
 			"rindex0": items.Len() - i - 1,
+		}
+
+		if fw, ok := fileRenderer.(isolatedFileWriter); ok {
+			if err := fw.RenderFileIsolatedTo(w, filename, scope); err != nil {
+				return err
+			}
+			continue
 		}
 
 		s, err := fileRenderer.RenderFileIsolated(filename, scope)

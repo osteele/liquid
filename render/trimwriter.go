@@ -19,18 +19,23 @@ type trimWriter struct {
 // a prefix whitespace trim on b is performed before writing it to
 // the buffer and the trim flag is unset. If the trim flag was not
 // set, the current buffer is flushed before b is written.
-// Write only returns the bytes written to w during a flush.
+// Write reports the length of the original input when the write succeeds, as
+// required by io.Writer, even when whitespace trimming shortens the output.
 func (tw *trimWriter) Write(b []byte) (n int, err error) {
+	originalLen := len(b)
 	if tw.trim {
 		b = bytes.TrimLeftFunc(b, unicode.IsSpace)
 		tw.trim = false
-	} else if n, err = tw.Flush(); err != nil {
-		return n, err
+	} else if _, err = tw.Flush(); err != nil {
+		return 0, err
 	}
 
 	_, err = tw.buf.Write(b)
+	if err != nil {
+		return 0, err
+	}
 
-	return
+	return originalLen, nil
 }
 
 // TrimLeft trims all whitespaces before the trim node, i.e. the whitespace
