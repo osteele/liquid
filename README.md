@@ -167,8 +167,6 @@ This section provides a comprehensive guide to using and extending the Liquid te
 
 These features of Shopify Liquid aren't implemented:
 
-- Filter keyword parameters, for example `{{ image | img_url: '580x', scale: 2
-  }}`. [[Issue #42](https://github.com/osteele/liquid/issues/42)]
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
   - Note: `Engine.LaxFilters()` enables Shopify-compatible behavior for undefined filters (silently pass through).
 
