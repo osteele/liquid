@@ -26,9 +26,6 @@ jobs:
     - name: Install dependencies
       run: make deps
 
-    - name: Install tools
-      run: make tools
-
     - name: Build
       run: make build
 
@@ -104,19 +101,16 @@ jobs:
       with:
         go-version: 1.26.x
 
-    - name: Install tools
-      run: make tools
+    - name: Install Ragel
+      run: sudo apt-get update && sudo apt-get install --yes ragel
 
-    - name: Regenerate yacc parser
-      run: |
-        cd expressions
-        goyacc expressions.y
-        gofmt -w y.go
+    - name: Regenerate generated files
+      run: make generate
 
     - name: Check for differences
       run: |
         if [ -n "$(git status --porcelain)" ]; then
-          echo "Generated parser files are out of date. Please run 'go generate ./...' and commit the results."
+          echo "Generated files are out of date. Please run 'make generate' and commit the results."
           git diff
           exit 1
         fi

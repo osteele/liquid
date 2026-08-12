@@ -380,11 +380,11 @@ and filter test cases are taken directly from the Liquid documentation.
 
 MIT License
 
-[go-url]: https://github.com/osteele/liquid/actions?query=workflow%3A%22Build+Status%22
-[go-svg]: https://github.com/osteele/liquid/actions/workflows/go.yml/badge.svg
+[go-url]: https://github.com/osteele/liquid/actions/workflows/test.yml
+[go-svg]: https://github.com/osteele/liquid/actions/workflows/test.yml/badge.svg
 
-[golangci-lint-url]: https://github.com/osteele/liquid/actions?query=workflow%3Lint
-[golangci-lint-svg]: https://github.com/osteele/liquid/actions/workflows/golangci-lint.yml/badge.svg
+[golangci-lint-url]: https://github.com/osteele/liquid/actions/workflows/lint.yml
+[golangci-lint-svg]: https://github.com/osteele/liquid/actions/workflows/lint.yml/badge.svg
 
 [godoc-url]: https://godoc.org/github.com/osteele/liquid
 [godoc-svg]: https://godoc.org/github.com/osteele/liquid?status.svg

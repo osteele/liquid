@@ -19,11 +19,10 @@ PACKAGES := $(shell $(GOCMD) list ./... | grep -v /vendor/)
 COVERAGE_FILE := coverage.out
 COVERAGE_HTML := coverage.html
 
-# Tools - installed via tools.go or go.mod tool directive
-TOOLS_DIR := $(shell $(GOCMD) env GOPATH)/bin
-GOYACC := $(TOOLS_DIR)/goyacc
-STRINGER := $(TOOLS_DIR)/stringer
-GOLANGCI_LINT := $(GOCMD) tool golangci-lint  # Use version from go.mod
+# Tools managed by the go.mod tool directive
+GOYACC := $(GOCMD) tool goyacc
+STRINGER := $(GOCMD) tool stringer
+GOLANGCI_LINT := $(GOCMD) tool golangci-lint
 
 # Colors for output
 RED := \033[0;31m
@@ -61,7 +60,7 @@ clean: ## Remove build artifacts and temporary files
 ##@ Code Generation
 
 .PHONY: generate
-generate: tools ## Generate code (parsers, string methods, etc.)
+generate: tools check-ragel ## Generate code (parsers, string methods, etc.)
 	@echo "Generating code..."
 	$(GOGENERATE) ./...
 
@@ -150,14 +149,15 @@ mod-verify: ## Verify dependencies
 ##@ Tools
 
 .PHONY: tools
-tools: ## Install development tools
-	@echo "Installing development tools..."
-	@$(GOCMD) install golang.org/x/tools/cmd/goyacc@latest
-	@$(GOCMD) install golang.org/x/tools/cmd/stringer@latest
-	@echo "${GREEN}✓ Tools installed${NC}"
-	@echo ""
-	@echo "${YELLOW}Note: golangci-lint is managed via go.mod tool directive${NC}"
-	@echo "Run 'go tool golangci-lint' to use it"
+tools: ## Download pinned Go development tools
+	@echo "Downloading pinned Go development tools..."
+	@$(GOYACC) -h >/dev/null 2>&1
+	@$(STRINGER) -h >/dev/null 2>&1
+	@echo "${GREEN}✓ Go tools available${NC}"
+
+.PHONY: check-ragel
+check-ragel: ## Verify that the Ragel state-machine compiler is installed
+	@command -v ragel >/dev/null || (echo "${RED}Ragel is required for code generation${NC}" && exit 1)
 
 .PHONY: install-hooks
 install-hooks: ## Install pre-commit hooks

@@ -17,6 +17,7 @@
 ### CI
 
 - Added 32-bit build verification (linux/arm, linux/386) to CI pipeline.
+- Pinned Go development tools in `go.mod`, aligned local and CI lint versions, and added reproducibility checks for both generated expression-parser files.
 
 ## 1.8.1 (2026-02-27)
 
