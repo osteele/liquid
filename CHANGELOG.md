@@ -3,12 +3,14 @@
 
 ## Unreleased
 
+## 1.9.0 (2026-08-12)
+
 ### Added
 
-- **Named Filter Arguments** (#42): Added keyword arguments for filters, including `allow_false` support in the `default` filter.
-- **String Literal Escapes** (#45): Added `\\`, `\"`, `\n`, `\t`, and `\r` escapes in double-quoted string literals. Single-quoted strings remain literal.
-- **Shopify Filters** (#146): Added `where`, `sum`, `at_least`, `at_most`, `pluralize`, `handleize`/`handle`, `remove_last`, and `replace_last`.
-- **Render Tag** (#128, #129): Added isolated snippet rendering with named parameters and `with`, `for`, and `as` forms.
+- **Named Filter Arguments** (#42, #75): Added keyword arguments for filters, including `allow_false` support in the `default` filter. Thanks [@tanema](https://github.com/tanema) and [@ns-jjiang](https://github.com/ns-jjiang)
+- **String Literal Escapes** (#45): Added `\\`, `\"`, `\n`, `\t`, and `\r` escapes in double-quoted string literals. Single-quoted strings remain literal. Thanks [@tuchida](https://github.com/tuchida)
+- **Shopify Filters** (#146): Added `where`, `sum`, `at_least`, `at_most`, `pluralize`, `handleize`/`handle`, `remove_last`, and `replace_last`. Thanks [@michaelhvisser](https://github.com/michaelhvisser)
+- **Render Tag** (#128, #129): Added isolated snippet rendering with named parameters and `with`, `for`, and `as` forms. Thanks [@pierre-b](https://github.com/pierre-b)
 
 ### Fixed
 

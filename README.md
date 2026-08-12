@@ -336,6 +336,13 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
     <td align="center"><a href="https://github.com/GauthierHacout"><img src="https://avatars.githubusercontent.com/u/71611631?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gauthier Hacout</b></sub></a><br /><a href="https://github.com/osteele/liquid/issues?q=author%3AGauthierHacout" title="Bug reports">🐛</a></td>
     <td align="center"><a href="https://github.com/jaime-amate"><img src="https://avatars.githubusercontent.com/u/16927375?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jaime Amate</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=jaime-amate" title="Code">💻</a></td>
   </tr>
+  <tr>
+    <td align="center"><a href="https://github.com/michaelhvisser"><img src="https://avatars.githubusercontent.com/u/40672164?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michael Visser</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=michaelhvisser" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=michaelhvisser" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/pierre-b"><img src="https://avatars.githubusercontent.com/u/1058531?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Pierre</b></sub></a><br /><a href="https://github.com/osteele/liquid/commits?author=pierre-b" title="Code">💻</a> <a href="https://github.com/osteele/liquid/commits?author=pierre-b" title="Documentation">📖</a> <a href="#ideas-pierre-b" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/osteele/liquid/commits?author=pierre-b" title="Tests">⚠️</a></td>
+    <td align="center"><a href="https://github.com/ns-jjiang"><img src="https://avatars.githubusercontent.com/u/117057470?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Jush Jiang</b></sub></a><br /><a href="#ideas-ns-jjiang" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/tuchida"><img src="https://avatars.githubusercontent.com/u/201790?v=4?s=100" width="100px;" alt=""/><br /><sub><b>tuchida</b></sub></a><br /><a href="#ideas-tuchida" title="Ideas, Planning, & Feedback">🤔</a></td>
+    <td align="center"><a href="https://github.com/tanema"><img src="https://avatars.githubusercontent.com/u/463193?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Tim Anema</b></sub></a><br /><a href="#ideas-tanema" title="Ideas, Planning, & Feedback">🤔</a></td>
+  </tr>
 </table>
 
 <!-- markdownlint-restore -->
