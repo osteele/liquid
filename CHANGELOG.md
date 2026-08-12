@@ -3,6 +3,40 @@
 
 ## Unreleased
 
+## 1.9.1 (2026-08-12)
+
+### Changed
+
+- **Documentation**: Reworked the README and guides for direct setup and usage
+  instructions. Corrected the security boundary, cooperative-cancellation
+  limits, template-store behavior, and loop-modifier compatibility notes.
+
+### Fixed
+
+- **Writer Errors**: `FRender` and `ParseAndFRender` now return final buffered
+  writer failures instead of panicking. Wrapped errors support `errors.Is`.
+- **Strict Variables**: Strict mode now distinguishes missing variables and
+  properties from valid `nil` literals and bound `nil` values.
+- **Nested Includes**: Relative paths in nested includes now resolve from the
+  included file instead of the original root template.
+- **Value Safety**: Prevented panics when templates compare maps, access
+  unexported struct fields, use incompatible map property keys, or pass `nil`
+  through `uniq`.
+- **Delimiters**: Empty custom delimiter arguments now select their documented
+  defaults. Whitespace control also works with delimiters of any length.
+- **Standard Filters**: Corrected Unicode and downcasing behavior in
+  `capitalize`, short-length behavior in `truncate`, and exact-count behavior
+  in `truncatewords`.
+- **Jekyll Assignments**: Nested assignment uses copy-on-write and no longer
+  mutates maps supplied in the caller's bindings.
+
+### Security
+
+- **Template Paths**: The built-in `include` and `render` tags now reject
+  absolute paths and paths that escape the source template's directory.
+  `FileTemplateStore` confines reads to a configurable root and blocks symbolic
+  link escapes.
+
 ## 1.9.0 (2026-08-12)
 
 ### Added
