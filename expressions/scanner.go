@@ -9,7 +9,6 @@ import (
 	"unicode"
 )
 
-//line scanner.go:13
 var _expression_actions []byte = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 12,
 	1, 13, 1, 14, 1, 15, 1, 16,
@@ -274,7 +273,6 @@ func newLexer(data []byte) *lexer {
 		pe:   len(data),
 	}
 
-//line scanner.go:281
 	{
 		lex.cs = expression_start
 		lex.ts = 0
@@ -290,7 +288,6 @@ func (lex *lexer) Lex(out *yySymType) int {
 	eof := lex.pe
 	tok := 0
 
-//line scanner.go:298
 	{
 		var _klen int
 		var _trans int
@@ -311,7 +308,6 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = (lex.p)
 
-//line scanner.go:318
 			}
 		}
 
@@ -701,7 +697,6 @@ func (lex *lexer) Lex(out *yySymType) int {
 					}
 				}
 
-//line scanner.go:627
 			}
 		}
 
@@ -716,7 +711,6 @@ func (lex *lexer) Lex(out *yySymType) int {
 //line NONE:1
 				lex.ts = 0
 
-//line scanner.go:641
 			}
 		}
 
