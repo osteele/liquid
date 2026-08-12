@@ -1,54 +1,59 @@
-# Template Store Example
+# Load templates from an embedded filesystem
 
-This document describes the implementation of an `TemplateStore` that uses an embedded file system as its storage type.
-
-Add a go file to your project with configuration properties and the ReadTemplate() implementation
+A `TemplateStore` supplies files to the `include` and `render` tags. This
+example embeds a `templates` directory in the application binary.
 
 ```go
-package your_package_name
+package templates
 
 import (
-	"embed"
-	"fmt"
+    "embed"
+    "io/fs"
 )
 
-type EmbeddedFileSystemTemplateStore struct {
-	Folder  embed.FS
-	RootDir string
-}
-
-// implementation of TemplateStore
-func (tl *EmbeddedFileSystemTemplateStore) ReadTemplate(filename string) ([]byte, error) {
-
-	fileName := fmt.Sprintf("%v/%v", tl.RootDir, filename)
-	templateFile, err := tl.Folder.ReadFile(fileName)
-
-	return templateFile, err
-}
-
-```
-initialize your embedded folder.  for details on go embedded package see [embed](https://pkg.go.dev/embed)
-
-```go
-
 //go:embed all:templates
-var folder embed.FS
+var files embed.FS
 
+type Store struct {
+    FS fs.FS
+}
+
+func (s *Store) ReadTemplate(name string) ([]byte, error) {
+    return fs.ReadFile(s.FS, name)
+}
+
+func NewStore() (*Store, error) {
+    templateFS, err := fs.Sub(files, "templates")
+    if err != nil {
+        return nil, err
+    }
+    return &Store{FS: templateFS}, nil
+}
 ```
-create store and register with engine
+
+Register the store before parsing or rendering templates:
 
 ```go
-	// use the embedded file system loader for now.
-	embedFileSystemTemplateStore := &your_package_name.EmbeddedFileSystemTemplateStore{
-		Folder:  folder,
-		RootDir: "templates",
-	}
+store, err := templates.NewStore()
+if err != nil {
+    log.Fatal(err)
+}
 
-    //create engine
-    engine := liquid.NewEngine()
-
-    //register with the engine
-	engine.RegisterTemplateStore(embedFileSystemTemplateStore)
-
-    //ready to go
+engine := liquid.NewEngine()
+engine.RegisterTemplateStore(store)
 ```
+
+Give the source template a path relative to the embedded `templates` directory
+when includes must resolve relative to it:
+
+```go
+template, err := engine.ParseTemplateLocation(source, "pages/index.liquid", 1)
+```
+
+An include such as `{% include "../shared/header.liquid" %}` is rejected
+because include and render paths cannot escape the source template's directory.
+Organize reusable partials beneath that directory, or implement an application
+tag with an explicit allowlist for cross-directory lookup.
+
+Custom stores must enforce any additional authorization rules your application
+needs. See the [security policy](../SECURITY.md).

@@ -1,152 +1,97 @@
 # Contributing
 
-Here's some ways to help:
+Bug reports, focused test cases, documentation fixes, and code contributions
+are welcome. Before starting a large change, open an issue to confirm the
+approach.
 
-* Select an item from the [issues list](https://github.com/osteele/liquid/issues)
-* Search the sources for FIXME and TODO comments using `make list-todo`
-* Improve the code coverage - run `make coverage` to see current coverage (currently ~84%)
+Review the
+[pull request template](https://github.com/osteele/liquid/blob/main/.github/PULL_REQUEST_TEMPLATE.md)
+before writing the final description.
 
-Review the [pull request template](https://github.com/osteele/liquid/blob/master/.github/PULL_REQUEST_TEMPLATE.md) before you get too far along on coding.
+## Set up the repository
 
-A note on lint: `nolint: gocyclo` has been used to disable cyclomatic complexity checks on generated functions, hand-written parsers, and some of the generic interpreter functions. IMO this check isn't appropriate for those classes of functions. This isn't a license to disable cyclomatic complexity checks or lint in general.
-
-## Cookbook
-
-### Set up your machine
-
-Fork and clone the repo.
-
-[Install go](https://golang.org/doc/install#install). On macOS running Homebrew, `brew install go` is easier than the linked instructions.
-
-Install package dependencies and development tools:
+Install [Go](https://go.dev/doc/install), then fork and clone the repository.
+Download the pinned tools and module dependencies:
 
 ```bash
-make tools  # Download the versions pinned in go.mod
-make deps   # Download Go dependencies
+make tools
+make deps
 ```
 
-The lint target runs the golangci-lint version pinned in `go.mod`; a separate
-global installation is not required.
+The lint target uses the `golangci-lint` version pinned in `go.mod`. You do not
+need a global installation.
 
-#### Set up Git Hooks (Recommended)
-
-This project uses pre-commit hooks to automatically run formatting, linting, and tests before commits and pushes:
+Optional pre-commit hooks run formatting, lint, tests, and basic repository
+checks:
 
 ```bash
-make install-hooks  # Install pre-commit hooks
+make install-hooks
 ```
 
-This will:
-- Install pre-commit if not already installed
-- Set up hooks to run automatically on `git commit` and `git push`
-- Run formatting (`go fmt`)
-- Run linting (`golangci-lint`)
-- Run tests (`go test -short`)
-- Check for common issues (trailing whitespace, large files, merge conflicts)
+Run all hooks manually with `make run-hooks`. Update the hook definitions with
+`make update-hooks`.
 
-To test the hooks manually:
+## Develop and test
+
+Run the standard pre-commit checks before opening a pull request:
+
 ```bash
-make run-hooks  # Run all hooks on all files
+make pre-commit
 ```
 
-To update hooks to latest versions:
+Useful targets include:
+
 ```bash
-make update-hooks  # Update pre-commit hooks
+make test         # Run all tests
+make test-short   # Run short tests
+make coverage     # Write coverage.out and print package coverage
+make benchmark    # Run benchmarks
+make fmt          # Format Go source
+make lint         # Run golangci-lint
+make lint-fix     # Apply supported lint fixes
+make vet          # Run go vet
+make build        # Build the command
+make ci           # Run the local CI sequence
 ```
 
-### Development Workflow
+Use `make help` to list every target.
 
-Quick start for development:
+Do not suppress a lint finding without a specific reason. Existing
+`nolint:gocyclo` directives cover generated functions, hand-written parsers,
+and generic interpreter functions where the complexity metric is not useful.
+
+## Manage dependencies
 
 ```bash
-make all         # Clean, lint, test, and build everything
-make pre-commit  # Run formatter, linter, and tests before committing
+make deps          # Download dependencies
+make deps-update   # Update dependencies
+make deps-list     # List dependencies
+make mod-tidy      # Run go mod tidy
+make mod-verify    # Verify downloaded modules
+make check-mod     # Check whether go.mod and go.sum are current
 ```
 
-### Testing
+## Generate the parser
+
+The expression lexer uses Ragel, and the parser uses `goyacc`. Install Ragel
+before editing `expressions/scanner.rl`. On macOS, run `brew install ragel`.
+
+After changing `expressions/scanner.rl` or `expressions/expressions.y`,
+regenerate the checked-in Go files:
 
 ```bash
-make test        # Run all tests
-make test-short  # Run short tests only
-make coverage    # Generate test coverage report
-make benchmark   # Run performance benchmarks
+make generate
 ```
 
-**Coverage Reporting**: Code coverage is tracked automatically via GitHub Actions. When you push to the main branch, the CI pipeline:
-- Generates a coverage report using Go's native coverage tools
-- Extracts the coverage percentage
-- Displays coverage details in the workflow summary
-- Optionally creates a coverage badge (if `GIST_SECRET` is configured)
+The generation target downloads the pinned Go tools and checks for Ragel.
 
-To view coverage locally, run `make coverage`. This generates `coverage.out` and displays per-package coverage percentages. The coverage data is generated without external SaaS services, using only Go's built-in tooling.
+## Preview API documentation
 
-### Code Quality
+Run a local documentation server:
 
 ```bash
-make fmt         # Format code
-make lint        # Run linter
-make lint-fix    # Run linter with auto-fix
-make vet         # Run go vet
-```
-
-### Building
-
-```bash
-make build       # Build the binary
-make install     # Build and install to GOPATH/bin
-make clean       # Remove build artifacts
-```
-
-### Dependencies
-
-```bash
-make deps        # Download dependencies
-make deps-update # Update dependencies to latest versions
-make deps-list   # List all dependencies
-make mod-tidy    # Clean up go.mod and go.sum
-make mod-verify  # Verify dependencies are correct
-make check-mod   # Check if go.mod is up to date
-```
-
-### Utilities
-
-```bash
-make list-todo   # Find all TODO and FIXME comments
-make list-imports # List all package imports
-make ci          # Run full CI suite locally
-make help        # Show all available commands
-```
-
-### Preview the Documentation
-
-```bash
+go install golang.org/x/tools/cmd/godoc@latest
 godoc -http=:6060
-open http://localhost:6060/pkg/github.com/osteele/liquid/
 ```
 
-### Work on the Expression Parser and Lexer
-
-To work on the lexer, install Ragel. On macOS: `brew install ragel`.
-
-The Go code-generation tools are pinned in `go.mod` and downloaded by `make tools`:
-- `goyacc` for parser generation
-- `stringer` for string method generation
-
-After editing `scanner.rl` or `expressions.y`:
-
-```bash
-make generate   # Re-generate lexers and parsers
-```
-
-Or directly:
-
-```bash
-go generate ./...
-```
-
-Test just the scanner:
-
-```bash
-cd expressions
-ragel -Z scanner.rl && go test
-```
+Then open <http://localhost:6060/pkg/github.com/osteele/liquid/>.

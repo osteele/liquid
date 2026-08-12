@@ -1,4 +1,4 @@
-# Liquid Template Parser
+# Liquid templates for Go
 
 [![go badge][go-svg]][go-url]
 [![Golangci-lint badge][golangci-lint-svg]][golangci-lint-url]
@@ -6,39 +6,16 @@
 [![Go Doc][godoc-svg]][godoc-url]
 [![MIT License][license-svg]][license-url]
 
-`liquid` is a pure Go implementation of [Shopify Liquid
-templates](https://shopify.github.io/liquid). It was developed for use in the
-[Gojekyll](https://github.com/osteele/gojekyll) port of the Jekyll static site
-generator.
-
-<!-- TOC -->
-
-- [Liquid Template Parser](#liquid-template-parser)
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Command-Line tool](#command-line-tool)
-  - [Security](#security)
-  - [Documentation](#documentation)
-    - [Status](#status)
-    - [Drops](#drops)
-    - [Value Types](#value-types)
-    - [Template Store](#template-store)
-    - [References](#references)
-  - [Contributing](#contributing)
-    - [Contributors](#contributors)
-    - [Attribution](#attribution)
-  - [Other Implementations](#other-implementations)
-    - [Go](#go)
-    - [Other Languages](#other-languages)
-  - [License](#license)
-
-<!-- /TOC -->
+`liquid` is a pure Go implementation of
+[Shopify Liquid](https://shopify.github.io/liquid). It was developed for
+[Gojekyll](https://github.com/osteele/gojekyll), a Go port of the Jekyll
+static-site generator.
 
 ## Installation
 
-`go get github.com/osteele/liquid` # latest version
-
-`go get -u github.com/osteele/liquid` # development version
+```bash
+go get github.com/osteele/liquid@latest
+```
 
 ## Usage
 
@@ -51,17 +28,18 @@ bindings := map[string]any{
     },
 }
 out, err := engine.ParseAndRenderString(template, bindings)
-if err != nil { log.Fatalln(err) }
+if err != nil {
+    log.Fatal(err)
+}
 fmt.Println(out)
 // Output: <h1>Introduction</h1>
 ```
 
 See the [API documentation][godoc-url] for additional examples.
 
-### Jekyll Compatibility
+### Jekyll compatibility
 
-This library was originally developed for [Gojekyll](https://github.com/osteele/gojekyll), a Go port of Jekyll. 
-As such, it includes optional Jekyll-specific extensions that are not part of the Shopify Liquid specification.
+Optional Jekyll extensions support syntax that is not part of Shopify Liquid.
 
 To enable Jekyll compatibility mode:
 
@@ -70,18 +48,16 @@ engine := liquid.NewEngine()
 engine.EnableJekyllExtensions()
 ```
 
-Jekyll extensions include:
-
-- **Dot notation in assign tags**: `{% assign page.canonical_url = "/about/" %}`
-  - In standard Liquid, this would be a syntax error
-  - With Jekyll extensions enabled, this creates or updates nested object properties
-  - Intermediate objects are created automatically if they don't exist
+Jekyll mode allows dot notation in assignment targets, such as
+`{% assign page.canonical_url = "/about/" %}`. It creates missing intermediate
+maps. Nested assignments use copy-on-write and do not modify maps supplied by
+the caller.
 
 Example:
 
 ```go
 engine := liquid.NewEngine()
-engine.EnableJekyllExtensions()  // Enable Jekyll-specific features
+engine.EnableJekyllExtensions()
 
 template := `{% assign page.meta.author = "John Doe" %}{{ page.meta.author }}`
 bindings := map[string]any{
@@ -89,17 +65,20 @@ bindings := map[string]any{
         "title": "Home",
     },
 }
-out, _ := engine.ParseAndRenderString(template, bindings)
+out, err := engine.ParseAndRenderString(template, bindings)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(out)
 // Output: John Doe
 ```
 
-**Note**: Jekyll extensions are disabled by default to maintain compatibility with standard Shopify Liquid.
+Jekyll extensions are disabled by default.
 
-### Command-Line tool
+### Command-line tool
 
 `go install github.com/osteele/liquid/cmd/liquid@latest` installs a command-line
-`liquid` executable. This is intended to make it easier to create test cases for
-bug reports.
+`liquid` executable for testing templates and preparing bug reports.
 
 ```bash
 $ liquid --help
@@ -110,96 +89,63 @@ hello!
 
 ## Security
 
-**Important**: If you plan to process untrusted templates (templates authored by users you don't fully trust), please review the [Security Policy](SECURITY.md) documentation.
+Read the [security policy](SECURITY.md) before rendering untrusted templates.
+The engine has no built-in CPU, memory, iteration, or output limits.
+Auto-escaping is opt-in. The `include` and `render` tags can read through the
+configured template store. Registered extensions and callable bound values
+execute application Go code.
 
-Key security considerations:
-
-- **Sandboxed Execution**: Templates cannot execute arbitrary code or access filesystem/network resources (by default)
-- **DoS Vulnerabilities**: The engine is vulnerable to denial-of-service attacks via infinite loops and memory exhaustion when processing untrusted templates
-- **Resource Limiting via FRender**: Use the `FRender` method with custom writers to implement timeouts and output size limits for untrusted templates
-- **Third-Party Extensions**: Custom filters and tags execute arbitrary Go code and should be carefully audited
-
-For detailed information about security guarantees, limitations, and production deployment recommendations, see [SECURITY.md](SECURITY.md). For implementing resource limits, see the [FRender documentation](./docs/FRender.md).
+Use [`FRender`](./docs/FRender.md) to limit output and check cooperative
+cancellation. Use process or container isolation when you need enforceable
+resource limits.
 
 ## Documentation
 
-This section provides a comprehensive guide to using and extending the Liquid template engine. Documentation is organized by topic:
-
-### Getting Started
-
-- **[Installation](#installation)** - Install the library and command-line tool
-- **[Usage](#usage)** - Quick start guide with examples
-- **[Command-Line Tool](#command-line-tool)** - Testing templates from the command line
-- **[API Documentation][godoc-url]** - Complete API reference on pkg.go.dev
-
-### Core Concepts
-
-- **[Value Types](#value-types)** - How Go values map to Liquid types
-- **[Drops](#drops)** - Custom types in templates
-- **[Status](#status)** - Feature compatibility with Shopify Liquid
-
-### Advanced Usage
-
-- **[Template Store](#template-store)** - Custom template storage (filesystem, database, etc.)
-  - See also: [Template Store Example](./docs/TemplateStoreExample.md)
-- **[Advanced Rendering](#advanced-rendering)** - FRender for streaming, timeouts, and size limits
-  - See also: [FRender Documentation](./docs/FRender.md)
-
-### Security & Performance
-
-- **[Security](#security)** - Resource limits and security considerations
-  - See also: [SECURITY.md](SECURITY.md)
-- **[FRender Documentation](./docs/FRender.md)** - Implementing resource limits in production
-
-### Internals
-
-- **[Loop Semantics](./docs/loop-semantics.md)** - Comparison with Ruby Liquid implementation
-- **[References](#references)** - Shopify Liquid documentation and resources
-
-### Contributing
-
-- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - How to contribute to the project
-- **[Contributors](#contributors)** - List of project contributors
-
----
+The [API reference][godoc-url] documents exported Go types and methods. The
+guides cover [custom template stores](./docs/TemplateStoreExample.md),
+[`FRender`](./docs/FRender.md), [security](SECURITY.md), and
+[loop-modifier differences](./docs/loop-semantics.md).
 
 ### Status
 
-These features of Shopify Liquid aren't implemented:
+The following Shopify Liquid feature is not implemented:
 
 - Warn and lax [error modes](https://github.com/shopify/liquid#error-modes).
-  - Note: `Engine.LaxFilters()` enables Shopify-compatible behavior for undefined filters (silently pass through).
+  - `Engine.LaxFilters()` does provide Shopify-compatible pass-through behavior
+    for undefined filters.
 
 ### Drops
 
 Drops have a different design from the Shopify (Ruby) implementation. A Ruby
 drop sets `liquid_attributes` to a list of attributes that are exposed to
 Liquid. A Go drop implements `ToLiquid() any`, that returns a proxy
-object. Conventionally, the proxy is a `map` or `struct` that defines the
-exposed properties. See <http://godoc.org/github.com/osteele/liquid#Drop> for
-additional information.
+object. The proxy is usually a map or struct that defines the exposed
+properties. See the
+[`Drop` API documentation](https://pkg.go.dev/github.com/osteele/liquid#Drop)
+for details.
 
 ### Value Types
 
 `Render` and friends take a `Bindings` parameter. This is a map of `string` to
-`any`, that associates template variable names with Go values.
+`any` that associates template variable names with Go values.
 
-Any Go value can be used as a variable value. These values have special meaning:
+Any Go value can be used as a variable value. These values have special
+meaning:
 
 - `false` and `nil`
   - These, and no other values, are recognized as false by `and`, `or`, `{% if
     %}`, `{% elsif %}`, and `{% case %}`.
 - Integers
-  - (Only) integers can be used as array indices: `array[1]`; `array[n]`, where
+  - Integers can be used as array indices: `array[1]`; `array[n]`, where
     `array` has an array value and `n` has an integer value.
   - (Only) integers can be used as the endpoints of a range: `{% for item in
     (1..5) %}`, `{% for item in (start..end) %}` where `start` and `end` have
     integer values.
 - Integers and floats
   - Integers and floats are converted to their join type for comparison: `1 ==
-    1.0` evaluates to `true`.  Similarly, `int8(1)`, `int16(1)`, `uint8(1)` etc.
-    are all `==`.
-  - [There is currently no special treatment of complex numbers.]
+    1.0` evaluates to `true`. Similarly, `int8(1)`, `int16(1)`, and `uint8(1)`
+    are all equal.
+  - Complex numbers receive no special treatment.
 - Integers, floats, and strings
   - Integers, floats, and strings can be used in comparisons `<`, `>`, `<=`,
     `>=`. Integers and floats can be usefully compared with each other. Strings
@@ -212,8 +158,8 @@ Any Go value can be used as a variable value. These values have special meaning:
     array[0]`, `array[array.size-1] == array.last` (where `array.size > 0`)
 - Maps
   - A map can be indexed by a string: `hash["key"]`; `hash[s]` where `s` has a
-    string value
-  - A map can be accessed using property syntax `hash.key`
+    string value.
+  - A map can be accessed using property syntax: `hash.key`.
   - Maps have a special `size` property, that returns the size of the map.
 - Drops
   - A value `value` of a type that implements the `Drop` interface acts as the
@@ -221,10 +167,11 @@ Any Go value can be used as a variable value. These values have special meaning:
     `ToLiquid` will be called. [This is in contrast to Shopify Liquid, which
     both uses a different interface for drops, and makes stronger guarantees.]
 - Structs
-  - A public field of a struct can be accessed by its name: `value.FieldName`, `value["fieldName"]`.
-    - A field tagged e.g. `liquid:”name”` is accessed as `value.name` instead.
+  - A public field of a struct can be accessed by its name: `value.FieldName`,
+    `value["FieldName"]`.
+    - A field tagged `liquid:"name"` is accessed as `value.name` instead.
     - If the value of the field is a function that takes no arguments and
-      returns either one or two arguments, accessing it invokes the function,
+      returns either one or two values, accessing it invokes the function,
       and the value of the property is its first return value.
     - If the second return value is non-nil, accessing the field panics instead.
   - A function defined on a struct can be accessed by function name e.g.
@@ -244,41 +191,39 @@ Any Go value can be used as a variable value. These values have special meaning:
 
 ### Template Store
 
-The template store allows for usage of varying template storage implementations (embedded file system, database, service, etc).  In order to use:
+`TemplateStore` loads files for the `include` and `render` tags. Implement it
+to load templates from an embedded filesystem, database, or service:
 
-1. Create a struct that implements TemplateStore
-    ```go
-    type TemplateStore interface {
-	      ReadTemplate(templatename string) ([]byte, error)
-    }
-    ```
-1. Register with the engine
-    ```go
-    engine.RegisterTemplateStore(myTemplateStore)
-    ```
+```go
+type TemplateStore interface {
+    ReadTemplate(templateName string) ([]byte, error)
+}
 
-`FileTemplateStore` is the default mechanism for backwards compatibility.
+engine.RegisterTemplateStore(myTemplateStore)
+```
 
-Refer to [example](./docs/TemplateStoreExample.md) for an example implementation.
+`FileTemplateStore` is the default. It confines reads to `Root`; an empty root
+uses the current working directory. Include and render paths are relative to
+the source template and cannot escape its directory.
+
+See the [embedded template-store example](./docs/TemplateStoreExample.md).
 
 ### Advanced Rendering
 
 #### Custom Writers (FRender)
 
-For advanced use cases like streaming to files, implementing timeouts, or limiting output size, use the `FRender` method to render directly to any `io.Writer`:
+Use `FRender` to write directly to an `io.Writer`:
 
 ```go
 var buf bytes.Buffer
 err := template.FRender(&buf, bindings)
 ```
 
-This is particularly useful for:
-- Rendering large templates without buffering in memory
-- Implementing cancellation via context
-- Limiting output size from untrusted templates
-- Custom output transformation
+Writer wrappers can limit output, check a cancellation context when output is
+written, or transform output. Writer errors are returned from `FRender` and
+support `errors.Is`.
 
-See the [FRender documentation](./docs/FRender.md) for detailed examples and security best practices.
+See the [`FRender` guide](./docs/FRender.md) for examples and limitations.
 
 ### References
 
@@ -289,12 +234,13 @@ See the [FRender documentation](./docs/FRender.md) for detailed examples and sec
 
 ## Contributing
 
-Bug reports, test cases, and code contributions are more than welcome.
-Please refer to the [contribution guidelines](./CONTRIBUTING.md).
+Bug reports, test cases, documentation, and code contributions are welcome.
+Read the [contribution guide](./CONTRIBUTING.md) before opening a pull request.
 
 ### Contributors
 
-Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
+Thanks to these contributors
+([emoji key](https://github.com/kentcdodds/all-contributors#emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
@@ -352,7 +298,7 @@ Thanks goes to these wonderful people ([emoji key](https://github.com/kentcdodds
 
 This project follows the
 [all-contributors](https://github.com/kentcdodds/all-contributors)
-specification. Contributions of any kind welcome!
+specification. Contributions of all kinds are welcome.
 
 ### Attribution
 
@@ -381,7 +327,7 @@ and filter test cases are taken directly from the Liquid documentation.
 
 ### Other Languages
 
- See Shopify's [ports of Liquid to other environments](https://github.com/Shopify/liquid/wiki/Ports-of-Liquid-to-other-environments).
+See Shopify's [ports of Liquid to other environments](https://github.com/Shopify/liquid/wiki/Ports-of-Liquid-to-other-environments).
 
 ## License
 
@@ -393,10 +339,10 @@ MIT License
 [golangci-lint-url]: https://github.com/osteele/liquid/actions/workflows/lint.yml
 [golangci-lint-svg]: https://github.com/osteele/liquid/actions/workflows/lint.yml/badge.svg
 
-[godoc-url]: https://godoc.org/github.com/osteele/liquid
-[godoc-svg]: https://godoc.org/github.com/osteele/liquid?status.svg
+[godoc-url]: https://pkg.go.dev/github.com/osteele/liquid
+[godoc-svg]: https://pkg.go.dev/badge/github.com/osteele/liquid.svg
 
-[license-url]: https://github.com/osteele/liquid/blob/master/LICENSE
+[license-url]: https://github.com/osteele/liquid/blob/main/LICENSE
 [license-svg]: https://img.shields.io/badge/license-MIT-blue.svg
 
 [go-report-card-url]: https://goreportcard.com/report/github.com/osteele/liquid
