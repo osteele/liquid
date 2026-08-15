@@ -14,7 +14,13 @@ type (
 )
 
 func (g grammarFake) BlockSyntax(w string) (BlockSyntax, bool) {
-	return blockSyntaxFake(w), true
+	switch {
+	case w == "for" || w == "if" || w == "unless" || w == "else" ||
+		w == "raw" || w == "comment" || strings.HasPrefix(w, "end"):
+		return blockSyntaxFake(w), true
+	default:
+		return nil, false
+	}
 }
 
 func (g blockSyntaxFake) IsBlock() bool { return true }
@@ -161,4 +167,65 @@ func TestToken_IsZero(t *testing.T) {
 func TestSourceLoc_String(t *testing.T) {
 	require.Equal(t, "f.html:5", (SourceLoc{Pathname: "f.html", LineNo: 5}).String())
 	require.Equal(t, "line 3", (SourceLoc{LineNo: 3}).String())
+}
+
+// parserNestingStateTests models the parser's internal state machine.
+// Each row is a token sequence and whether it should parse or produce an error.
+var parserNestingStateTests = []struct {
+	name        string
+	template    string
+	wantErr     bool
+	errContains string
+}{
+	// Valid base states
+	{"empty template", "", false, ""},
+	{"plain text", "hello world", false, ""},
+	{"object expression", "{{ x }}", false, ""},
+	{"unknown tag", "{% other %}", false, ""},
+
+	// Valid block nesting
+	{"simple for", "{% for item in list %}{% endfor %}", false, ""},
+	{"simple if", "{% if test %}{% endif %}", false, ""},
+	{"if with else", "{% if test %}{% else %}{% endif %}", false, ""},
+	{"nested if", "{% if test %}{% if test %}{% endif %}{% endif %}", false, ""},
+	{"for containing if", "{% for item in list %}{% if test %}{% endif %}{% endfor %}", false, ""},
+	{"unless", "{% unless test %}{% endunless %}", false, ""},
+
+	// Raw / comment swallow content
+	{"raw swallows tag", "{% raw %}{% if true %}{% endraw %}", false, ""},
+	{"raw swallows object", "{% raw %}{{ x }}{% endraw %}", false, ""},
+	{"comment swallows tag", "{% comment %}{% if true %}{% endcomment %}", false, ""},
+	{"comment swallows raw", "{% comment %}{% raw %}{% endcomment %}", false, ""},
+
+	// Invalid states: clauses / ends without matching start
+	{"else outside if", "{% else %}", true, "not inside"},
+	{"endfor without for", "{% endfor %}", true, "not inside"},
+	{"endif without if", "{% endif %}", true, "not inside"},
+
+	// Invalid states: mismatched end tag
+	{"wrong end tag", "{% if test %}{% endfor %}", true, "not inside"},
+	{"nested wrong end tag", "{% for item in list %}{% if test %}{% endfor %}{% endif %}", true, "not inside"},
+
+	// Invalid states: unterminated blocks
+	{"unterminated if", "{% if test %}", true, "unterminated"},
+	{"unterminated for", "{% for item in list %}", true, "unterminated"},
+
+	// Invalid states: clause in wrong block
+	{"else inside for", "{% for item in list %}{% else %}{% endfor %}", true, "not inside"},
+}
+
+func TestParserNestingState(t *testing.T) {
+	cfg := Config{Grammar: grammarFake{}}
+
+	for _, test := range parserNestingStateTests {
+		t.Run(test.name, func(t *testing.T) {
+			_, err := cfg.Parse(test.template, SourceLoc{})
+			if test.wantErr {
+				require.Errorf(t, err, test.template)
+				require.Containsf(t, err.Error(), test.errContains, test.template)
+			} else {
+				require.NoErrorf(t, err, test.template)
+			}
+		})
+	}
 }

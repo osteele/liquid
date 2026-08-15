@@ -215,3 +215,139 @@ func TestIterationTags_errors(t *testing.T) {
 		})
 	}
 }
+
+// loopControlStateTests models the for-loop control state machine:
+// (current iteration, control action) -> rendered output.
+var loopControlStateTests = []struct {
+	name     string
+	template string
+	expected string
+}{
+	{"break on first iteration", `{% for a in array %}{% break %}{{ a }}.{% endfor %}`, ""},
+	{"break in middle", `{% for a in array %}{% if a == 'second' %}{% break %}{% endif %}{{ a }}.{% endfor %}`, "first."},
+	{"break after last item", `{% for a in array %}{{ a }}.{% if a == 'third' %}{% break %}{% endif %}{% endfor %}`, "first.second.third."},
+	{"continue on first iteration", `{% for a in array %}{% continue %}{{ a }}.{% endfor %}`, ""},
+	{"continue in middle", `{% for a in array %}{% if a == 'second' %}{% continue %}{% endif %}{{ a }}.{% endfor %}`, "first.third."},
+	{"continue on last item", `{% for a in array %}{{ a }}.{% if a == 'third' %}{% continue %}{% endif %}{% endfor %}`, "first.second.third."},
+	{"break only affects inner loop", `{% for a in array %}{% for b in array %}{% if b == 'second' %}{% break %}{% endif %}{{ b }}{% endfor %}:{{ a }}.{% endfor %}`, "first:first.first:second.first:third."},
+	{"else on empty array", `{% for a in empty %}{{ a }}.{% else %}none{% endfor %}`, "none"},
+	{"else not used", `{% for a in array %}{{ a }}.{% else %}none{% endfor %}`, "first.second.third."},
+}
+
+func TestLoopControlState(t *testing.T) {
+	cfg := render.NewConfig()
+	AddStandardTags(&cfg)
+
+	bindings := map[string]any{
+		"array": []string{"first", "second", "third"},
+		"empty": []string{},
+	}
+
+	for _, test := range loopControlStateTests {
+		t.Run(test.name, func(t *testing.T) {
+			root, err := cfg.Compile(test.template, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.template)
+
+			buf := new(bytes.Buffer)
+			err = render.Render(root, buf, bindings, cfg)
+			require.NoErrorf(t, err, test.template)
+			require.Equalf(t, test.expected, buf.String(), test.template)
+		})
+	}
+}
+
+// forloopMapStateTests models the forloop variable state at each iteration.
+// Each row is (loop configuration, iteration index) -> expected forloop map.
+var forloopMapStateTests = []struct {
+	name     string
+	template string
+	bindings map[string]any
+	expected []map[string]any
+}{
+	{
+		name:     "three iterations",
+		template: `{% for a in array %}{% record_forloop %}{% endfor %}`,
+		bindings: map[string]any{"array": []string{"x", "y", "z"}},
+		expected: []map[string]any{
+			{"first": true, "last": false, "index": 1, "index0": 0, "rindex": 3, "rindex0": 2, "length": 3},
+			{"first": false, "last": false, "index": 2, "index0": 1, "rindex": 2, "rindex0": 1, "length": 3},
+			{"first": false, "last": true, "index": 3, "index0": 2, "rindex": 1, "rindex0": 0, "length": 3},
+		},
+	},
+	{
+		name:     "limit modifier",
+		template: `{% for a in array limit:2 %}{% record_forloop %}{% endfor %}`,
+		bindings: map[string]any{"array": []string{"x", "y", "z"}},
+		expected: []map[string]any{
+			{"first": true, "last": false, "index": 1, "index0": 0, "rindex": 2, "rindex0": 1, "length": 2},
+			{"first": false, "last": true, "index": 2, "index0": 1, "rindex": 1, "rindex0": 0, "length": 2},
+		},
+	},
+	{
+		name:     "offset modifier",
+		template: `{% for a in array offset:1 %}{% record_forloop %}{% endfor %}`,
+		bindings: map[string]any{"array": []string{"x", "y", "z"}},
+		expected: []map[string]any{
+			{"first": true, "last": false, "index": 1, "index0": 0, "rindex": 2, "rindex0": 1, "length": 2},
+			{"first": false, "last": true, "index": 2, "index0": 1, "rindex": 1, "rindex0": 0, "length": 2},
+		},
+	},
+	{
+		name:     "reversed modifier",
+		template: `{% for a in array reversed %}{% record_forloop %}{% endfor %}`,
+		bindings: map[string]any{"array": []string{"x", "y", "z"}},
+		expected: []map[string]any{
+			{"first": true, "last": false, "index": 1, "index0": 0, "rindex": 3, "rindex0": 2, "length": 3},
+			{"first": false, "last": false, "index": 2, "index0": 1, "rindex": 2, "rindex0": 1, "length": 3},
+			{"first": false, "last": true, "index": 3, "index0": 2, "rindex": 1, "rindex0": 0, "length": 3},
+		},
+	},
+	{
+		name:     "single iteration",
+		template: `{% for a in one %}{% record_forloop %}{% endfor %}`,
+		bindings: map[string]any{"one": []string{"only"}},
+		expected: []map[string]any{
+			{"first": true, "last": true, "index": 1, "index0": 0, "rindex": 1, "rindex0": 0, "length": 1},
+		},
+	},
+}
+
+func TestForloopMapState(t *testing.T) {
+	var recorded []map[string]any
+
+	cfg := render.NewConfig()
+	AddStandardTags(&cfg)
+	cfg.AddTag("record_forloop", func(string) (func(io.Writer, render.Context) error, error) {
+		return func(_ io.Writer, ctx render.Context) error {
+			loopVar := ctx.Get("forloop")
+			require.NotNil(t, loopVar, "forloop variable should be set")
+			loopMap, ok := loopVar.(map[string]any)
+			require.True(t, ok, "forloop variable should be a map")
+
+			// Clone and drop the internal .cycles map so the table stays focused
+			// on the documented forloop variables.
+			cloned := make(map[string]any, len(loopMap))
+			for k, v := range loopMap {
+				if k == ".cycles" {
+					continue
+				}
+				cloned[k] = v
+			}
+			recorded = append(recorded, cloned)
+			return nil
+		}, nil
+	})
+
+	for _, test := range forloopMapStateTests {
+		t.Run(test.name, func(t *testing.T) {
+			recorded = nil
+
+			root, err := cfg.Compile(test.template, parser.SourceLoc{})
+			require.NoErrorf(t, err, test.template)
+
+			err = render.Render(root, io.Discard, test.bindings, cfg)
+			require.NoErrorf(t, err, test.template)
+			require.Equalf(t, test.expected, recorded, test.template)
+		})
+	}
+}

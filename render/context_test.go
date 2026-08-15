@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"testing"
 
@@ -291,4 +292,157 @@ func TestContext_file_not_found_error(t *testing.T) {
 	err = Render(root, io.Discard, contextTestBindings, cfg)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err.Cause()))
+}
+
+// setPathStateTests models SetPath as a state transition on the bindings map.
+// Each row is (initial bindings, path, value) -> (expected bindings or error).
+var setPathStateTests = []struct {
+	name    string
+	initial map[string]any
+	path    []string
+	value   any
+	want    map[string]any
+	wantErr string
+}{
+	{
+		name:    "creates missing nested path",
+		initial: map[string]any{},
+		path:    []string{"page", "url"},
+		value:   "/about/",
+		want:    map[string]any{"page": map[string]any{"url": "/about/"}},
+	},
+	{
+		name:    "replaces existing leaf",
+		initial: map[string]any{"page": map[string]any{"url": "/old/"}},
+		path:    []string{"page", "url"},
+		value:   "/new/",
+		want:    map[string]any{"page": map[string]any{"url": "/new/"}},
+	},
+	{
+		name:    "clones intermediate map and preserves siblings",
+		initial: map[string]any{"page": map[string]any{"url": "/old/", "title": "T"}},
+		path:    []string{"page", "url"},
+		value:   "/new/",
+		want:    map[string]any{"page": map[string]any{"url": "/new/", "title": "T"}},
+	},
+	{
+		name:    "single-element path delegates to Set",
+		initial: map[string]any{},
+		path:    []string{"x"},
+		value:   42,
+		want:    map[string]any{"x": 42},
+	},
+	{
+		name:    "errors on non-map intermediate",
+		initial: map[string]any{"page": 42},
+		path:    []string{"page", "url"},
+		value:   "/about/",
+		wantErr: "cannot set property on non-object",
+	},
+	{
+		name:    "errors on empty path",
+		initial: map[string]any{},
+		path:    []string{},
+		value:   "val",
+		wantErr: "empty path",
+	},
+}
+
+func TestSetPathState(t *testing.T) {
+	for _, test := range setPathStateTests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := newNodeContext(test.initial, NewConfig())
+			rc := rendererContext{ctx: ctx}
+
+			err := rc.SetPath(test.path, test.value)
+			if test.wantErr != "" {
+				require.Errorf(t, err, "SetPath(%v, %v)", test.path, test.value)
+				require.Containsf(t, err.Error(), test.wantErr, "SetPath(%v, %v)", test.path, test.value)
+				return
+			}
+			require.NoErrorf(t, err, "SetPath(%v, %v)", test.path, test.value)
+			require.Equalf(t, test.want, ctx.bindings, "SetPath(%v, %v)", test.path, test.value)
+		})
+	}
+}
+
+// renderFileScopeStateTests models parent/child scope transitions.
+// Each row is (parent bindings, child additions, isolated flag) -> output + parent unchanged.
+var renderFileScopeStateTests = []struct {
+	name       string
+	parent     map[string]any
+	childAdd   map[string]any
+	isolated   bool
+	template   string
+	wantOut    string
+	wantParent map[string]any
+}{
+	{
+		name:       "child inherits parent variable",
+		parent:     map[string]any{"x": 1},
+		childAdd:   map[string]any{},
+		isolated:   false,
+		template:   "{{ x }}",
+		wantOut:    "1",
+		wantParent: map[string]any{"x": 1},
+	},
+	{
+		name:       "child shadow does not leak to parent",
+		parent:     map[string]any{"x": 1},
+		childAdd:   map[string]any{"x": 2},
+		isolated:   false,
+		template:   "{{ x }}",
+		wantOut:    "2",
+		wantParent: map[string]any{"x": 1},
+	},
+	{
+		name:       "child addition does not leak to parent",
+		parent:     map[string]any{"x": 1},
+		childAdd:   map[string]any{"y": 2},
+		isolated:   false,
+		template:   "{{ x }}-{{ y }}",
+		wantOut:    "1-2",
+		wantParent: map[string]any{"x": 1},
+	},
+	{
+		name:       "isolated child does not inherit parent",
+		parent:     map[string]any{"x": 1},
+		childAdd:   map[string]any{},
+		isolated:   true,
+		template:   "{{ x }}",
+		wantOut:    "",
+		wantParent: map[string]any{"x": 1},
+	},
+	{
+		name:       "isolated child uses only provided bindings",
+		parent:     map[string]any{"x": 1},
+		childAdd:   map[string]any{"y": 2},
+		isolated:   true,
+		template:   "{{ y }}",
+		wantOut:    "2",
+		wantParent: map[string]any{"x": 1},
+	},
+}
+
+func TestRenderFileScopeState(t *testing.T) {
+	for _, test := range renderFileScopeStateTests {
+		t.Run(test.name, func(t *testing.T) {
+			cfg := NewConfig()
+			cfg.Cache["child"] = []byte(test.template)
+
+			parent := newNodeContext(maps.Clone(test.parent), cfg)
+			rc := rendererContext{ctx: parent}
+
+			var buf bytes.Buffer
+			var err error
+			if test.isolated {
+				err = rc.RenderFileIsolatedTo(&buf, "child", test.childAdd)
+			} else {
+				err = rc.RenderFileTo(&buf, "child", test.childAdd)
+			}
+			require.NoErrorf(t, err, test.name)
+			require.Equalf(t, test.wantOut, buf.String(), test.name)
+			require.Equalf(t, test.wantParent, parent.bindings, test.name)
+		})
+	}
 }
