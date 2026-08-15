@@ -3,7 +3,7 @@ module github.com/osteele/liquid
 go 1.25.0
 
 require (
-	github.com/osteele/tuesday v1.0.4
+	github.com/osteele/tuesday v1.1.1
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/tools v0.42.0
 	gopkg.in/yaml.v2 v2.4.0
