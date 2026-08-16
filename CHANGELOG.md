@@ -3,6 +3,8 @@
 
 ## Unreleased
 
+## 1.9.2 (2026-08-16)
+
 ### Performance
 
 - Benchmarks on Apple M1 improved as follows (median of eight runs): parsing is
@@ -22,6 +24,14 @@
 
 - Preserve `os.IsNotExist` compatibility when a template read fails and the
   template-store root closes successfully.
+- The `date` filter now pads timezone fields to Ruby's minimum widths, so
+  `%1z` renders `-0500` rather than `-500`. This comes from upgrading
+  `github.com/osteele/tuesday` to v1.1.1.
+
+### Changed
+
+- Upgraded `github.com/osteele/tuesday` to v1.1.1, which drops all external
+  module dependencies.
 
 ## 1.9.1 (2026-08-12)
 
