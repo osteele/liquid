@@ -391,6 +391,9 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 				start = len(runes)
 			}
 			end := start + n
+			if end < start {
+				end = start
+			}
 			if end > len(runes) {
 				end = len(runes)
 			}
@@ -413,6 +416,9 @@ func AddStandardFilters(fd FilterDictionary) { //nolint: gocyclo
 					start = len(slice)
 				}
 				end := start + n
+				if end < start {
+					end = start
+				}
 				if end > len(slice) {
 					end = len(slice)
 				}
