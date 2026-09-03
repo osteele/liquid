@@ -3,6 +3,12 @@
 
 ## Unreleased
 
+### Fixed
+
+- The `{% cycle %}` tag no longer assigns to an error variable shared by every
+  render of a parsed template, so a template containing `{% cycle %}` can be
+  rendered concurrently from multiple goroutines.
+
 ## 1.9.2 (2026-08-16)
 
 ### Performance
