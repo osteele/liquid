@@ -115,6 +115,35 @@ func TestTemplate_Render_race(t *testing.T) {
 	wg2.Wait()
 }
 
+func TestTemplate_Render_cycle_race(t *testing.T) {
+	engine := NewEngine()
+	tpl, err := engine.ParseString(`{% for a in (1..4) %}{% cycle 'a', 'b' %}{% endfor %}`)
+	require.NoError(t, err)
+
+	const (
+		goroutines = 16
+		renders    = 50
+	)
+
+	var wg sync.WaitGroup
+
+	for range goroutines {
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+
+			for range renders {
+				out, err := tpl.RenderString(Bindings{})
+				assert.NoError(t, err)
+				assert.Equal(t, "abab", out)
+			}
+		}()
+	}
+
+	wg.Wait()
+}
+
 func BenchmarkTemplate_Render(b *testing.B) {
 	engine := NewEngine()
 	bindings := Bindings{"a": "string value"}
